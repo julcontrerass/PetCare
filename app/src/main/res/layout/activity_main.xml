@@ -12,12 +12,16 @@
         android:layout_width="261dp"
         android:layout_height="55dp"
         android:layout_marginBottom="120dp"
+        android:backgroundTint="@color/white"
         android:text="@string/crear_cuenta"
+        android:textColor="#02797A"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.0"
+        app:strokeColor="#02797A"
+        app:strokeWidth="2dp" />
 
     <ImageView
         android:id="@+id/imageView"
@@ -39,6 +43,7 @@
         android:layout_height="55dp"
         android:layout_marginBottom="120dp"
         android:text="@string/iniciar_sesi_n"
+        android:backgroundTint="#02797A"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
