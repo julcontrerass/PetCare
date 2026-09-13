@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare;
 
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +20,18 @@ public class MainActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+
+        Button btnIniciarSesion = findViewById(R.id.button);
+        btnIniciarSesion.setOnClickListener(v -> {
+            setContentView(R.layout.iniciar_sesion);
+
+            Button btnIngresar = findViewById(R.id.button3);
+            if (btnIngresar != null) {
+                btnIngresar.setOnClickListener(v2 -> {
+                    setContentView(R.layout.home_dueno);
+                });
+            }
         });
     }
 }

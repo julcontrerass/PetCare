@@ -6,4 +6,16 @@
     </style>
 
     <style name="Theme.PetCare" parent="Base.Theme.PetCare" />
+
+    <style name="CircleImage" parent="">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="RoundedCornerImage" parent="">
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="RoundedCornerImageSmall" parent="">
+        <item name="cornerSize">12dp</item>
+    </style>
 </resources>
