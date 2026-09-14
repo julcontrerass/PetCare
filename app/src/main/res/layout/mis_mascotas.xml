@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="209dp"
+        android:layout_height="124dp"
+        android:layout_marginTop="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_arrow_back_24"
+        android:contentDescription="@string/volver_atras"
+        app:layout_constraintEnd_toStartOf="@+id/textView8"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView8"
+        android:layout_width="272dp"
+        android:layout_height="116dp"
+        android:text="Mis mascotas"
+        android:textColor="@color/black"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.552"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.028" />
+
+    <Button
+        android:id="@+id/button6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/white"
+        android:textColor="@color/black"
+        android:text="@string/agregar_mascota"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/textView8"
+        app:layout_constraintTop_toTopOf="@+id/textView8"
+        app:layout_constraintBottom_toBottomOf="@+id/textView8" />
+
+
+    <RelativeLayout
+        android:id="@+id/layout_pet_1"
+        android:layout_width="859dp"
+        android:layout_height="119dp"
+        android:layout_marginTop="72dp"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView8">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/img_pet"
+            android:layout_width="95dp"
+            android:layout_height="80dp"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:src="@drawable/milo"
+            app:shapeAppearanceOverlay="@style/RoundedCornerImageSmall" />
+
+        <LinearLayout
+            android:id="@+id/layout_pet_info"
+            android:layout_width="696dp"
+            android:layout_height="69dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="12dp"
+            android:layout_toEndOf="@id/img_pet"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_pet_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mika"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_pet_breed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gato - europeo"
+                android:textColor="@color/text_gray"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tv_pet_birthdate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10 feb 2021"
+                android:textColor="@color/text_gray"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/layout_pet_2"
+        android:layout_width="859dp"
+        android:layout_height="119dp"
+        android:layout_marginTop="8dp"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layout_pet_1">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/img_pet_2"
+            android:layout_width="95dp"
+            android:layout_height="80dp"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:src="@drawable/luna"
+            app:shapeAppearanceOverlay="@style/RoundedCornerImageSmall" />
+
+        <LinearLayout
+            android:id="@+id/layout_pet_info_2"
+            android:layout_width="696dp"
+            android:layout_height="69dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="12dp"
+            android:layout_toEndOf="@id/img_pet_2"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_pet_name_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Koda"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_pet_breed_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Perro - Golden retriever"
+                android:textColor="@color/text_gray"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tv_pet_birthdate_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15 mar 2020"
+                android:textColor="@color/text_gray"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/layout_pet_3"
+        android:layout_width="859dp"
+        android:layout_height="119dp"
+        android:layout_marginTop="8dp"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layout_pet_2">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/img_pet_3"
+            android:layout_width="95dp"
+            android:layout_height="80dp"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:src="@drawable/milo"
+            app:shapeAppearanceOverlay="@style/RoundedCornerImageSmall" />
+
+        <LinearLayout
+            android:id="@+id/layout_pet_info_3"
+            android:layout_width="696dp"
+            android:layout_height="69dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="12dp"
+            android:layout_toEndOf="@id/img_pet_3"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_pet_name_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Luna"
+                android:textColor="@color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_pet_breed_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Perro - Caniche"
+                android:textColor="@color/text_gray"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tv_pet_birthdate_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="05 jun 2019"
+                android:textColor="@color/text_gray"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

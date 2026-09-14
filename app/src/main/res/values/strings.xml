@@ -36,4 +36,6 @@
     <string name="olvidaste_tu_contrase_a">¿Olvidaste tu contraseña?</string>
     <string name="ejemplo_correo_com">ejemplo@correo.com</string>
     <string name="asteriscos">**</string>
+    <string name="volver_atras">Volver atrás</string>
+    <string name="agregar_mascota">+</string>
 </resources>
