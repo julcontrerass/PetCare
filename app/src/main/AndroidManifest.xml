@@ -17,13 +17,18 @@
         <activity
             android:name=".DetalleDeMascotaActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".HomeVeterinarioActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".MisPacientesActivity" />
+        <activity android:name=".DetallePacienteActivity" />
     </application>
 
 </manifest>
