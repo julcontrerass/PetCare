@@ -1,59 +1,45 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
-import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 
 class DetalleDeMascotaActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.detalle_de_mascota)
 
-        // Referencias a los 3 contenedores
-        val layoutInformacion = findViewById<LinearLayout>(R.id.layout_informacion)
-        val layoutHistorial = findViewById<LinearLayout>(R.id.layout_historial)
-        val layoutRecordatorios = findViewById<LinearLayout>(R.id.layout_recordatorios)
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+        val viewPager = findViewById<ViewPager2>(R.id.viewPager)
 
-        // Referencias a los 3 botones
-        val btnInformacion = findViewById<Button>(R.id.button7)
-        val btnHistorial = findViewById<Button>(R.id.button8)
-        val btnRecordatorios = findViewById<Button>(R.id.button9)
+        val adapter = PetDetailPagerAdapter(this)
+        viewPager.adapter = adapter
 
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = when (position) {
+                0 -> "Información"
+                1 -> "Historial"
+                2 -> "Recordatorios"
+                else -> null
+            }
+        }.attach()
+    }
 
-        val layoutProximos = findViewById<LinearLayout>(R.id.layout_recordatorios_proximos)
-        val layoutCompletados = findViewById<LinearLayout>(R.id.layout_recordatorios_completados)
+    private class PetDetailPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
+        override fun getItemCount(): Int = 3
 
-        val btnProximos = findViewById<Button>(R.id.btn_proximos)
-        val btnCompletados = findViewById<Button>(R.id.btn_completados)
-
-        btnInformacion.setOnClickListener {
-            layoutInformacion.visibility = View.VISIBLE
-            layoutHistorial.visibility = View.GONE
-            layoutRecordatorios.visibility = View.GONE
-        }
-
-        btnHistorial.setOnClickListener {
-            layoutInformacion.visibility = View.GONE
-            layoutHistorial.visibility = View.VISIBLE
-            layoutRecordatorios.visibility = View.GONE
-        }
-
-        btnRecordatorios.setOnClickListener {
-            layoutInformacion.visibility = View.GONE
-            layoutHistorial.visibility = View.GONE
-            layoutRecordatorios.visibility = View.VISIBLE
-        }
-
-        btnProximos.setOnClickListener {
-            layoutProximos.visibility = View.VISIBLE
-            layoutCompletados.visibility = View.GONE
-        }
-
-        btnCompletados.setOnClickListener {
-            layoutProximos.visibility = View.GONE
-            layoutCompletados.visibility = View.VISIBLE
+        override fun createFragment(position: Int): Fragment {
+            return when (position) {
+                0 -> InformacionFragment()
+                1 -> HistorialFragment()
+                2 -> RecordatoriosFragment()
+                else -> throw IllegalStateException("Invalid position $position")
+            }
         }
     }
 }
