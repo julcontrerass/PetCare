@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_base_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    tools:ignore="Overdraw">
+
+    <!-- Espaciador dinámico para el Notch (barra de estado) -->
+    <View
+        android:id="@+id/status_bar_spacer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp" />
+
+    <!-- El contenedor ocupa el espacio central disponible -->
+    <FrameLayout
+        android:id="@+id/content_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- La barra de navegación se mantiene firme abajo -->
+    <include
+        android:id="@+id/bottom_navigation_container"
+        layout="@layout/nav_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>

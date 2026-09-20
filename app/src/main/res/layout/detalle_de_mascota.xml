@@ -4,13 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/white"
+    tools:ignore="Overdraw">
 
     <!-- BARRA SUPERIOR FIJA -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
+        android:layout_marginTop="12dp"
         android:paddingHorizontal="16dp"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -18,6 +20,7 @@
             android:id="@+id/btnBack"
             android:layout_width="24dp"
             android:layout_height="24dp"
+            android:contentDescription="@string/volver_atras"
             android:src="@drawable/baseline_arrow_back_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -28,7 +31,7 @@
             android:id="@+id/txtTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Detalle de Mascota"
+            android:text="@string/detalle_mascota_title"
             android:textColor="@color/black"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -41,6 +44,7 @@
             android:id="@+id/btnMore"
             android:layout_width="24dp"
             android:layout_height="24dp"
+            android:contentDescription="@string/mas_opciones_desc"
             android:src="@drawable/ic_more"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -54,8 +58,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
-        app:layout_constraintTop_toBottomOf="@+id/topBar">
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -79,6 +83,7 @@
                     android:id="@+id/imageView3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:contentDescription="@null"
                     android:scaleType="centerCrop"
                     android:src="@drawable/milo" />
 
@@ -98,98 +103,63 @@
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:layout_gravity="center"
+                    android:contentDescription="@string/cambiar_foto_desc"
                     android:src="@drawable/ic_camera"
                     app:tint="@color/black" />
 
             </androidx.cardview.widget.CardView>
 
             <!-- NOMBRE Y EDITAR -->
-            <LinearLayout
-                android:id="@+id/nameContainer"
+            <TextView
+                android:id="@+id/textView9"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:drawablePadding="8dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:text="@string/nombre_koda"
+                android:textColor="@color/black"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:drawableEndCompat="@drawable/ic_pencil"
+                app:drawableTint="@color/text_gray"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/petImageCard">
-
-                <TextView
-                    android:id="@+id/textView9"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Koda"
-                    android:textColor="@color/black"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_pencil"
-                    app:tint="@color/text_gray" />
-
-            </LinearLayout>
+                app:layout_constraintTop_toBottomOf="@+id/petImageCard" />
 
             <!-- RAZA / TIPO -->
-            <LinearLayout
-                android:id="@+id/breedContainer"
+            <TextView
+                android:id="@+id/textView10"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
+                android:drawablePadding="6dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:text="@string/raza_koda"
+                android:textColor="@color/text_gray"
+                android:textSize="14sp"
+                app:drawableStartCompat="@drawable/ic_dog"
+                app:drawableTint="@color/text_gray"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/nameContainer">
-
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_dog"
-                    app:tint="@color/text_gray" />
-
-                <TextView
-                    android:id="@+id/textView10"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="Perro - Golden Retriever"
-                    android:textColor="@color/text_gray"
-                    android:textSize="14sp" />
-
-            </LinearLayout>
+                app:layout_constraintTop_toBottomOf="@+id/textView9" />
 
             <!-- FECHA / SEXO -->
-            <LinearLayout
-                android:id="@+id/infoContainer"
+            <TextView
+                android:id="@+id/textView11"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:drawablePadding="6dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:text="@string/nacimiento_sexo_koda"
+                android:textColor="@color/text_gray"
+                android:textSize="14sp"
+                app:drawableStartCompat="@drawable/ic_calendar"
+                app:drawableTint="@color/text_gray"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/breedContainer">
-
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_calendar"
-                    app:tint="@color/text_gray" />
-
-                <TextView
-                    android:id="@+id/textView11"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="15 Mar 2020  •  ♂ Macho"
-                    android:textColor="@color/text_gray"
-                    android:textSize="14sp" />
-
-            </LinearLayout>
+                app:layout_constraintTop_toBottomOf="@+id/textView10" />
 
             <!-- PESTAÑAS (BOTONES DE SELECCIÓN) -->
             <LinearLayout
@@ -198,7 +168,7 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="20dp"
                 android:orientation="horizontal"
-                app:layout_constraintTop_toBottomOf="@+id/infoContainer">
+                app:layout_constraintTop_toBottomOf="@+id/textView11">
 
                 <Button
                     android:id="@+id/button7"
@@ -211,7 +181,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    android:text="Información"
+                    android:text="@string/tab_informacion"
                     android:textAllCaps="false"
                     android:textColor="@color/primary_teal"
                     android:textSize="14sp"
@@ -228,7 +198,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    android:text="Historial"
+                    android:text="@string/tab_historial"
                     android:textAllCaps="false"
                     android:textColor="@color/text_gray"
                     android:textSize="14sp"
@@ -245,7 +215,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    android:text="Recordatorios"
+                    android:text="@string/tab_recordatorios"
                     android:textAllCaps="false"
                     android:textColor="@color/text_gray"
                     android:textSize="14sp"
@@ -268,7 +238,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Peso"
+                    android:text="@string/label_peso"
                     android:textColor="@color/text_gray"
                     android:textSize="13sp" />
 
@@ -278,7 +248,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:paddingBottom="8dp"
-                    android:text="26 kg"
+                    android:text="@string/valor_peso_koda"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
@@ -292,7 +262,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Microchip"
+                    android:text="@string/label_microchip"
                     android:textColor="@color/text_gray"
                     android:textSize="13sp" />
 
@@ -302,7 +272,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:paddingBottom="8dp"
-                    android:text="981020000123456"
+                    android:text="@string/valor_microchip_koda"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
@@ -316,7 +286,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Color"
+                    android:text="@string/label_color"
                     android:textColor="@color/text_gray"
                     android:textSize="13sp" />
 
@@ -326,7 +296,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:paddingBottom="8dp"
-                    android:text="Dorado"
+                    android:text="@string/valor_color_koda"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
@@ -340,7 +310,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Observaciones"
+                    android:text="@string/label_observaciones_mascota"
                     android:textColor="@color/text_gray"
                     android:textSize="13sp" />
 
@@ -350,7 +320,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:paddingBottom="12dp"
-                    android:text="Alergia a la comida de pollo"
+                    android:text="@string/obs_alergia_koda"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
@@ -367,7 +337,7 @@
                     android:layout_height="48dp"
                     android:layout_marginTop="32dp"
                     android:backgroundTint="@color/primary_teal"
-                    android:text="Editar información"
+                    android:text="@string/btn_editar_informacion"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="15sp"
@@ -400,13 +370,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Consulta veterinaria"
+                        android:text="@string/evento_consulta_veterinaria"
                         android:textColor="@color/black"
                         android:textSize="15sp" />
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
                 </LinearLayout>
@@ -431,13 +402,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Vacunas"
+                        android:text="@string/evento_vacunas"
                         android:textColor="@color/black"
                         android:textSize="15sp" />
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
                 </LinearLayout>
@@ -462,13 +434,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Desparasitación"
+                        android:text="@string/evento_desparasitacion"
                         android:textColor="@color/black"
                         android:textSize="15sp" />
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
                 </LinearLayout>
@@ -493,13 +466,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Análisis de sangre"
+                        android:text="@string/evento_analisis_sangre"
                         android:textColor="@color/black"
                         android:textSize="15sp" />
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
                 </LinearLayout>
@@ -524,13 +498,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cirugía"
+                        android:text="@string/categoria_cirugia"
                         android:textColor="@color/black"
                         android:textSize="15sp" />
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
                 </LinearLayout>
@@ -555,13 +530,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Control general"
+                        android:text="@string/control_general"
                         android:textColor="@color/black"
                         android:textSize="15sp" />
 
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
                 </LinearLayout>
@@ -583,17 +559,19 @@
                     android:layout_height="36dp"
                     android:orientation="horizontal">
 
+                    <!-- Segmented control intencional: se mantiene el estilo elevado para diferenciar el estado activo -->
                     <Button
                         android:id="@+id/btn_proximos"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:backgroundTint="@color/light_gray"
-                        android:text="Próximos"
+                        android:text="@string/label_proximos"
                         android:textAllCaps="false"
                         android:textColor="@color/primary_teal"
                         android:textSize="13sp"
-                        app:cornerRadius="6dp" />
+                        app:cornerRadius="6dp"
+                        tools:ignore="ButtonStyle" />
 
                     <Button
                         android:id="@+id/btn_completados"
@@ -602,11 +580,12 @@
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
                         android:backgroundTint="@color/light_gray"
-                        android:text="Completados"
+                        android:text="@string/label_completados"
                         android:textAllCaps="false"
                         android:textColor="@color/text_gray"
                         android:textSize="13sp"
-                        app:cornerRadius="6dp" />
+                        app:cornerRadius="6dp"
+                        tools:ignore="ButtonStyle" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -621,7 +600,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
-                        android:text="Vacuna - 15 sep 2026"
+                        android:text="@string/hist_vacuna_15sep"
                         android:textColor="@color/black" />
 
                     <View
@@ -633,7 +612,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
-                        android:text="Desparasitación - 19 sep 2026"
+                        android:text="@string/hist_desparasitacion_19sep"
                         android:textColor="@color/black" />
 
                     <View
@@ -645,7 +624,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
-                        android:text="Control general - 04 oct 2026"
+                        android:text="@string/hist_control_04oct"
                         android:textColor="@color/black" />
                 </LinearLayout>
 
@@ -661,7 +640,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
-                        android:text="Vacuna - 02 ago 2026"
+                        android:text="@string/hist_vacuna_02ago"
                         android:textColor="@color/black" />
 
                     <View
@@ -673,7 +652,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
-                        android:text="Análisis de sangre - 10 jul 2026"
+                        android:text="@string/hist_analisis_10jul"
                         android:textColor="@color/black" />
                 </LinearLayout>
 
@@ -682,133 +661,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- NAV BAR INFERIOR FIJA -->
-    <LinearLayout
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:background="@color/white"
-        android:elevation="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Inicio -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_home"
-                app:tint="@color/text_gray" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Inicio"
-                android:textColor="@color/text_gray"
-                android:textSize="11sp" />
-        </LinearLayout>
-
-        <!-- Mascotas -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_dog"
-                app:tint="@color/primary_teal" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Mascotas"
-                android:textColor="@color/primary_teal"
-                android:textSize="11sp" />
-        </LinearLayout>
-
-        <!-- Botón Central (+) -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                app:cardBackgroundColor="@color/primary_teal"
-                app:cardCornerRadius="19dp"
-                app:cardElevation="0dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_plus"
-                    app:tint="@color/white" />
-            </androidx.cardview.widget.CardView>
-        </LinearLayout>
-
-        <!-- Recordatorios -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_list"
-                app:tint="@color/text_gray" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Recordatorios"
-                android:textColor="@color/text_gray"
-                android:textSize="11sp" />
-        </LinearLayout>
-
-        <!-- Más -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_more"
-                app:tint="@color/text_gray" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Más"
-                android:textColor="@color/text_gray"
-                android:textSize="11sp" />
-        </LinearLayout>
-
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

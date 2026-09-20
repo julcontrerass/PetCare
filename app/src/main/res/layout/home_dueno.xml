@@ -5,13 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    tools:ignore="Overdraw">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation_container"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -54,12 +53,15 @@
                         app:tint="@color/black" />
 
                     <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/iv_home_profile"
                         android:layout_width="36dp"
                         android:layout_height="36dp"
                         android:contentDescription="@null"
                         android:padding="2dp"
                         android:scaleType="centerCrop"
                         android:src="@drawable/juani"
+                        android:clickable="true"
+                        android:focusable="true"
                         app:shapeAppearanceOverlay="@style/CircleImage" />
                 </LinearLayout>
             </RelativeLayout>
@@ -137,11 +139,15 @@
 
                     <!-- Pet Item 2 -->
                     <LinearLayout
+                        android:id="@+id/pet_milo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="16dp"
                         android:gravity="center"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
 
                         <com.google.android.material.imageview.ShapeableImageView
                             android:layout_width="80dp"
@@ -170,10 +176,14 @@
 
                     <!-- Add Button -->
                     <LinearLayout
+                        android:id="@+id/btnAddPetHome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
 
                         <FrameLayout
                             android:layout_width="80dp"
@@ -193,7 +203,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="@string/filtrar_por"
+                            android:text="@string/nueva_mascota_home_label"
                             android:textColor="@color/text_gray" />
                     </LinearLayout>
                 </LinearLayout>
@@ -274,30 +284,19 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <LinearLayout
+                    <TextView
                         android:id="@+id/layout_reminder_time_1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
+                        android:drawablePadding="4dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_clock"
-                            app:tint="@color/text_gray" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/hora_rem_1"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        android:text="@string/hora_rem_1"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/ic_clock"
+                        app:drawableTint="@color/text_gray" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -349,30 +348,19 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <LinearLayout
+                    <TextView
                         android:id="@+id/layout_reminder_time_2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
+                        android:drawablePadding="4dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_clock"
-                            app:tint="@color/text_gray" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/hora_rem_2"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        android:text="@string/hora_rem_2"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/ic_clock"
+                        app:drawableTint="@color/text_gray" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -519,121 +507,6 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Navigation -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottom_navigation_container"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:background="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:baselineAligned="false"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:weightSum="5">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/home"
-                    android:src="@drawable/ic_home"
-                    app:tint="@color/primary_teal" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/home"
-                    android:textColor="@color/primary_teal"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/mascotas"
-                    android:src="@drawable/ic_dog"
-                    app:tint="@color/text_gray" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/mascotas"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/nav_mis_mascotas"
-                    android:src="@drawable/ic_list"
-                    app:tint="@color/text_gray" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/nav_mis_mascotas"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/mas"
-                    android:src="@drawable/ic_more"
-                    app:tint="@color/text_gray" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/mas"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_plus"
-            app:backgroundTint="@color/primary_teal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:tint="@color/white" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
