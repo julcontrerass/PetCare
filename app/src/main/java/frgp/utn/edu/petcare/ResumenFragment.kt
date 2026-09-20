@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,11 +19,17 @@ class ResumenFragment : Fragment() {
         val items = listOf(
             ResumenItem("Última consulta", "18 May 2026", R.drawable.ic_clock),
             ResumenItem("Próximo recordatorio", "Vacuna antirrábica • 18 May 2027", R.drawable.ic_calendar),
-            ResumenItem("Veterinarios autorizados", "1 veterinario", R.drawable.ic_pencil), // No user icon found in list, using pencil as fallback
+            ResumenItem("Veterinarios autorizados", "1 veterinario", R.drawable.ic_pencil),
             ResumenItem("Historial clínico", "Ver todos los eventos", R.drawable.ic_activity)
         )
 
-        rvResumen.adapter = ResumenAdapter(items)
+        val adapter = ResumenAdapter(items)
+        adapter.setOnItemClickListener { position ->
+            if (position == 3) { // Historial clínico
+                startActivity(Intent(requireContext(), HistorialClinicoVetActivity::class.java))
+            }
+        }
+        rvResumen.adapter = adapter
         return view
     }
 }

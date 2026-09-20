@@ -29,7 +29,10 @@ class DetallePacienteActivity : AppCompatActivity() {
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
                     0 -> ResumenFragment()
-                    else -> Fragment() // Temporary for other tabs
+                    1 -> InformacionVetFragment()
+                    2 -> PropietarioFragment()
+                    3 -> ArchivosFragment()
+                    else -> throw IllegalStateException("Invalid position $position")
                 }
             }
         }

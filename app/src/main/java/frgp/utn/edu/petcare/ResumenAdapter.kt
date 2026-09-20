@@ -15,6 +15,12 @@ data class ResumenItem(
 
 class ResumenAdapter(private val items: List<ResumenItem>) : RecyclerView.Adapter<ResumenAdapter.ViewHolder>() {
 
+    private var onItemClickListener: ((Int) -> Unit)? = null
+
+    fun setOnItemClickListener(listener: (Int) -> Unit) {
+        onItemClickListener = listener
+    }
+
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ivIcon: ImageView = view.findViewById(R.id.ivIcon)
         val tvTitle: TextView = view.findViewById(R.id.tvTitle)
@@ -31,6 +37,10 @@ class ResumenAdapter(private val items: List<ResumenItem>) : RecyclerView.Adapte
         holder.tvTitle.text = item.title
         holder.tvSubtitle.text = item.subtitle
         holder.ivIcon.setImageResource(item.iconRes)
+        
+        holder.itemView.setOnClickListener {
+            onItemClickListener?.invoke(position)
+        }
     }
 
     override fun getItemCount() = items.size
