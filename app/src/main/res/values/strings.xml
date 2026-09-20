@@ -6,7 +6,7 @@
     <string name="hola_juani">Hola, Juan!</string>
     <string name="mis_mascotas">Mis mascotas</string>
     <string name="ver_todas">Ver todas</string>
-    <string name="filtrar_por">Filtrar por</string>
+    <string name="nueva_mascota_home_label">Nueva</string>
     <string name="proximos_recordatorios">Próximos recordatorios</string>
     <string name="actividad_reciente">Actividad reciente</string>
     <string name="cita_veterinaria">Cita veterinaria</string>
@@ -23,7 +23,6 @@
     <string name="hora_rem_1">10:00</string>
     <string name="hora_rem_2">14:00</string>
     <string name="fecha_act_1">20 Mar 2023</string>
-    <string name="nav_mis_mascotas">Mis mascotas</string>
     <string name="bienvenido_de_nuevo">¡Bienvenido de nuevo!</string>
     <string name="inicia_sesi_n_para_continuar">Inicia sesión para continuar</string>
     <string name="correo_electr_nico">Correo electrónico</string>
@@ -31,11 +30,174 @@
     <string name="crear_cuentaa">Crear cuenta</string>
     <string name="no_tienes_cuenta">¿No tienes cuenta?</string>
     <string name="google">Google</string>
-    <string name="o_continu_con">O continuá con</string>
+    <string name="o_continu_con">o continuá con</string>
+    <string name="apple">Apple</string>
     <string name="iniciar_sesi_nn">Iniciar sesión</string>
     <string name="olvidaste_tu_contrase_a">¿Olvidaste tu contraseña?</string>
     <string name="ejemplo_correo_com">ejemplo@correo.com</string>
-    <string name="asteriscos">**</string>
     <string name="volver_atras">Volver atrás</string>
     <string name="agregar_mascota">+</string>
+    <string name="password_placeholder">••••••••••••</string>
+    <string name="logo_description">Logo de PetCare</string>
+    <string name="mi_perfil">Mi Perfil</string>
+    <string name="user_name">Juan Perez</string>
+    <string name="informacion_cuenta">Información de la cuenta</string>
+    <string name="user_email">juan.perez@example.com</string>
+    <string name="user_phone">+54 11 1234–5678</string>
+    <string name="user_address">Calle Falsa 123</string>
+    <string name="ver_datos_personales">Ver datos personales</string>
+    <string name="editar_datos">Editar datos</string>
+    <string name="cambiar_contrasena">Cambiar contraseña</string>
+    <string name="cerrar_sesion">Cerrar sesión</string>
+
+    <!-- Nuevo evento -->
+    <string name="nuevo_evento_title">Nuevo evento</string>
+    <string name="step_tipo">Tipo</string>
+    <string name="step_veterinario">Vet</string>
+    <string name="step_detalles">Fecha</string>
+    <string name="step_resumen">Resumen</string>
+    <string name="categoria_evento_label">Categoría del Evento</string>
+    <string name="categoria_vacuna">Vacuna</string>
+    <string name="categoria_control">Control</string>
+    <string name="categoria_cirugia">Cirugía</string>
+    <string name="categoria_estudio">Estudio / Tratamiento</string>
+    <string name="mascota_label">Mascota</string>
+    <string name="hora_label">Hora</string>
+    <string name="observaciones_label">Observaciones</string>
+    <string name="observaciones_hint">Agregá una nota (opcional)</string>
+    <string name="btn_cancelar">Cancelar</string>
+    <string name="btn_siguiente">Siguiente</string>
+    <string name="btn_atras">Atrás</string>
+    <string name="btn_guardar_evento">Guardar Evento</string>
+    <string name="resumen_categoria">Categoría</string>
+    <string name="resumen_mascota">Mascota</string>
+    <string name="resumen_veterinario">Veterinario</string>
+    <string name="resumen_fecha">Fecha</string>
+    <string name="resumen_hora">Hora</string>
+    <string name="resumen_observaciones">Observaciones</string>
+    <string name="sin_observaciones">Sin observaciones</string>
+    <string name="veterinario_especializado_label">Veterinario especializado</string>
+    <string name="sin_veterinarios_categoria">No hay veterinarios disponibles para esta categoría</string>
+    <string name="seleccionar_fecha_label">Seleccioná la fecha</string>
+
+    <!-- Calendario -->
+    <string name="calendario_title">Calendario</string>
+    <string name="nav_calendario">Calendario</string>
+    <string name="btn_agregar_evento">Agregar evento</string>
+    <string name="no_hay_eventos">No hay eventos este día</string>
+
+    <!-- Veterinarios -->
+    <string name="veterinarios_title">Veterinarios autorizados</string>
+    <string name="buscar_hint">Buscar</string>
+    <string name="mascotas_asociadas_label">Mascotas Asociadas</string>
+    <string name="estado_activo">Activo</string>
+    <string name="estado_pendiente">Pendiente</string>
+    <string name="estado_inactivo">Inactivo</string>
+    <string name="btn_agregar_veterinario">Agregar veterinario</string>
+    <string name="veterinarios_autorizados_menu">Veterinarios autorizados</string>
+    <string name="dialog_nuevo_veterinario">Nuevo veterinario</string>
+    <string name="hint_nombre_veterinario">Nombre completo</string>
+    <string name="hint_matricula">Matrícula</string>
+    <string name="btn_agregar">Agregar</string>
+    <string name="sin_resultados">No se encontraron veterinarios</string>
+
+    <!-- Editar perfil -->
+    <string name="editar_perfil_title">Editar perfil</string>
+    <string name="label_nombre_completo">Nombre completo</string>
+    <string name="label_correo">Correo electrónico</string>
+    <string name="label_telefono">Teléfono</string>
+    <string name="label_direccion">Dirección</string>
+    <string name="hint_nombre_completo">Ingresá tu nombre completo</string>
+    <string name="hint_correo">Ingresá tu correo</string>
+    <string name="hint_telefono">Ingresá tu teléfono</string>
+    <string name="hint_direccion">Ingresá tu dirección</string>
+    <string name="btn_guardar_perfil">Guardar cambios</string>
+    <string name="perfil_actualizado_msg">Perfil actualizado correctamente</string>
+
+    <!-- Nueva mascota -->
+    <string name="nueva_mascota_title">Nueva mascota</string>
+    <string name="label_nombre_mascota">Nombre</string>
+    <string name="hint_nombre_mascota">Ingresá el nombre de tu mascota</string>
+    <string name="label_tipo_mascota">Tipo de mascota</string>
+    <string name="tipo_perro">Perro</string>
+    <string name="tipo_gato">Gato</string>
+    <string name="tipo_otro">Otro</string>
+    <string name="label_raza">Raza</string>
+    <string name="hint_raza">Ej: Golden retriever</string>
+    <string name="label_fecha_nacimiento">Fecha de nacimiento</string>
+    <string name="hint_fecha_nacimiento">Ej: 10 feb 2021</string>
+    <string name="btn_guardar_mascota">Guardar mascota</string>
+    <string name="mascota_agregada_msg">Mascota agregada correctamente</string>
+
+    <!-- Calendario -->
+    <string name="mes_anterior_desc">Mes anterior</string>
+    <string name="mes_siguiente_desc">Mes siguiente</string>
+    <string name="calendario_mes_anio">Mayo 2026</string>
+    <string name="dia_l">L</string>
+    <string name="dia_m">M</string>
+    <string name="dia_x">X</string>
+    <string name="dia_j">J</string>
+    <string name="dia_v">V</string>
+    <string name="dia_s">S</string>
+    <string name="dia_d">D</string>
+    <string name="eventos_del_dia">Eventos del 15 de Mayo</string>
+
+    <!-- Detalle de mascota -->
+    <string name="detalle_mascota_title">Detalle de mascota</string>
+    <string name="mas_opciones_desc">Más opciones</string>
+    <string name="cambiar_foto_desc">Cambiar foto</string>
+    <string name="nombre_koda">Koda</string>
+    <string name="raza_koda">Perro - Golden Retriever</string>
+    <string name="nacimiento_sexo_koda">Nacido el 15 mar 2020 - Macho</string>
+    <string name="tab_informacion">Información</string>
+    <string name="tab_historial">Historial</string>
+    <string name="tab_recordatorios">Recordatorios</string>
+    <string name="label_peso">Peso</string>
+    <string name="valor_peso_koda">28 kg</string>
+    <string name="label_microchip">Microchip</string>
+    <string name="valor_microchip_koda">985121054871236</string>
+    <string name="label_color">Color</string>
+    <string name="valor_color_koda">Dorado</string>
+    <string name="label_observaciones_mascota">Observaciones</string>
+    <string name="obs_alergia_koda">Alérgico a la penicilina</string>
+    <string name="btn_editar_informacion">Editar información</string>
+    <string name="evento_consulta_veterinaria">Consulta veterinaria</string>
+    <string name="evento_vacunas">Vacunas</string>
+    <string name="evento_desparasitacion">Desparasitación</string>
+    <string name="evento_analisis_sangre">Análisis de sangre</string>
+    <string name="label_proximos">Próximos</string>
+    <string name="label_completados">Completados</string>
+    <string name="hist_vacuna_15sep">Vacuna antirrábica - 15 sep 2026</string>
+    <string name="hist_desparasitacion_19sep">Desparasitación - 19 sep 2026</string>
+    <string name="hist_control_04oct">Control general - 04 oct 2026</string>
+    <string name="hist_vacuna_02ago">Vacuna triple felina - 02 ago 2026</string>
+    <string name="hist_analisis_10jul">Análisis de sangre - 10 jul 2026</string>
+
+    <!-- Mi perfil -->
+    <string name="cambiar_foto_perfil_desc">Cambiar foto de perfil</string>
+
+    <!-- Nuevo evento -->
+    <string name="nombre_mika">Mika</string>
+    <string name="hora_09_00">09:00</string>
+    <string name="hora_11_00">11:00</string>
+    <string name="hora_14_00">14:00</string>
+    <string name="hora_16_00">16:00</string>
+    <string name="hora_18_00">18:00</string>
+
+    <!-- Mis mascotas (lista) -->
+    <string name="raza_mika">Gato - europeo</string>
+    <string name="nacimiento_mika">10 feb 2021</string>
+    <string name="raza_koda_lista">Perro - Golden retriever</string>
+    <string name="nacimiento_koda_lista">15 mar 2020</string>
+    <string name="raza_luna">Perro - Caniche</string>
+    <string name="nacimiento_luna">05 jun 2019</string>
+
+    <!-- Veterinarios autorizados -->
+    <string name="vet_alejandro_ramirez">Dr. Alejandro Ramírez</string>
+    <string name="matricula_mp12345">Matrícula: MP-12345</string>
+    <string name="mascotas_koda_mika">Koda, Mika</string>
+    <string name="vet_carla_mendez">Dra. Carla Méndez</string>
+    <string name="matricula_mp98765">Matrícula: MP-98765</string>
+    <string name="vet_ricardo_soto">Dr. Ricardo Soto</string>
+    <string name="matricula_mp45612">Matrícula: MP-45612</string>
 </resources>
