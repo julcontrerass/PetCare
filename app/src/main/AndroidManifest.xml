@@ -24,6 +24,12 @@
             android:name=".DetalleDeMascotaActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".HomeVeterinarioActivity"
+            android:exported="false" />
+        <activity android:name=".MisPacientesActivity" />
+        <activity android:name=".DetallePacienteActivity" />
+        <activity android:name=".HistorialClinicoVetActivity" />
     </application>
 
 </manifest>
