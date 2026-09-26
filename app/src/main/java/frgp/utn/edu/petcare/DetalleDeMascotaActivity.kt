@@ -3,57 +3,162 @@ package frgp.utn.edu.petcare
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import com.google.android.material.tabs.TabLayout
 
 class DetalleDeMascotaActivity : AppCompatActivity() {
+
+    private lateinit var imageView3: ImageView
+    private lateinit var textView9: TextView
+    private lateinit var textView10: TextView
+    private lateinit var textView11: TextView
+    private lateinit var editTextText: TextView
+    private lateinit var txtMicrochip: TextView
+    private lateinit var editTextText2: TextView
+    private lateinit var editTextText3: TextView
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            imageView3.setImageURI(it)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.detalle_de_mascota)
 
-        // Referencias a los 3 contenedores
-        val layoutInformacion = findViewById<LinearLayout>(R.id.layout_informacion)
-        val layoutHistorial = findViewById<LinearLayout>(R.id.layout_historial)
-        val layoutRecordatorios = findViewById<LinearLayout>(R.id.layout_recordatorios)
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        toolbar.setNavigationOnClickListener { finish() }
 
-        // Referencias a los 3 botones
-        val btnInformacion = findViewById<Button>(R.id.button7)
-        val btnHistorial = findViewById<Button>(R.id.button8)
-        val btnRecordatorios = findViewById<Button>(R.id.button9)
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+        tabLayout?.getTabAt(0)?.select()
+        tabLayout?.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    1 -> {
+                        finish()
+                    }
+                    2 -> {
+                        finish()
+                    }
+                }
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
 
+        imageView3 = findViewById(R.id.imageView3)
+        textView9 = findViewById(R.id.textView9)
+        textView10 = findViewById(R.id.textView10)
+        textView11 = findViewById(R.id.textView11)
+        editTextText = findViewById(R.id.editTextText)
+        txtMicrochip = findViewById(R.id.txtMicrochip)
+        editTextText2 = findViewById(R.id.editTextText2)
+        editTextText3 = findViewById(R.id.editTextText3)
 
-        val layoutProximos = findViewById<LinearLayout>(R.id.layout_recordatorios_proximos)
-        val layoutCompletados = findViewById<LinearLayout>(R.id.layout_recordatorios_completados)
+        val btnCameraOverlay = findViewById<View>(R.id.btnCameraOverlay)
+        val petImageCard = findViewById<View>(R.id.petImageCard)
 
-        val btnProximos = findViewById<Button>(R.id.btn_proximos)
-        val btnCompletados = findViewById<Button>(R.id.btn_completados)
-
-        btnInformacion.setOnClickListener {
-            layoutInformacion.visibility = View.VISIBLE
-            layoutHistorial.visibility = View.GONE
-            layoutRecordatorios.visibility = View.GONE
+        val openImagePicker: (View) -> Unit = {
+            pickImageLauncher.launch("image/*")
         }
 
-        btnHistorial.setOnClickListener {
-            layoutInformacion.visibility = View.GONE
-            layoutHistorial.visibility = View.VISIBLE
-            layoutRecordatorios.visibility = View.GONE
+        btnCameraOverlay?.setOnClickListener(openImagePicker)
+        imageView3.setOnClickListener(openImagePicker)
+        petImageCard?.setOnClickListener(openImagePicker)
+
+        val btnEditarInfo = findViewById<Button>(R.id.btnEditarInfo)
+        btnEditarInfo?.setOnClickListener {
+            showEditDialog()
+        }
+    }
+
+    private fun showEditDialog() {
+        val context = this
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 32)
         }
 
-        btnRecordatorios.setOnClickListener {
-            layoutInformacion.visibility = View.GONE
-            layoutHistorial.visibility = View.GONE
-            layoutRecordatorios.visibility = View.VISIBLE
+        val params = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(0, 16, 0, 16)
         }
 
-        btnProximos.setOnClickListener {
-            layoutProximos.visibility = View.VISIBLE
-            layoutCompletados.visibility = View.GONE
+        val inputNombre = EditText(context).apply {
+            hint = "Nombre"
+            setText(textView9.text.toString().trim())
+            layoutParams = params
+        }
+        val inputRaza = EditText(context).apply {
+            hint = "Raza"
+            setText(textView10.text.toString())
+            layoutParams = params
+        }
+        val inputNacSexo = EditText(context).apply {
+            hint = "Nacimiento y Sexo"
+            setText(textView11.text.toString())
+            layoutParams = params
+        }
+        val inputPeso = EditText(context).apply {
+            hint = "Peso"
+            setText(editTextText.text.toString())
+            layoutParams = params
+        }
+        val inputMicrochip = EditText(context).apply {
+            hint = "Microchip"
+            setText(txtMicrochip.text.toString())
+            layoutParams = params
+        }
+        val inputColor = EditText(context).apply {
+            hint = "Color"
+            setText(editTextText2.text.toString())
+            layoutParams = params
+        }
+        val inputObs = EditText(context).apply {
+            hint = "Observaciones"
+            setText(editTextText3.text.toString())
+            layoutParams = params
         }
 
-        btnCompletados.setOnClickListener {
-            layoutProximos.visibility = View.GONE
-            layoutCompletados.visibility = View.VISIBLE
+        layout.addView(inputNombre)
+        layout.addView(inputRaza)
+        layout.addView(inputNacSexo)
+        layout.addView(inputPeso)
+        layout.addView(inputMicrochip)
+        layout.addView(inputColor)
+        layout.addView(inputObs)
+
+        val scrollView = ScrollView(context).apply {
+            addView(layout)
         }
+
+        AlertDialog.Builder(context)
+            .setTitle("Editar Información de Mascota")
+            .setView(scrollView)
+            .setPositiveButton("Guardar") { _, _ ->
+                textView9.text = inputNombre.text.toString()
+                textView10.text = inputRaza.text.toString()
+                textView11.text = inputNacSexo.text.toString()
+                editTextText.text = inputPeso.text.toString()
+                txtMicrochip.text = inputMicrochip.text.toString()
+                editTextText2.text = inputColor.text.toString()
+                editTextText3.text = inputObs.text.toString()
+                Toast.makeText(context, "Información actualizada", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 }
