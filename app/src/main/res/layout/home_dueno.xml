@@ -45,11 +45,15 @@
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/btn_notifications"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_notifications"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
                         app:tint="@color/black" />
 
                     <com.google.android.material.imageview.ShapeableImageView
@@ -100,17 +104,22 @@
                 android:scrollbars="none">
 
                 <LinearLayout
+                    android:id="@+id/containerMisMascotasHome"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
                     <!-- Pet Item 1 -->
                     <LinearLayout
+                        android:id="@+id/pet_luna"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="16dp"
                         android:gravity="center"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
 
                         <com.google.android.material.imageview.ShapeableImageView
                             android:layout_width="80dp"
@@ -236,133 +245,12 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Reminder Item 1 -->
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/containerRecordatoriosHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/light_gray"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/img_reminder_1"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:contentDescription="@null"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/milo"
-                        app:shapeAppearanceOverlay="@style/RoundedCornerImageSmall" />
-
-                    <LinearLayout
-                        android:id="@+id/layout_reminder_info_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/img_reminder_1"
-                        android:layout_toStartOf="@+id/layout_reminder_time_1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/cita_veterinaria"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/fecha_rem_1"
-                            android:textColor="@color/text_gray"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/layout_reminder_time_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:drawablePadding="4dp"
-                        android:gravity="center_vertical"
-                        android:text="@string/hora_rem_1"
-                        android:textColor="@color/black"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_clock"
-                        app:drawableTint="@color/text_gray" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Reminder Item 2 -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/light_gray"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/img_reminder_2"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:contentDescription="@null"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/luna"
-                        app:shapeAppearanceOverlay="@style/RoundedCornerImageSmall" />
-
-                    <LinearLayout
-                        android:id="@+id/layout_reminder_info_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/img_reminder_2"
-                        android:layout_toStartOf="@+id/layout_reminder_time_2"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/cita_veterinaria"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/fecha_rem_2"
-                            android:textColor="@color/text_gray"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/layout_reminder_time_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:drawablePadding="4dp"
-                        android:gravity="center_vertical"
-                        android:text="@string/hora_rem_2"
-                        android:textColor="@color/black"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_clock"
-                        app:drawableTint="@color/text_gray" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp" />
 
             <!-- Activity Section -->
             <TextView
@@ -374,135 +262,12 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <!-- Activity Item 1 -->
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/containerActividadRecienteHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/light_gray"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <FrameLayout
-                        android:id="@+id/icon_container_1"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_icon_teal">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_activity"
-                            app:tint="@color/primary_teal" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/icon_container_1"
-                        android:layout_toStartOf="@+id/chevron_1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/control_general"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/fecha_act_1"
-                            android:textColor="@color/text_gray"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/chevron_1"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/text_gray" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Activity Item 2 -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/light_gray"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp">
-
-                    <FrameLayout
-                        android:id="@+id/icon_container_2"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_icon_teal">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_activity"
-                            app:tint="@color/primary_teal" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/icon_container_2"
-                        android:layout_toStartOf="@+id/chevron_2"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/control_general"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/fecha_act_1"
-                            android:textColor="@color/text_gray"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/chevron_2"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/text_gray" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

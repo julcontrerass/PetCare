@@ -19,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,18 +37,22 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.shape.RelativeCornerSize;
 import com.google.android.material.tabs.TabLayout;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -129,9 +134,27 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        View btnNotifications = findViewById(R.id.btn_notifications);
+        if (btnNotifications != null) {
+            btnNotifications.setOnClickListener(v -> {
+                bounceView(v);
+                showNotificationsDialog();
+            });
+        }
+
+        View petLuna = findViewById(R.id.pet_luna);
+        if (petLuna != null) {
+            petLuna.setOnClickListener(v -> showPetDetailView());
+        }
+
         View petMilo = findViewById(R.id.pet_milo);
         if (petMilo != null) {
             petMilo.setOnClickListener(v -> showPetDetailView());
+        }
+
+        View tvVerTodas = findViewById(R.id.tv_ver_todas_mascotas);
+        if (tvVerTodas != null) {
+            tvVerTodas.setOnClickListener(v -> showPetsView());
         }
 
         View btnAddPetHome = findViewById(R.id.btnAddPetHome);
@@ -140,6 +163,59 @@ public class MainActivity extends AppCompatActivity {
                 bounceView(v);
                 showNuevaMascotaView();
             });
+        }
+
+        LinearLayout containerMisMascotasHome = findViewById(R.id.containerMisMascotasHome);
+        if (containerMisMascotasHome != null && btnAddPetHome != null) {
+            int addBtnIndex = containerMisMascotasHome.indexOfChild(btnAddPetHome);
+            for (Mascota m : mascotasNuevas) {
+                View petView = buildMascotaHomeItem(m);
+                containerMisMascotasHome.addView(petView, addBtnIndex);
+                addBtnIndex++;
+            }
+        }
+
+        View tvVerTodasRecordatorios = findViewById(R.id.tv_ver_todas_recordatorios);
+        if (tvVerTodasRecordatorios != null) {
+            tvVerTodasRecordatorios.setOnClickListener(v -> showRecordatoriosView());
+        }
+
+        LinearLayout containerRecordatoriosHome = findViewById(R.id.containerRecordatoriosHome);
+        if (containerRecordatoriosHome != null) {
+            containerRecordatoriosHome.removeAllViews();
+            List<EventoConFecha> proximos = obtenerEventosOrdenados(true);
+            int count = 0;
+            for (EventoConFecha ecf : proximos) {
+                if (count >= 3) break;
+                containerRecordatoriosHome.addView(buildReminderHomeCard(ecf));
+                count++;
+            }
+            if (count == 0) {
+                TextView tvSinRecordatorios = new TextView(this);
+                tvSinRecordatorios.setText("No hay próximos recordatorios");
+                tvSinRecordatorios.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+                tvSinRecordatorios.setPadding(0, dp(8), 0, dp(8));
+                containerRecordatoriosHome.addView(tvSinRecordatorios);
+            }
+        }
+
+        LinearLayout containerActividadRecienteHome = findViewById(R.id.containerActividadRecienteHome);
+        if (containerActividadRecienteHome != null) {
+            containerActividadRecienteHome.removeAllViews();
+            List<EventoConFecha> reciente = obtenerActividadReciente30Dias();
+            int count = 0;
+            for (EventoConFecha ecf : reciente) {
+                if (count >= 5) break;
+                containerActividadRecienteHome.addView(buildActividadRecienteCard(ecf));
+                count++;
+            }
+            if (count == 0) {
+                TextView tvSinActividad = new TextView(this);
+                tvSinActividad.setText("No hay actividad reciente en los últimos 30 días");
+                tvSinActividad.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+                tvSinActividad.setPadding(0, dp(8), 0, dp(8));
+                containerActividadRecienteHome.addView(tvSinActividad);
+            }
         }
     }
 
@@ -431,25 +507,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void showRecordatoriosView() {
+        ensureAppBaseSet();
+        ViewGroup container = findViewById(R.id.content_container);
+        container.removeAllViews();
+        getLayoutInflater().inflate(R.layout.recordatorios, container, true);
+
+        highlightNavItem(-1);
+
+        setupRecordatoriosView();
+    }
+
     private void setupRecordatoriosView() {
-        View toolbarView = findViewById(R.id.toolbar);
-        if (toolbarView instanceof Toolbar) {
-            ((Toolbar) toolbarView).setNavigationOnClickListener(v -> showPetDetailView());
+        Toolbar toolbarView = findViewById(R.id.toolbar);
+        if (toolbarView != null) {
+            toolbarView.setNavigationOnClickListener(v -> showHomeView());
+        }
+
+        View btnToolbarAdd = findViewById(R.id.btnToolbarAdd);
+        if (btnToolbarAdd != null) {
+            btnToolbarAdd.setOnClickListener(v -> {
+                bounceView(v);
+                showNuevoEventoView(LocalDate.now());
+            });
         }
 
         TabLayout tabLayout = findViewById(R.id.tabLayoutRecordatorios);
         RecyclerView recyclerView = findViewById(R.id.recyclerViewRecordatorios);
 
-        List<RecordatorioItem> proximosItems = Arrays.asList(
-                new RecordatorioItem("Vacuna múltiple", "Koda", "15 May 2026", "Falta 5 días", R.drawable.ic_calendar),
-                new RecordatorioItem("Control general", "Mika", "20 May 2026", "Falta 10 días", R.drawable.ic_pencil),
-                new RecordatorioItem("Desparasitación", "Koda", "01 Jun 2026", "Falta 22 días", R.drawable.ic_dog)
-        );
-
-        List<RecordatorioItem> completadosItems = Arrays.asList(
-                new RecordatorioItem("Antirrábica", "Koda", "02 Ago 2025", "Completado", R.drawable.ic_check_circle),
-                new RecordatorioItem("Análisis general", "Koda", "10 Jul 2025", "Completado", R.drawable.ic_list)
-        );
+        List<RecordatorioItem> proximosItems = obtenerRecordatoriosItems(true);
+        List<RecordatorioItem> completadosItems = obtenerRecordatoriosItems(false);
 
         if (recyclerView != null) {
             recyclerView.setAdapter(new RecordatoriosAdapter(proximosItems));
@@ -500,7 +587,7 @@ public class MainActivity extends AppCompatActivity {
                 btnProximos.setTextColor(ContextCompat.getColor(this, R.color.primary_teal));
                 btnCompletados.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.light_gray));
                 btnCompletados.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
-                if (recyclerView != null) recyclerView.setAdapter(new RecordatoriosAdapter(proximosItems));
+                if (recyclerView != null) recyclerView.setAdapter(new RecordatoriosAdapter(obtenerRecordatoriosItems(true)));
             });
 
             btnCompletados.setOnClickListener(v -> {
@@ -509,21 +596,13 @@ public class MainActivity extends AppCompatActivity {
                 btnCompletados.setTextColor(ContextCompat.getColor(this, R.color.primary_teal));
                 btnProximos.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.light_gray));
                 btnProximos.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
-                if (recyclerView != null) recyclerView.setAdapter(new RecordatoriosAdapter(completadosItems));
+                if (recyclerView != null) recyclerView.setAdapter(new RecordatoriosAdapter(obtenerRecordatoriosItems(false)));
             });
         }
 
         View fabAdd = findViewById(R.id.fabAdd);
         if (fabAdd != null) {
             fabAdd.setOnClickListener(v -> {
-                bounceView(v);
-                showNuevoEventoView(diaSeleccionado);
-            });
-        }
-
-        View btnToolbarAdd = findViewById(R.id.btnToolbarAdd);
-        if (btnToolbarAdd != null) {
-            btnToolbarAdd.setOnClickListener(v -> {
                 bounceView(v);
                 showNuevoEventoView(diaSeleccionado);
             });
@@ -761,6 +840,489 @@ public class MainActivity extends AppCompatActivity {
         return card;
     }
 
+    private View buildMascotaHomeItem(Mascota m) {
+        LinearLayout item = new LinearLayout(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMarginEnd(dp(16));
+        item.setLayoutParams(lp);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(Gravity.CENTER);
+        item.setClickable(true);
+        item.setFocusable(true);
+
+        TypedValue outValue = new TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+        item.setBackgroundResource(outValue.resourceId);
+
+        ShapeableImageView ivFoto = new ShapeableImageView(this);
+        LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(dp(80), dp(80));
+        ivFoto.setLayoutParams(imgLp);
+        ivFoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivFoto.setShapeAppearanceModel(ivFoto.getShapeAppearanceModel().toBuilder()
+                .setAllCornerSizes(dp(20))
+                .build());
+
+        if (m.fotoUri != null) {
+            ivFoto.setImageURI(m.fotoUri);
+        } else {
+            ivFoto.setImageResource(R.drawable.ic_dog);
+            ivFoto.setBackgroundResource(R.drawable.bg_icon_teal);
+            ivFoto.setColorFilter(ContextCompat.getColor(this, R.color.primary_teal));
+            int padding = dp(16);
+            ivFoto.setPadding(padding, padding, padding, padding);
+        }
+        item.addView(ivFoto);
+
+        TextView tvNombre = new TextView(this);
+        LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        nameLp.topMargin = dp(8);
+        tvNombre.setLayoutParams(nameLp);
+        tvNombre.setText(m.nombre);
+        tvNombre.setTextColor(ContextCompat.getColor(this, R.color.black));
+        tvNombre.setTypeface(tvNombre.getTypeface(), Typeface.BOLD);
+        item.addView(tvNombre);
+
+        TextView tvRaza = new TextView(this);
+        tvRaza.setText(m.raza != null && !m.raza.isEmpty() ? m.raza : m.tipo);
+        tvRaza.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+        tvRaza.setTextSize(12);
+        tvRaza.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        item.addView(tvRaza);
+
+        item.setOnClickListener(v -> showPetDetailView());
+
+        return item;
+    }
+
+    private static class EventoConFecha implements Comparable<EventoConFecha> {
+        LocalDate fecha;
+        EventoMascota evento;
+
+        EventoConFecha(LocalDate fecha, EventoMascota evento) {
+            this.fecha = fecha;
+            this.evento = evento;
+        }
+
+        @Override
+        public int compareTo(EventoConFecha o) {
+            int cmp = this.fecha.compareTo(o.fecha);
+            if (cmp == 0) {
+                return this.evento.hora.compareTo(o.evento.hora);
+            }
+            return cmp;
+        }
+    }
+
+    private static final String[] MESES_CORTO = {"Ene", "Feb", "Mar", "Abr", "May", "Jun",
+            "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
+
+    private List<EventoConFecha> obtenerEventosOrdenados(boolean proximos) {
+        seedEventosDemoSiNecesario();
+        LocalDate hoy = LocalDate.now();
+        LocalDate refDate = hoy.isBefore(LocalDate.of(2026, 5, 1)) ? LocalDate.of(2026, 5, 1) : hoy;
+
+        List<EventoConFecha> list = new ArrayList<>();
+        for (Map.Entry<String, List<EventoMascota>> entry : eventosPorFecha.entrySet()) {
+            try {
+                LocalDate fecha = LocalDate.parse(entry.getKey());
+                boolean isProximo = !fecha.isBefore(refDate);
+                if (isProximo == proximos) {
+                    for (EventoMascota ev : entry.getValue()) {
+                        list.add(new EventoConFecha(fecha, ev));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        Collections.sort(list);
+        if (!proximos) {
+            Collections.reverse(list);
+        }
+        return list;
+    }
+
+    private List<RecordatorioItem> obtenerRecordatoriosItems(boolean proximos) {
+        List<EventoConFecha> eventos = obtenerEventosOrdenados(proximos);
+        List<RecordatorioItem> items = new ArrayList<>();
+        LocalDate refDate = LocalDate.now().isBefore(LocalDate.of(2026, 5, 1)) ? LocalDate.of(2026, 5, 1) : LocalDate.now();
+
+        for (EventoConFecha ecf : eventos) {
+            String title = ecf.evento.categoria;
+            String petName = ecf.evento.mascota;
+            String dateStr = ecf.fecha.getDayOfMonth() + " " +
+                    MESES_CORTO[ecf.fecha.getMonthValue() - 1] + " " +
+                    ecf.fecha.getYear();
+
+            String daysLeft;
+            if (proximos) {
+                long dias = ChronoUnit.DAYS.between(refDate, ecf.fecha);
+                if (dias <= 0) {
+                    daysLeft = "Hoy - " + ecf.evento.hora;
+                } else if (dias == 1) {
+                    daysLeft = "Mañana - " + ecf.evento.hora;
+                } else {
+                    daysLeft = "Falta " + dias + " días";
+                }
+            } else {
+                daysLeft = "Completado";
+            }
+
+            int iconRes = getIconForCategory(ecf.evento.categoria);
+            items.add(new RecordatorioItem(title, petName, dateStr, daysLeft, iconRes));
+        }
+        return items;
+    }
+
+    private int getIconForCategory(String categoria) {
+        if (categoria == null) return R.drawable.ic_calendar;
+        String catLower = categoria.toLowerCase();
+        if (catLower.contains("vacuna")) return R.drawable.ic_syringe;
+        if (catLower.contains("control")) return R.drawable.ic_pencil;
+        if (catLower.contains("cirug")) return R.drawable.ic_cirugia;
+        if (catLower.contains("estudio") || catLower.contains("tratamiento")) return R.drawable.ic_pulse;
+        return R.drawable.ic_calendar;
+    }
+
+    private View buildReminderHomeCard(EventoConFecha ecf) {
+        MaterialCardView card =
+                new MaterialCardView(this);
+        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardLp.bottomMargin = dp(12);
+        card.setLayoutParams(cardLp);
+        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
+        card.setRadius(dp(16));
+        card.setCardElevation(0);
+        card.setStrokeWidth(0);
+
+        RelativeLayout relativeLayout = new RelativeLayout(this);
+        relativeLayout.setLayoutParams(new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
+        relativeLayout.setPadding(dp(16), dp(16), dp(16), dp(16));
+
+        int imgId = View.generateViewId();
+        ShapeableImageView ivImg = new ShapeableImageView(this);
+        ivImg.setId(imgId);
+        RelativeLayout.LayoutParams imgLp = new RelativeLayout.LayoutParams(dp(40), dp(40));
+        ivImg.setLayoutParams(imgLp);
+        ivImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivImg.setShapeAppearanceModel(ivImg.getShapeAppearanceModel().toBuilder()
+                .setAllCornerSizes(dp(12)).build());
+
+        if ("Luna".equalsIgnoreCase(ecf.evento.mascota)) {
+            ivImg.setImageResource(R.drawable.luna);
+        } else if ("Milo".equalsIgnoreCase(ecf.evento.mascota)) {
+            ivImg.setImageResource(R.drawable.milo);
+        } else {
+            Uri petFoto = null;
+            for (Mascota m : mascotasNuevas) {
+                if (m.nombre != null && m.nombre.equalsIgnoreCase(ecf.evento.mascota)) {
+                    petFoto = m.fotoUri;
+                    break;
+                }
+            }
+            if (petFoto != null) {
+                ivImg.setImageURI(petFoto);
+            } else {
+                ivImg.setImageResource(getIconForCategory(ecf.evento.categoria));
+                ivImg.setBackgroundResource(R.drawable.bg_icon_teal);
+                ivImg.setColorFilter(ContextCompat.getColor(this, R.color.primary_teal));
+                int p = dp(8);
+                ivImg.setPadding(p, p, p, p);
+            }
+        }
+        relativeLayout.addView(ivImg);
+
+        int timeId = View.generateViewId();
+        TextView tvTime = new TextView(this);
+        tvTime.setId(timeId);
+        RelativeLayout.LayoutParams timeLp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        timeLp.addRule(RelativeLayout.ALIGN_PARENT_END);
+        timeLp.addRule(RelativeLayout.CENTER_VERTICAL);
+        tvTime.setLayoutParams(timeLp);
+        tvTime.setText(ecf.evento.hora);
+        tvTime.setTextColor(ContextCompat.getColor(this, R.color.black));
+        tvTime.setTypeface(tvTime.getTypeface(), Typeface.BOLD);
+        tvTime.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_clock, 0, 0, 0);
+        tvTime.setCompoundDrawablePadding(dp(4));
+        relativeLayout.addView(tvTime);
+
+        LinearLayout infoCol = new LinearLayout(this);
+        infoCol.setOrientation(LinearLayout.VERTICAL);
+        RelativeLayout.LayoutParams infoLp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        infoLp.setMarginStart(dp(12));
+        infoLp.addRule(RelativeLayout.END_OF, imgId);
+        infoLp.addRule(RelativeLayout.START_OF, timeId);
+        infoCol.setLayoutParams(infoLp);
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText(ecf.evento.categoria + " (" + ecf.evento.mascota + ")");
+        tvTitle.setTextColor(ContextCompat.getColor(this, R.color.black));
+        tvTitle.setTypeface(tvTitle.getTypeface(), Typeface.BOLD);
+        infoCol.addView(tvTitle);
+
+        TextView tvSub = new TextView(this);
+        String dateFormatted = ecf.fecha.getDayOfMonth() + " " + MESES_CORTO[ecf.fecha.getMonthValue() - 1] + " " + ecf.fecha.getYear();
+        tvSub.setText(ecf.evento.veterinario != null && !ecf.evento.veterinario.isEmpty()
+                ? dateFormatted + " · " + ecf.evento.veterinario : dateFormatted);
+        tvSub.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+        tvSub.setTextSize(12);
+        infoCol.addView(tvSub);
+
+        relativeLayout.addView(infoCol);
+        card.addView(relativeLayout);
+
+        card.setOnClickListener(v -> showRecordatoriosView());
+        return card;
+    }
+
+    private List<EventoConFecha> obtenerActividadReciente30Dias() {
+        seedEventosDemoSiNecesario();
+        LocalDate hoy = LocalDate.now();
+        LocalDate refDate = hoy.isBefore(LocalDate.of(2026, 5, 1)) ? LocalDate.of(2026, 5, 15) : hoy;
+        LocalDate hace30Dias = refDate.minusDays(30);
+
+        List<EventoConFecha> list = new ArrayList<>();
+        for (Map.Entry<String, List<EventoMascota>> entry : eventosPorFecha.entrySet()) {
+            try {
+                LocalDate fecha = LocalDate.parse(entry.getKey());
+                if (!fecha.isAfter(refDate) && !fecha.isBefore(hace30Dias)) {
+                    for (EventoMascota ev : entry.getValue()) {
+                        list.add(new EventoConFecha(fecha, ev));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        Collections.sort(list);
+        Collections.reverse(list);
+        return list;
+    }
+
+    private View buildActividadRecienteCard(EventoConFecha ecf) {
+        MaterialCardView card =
+                new MaterialCardView(this);
+        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardLp.bottomMargin = dp(12);
+        card.setLayoutParams(cardLp);
+        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
+        card.setRadius(dp(16));
+        card.setCardElevation(0);
+        card.setStrokeWidth(0);
+
+        RelativeLayout relativeLayout = new RelativeLayout(this);
+        relativeLayout.setLayoutParams(new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
+        relativeLayout.setPadding(dp(16), dp(16), dp(16), dp(16));
+
+        int iconContainerId = View.generateViewId();
+        FrameLayout iconContainer = new FrameLayout(this);
+        iconContainer.setId(iconContainerId);
+        RelativeLayout.LayoutParams iconContainerLp = new RelativeLayout.LayoutParams(dp(40), dp(40));
+        iconContainer.setLayoutParams(iconContainerLp);
+        iconContainer.setBackgroundResource(R.drawable.bg_icon_teal);
+
+        ImageView icon = new ImageView(this);
+        FrameLayout.LayoutParams iconInnerLp = new FrameLayout.LayoutParams(dp(20), dp(20));
+        iconInnerLp.gravity = Gravity.CENTER;
+        icon.setLayoutParams(iconInnerLp);
+        icon.setImageResource(getIconForCategory(ecf.evento.categoria));
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.primary_teal));
+        iconContainer.addView(icon);
+        relativeLayout.addView(iconContainer);
+
+        int chevronId = View.generateViewId();
+        ImageView chevron = new ImageView(this);
+        chevron.setId(chevronId);
+        RelativeLayout.LayoutParams chevronLp = new RelativeLayout.LayoutParams(dp(24), dp(24));
+        chevronLp.addRule(RelativeLayout.ALIGN_PARENT_END);
+        chevronLp.addRule(RelativeLayout.CENTER_VERTICAL);
+        chevron.setLayoutParams(chevronLp);
+        chevron.setImageResource(R.drawable.ic_chevron_right);
+        chevron.setColorFilter(ContextCompat.getColor(this, R.color.text_gray));
+        relativeLayout.addView(chevron);
+
+        LinearLayout infoCol = new LinearLayout(this);
+        infoCol.setOrientation(LinearLayout.VERTICAL);
+        RelativeLayout.LayoutParams infoLp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        infoLp.setMarginStart(dp(12));
+        infoLp.addRule(RelativeLayout.END_OF, iconContainerId);
+        infoLp.addRule(RelativeLayout.START_OF, chevronId);
+        infoCol.setLayoutParams(infoLp);
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText(ecf.evento.categoria + " - " + ecf.evento.mascota);
+        tvTitle.setTextColor(ContextCompat.getColor(this, R.color.black));
+        tvTitle.setTypeface(tvTitle.getTypeface(), Typeface.BOLD);
+        infoCol.addView(tvTitle);
+
+        TextView tvSub = new TextView(this);
+        String dateFormatted = ecf.fecha.getDayOfMonth() + " " + MESES_CORTO[ecf.fecha.getMonthValue() - 1] + " " + ecf.fecha.getYear();
+        tvSub.setText(ecf.evento.veterinario != null && !ecf.evento.veterinario.isEmpty()
+                ? dateFormatted + " · " + ecf.evento.veterinario : dateFormatted);
+        tvSub.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+        tvSub.setTextSize(12);
+        infoCol.addView(tvSub);
+
+        relativeLayout.addView(infoCol);
+        card.addView(relativeLayout);
+
+        card.setOnClickListener(v -> showPetDetailView());
+        return card;
+    }
+
+    private static class NotificacionItem {
+        String titulo;
+        String mensaje;
+        String tiempo;
+        int iconRes;
+
+        NotificacionItem(String titulo, String mensaje, String tiempo, int iconRes) {
+            this.titulo = titulo;
+            this.mensaje = mensaje;
+            this.tiempo = tiempo;
+            this.iconRes = iconRes;
+        }
+    }
+
+    private final List<NotificacionItem> listaNotificaciones = new ArrayList<>();
+
+    private void seedNotificacionesDemoSiNecesario() {
+        if (!listaNotificaciones.isEmpty()) return;
+        listaNotificaciones.add(new NotificacionItem(
+                "Turno confirmado",
+                "El Dr. Alejandro Ramírez ha confirmado el turno de vacuna para Luna.",
+                "Hace 10 min",
+                R.drawable.ic_check_circle
+        ));
+        listaNotificaciones.add(new NotificacionItem(
+                "Cambio de turno",
+                "Dra. Carla Méndez ha reprogramado el control de Mika para el 20 de Mayo a las 11:00 hs.",
+                "Hace 2 horas",
+                R.drawable.ic_calendar
+        ));
+        listaNotificaciones.add(new NotificacionItem(
+                "Turno cancelado",
+                "El Dr. Ricardo Soto ha cancelado el turno de limpieza dental de Milo por feriado.",
+                "Ayer",
+                R.drawable.ic_cancel
+        ));
+        listaNotificaciones.add(new NotificacionItem(
+                "Recordatorio de salud",
+                "Recordá que Koda tiene su refuerzo de vacuna múltiple en los próximos días.",
+                "Hace 2 días",
+                R.drawable.ic_notifications
+        ));
+    }
+
+    private void showNotificationsDialog() {
+        seedNotificacionesDemoSiNecesario();
+
+        LinearLayout contentLayout = new LinearLayout(this);
+        contentLayout.setOrientation(LinearLayout.VERTICAL);
+        contentLayout.setPadding(dp(20), dp(16), dp(20), dp(16));
+
+        if (listaNotificaciones.isEmpty()) {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("No tenés notificaciones.");
+            tvEmpty.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+            tvEmpty.setPadding(0, dp(16), 0, dp(16));
+            tvEmpty.setGravity(Gravity.CENTER);
+            contentLayout.addView(tvEmpty);
+        } else {
+            for (NotificacionItem n : listaNotificaciones) {
+                View notifCard = buildNotificacionCard(n);
+                contentLayout.addView(notifCard);
+            }
+        }
+
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.addView(contentLayout);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Notificaciones")
+                .setView(scrollView)
+                .setPositiveButton("Cerrar", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private View buildNotificacionCard(NotificacionItem n) {
+        MaterialCardView card =
+                new MaterialCardView(this);
+        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardLp.bottomMargin = dp(10);
+        card.setLayoutParams(cardLp);
+        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
+        card.setRadius(dp(12));
+        card.setCardElevation(0);
+        card.setStrokeWidth(0);
+
+        RelativeLayout relativeLayout = new RelativeLayout(this);
+        relativeLayout.setLayoutParams(new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT));
+        relativeLayout.setPadding(dp(12), dp(12), dp(12), dp(12));
+
+        int iconId = View.generateViewId();
+        FrameLayout iconCircle = new FrameLayout(this);
+        iconCircle.setId(iconId);
+        RelativeLayout.LayoutParams iconLp = new RelativeLayout.LayoutParams(dp(36), dp(36));
+        iconCircle.setLayoutParams(iconLp);
+        iconCircle.setBackgroundResource(R.drawable.bg_icon_teal);
+
+        ImageView icon = new ImageView(this);
+        FrameLayout.LayoutParams iconInnerLp = new FrameLayout.LayoutParams(dp(18), dp(18));
+        iconInnerLp.gravity = Gravity.CENTER;
+        icon.setLayoutParams(iconInnerLp);
+        icon.setImageResource(n.iconRes);
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.primary_teal));
+        iconCircle.addView(icon);
+        relativeLayout.addView(iconCircle);
+
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        RelativeLayout.LayoutParams textColLp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        textColLp.addRule(RelativeLayout.END_OF, iconId);
+        textColLp.setMarginStart(dp(12));
+        textCol.setLayoutParams(textColLp);
+
+        TextView tvTitulo = new TextView(this);
+        tvTitulo.setText(n.titulo);
+        tvTitulo.setTextColor(ContextCompat.getColor(this, R.color.black));
+        tvTitulo.setTypeface(tvTitulo.getTypeface(), Typeface.BOLD);
+        tvTitulo.setTextSize(14);
+        textCol.addView(tvTitulo);
+
+        TextView tvMsg = new TextView(this);
+        tvMsg.setText(n.mensaje);
+        tvMsg.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+        tvMsg.setTextSize(12);
+        LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        msgLp.topMargin = dp(2);
+        tvMsg.setLayoutParams(msgLp);
+        textCol.addView(tvMsg);
+
+        TextView tvTiempo = new TextView(this);
+        tvTiempo.setText(n.tiempo);
+        tvTiempo.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+        tvTiempo.setTextSize(10);
+        LinearLayout.LayoutParams tiempoLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        tiempoLp.topMargin = dp(4);
+        tvTiempo.setLayoutParams(tiempoLp);
+        textCol.addView(tvTiempo);
+
+        relativeLayout.addView(textCol);
+        card.addView(relativeLayout);
+        return card;
+    }
+
     private void showNuevaMascotaView() {
         ensureAppBaseSet();
         tipoMascotaNueva = null;
@@ -815,6 +1377,13 @@ public class MainActivity extends AppCompatActivity {
 
                 mascotasNuevas.add(new Mascota(nombre, tipoMascotaNueva,
                         raza.isEmpty() ? tipoMascotaNueva : raza, fecha.isEmpty() ? "-" : fecha, fotoMascotaNuevaUri));
+
+                listaNotificaciones.add(0, new NotificacionItem(
+                        "Mascota agregada",
+                        "Has agregado a " + nombre + " (" + tipoMascotaNueva + ") como nueva mascota.",
+                        "Ahora mismo",
+                        R.drawable.ic_dog
+                ));
 
                 Toast.makeText(this, R.string.mascota_agregada_msg, Toast.LENGTH_SHORT).show();
                 showPetsView();
@@ -1123,6 +1692,7 @@ public class MainActivity extends AppCompatActivity {
     private void seedEventosDemoSiNecesario() {
         if (eventosDemoSeeded) return;
         eventosDemoSeeded = true;
+        // Eventos futuros
         agregarEvento(LocalDate.of(2026, 5, 15), "Vacuna", "Koda", "Dr. Alejandro Ramírez", "11:00", "");
         agregarEvento(LocalDate.of(2026, 5, 15), "Control", "Mika", "Dra. Carla Méndez", "11:00", "");
         agregarEvento(LocalDate.of(2026, 5, 20), "Cirugía", "Milo", "Dr. Ricardo Soto", "09:00", "");
@@ -1130,6 +1700,12 @@ public class MainActivity extends AppCompatActivity {
         agregarEvento(LocalDate.of(2026, 5, 22), "Control", "Koda", "Dra. Carla Méndez", "16:00", "");
         agregarEvento(LocalDate.of(2026, 5, 28), "Estudio / Tratamiento", "Mika", "Dra. Valentina Ríos", "10:00", "");
         agregarEvento(LocalDate.of(2026, 5, 28), "Vacuna", "Milo", "Dr. Alejandro Ramírez", "13:00", "");
+
+        // Eventos pasados recientes (últimos 30 días)
+        agregarEvento(LocalDate.of(2026, 5, 10), "Control general", "Milo", "Dra. Carla Méndez", "10:00", "Chequeo de rutina OK");
+        agregarEvento(LocalDate.of(2026, 5, 2), "Vacuna múltiple", "Luna", "Dr. Alejandro Ramírez", "12:00", "Refuerzo anual aplicado");
+        agregarEvento(LocalDate.of(2026, 4, 25), "Consulta veterinaria", "Koda", "Dr. Juan Pérez", "15:30", "Control de peso");
+        agregarEvento(LocalDate.of(2026, 4, 18), "Desparasitación", "Mika", "Dra. Valentina Ríos", "11:00", "Dosis completada");
     }
 
     private void showCalendarView() {
@@ -1405,6 +1981,25 @@ public class MainActivity extends AppCompatActivity {
         setupMascotaOption(R.id.optLuna, "Luna");
         setupMascotaOption(R.id.optMilo, "Milo");
 
+        LinearLayout mascotaOptionsLayout = findViewById(R.id.mascotaOptions);
+        if (mascotaOptionsLayout != null) {
+            for (Mascota m : mascotasNuevas) {
+                TextView opt = new TextView(this);
+                opt.setPadding(dp(12), dp(12), dp(12), dp(12));
+                opt.setText(m.nombre);
+                opt.setTextColor(ContextCompat.getColor(this, R.color.black));
+                opt.setTextSize(14);
+                opt.setOnClickListener(v -> {
+                    bounceView(v);
+                    mascotaNuevoEvento = m.nombre;
+                    TextView tvMascotaSeleccionada = findViewById(R.id.tvMascotaSeleccionada);
+                    if (tvMascotaSeleccionada != null) tvMascotaSeleccionada.setText(m.nombre);
+                    mascotaOptionsLayout.setVisibility(View.GONE);
+                });
+                mascotaOptionsLayout.addView(opt);
+            }
+        }
+
         setupHoraChip(R.id.chip0900, "09:00");
         setupHoraChip(R.id.chip1100, "11:00");
         setupHoraChip(R.id.chip1400, "14:00");
@@ -1468,6 +2063,14 @@ public class MainActivity extends AppCompatActivity {
                     agregarEvento(fechaEventoNuevo, categoriaNuevoEvento, mascotaNuevoEvento, veterinarioNuevoEvento, horaNuevoEvento, observacionesNuevoEvento);
                     diaSeleccionado = fechaEventoNuevo;
                     mesCalendarioActual = YearMonth.from(fechaEventoNuevo);
+
+                    listaNotificaciones.add(0, new NotificacionItem(
+                            "Nuevo evento agendado",
+                            "Has agendado " + categoriaNuevoEvento + " para " + mascotaNuevoEvento + " con " + veterinarioNuevoEvento + " el " + fechaEventoNuevo.getDayOfMonth() + "/" + fechaEventoNuevo.getMonthValue() + ".",
+                            "Ahora mismo",
+                            R.drawable.ic_calendar
+                    ));
+
                     Toast.makeText(this, getString(R.string.btn_guardar_evento) + ": OK", Toast.LENGTH_SHORT).show();
                     showCalendarView();
                 }
