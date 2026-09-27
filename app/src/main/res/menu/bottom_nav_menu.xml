@@ -19,5 +19,5 @@
     <item
         android:id="@+id/nav_mas"
         android:icon="@drawable/ic_more"
-        android:title="Más" />
+        android:title="Perfil" />
 </menu>

@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare;
 
+import android.app.DatePickerDialog;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -7,6 +8,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
@@ -42,6 +44,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -337,6 +340,24 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void showDatePickerDialog(EditText editText) {
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
+                (view, selectedYear, selectedMonth, selectedDay) -> {
+                    String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
+                    String formattedDate = String.format(Locale.getDefault(), "%02d %s %d", selectedDay, meses[selectedMonth], selectedYear);
+                    editText.setText(formattedDate);
+                },
+                year, month, day
+        );
+        datePickerDialog.show();
+    }
+
     private void setupHistorialClinicoView() {
         View btnBack = findViewById(R.id.toolbar);
         if (btnBack instanceof Toolbar) {
@@ -525,6 +546,32 @@ public class MainActivity extends AppCompatActivity {
         getLayoutInflater().inflate(R.layout.mi_perfil, container, true);
 
         highlightNavItem(R.id.nav_mas);
+
+        ShapeableImageView ivProfilePic = findViewById(R.id.ivProfilePic);
+        if (ivProfilePic != null) {
+            if (profilePhotoUri != null) {
+                ivProfilePic.setImageURI(profilePhotoUri);
+                ivProfilePic.setTranslationX(profileTranslationX);
+                ivProfilePic.setTranslationY(profileTranslationY);
+            }
+            ivProfilePic.setScaleType(profileScaleType);
+            ivProfilePic.setOnClickListener(v -> {
+                if (profilePhotoUri == null) {
+                    Toast.makeText(this, "Primero elegí una foto tocando el ícono del lápiz", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                bounceView(v);
+                showAdjustPhotoDialog(ivProfilePic);
+            });
+        }
+
+        View btnEditProfilePic = findViewById(R.id.btnEditProfilePic);
+        if (btnEditProfilePic != null) {
+            btnEditProfilePic.setOnClickListener(v -> {
+                bounceView(v);
+                pickProfilePhotoLauncher.launch("image/*");
+            });
+        }
 
         TextView tvUserName = findViewById(R.id.tvUserName);
         if (tvUserName != null) tvUserName.setText(nombreUsuario);
@@ -725,6 +772,11 @@ public class MainActivity extends AppCompatActivity {
         EditText etNombreMascota = findViewById(R.id.etNombreMascota);
         EditText etRaza = findViewById(R.id.etRaza);
         EditText etFechaNacimiento = findViewById(R.id.etFechaNacimiento);
+        if (etFechaNacimiento != null) {
+            etFechaNacimiento.setFocusable(false);
+            etFechaNacimiento.setClickable(true);
+            etFechaNacimiento.setOnClickListener(v -> showDatePickerDialog(etFechaNacimiento));
+        }
 
         setupTipoMascotaOption(R.id.optTipoPerro, getString(R.string.tipo_perro));
         setupTipoMascotaOption(R.id.optTipoGato, getString(R.string.tipo_gato));
@@ -911,6 +963,31 @@ public class MainActivity extends AppCompatActivity {
     private final List<Mascota> mascotasNuevas = new ArrayList<>();
     private String tipoMascotaNueva = null;
     private Uri fotoMascotaNuevaUri = null;
+    private Uri profilePhotoUri = null;
+    private ImageView.ScaleType profileScaleType = ImageView.ScaleType.CENTER_CROP;
+
+    private void showAdjustPhotoDialog(ImageView ivProfilePic) {
+        String[] options = {"Llenar círculo (Center Crop)", "Ajustar completa (Fit Center)", "Centrar imagen"};
+        new AlertDialog.Builder(this)
+                .setTitle("Ajustar posición de la foto")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        ivProfilePic.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                        profileScaleType = ImageView.ScaleType.CENTER_CROP;
+                        Toast.makeText(this, "Ajustado: Llenar círculo", Toast.LENGTH_SHORT).show();
+                    } else if (which == 1) {
+                        ivProfilePic.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                        profileScaleType = ImageView.ScaleType.FIT_CENTER;
+                        Toast.makeText(this, "Ajustado: Mostrar completa", Toast.LENGTH_SHORT).show();
+                    } else if (which == 2) {
+                        ivProfilePic.setScaleType(ImageView.ScaleType.CENTER);
+                        profileScaleType = ImageView.ScaleType.CENTER;
+                        Toast.makeText(this, "Ajustado: Centrar imagen", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
 
     private final ActivityResultLauncher<String> pickFotoMascotaLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -923,6 +1000,76 @@ public class MainActivity extends AppCompatActivity {
                     ivFotoMascota.setImageURI(uri);
                 }
             });
+
+    private float profileTranslationX = 0f;
+    private float profileTranslationY = 0f;
+
+    private final ActivityResultLauncher<String> pickProfilePhotoLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri == null) return;
+                showPhotoCropDialog(uri);
+            });
+
+    private void showPhotoCropDialog(Uri uri) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_crop_photo, null);
+        View frameContainer = dialogView.findViewById(R.id.frameCropContainer);
+        ImageView imgPreview = dialogView.findViewById(R.id.imgCropPreview);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelCrop);
+        Button btnSave = dialogView.findViewById(R.id.btnSaveCrop);
+
+        imgPreview.setImageURI(uri);
+
+        final float[] lastTouchX = new float[1];
+        final float[] lastTouchY = new float[1];
+
+        View.OnTouchListener touchListener = (v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    lastTouchX[0] = event.getRawX();
+                    lastTouchY[0] = event.getRawY();
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    float dx = event.getRawX() - lastTouchX[0];
+                    float dy = event.getRawY() - lastTouchY[0];
+                    imgPreview.setTranslationX(imgPreview.getTranslationX() + dx);
+                    imgPreview.setTranslationY(imgPreview.getTranslationY() + dy);
+                    lastTouchX[0] = event.getRawX();
+                    lastTouchY[0] = event.getRawY();
+                    break;
+                case MotionEvent.ACTION_UP:
+                    v.performClick();
+                    break;
+            }
+            return true;
+        };
+
+        if (frameContainer != null) frameContainer.setOnTouchListener(touchListener);
+        imgPreview.setOnTouchListener(touchListener);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSave.setOnClickListener(v -> {
+            profilePhotoUri = uri;
+            // Ratio entre 400dp (preview image) y 120dp (perfil image) -> 120f / 400f = 0.3f
+            profileTranslationX = imgPreview.getTranslationX() * 0.3f;
+            profileTranslationY = imgPreview.getTranslationY() * 0.3f;
+            ShapeableImageView ivProfilePic = findViewById(R.id.ivProfilePic);
+            if (ivProfilePic != null) {
+                ivProfilePic.setImageURI(uri);
+                ivProfilePic.setScaleType(profileScaleType);
+                ivProfilePic.setTranslationX(profileTranslationX);
+                ivProfilePic.setTranslationY(profileTranslationY);
+            }
+            Toast.makeText(this, "Foto de perfil actualizada", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
 
     private boolean perfilInicializado = false;
     private String nombreUsuario;
