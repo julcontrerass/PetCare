@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.RecyclerView
@@ -16,11 +17,20 @@ class HistorialClinicoVetActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.historial_clinico_vista_veterinario)
 
+        VetBottomNav.setup(this, R.id.nav_pacientes)
+
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.setNavigationOnClickListener { onBackPressed() }
+
+        findViewById<View>(R.id.btnMoreHistorial)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
+        findViewById<View>(R.id.fabAdd)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
 
         rvHistorial = findViewById(R.id.rvHistorial)
         val tabLayout = findViewById<TabLayout>(R.id.tabLayoutFilters)

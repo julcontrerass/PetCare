@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,6 +38,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.shape.RelativeCornerSize;
@@ -53,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,6 +63,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         seedEventosDemoSiNecesario();
         EdgeToEdge.enable(this);
+        mostrarPantallaInicial();
+    }
+
+    private void mostrarPantallaInicial() {
         setContentView(R.layout.activity_main);
         View mainRoot = findViewById(R.id.main);
         ViewCompat.setOnApplyWindowInsetsListener(mainRoot, (v, insets) -> {
@@ -70,6 +75,11 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
         ViewCompat.requestApplyInsets(mainRoot);
+
+        Button btnCrearCuenta = findViewById(R.id.button2);
+        if (btnCrearCuenta != null) {
+            btnCrearCuenta.setOnClickListener(v -> mostrarFuncionEnDesarrollo());
+        }
 
         Button btnIniciarSesion = findViewById(R.id.button);
         btnIniciarSesion.setOnClickListener(v -> {
@@ -82,14 +92,75 @@ public class MainActivity extends AppCompatActivity {
             });
             ViewCompat.requestApplyInsets(loginRoot);
 
+            // Selector de rol (dueño / veterinario)
+            rolVeterinarioSeleccionado = false;
+            MaterialButton btnRoleDueno = findViewById(R.id.btnRoleDueno);
+            MaterialButton btnRoleVeterinario = findViewById(R.id.btnRoleVeterinario);
+            if (btnRoleDueno != null && btnRoleVeterinario != null) {
+                actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
+                btnRoleDueno.setOnClickListener(v2 -> {
+                    rolVeterinarioSeleccionado = false;
+                    actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
+                });
+                btnRoleVeterinario.setOnClickListener(v2 -> {
+                    rolVeterinarioSeleccionado = true;
+                    actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
+                });
+            }
+
+            View tvForgotPassword = findViewById(R.id.tvForgotPassword);
+            if (tvForgotPassword != null) {
+                tvForgotPassword.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
+            }
+
+            View tvSignUp = findViewById(R.id.tvSignUp);
+            if (tvSignUp != null) {
+                tvSignUp.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
+            }
+
+            View btnGoogle = findViewById(R.id.btnGoogle);
+            if (btnGoogle != null) {
+                btnGoogle.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
+            }
+
+            View btnApple = findViewById(R.id.btnApple);
+            if (btnApple != null) {
+                btnApple.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
+            }
+
             // Boton de ingreso
             Button btnIngresar = findViewById(R.id.btnLogin);
             if (btnIngresar != null) {
                 btnIngresar.setOnClickListener(v2 -> {
-                    showHomeView();
+                    if (rolVeterinarioSeleccionado) {
+                        startActivity(new Intent(this, HomeVeterinarioActivity.class));
+                    } else {
+                        showHomeView();
+                    }
                 });
             }
         });
+    }
+
+    private boolean rolVeterinarioSeleccionado = false;
+
+    private void actualizarSelectorRol(MaterialButton btnRoleDueno, MaterialButton btnRoleVeterinario) {
+        MaterialButton seleccionado = rolVeterinarioSeleccionado ? btnRoleVeterinario : btnRoleDueno;
+        MaterialButton noSeleccionado = rolVeterinarioSeleccionado ? btnRoleDueno : btnRoleVeterinario;
+        seleccionado.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.primary_teal));
+        seleccionado.setTextColor(ContextCompat.getColor(this, R.color.white));
+        noSeleccionado.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.light_gray));
+        noSeleccionado.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+    }
+
+    private void mostrarFuncionEnDesarrollo() {
+        Toast.makeText(this, R.string.funcion_en_desarrollo, Toast.LENGTH_SHORT).show();
+    }
+
+    private void cerrarSesion() {
+        isAppBaseSet = false;
+        currentTabPosition = 0;
+        mostrarPantallaInicial();
     }
 
     private boolean isAppBaseSet = false;
@@ -323,6 +394,11 @@ public class MainActivity extends AppCompatActivity {
                 showEditPetDetailDialog();
             });
         }
+
+        View btnMore = findViewById(R.id.btnMore);
+        if (btnMore != null) {
+            btnMore.setOnClickListener(v -> mostrarFuncionEnDesarrollo());
+        }
     }
 
     private final ActivityResultLauncher<String> pickFotoDetalleLauncher =
@@ -454,12 +530,7 @@ public class MainActivity extends AppCompatActivity {
                     int pos = tab.getPosition();
                     if (pos == currentTabPosition) return;
                     if (pos == 0) {
-                        switchViewWithAnimation(0, () -> {
-                            ViewGroup c = findViewById(R.id.content_container);
-                            c.removeAllViews();
-                            getLayoutInflater().inflate(R.layout.detalle_de_mascota, c, true);
-                            showPetDetailView();
-                        });
+                        switchViewWithAnimation(0, MainActivity.this::showPetDetailView);
                     } else if (pos == 2) {
                         switchViewWithAnimation(2, () -> {
                             ViewGroup c = findViewById(R.id.content_container);
@@ -553,12 +624,7 @@ public class MainActivity extends AppCompatActivity {
                     int pos = tab.getPosition();
                     if (pos == currentTabPosition) return;
                     if (pos == 0) {
-                        switchViewWithAnimation(0, () -> {
-                            ViewGroup c = findViewById(R.id.content_container);
-                            c.removeAllViews();
-                            getLayoutInflater().inflate(R.layout.detalle_de_mascota, c, true);
-                            showPetDetailView();
-                        });
+                        switchViewWithAnimation(0, MainActivity.this::showPetDetailView);
                     } else if (pos == 1) {
                         switchViewWithAnimation(1, () -> {
                             ViewGroup c = findViewById(R.id.content_container);
@@ -669,6 +735,16 @@ public class MainActivity extends AppCompatActivity {
         View llEditarDatos = findViewById(R.id.llEditarDatos);
         if (llEditarDatos != null) {
             llEditarDatos.setOnClickListener(v -> showEditarPerfilView());
+        }
+
+        View llCambiarContrasena = findViewById(R.id.llCambiarContrasena);
+        if (llCambiarContrasena != null) {
+            llCambiarContrasena.setOnClickListener(v -> mostrarFuncionEnDesarrollo());
+        }
+
+        View llCerrarSesion = findViewById(R.id.llCerrarSesion);
+        if (llCerrarSesion != null) {
+            llCerrarSesion.setOnClickListener(v -> cerrarSesion());
         }
     }
 

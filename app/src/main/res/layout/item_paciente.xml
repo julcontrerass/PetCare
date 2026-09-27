@@ -75,7 +75,7 @@
     <View
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="#F0F0F0"
+        android:background="@color/divider_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/cvPetPhoto"

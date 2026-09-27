@@ -14,10 +14,12 @@
         app:navigationIcon="@drawable/baseline_arrow_back_24">
 
         <ImageButton
+            android:id="@+id/btnMorePaciente"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="end"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/mas_opciones_desc"
             android:src="@drawable/ic_more"
             app:tint="@color/black" />
 
@@ -152,20 +154,6 @@
             app:menu="@menu/bottom_nav_menu_vet"
             app:itemIconTint="@color/primary_teal"
             app:itemTextColor="@color/primary_teal" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabCenter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:backgroundTint="@color/primary_teal"
-            android:src="@drawable/ic_plus"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:tint="@color/white"
-            app:shapeAppearanceOverlay="@style/CircleImage"
-            app:elevation="8dp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -1,10 +1,9 @@
 package frgp.utn.edu.petcare
 
-import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeVeterinarioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,16 +11,16 @@ class HomeVeterinarioActivity : AppCompatActivity() {
         setContentView(R.layout.home_veterinario)
 
         val rvConsultas = findViewById<RecyclerView>(R.id.rvConsultas)
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
+        VetBottomNav.setup(this, R.id.nav_inicio)
 
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_pacientes -> {
-                    startActivity(Intent(this, MisPacientesActivity::class.java))
-                    true
-                }
-                else -> false
-            }
+        findViewById<View>(R.id.ivNotifications)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
+        findViewById<View>(R.id.tvVerAgenda)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
+        findViewById<View>(R.id.fabCenter)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
         }
 
         val items = listOf(

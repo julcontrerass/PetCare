@@ -54,17 +54,58 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvWelcomeTitle" />
 
+        <!-- Role Toggle -->
+        <LinearLayout
+            android:id="@+id/llRoleToggle"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="24dp"
+            android:background="@color/light_gray"
+            android:orientation="horizontal"
+            android:padding="4dp"
+            app:layout_constraintTop_toBottomOf="@id/tvWelcomeSubtitle">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRoleDueno"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="@color/primary_teal"
+                android:elevation="0dp"
+                android:text="@string/rol_dueno"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRoleVeterinario"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/light_gray"
+                android:elevation="0dp"
+                android:text="@string/rol_veterinario"
+                android:textAllCaps="false"
+                android:textColor="@color/text_gray"
+                android:textSize="13sp"
+                app:cornerRadius="6dp" />
+        </LinearLayout>
+
         <!-- Email Field -->
         <TextView
             android:id="@+id/tvEmailLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="24dp"
             android:text="@string/correo_electr_nico"
             android:textColor="@color/text_gray"
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvWelcomeSubtitle" />
+            app:layout_constraintTop_toBottomOf="@id/llRoleToggle" />
 
         <EditText
             android:id="@+id/etEmail"
@@ -136,7 +177,7 @@
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
             android:backgroundTint="@color/primary_teal"
-            android:text="@string/iniciar_sesi_nn"
+            android:text="@string/iniciar_sesi_n"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="16sp"
@@ -240,7 +281,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
-                android:text="@string/crear_cuentaa"
+                android:text="@string/crear_cuenta"
                 android:textColor="@color/primary_teal"
                 android:textStyle="bold" />
         </LinearLayout>

@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 
@@ -8,6 +9,15 @@ class MisPacientesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.mis_pacientes)
+
+        VetBottomNav.setup(this, R.id.nav_pacientes)
+
+        findViewById<View>(R.id.btnAgregarPaciente)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
+        findViewById<View>(R.id.fabCenter)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
 
         val rvPacientes = findViewById<RecyclerView>(R.id.rvPacientes)
 

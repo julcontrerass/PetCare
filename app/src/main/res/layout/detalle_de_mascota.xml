@@ -218,7 +218,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F0F0F0" />
+                    android:background="@color/divider_light" />
 
                 <!-- Microchip -->
                 <TextView
@@ -242,7 +242,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F0F0F0" />
+                    android:background="@color/divider_light" />
 
                 <!-- Color -->
                 <TextView
@@ -266,7 +266,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F0F0F0" />
+                    android:background="@color/divider_light" />
 
                 <!-- Observaciones -->
                 <TextView
@@ -290,7 +290,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F0F0F0" />
+                    android:background="@color/divider_light" />
 
                 <!-- BOTÓN ACCIÓN EDITAR -->
                 <Button

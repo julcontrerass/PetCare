@@ -36,10 +36,12 @@
         </LinearLayout>
 
         <ImageButton
+            android:id="@+id/btnAgregarPaciente"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="end"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/agregar_paciente"
             android:src="@drawable/ic_plus"
             app:tint="@color/black" />
 

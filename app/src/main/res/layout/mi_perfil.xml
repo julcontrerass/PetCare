@@ -234,6 +234,7 @@
 
                 <!-- Cambiar contraseña -->
                 <LinearLayout
+                    android:id="@+id/llCambiarContrasena"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -297,6 +298,7 @@
 
                 <!-- Cerrar sesión -->
                 <LinearLayout
+                    android:id="@+id/llCerrarSesion"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"

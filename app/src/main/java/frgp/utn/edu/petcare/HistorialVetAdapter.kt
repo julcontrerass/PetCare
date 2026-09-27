@@ -61,6 +61,7 @@ class HistorialVetAdapter(private var items: List<HistorialVetUIItem>) : Recycle
             holder.tvTitle.text = item.title
             holder.tvDoctor.text = item.doctor
             holder.tvNotes.text = item.notes
+            holder.tvNotes.visibility = if (item.notes.isBlank()) View.GONE else View.VISIBLE
             holder.ivIcon.setImageResource(item.iconRes)
         }
     }

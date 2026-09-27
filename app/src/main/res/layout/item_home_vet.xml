@@ -28,8 +28,7 @@
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginStart="12dp">
+        app:layout_constraintTop_toTopOf="parent">
         <ImageView
             android:id="@+id/ivProfile"
             android:layout_width="match_parent"
@@ -37,6 +36,13 @@
             android:scaleType="centerCrop"
             android:src="@drawable/juani" />
     </androidx.cardview.widget.CardView>
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierLeadingIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="end"
+        app:constraint_referenced_ids="tvTime,cvProfile" />
 
     <LinearLayout
         android:id="@+id/llTextContainer"
@@ -46,7 +52,7 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/ivChevron"
-        app:layout_constraintStart_toEndOf="@id/tvTime"
+        app:layout_constraintStart_toEndOf="@id/barrierLeadingIcon"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -89,7 +95,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#F0F0F0"
+        android:background="@color/divider_light"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginStart="60dp"/>
 

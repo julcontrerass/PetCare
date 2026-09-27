@@ -24,4 +24,5 @@
     <color name="icon_teal_bg">#E0F2F2</color>
 
     <color name="divider_color">#CCCCCC</color>
+    <color name="divider_light">#F0F0F0</color>
 </resources>

@@ -32,7 +32,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F0F0F0" />
+            android:background="@color/divider_light" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -54,7 +54,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F0F0F0" />
+            android:background="@color/divider_light" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -76,7 +76,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F0F0F0" />
+            android:background="@color/divider_light" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -98,7 +98,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F0F0F0" />
+            android:background="@color/divider_light" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -15,11 +16,17 @@ class DetallePacienteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.detalle_paciente)
 
+        VetBottomNav.setup(this, R.id.nav_pacientes)
+
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.setNavigationOnClickListener { onBackPressed() }
+
+        findViewById<View>(R.id.btnMorePaciente)?.setOnClickListener {
+            VetBottomNav.mostrarEnDesarrollo(this)
+        }
 
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
         val viewPager = findViewById<ViewPager2>(R.id.viewPager)
