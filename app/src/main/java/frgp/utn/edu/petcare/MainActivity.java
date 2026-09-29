@@ -205,10 +205,16 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        View btnNotificationsContainer = findViewById(R.id.btn_notifications_container);
         View btnNotifications = findViewById(R.id.btn_notifications);
-        if (btnNotifications != null) {
-            btnNotifications.setOnClickListener(v -> {
+        actualizarBadgeNotificaciones();
+
+        View notifClickTarget = btnNotificationsContainer != null ? btnNotificationsContainer : btnNotifications;
+        if (notifClickTarget != null) {
+            notifClickTarget.setOnClickListener(v -> {
                 bounceView(v);
+                hayNotificacionesSinLeer = false;
+                actualizarBadgeNotificaciones();
                 showNotificationsDialog();
             });
         }
@@ -1266,37 +1272,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private final List<NotificacionItem> listaNotificaciones = new ArrayList<>();
+    private boolean hayNotificacionesSinLeer = false;
 
-    private void seedNotificacionesDemoSiNecesario() {
-        if (!listaNotificaciones.isEmpty()) return;
-        listaNotificaciones.add(new NotificacionItem(
-                "Turno confirmado",
-                "El Dr. Alejandro Ramírez ha confirmado el turno de vacuna para Luna.",
-                "Hace 10 min",
-                R.drawable.ic_check_circle
-        ));
-        listaNotificaciones.add(new NotificacionItem(
-                "Cambio de turno",
-                "Dra. Carla Méndez ha reprogramado el control de Mika para el 20 de Mayo a las 11:00 hs.",
-                "Hace 2 horas",
-                R.drawable.ic_calendar
-        ));
-        listaNotificaciones.add(new NotificacionItem(
-                "Turno cancelado",
-                "El Dr. Ricardo Soto ha cancelado el turno de limpieza dental de Milo por feriado.",
-                "Ayer",
-                R.drawable.ic_cancel
-        ));
-        listaNotificaciones.add(new NotificacionItem(
-                "Recordatorio de salud",
-                "Recordá que Koda tiene su refuerzo de vacuna múltiple en los próximos días.",
-                "Hace 2 días",
-                R.drawable.ic_notifications
-        ));
+    private void agregarNotificacion(String titulo, String mensaje, String tiempo, int iconRes) {
+        listaNotificaciones.add(0, new NotificacionItem(titulo, mensaje, tiempo, iconRes));
+        hayNotificacionesSinLeer = true;
+        actualizarBadgeNotificaciones();
+    }
+
+    private void actualizarBadgeNotificaciones() {
+        View badge = findViewById(R.id.notification_badge);
+        if (badge != null) {
+            badge.setVisibility(hayNotificacionesSinLeer ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void showNotificationsDialog() {
-        seedNotificacionesDemoSiNecesario();
+        hayNotificacionesSinLeer = false;
+        actualizarBadgeNotificaciones();
 
         LinearLayout contentLayout = new LinearLayout(this);
         contentLayout.setOrientation(LinearLayout.VERTICAL);
@@ -1319,11 +1312,21 @@ public class MainActivity extends AppCompatActivity {
         ScrollView scrollView = new ScrollView(this);
         scrollView.addView(contentLayout);
 
-        new AlertDialog.Builder(this)
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle("Notificaciones")
                 .setView(scrollView)
-                .setPositiveButton("Cerrar", (dialog, which) -> dialog.dismiss())
-                .show();
+                .setPositiveButton("Cerrar", (dialog, which) -> dialog.dismiss());
+
+        if (!listaNotificaciones.isEmpty()) {
+            builder.setNeutralButton("Limpiar notificaciones", (dialog, which) -> {
+                listaNotificaciones.clear();
+                hayNotificacionesSinLeer = false;
+                actualizarBadgeNotificaciones();
+                Toast.makeText(this, "Notificaciones borradas", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        builder.show();
     }
 
     private View buildNotificacionCard(NotificacionItem n) {
@@ -1348,14 +1351,29 @@ public class MainActivity extends AppCompatActivity {
         iconCircle.setId(iconId);
         RelativeLayout.LayoutParams iconLp = new RelativeLayout.LayoutParams(dp(36), dp(36));
         iconCircle.setLayoutParams(iconLp);
-        iconCircle.setBackgroundResource(R.drawable.bg_icon_teal);
+
+        int bgRes = R.drawable.bg_icon_teal;
+        int tintColor = ContextCompat.getColor(this, R.color.primary_teal);
+
+        if (n.iconRes == R.drawable.ic_cancel || (n.titulo != null && n.titulo.toLowerCase().contains("cancelad"))) {
+            bgRes = R.drawable.bg_icon_orange;
+            tintColor = ContextCompat.getColor(this, R.color.accent_orange);
+        } else if (n.iconRes == R.drawable.ic_calendar || (n.titulo != null && n.titulo.toLowerCase().contains("turno"))) {
+            bgRes = R.drawable.bg_icon_purple;
+            tintColor = ContextCompat.getColor(this, R.color.accent_purple);
+        } else if (n.iconRes == R.drawable.ic_check_circle) {
+            bgRes = R.drawable.bg_icon_teal;
+            tintColor = ContextCompat.getColor(this, R.color.success_green);
+        }
+
+        iconCircle.setBackgroundResource(bgRes);
 
         ImageView icon = new ImageView(this);
         FrameLayout.LayoutParams iconInnerLp = new FrameLayout.LayoutParams(dp(18), dp(18));
         iconInnerLp.gravity = Gravity.CENTER;
         icon.setLayoutParams(iconInnerLp);
         icon.setImageResource(n.iconRes);
-        icon.setColorFilter(ContextCompat.getColor(this, R.color.primary_teal));
+        icon.setColorFilter(tintColor);
         iconCircle.addView(icon);
         relativeLayout.addView(iconCircle);
 
@@ -1454,12 +1472,12 @@ public class MainActivity extends AppCompatActivity {
                 mascotasNuevas.add(new Mascota(nombre, tipoMascotaNueva,
                         raza.isEmpty() ? tipoMascotaNueva : raza, fecha.isEmpty() ? "-" : fecha, fotoMascotaNuevaUri));
 
-                listaNotificaciones.add(0, new NotificacionItem(
-                        "Mascota agregada",
-                        "Has agregado a " + nombre + " (" + tipoMascotaNueva + ") como nueva mascota.",
+                agregarNotificacion(
+                        "Agregaste una nueva mascota",
+                        "Agregaste a " + nombre + " (" + tipoMascotaNueva + ") a tus mascotas.",
                         "Ahora mismo",
                         R.drawable.ic_dog
-                ));
+                );
 
                 Toast.makeText(this, R.string.mascota_agregada_msg, Toast.LENGTH_SHORT).show();
                 showPetsView();
@@ -1981,6 +1999,35 @@ public class MainActivity extends AppCompatActivity {
         textCol.addView(tvHora);
 
         card.addView(textCol);
+
+        card.setOnClickListener(v -> {
+            String vet = (evento.veterinario != null && !evento.veterinario.isEmpty()) ? evento.veterinario : "Veterinario no asignado";
+            String msg = "Mascota: " + evento.mascota + "\nCategoría: " + evento.categoria + "\nVeterinario: " + vet + "\nHora: " + evento.hora;
+            if (evento.observaciones != null && !evento.observaciones.isEmpty()) {
+                msg += "\nObservaciones: " + evento.observaciones;
+            }
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Detalle del turno")
+                    .setMessage(msg)
+                    .setPositiveButton("Cerrar", null)
+                    .setNegativeButton("Simular cancelación de veterinario", (dialog, which) -> {
+                        List<EventoMascota> lista = eventosPorFecha.get(dateKey(diaSeleccionado));
+                        if (lista != null) {
+                            lista.remove(evento);
+                        }
+                        agregarNotificacion(
+                                "Turno cancelado por el veterinario",
+                                "El turno de " + evento.mascota + " (" + evento.categoria + ") fue cancelado por el veterinario.",
+                                "Ahora mismo",
+                                R.drawable.ic_cancel
+                        );
+                        Toast.makeText(this, "Turno cancelado. Se generó una notificación.", Toast.LENGTH_SHORT).show();
+                        renderEventosDia();
+                    })
+                    .show();
+        });
+
         return card;
     }
 
@@ -2140,12 +2187,15 @@ public class MainActivity extends AppCompatActivity {
                     diaSeleccionado = fechaEventoNuevo;
                     mesCalendarioActual = YearMonth.from(fechaEventoNuevo);
 
-                    listaNotificaciones.add(0, new NotificacionItem(
-                            "Nuevo evento agendado",
-                            "Has agendado " + categoriaNuevoEvento + " para " + mascotaNuevoEvento + " con " + veterinarioNuevoEvento + " el " + fechaEventoNuevo.getDayOfMonth() + "/" + fechaEventoNuevo.getMonthValue() + ".",
+                    String vetInfo = (veterinarioNuevoEvento != null && !veterinarioNuevoEvento.isEmpty())
+                            ? " con " + veterinarioNuevoEvento : "";
+                    agregarNotificacion(
+                            "Tienes un nuevo turno",
+                            "Tienes un nuevo turno de " + categoriaNuevoEvento + " para " + mascotaNuevoEvento + vetInfo +
+                            " el " + fechaEventoNuevo.getDayOfMonth() + "/" + fechaEventoNuevo.getMonthValue() + " a las " + horaNuevoEvento + " hs.",
                             "Ahora mismo",
                             R.drawable.ic_calendar
-                    ));
+                    );
 
                     Toast.makeText(this, getString(R.string.btn_guardar_evento) + ": OK", Toast.LENGTH_SHORT).show();
                     showCalendarView();
