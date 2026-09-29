@@ -446,9 +446,12 @@ public class MainActivity extends AppCompatActivity {
         inputRaza.setLayoutParams(params);
 
         EditText inputNacSexo = new EditText(this);
-        inputNacSexo.setHint("Nacimiento y Sexo");
+        inputNacSexo.setHint("Fecha de nacimiento");
         if (tvBirthSex != null) inputNacSexo.setText(tvBirthSex.getText().toString());
         inputNacSexo.setLayoutParams(params);
+        inputNacSexo.setFocusable(false);
+        inputNacSexo.setClickable(true);
+        inputNacSexo.setOnClickListener(v -> showDatePickerDialog(inputNacSexo));
 
         EditText inputPeso = new EditText(this);
         inputPeso.setHint("Peso");
@@ -509,7 +512,13 @@ public class MainActivity extends AppCompatActivity {
                 (view, selectedYear, selectedMonth, selectedDay) -> {
                     String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
                     String formattedDate = String.format(Locale.getDefault(), "%02d %s %d", selectedDay, meses[selectedMonth], selectedYear);
-                    editText.setText(formattedDate);
+                    String currentText = editText.getText() != null ? editText.getText().toString() : "";
+                    if (currentText.contains("-")) {
+                        String sexPart = currentText.substring(currentText.indexOf("-"));
+                        editText.setText("Nacido el " + formattedDate + " " + sexPart);
+                    } else {
+                        editText.setText(formattedDate);
+                    }
                 },
                 year, month, day
         );

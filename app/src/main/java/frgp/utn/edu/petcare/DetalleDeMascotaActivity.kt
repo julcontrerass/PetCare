@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -14,6 +15,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.google.android.material.tabs.TabLayout
+import java.util.Calendar
+import java.util.Locale
 
 class DetalleDeMascotaActivity : AppCompatActivity() {
 
@@ -83,6 +86,30 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
         }
     }
 
+    private fun showDatePickerDialog(editText: EditText) {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        val datePickerDialog = DatePickerDialog(
+            this,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                val meses = arrayOf("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+                val formattedDate = String.format(Locale.getDefault(), "%02d %s %d", selectedDay, meses[selectedMonth], selectedYear)
+                val currentText = editText.text.toString()
+                if (currentText.contains("-")) {
+                    val sexPart = currentText.substring(currentText.indexOf("-"))
+                    editText.setText("Nacido el $formattedDate $sexPart")
+                } else {
+                    editText.setText(formattedDate)
+                }
+            },
+            year, month, day
+        )
+        datePickerDialog.show()
+    }
+
     private fun showEditDialog() {
         val context = this
         val layout = LinearLayout(context).apply {
@@ -108,9 +135,14 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
             layoutParams = params
         }
         val inputNacSexo = EditText(context).apply {
-            hint = "Nacimiento y Sexo"
+            hint = "Fecha de nacimiento"
             setText(textView11.text.toString())
             layoutParams = params
+            isFocusable = false
+            isClickable = true
+            setOnClickListener {
+                showDatePickerDialog(this)
+            }
         }
         val inputPeso = EditText(context).apply {
             hint = "Peso"
