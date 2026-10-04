@@ -202,4 +202,48 @@
     <string name="matricula_mp98765">Matrícula: MP-98765</string>
     <string name="vet_ricardo_soto">Dr. Ricardo Soto</string>
     <string name="matricula_mp45612">Matrícula: MP-45612</string>
+
+    <!-- Crear cuenta / Registro / Recuperar contraseña / Cambiar contraseña -->
+    <string name="completar_datos_registro">Completa tus datos para registrarte</string>
+    <string name="ya_tienes_cuenta">¿Ya tienes cuenta?</string>
+    <string name="cuenta_creada_exito">Cuenta creada exitosamente</string>
+    <string name="recuperar_contrasena_title">Recuperar contraseña</string>
+    <string name="recuperar_contrasena_msg">Ingresá tu correo electrónico para recibir las instrucciones de recuperación de contraseña:</string>
+    <string name="btn_enviar">Enviar</string>
+    <string name="ingresa_correo_valido">Por favor, ingresá tu correo electrónico</string>
+    <string name="recuperar_contrasena_exito">Se han enviado las instrucciones de recuperación a %1$s</string>
+    <string name="dialog_cambiar_contrasena_title">Cambiar contraseña</string>
+    <string name="hint_contrasena_actual">Contraseña actual</string>
+    <string name="hint_nueva_contrasena">Nueva contraseña</string>
+    <string name="hint_confirmar_contrasena">Confirmar nueva contraseña</string>
+    <string name="err_contrasena_actual_vacia">Por favor, ingresá tu contraseña actual</string>
+    <string name="err_nueva_contrasena_vacia">Por favor, ingresá la nueva contraseña</string>
+    <string name="err_contrasena_corta">La nueva contraseña debe tener al menos 6 caracteres</string>
+    <string name="err_contrasenas_no_coinciden">Las contraseñas no coinciden</string>
+    <string name="contrasena_actualizada_exito">Contraseña actualizada correctamente</string>
+
+    <!-- Veterinarios autorizados -->
+    <string name="filtro_todos">Todos</string>
+    <string name="filtro_activos">Activos</string>
+    <string name="filtro_pendientes">Pendientes</string>
+    <string name="filtro_inactivos">Anteriormente autorizados</string>
+    <string name="buscar_vet_hint">Buscar por nombre, usuario, mail o matrícula&#8230;</string>
+    <string name="dialog_autorizar_veterinario">Autorizar nuevo veterinario</string>
+    <string name="btn_autorizar">Autorizar</string>
+    <string name="btn_revocar">Revocar autorización</string>
+    <string name="btn_reautorizar">Reautorizar</string>
+    <string name="vet_autorizado_exito">Veterinario %1$s autorizado correctamente</string>
+    <string name="vet_desautorizado_exito">Se revocó la autorización de %1$s</string>
+    <string name="sin_veterinarios_disponibles">No se encontraron nuevos veterinarios para autorizar</string>
+
+    <!-- Dar de baja mascota -->
+    <string name="dar_de_baja_mascota">Dar de baja a la mascota</string>
+    <string name="confirmar_baja_title">Dar de baja a %1$s</string>
+    <string name="confirmar_baja_msg">¿Estás seguro de que querés dar de baja a esta mascota? Ya no aparecerá en tu lista de mascotas activas.</string>
+    <string name="motivo_baja_label">Motivo de la baja:</string>
+    <string name="motivo_fallecimiento">Fallecimiento</string>
+    <string name="motivo_adopcion">Adopción / Transferencia</string>
+    <string name="motivo_otro">Otro motivo</string>
+    <string name="btn_confirmar_baja">Confirmar baja</string>
+    <string name="mascota_dada_de_baja_msg">Mascota dada de baja correctamente</string>
 </resources>
