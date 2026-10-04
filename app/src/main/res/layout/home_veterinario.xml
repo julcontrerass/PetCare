@@ -39,10 +39,13 @@
                 android:id="@+id/tvGreeting"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
                 android:text="Hola 👋"
-                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                android:textSize="16sp"
                 android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
                 app:layout_constraintBottom_toBottomOf="@id/cvVetProfile"
                 app:layout_constraintEnd_toStartOf="@id/ivNotifications"
                 app:layout_constraintStart_toEndOf="@id/cvVetProfile"
@@ -79,96 +82,99 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="6dp"
                     app:cardBackgroundColor="@color/icon_blue_bg"
                     app:cardCornerRadius="12dp"
                     app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="10dp">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/tvPacientesHoy"
                             android:text="12"
-                            android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                             android:textColor="#00796B"
                             android:textStyle="bold" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
+                            android:textAlignment="center"
                             android:text="Pacientes hoy"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textSize="11sp"
                             android:textColor="@color/black" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginHorizontal="3dp"
                     app:cardBackgroundColor="@color/icon_orange_bg"
                     app:cardCornerRadius="12dp"
                     app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="10dp">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/tvConsultasPendientes"
                             android:text="5"
-                            android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                             android:textColor="#F57C00"
                             android:textStyle="bold" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
+                            android:textAlignment="center"
                             android:text="Consultas pendientes"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textSize="11sp"
                             android:textColor="@color/black" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="6dp"
                     app:cardBackgroundColor="@color/icon_purple_bg"
                     app:cardCornerRadius="12dp"
                     app:strokeWidth="0dp">
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="10dp">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:id="@+id/tvSolicitudesCount"
                             android:text="4"
-                            android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                             android:textColor="#7B1FA2"
                             android:textStyle="bold" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
+                            android:textAlignment="center"
                             android:text="Solicitudes de acceso"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textSize="11sp"
                             android:textColor="@color/black" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>

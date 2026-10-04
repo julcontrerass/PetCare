@@ -42,7 +42,8 @@
                 android:layout_height="wrap_content"
                 android:text="@string/home"
                 android:textColor="@color/text_gray"
-                android:textSize="12sp" />
+                android:textSize="11sp"
+                android:maxLines="1" />
         </LinearLayout>
 
         <LinearLayout
@@ -67,7 +68,8 @@
                 android:layout_height="wrap_content"
                 android:text="@string/mascotas"
                 android:textColor="@color/text_gray"
-                android:textSize="12sp" />
+                android:textSize="11sp"
+                android:maxLines="1" />
         </LinearLayout>
 
         <View
@@ -97,7 +99,8 @@
                 android:layout_height="wrap_content"
                 android:text="@string/nav_recordatorios"
                 android:textColor="@color/text_gray"
-                android:textSize="12sp" />
+                android:textSize="11sp"
+                android:maxLines="1" />
         </LinearLayout>
 
         <LinearLayout
@@ -122,7 +125,8 @@
                 android:layout_height="wrap_content"
                 android:text="@string/mas"
                 android:textColor="@color/text_gray"
-                android:textSize="12sp" />
+                android:textSize="11sp"
+                android:maxLines="1" />
         </LinearLayout>
 
     </LinearLayout>

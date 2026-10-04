@@ -1745,7 +1745,11 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dialog_rounded));
+        }
     }
 
     private View buildNotificacionCard(NotificacionItem n) {
@@ -1755,10 +1759,11 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         cardLp.bottomMargin = dp(10);
         card.setLayoutParams(cardLp);
-        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.light_gray));
+        card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.white));
         card.setRadius(dp(12));
-        card.setCardElevation(0);
-        card.setStrokeWidth(0);
+        card.setCardElevation(dp(1));
+        card.setStrokeWidth(dp(1));
+        card.setStrokeColor(ContextCompat.getColor(this, R.color.divider_light));
 
         RelativeLayout relativeLayout = new RelativeLayout(this);
         relativeLayout.setLayoutParams(new RelativeLayout.LayoutParams(
