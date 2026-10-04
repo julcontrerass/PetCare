@@ -1,15 +1,12 @@
 package frgp.utn.edu.petcare
 
 import android.app.DatePickerDialog
-import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -31,6 +28,7 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
     private lateinit var txtMicrochip: TextView
     private lateinit var editTextText2: TextView
     private lateinit var editTextText3: TextView
+    private lateinit var tvPetStatus: TextView
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -71,6 +69,7 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
         txtMicrochip = findViewById(R.id.txtMicrochip)
         editTextText2 = findViewById(R.id.editTextText2)
         editTextText3 = findViewById(R.id.editTextText3)
+        tvPetStatus = findViewById(R.id.tvPetStatus)
 
         val btnCameraOverlay = findViewById<View>(R.id.btnCameraOverlay)
         val petImageCard = findViewById<View>(R.id.petImageCard)
@@ -101,61 +100,10 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
 
     private fun showDarDeBajaDialog() {
         val petName = if (::textView9.isInitialized) textView9.text.toString().trim() else "Mascota"
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 32, 48, 32)
-        }
-
-        val tvMsg = TextView(this).apply {
-            text = getString(R.string.confirmar_baja_msg)
-            textSize = 14f
-            setTextColor(getColor(R.color.text_gray))
-        }
-        container.addView(tvMsg)
-
-        val tvMotivoLabel = TextView(this).apply {
-            text = getString(R.string.motivo_baja_label)
-            textSize = 14f
-            setTypeface(typeface, Typeface.BOLD)
-            setTextColor(getColor(R.color.black))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = 32
-            }
-        }
-        container.addView(tvMotivoLabel)
-
-        val radioGroup = RadioGroup(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = 16
-            }
-        }
-
-        val rbFallecimiento = RadioButton(this).apply {
-            text = getString(R.string.motivo_fallecimiento)
-            isChecked = true
-        }
-        val rbAdopcion = RadioButton(this).apply {
-            text = getString(R.string.motivo_adopcion)
-        }
-        val rbOtro = RadioButton(this).apply {
-            text = getString(R.string.motivo_otro)
-        }
-
-        radioGroup.addView(rbFallecimiento)
-        radioGroup.addView(rbAdopcion)
-        radioGroup.addView(rbOtro)
-        container.addView(radioGroup)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.confirmar_baja_title, petName))
-            .setView(container)
+            .setMessage(getString(R.string.confirmar_baja_msg))
             .setPositiveButton(R.string.btn_confirmar_baja) { _, _ ->
                 Toast.makeText(this, R.string.mascota_dada_de_baja_msg, Toast.LENGTH_SHORT).show()
                 finish()

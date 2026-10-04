@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Patterns;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -160,12 +161,16 @@ public class MainActivity extends AppCompatActivity {
                 EditText etPassword = findViewById(R.id.etPassword);
                 String email = etEmail != null ? etEmail.getText().toString().trim().toLowerCase(Locale.ROOT) : "";
                 String password = etPassword != null ? etPassword.getText().toString() : "";
-                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                     if (etEmail != null) etEmail.setError("Ingresá un correo válido");
                     return;
                 }
                 if (password.isEmpty()) {
                     if (etPassword != null) etPassword.setError("Ingresá tu contraseña");
+                    return;
+                }
+                if (password.length() < 6) {
+                    if (etPassword != null) etPassword.setError("Mínimo 6 caracteres");
                     return;
                 }
                 if (cuentasDemo.containsKey(email) && !password.equals(passwordsDemo.get(email))) {
@@ -234,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
             String pass = etPass.getText().toString();
             boolean ok = true;
             if (nombre.isEmpty()) { etNombre.setError("Ingresá tu nombre"); ok = false; }
-            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 etEmail.setError("Correo inválido"); ok = false;
             } else if (cuentasDemo.containsKey(email)) {
                 etEmail.setError("Ese correo ya está registrado"); ok = false;
@@ -272,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
         View tvOk = findViewById(R.id.tvRecuperarOk);
         findViewById(R.id.btnEnviarRecuperar).setOnClickListener(v -> {
             String email = etEmail.getText().toString().trim();
-            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 etEmail.setError("Correo inválido");
                 tvOk.setVisibility(View.GONE);
                 return;
@@ -309,17 +314,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        float startX = (newPosition > currentTabPosition) ? container.getWidth() : -container.getWidth();
+        float startX = (newPosition > currentTabPosition) ? container.getWidth() * 0.25f : -container.getWidth() * 0.25f;
 
         inflationRunnable.run();
 
         container.setTranslationX(startX);
-        container.setAlpha(0f);
+        container.setAlpha(0.3f);
 
         container.animate()
                 .translationX(0f)
                 .alpha(1f)
-                .setDuration(250)
+                .setDuration(300)
+                .setInterpolator(new DecelerateInterpolator())
                 .start();
 
         currentTabPosition = newPosition;
@@ -513,6 +519,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             toolbar.setNavigationOnClickListener(v -> showPetsView());
+            TextView tvTitle = toolbar.findViewById(R.id.toolbar_title);
+            if (tvTitle != null && mascotaActual != null) tvTitle.setText(mascotaActual.nombre);
         }
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -535,6 +543,7 @@ public class MainActivity extends AppCompatActivity {
                         });
                     } else if (pos == 2) {
                         switchViewWithAnimation(2, () -> {
+                            viewingGlobalRecordatorios = false;
                             ViewGroup c = findViewById(R.id.content_container);
                             c.removeAllViews();
                             getLayoutInflater().inflate(R.layout.recordatorios, c, true);
@@ -584,6 +593,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Mascota mascotaActual = null;
+    private boolean viewingGlobalRecordatorios = true;
 
     private void mostrarMenuMascota(View ancla) {
         PopupMenu menu = new PopupMenu(this, ancla);
@@ -751,9 +761,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupHistorialClinicoView() {
-        View btnBack = findViewById(R.id.toolbar);
-        if (btnBack instanceof Toolbar) {
-            ((Toolbar) btnBack).setNavigationOnClickListener(v -> showPetDetailView());
+        Toolbar toolbarView = findViewById(R.id.toolbar);
+        if (toolbarView != null) {
+            toolbarView.setNavigationOnClickListener(v -> showPetDetailView());
+            TextView tvTitle = toolbarView.findViewById(R.id.toolbar_title);
+            if (tvTitle != null && mascotaActual != null) tvTitle.setText(mascotaActual.nombre);
         }
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -773,6 +785,7 @@ public class MainActivity extends AppCompatActivity {
                         switchViewWithAnimation(0, MainActivity.this::showPetDetailView);
                     } else if (pos == 2) {
                         switchViewWithAnimation(2, () -> {
+                            viewingGlobalRecordatorios = false;
                             ViewGroup c = findViewById(R.id.content_container);
                             c.removeAllViews();
                             getLayoutInflater().inflate(R.layout.recordatorios, c, true);
@@ -790,14 +803,24 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (recyclerView != null) {
-            List<HistorialItem> items = Arrays.asList(
-                    new HistorialItem("Consulta veterinaria", "10 May 2026 · Dr. Juan Pérez", R.drawable.ic_list, R.color.icon_blue_bg),
-                    new HistorialItem("Vacuna múltiple", "15 Abr 2026 · Dr. Juan Pérez", R.drawable.ic_pencil, R.color.icon_green_bg),
-                    new HistorialItem("Desparasitación", "01 Mar 2026 · Dr. Juan Pérez", R.drawable.ic_dog, R.color.icon_orange_bg),
-                    new HistorialItem("Análisis de sangre", "10 Feb 2026 · Dr. Juan Pérez", R.drawable.ic_list, R.color.icon_purple_bg),
-                    new HistorialItem("Cirugía", "15 Jul 2025 · Dr. Juan Pérez", R.drawable.ic_dog, R.color.icon_pink_bg),
-                    new HistorialItem("Control general", "10 Ene 2025 · Dr. Juan Pérez", R.drawable.ic_calendar, R.color.icon_teal_bg)
-            );
+            List<HistorialItem> items = new ArrayList<>();
+            if (mascotaActual != null) {
+                seedEventosDemoSiNecesario();
+                for (Map.Entry<String, List<EventoMascota>> entry : eventosPorFecha.entrySet()) {
+                    for (EventoMascota ev : entry.getValue()) {
+                        if (ev.mascota != null && ev.mascota.equalsIgnoreCase(mascotaActual.nombre)) {
+                            String title = ev.categoria;
+                            String subtitle = ev.fecha + (ev.veterinario != null && !ev.veterinario.isEmpty() ? " · " + ev.veterinario : "");
+                            int iconRes = getIconForCategory(ev.categoria);
+                            int bgRes = getBgColorForCategory(ev.categoria);
+                            items.add(new HistorialItem(title, subtitle, iconRes, bgRes));
+                        }
+                    }
+                }
+            }
+            if (items.isEmpty()) {
+                items.add(new HistorialItem("Sin eventos clínicos", "No hay turnos registrados para " + (mascotaActual != null ? mascotaActual.nombre : "esta mascota"), R.drawable.ic_calendar, R.color.icon_teal_bg));
+            }
             recyclerView.setAdapter(new HistorialAdapter(items));
         }
 
@@ -819,6 +842,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showRecordatoriosView() {
+        viewingGlobalRecordatorios = true;
         ensureAppBaseSet();
         ViewGroup container = findViewById(R.id.content_container);
         container.removeAllViews();
@@ -832,7 +856,15 @@ public class MainActivity extends AppCompatActivity {
     private void setupRecordatoriosView() {
         Toolbar toolbarView = findViewById(R.id.toolbar);
         if (toolbarView != null) {
-            toolbarView.setNavigationOnClickListener(v -> showHomeView());
+            if (viewingGlobalRecordatorios) {
+                toolbarView.setNavigationOnClickListener(v -> showHomeView());
+                TextView tvTitle = toolbarView.findViewById(R.id.toolbar_title);
+                if (tvTitle != null) tvTitle.setText("Recordatorios");
+            } else {
+                toolbarView.setNavigationOnClickListener(v -> showPetDetailView());
+                TextView tvTitle = toolbarView.findViewById(R.id.toolbar_title);
+                if (tvTitle != null && mascotaActual != null) tvTitle.setText(mascotaActual.nombre);
+            }
         }
 
         View btnToolbarAdd = findViewById(R.id.btnToolbarAdd);
@@ -847,40 +879,44 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerViewRecordatorios);
 
         List<RecordatorioItem> proximosItems = obtenerRecordatoriosItems(true);
-        List<RecordatorioItem> completadosItems = obtenerRecordatoriosItems(false);
-
         if (recyclerView != null) {
             recyclerView.setAdapter(new RecordatoriosAdapter(proximosItems));
         }
 
         if (tabLayout != null) {
-            currentTabPosition = 2;
-            TabLayout.Tab tab = tabLayout.getTabAt(2);
-            if (tab != null) tab.select();
+            if (viewingGlobalRecordatorios) {
+                tabLayout.setVisibility(View.GONE);
+            } else {
+                tabLayout.setVisibility(View.VISIBLE);
+                currentTabPosition = 2;
+                TabLayout.Tab tab = tabLayout.getTabAt(2);
+                if (tab != null) tab.select();
 
-            tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-                @Override
-                public void onTabSelected(TabLayout.Tab tab) {
-                    int pos = tab.getPosition();
-                    if (pos == currentTabPosition) return;
-                    if (pos == 0) {
-                        switchViewWithAnimation(0, MainActivity.this::showPetDetailView);
-                    } else if (pos == 1) {
-                        switchViewWithAnimation(1, () -> {
-                            ViewGroup c = findViewById(R.id.content_container);
-                            c.removeAllViews();
-                            getLayoutInflater().inflate(R.layout.historial_clinico, c, true);
-                            setupHistorialClinicoView();
-                        });
+                tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                    @Override
+                    public void onTabSelected(TabLayout.Tab tab) {
+                        int pos = tab.getPosition();
+                        if (pos == currentTabPosition) return;
+                        if (pos == 0) {
+                            switchViewWithAnimation(0, MainActivity.this::showPetDetailView);
+                        } else if (pos == 1) {
+                            switchViewWithAnimation(1, () -> {
+                                viewingGlobalRecordatorios = false;
+                                ViewGroup c = findViewById(R.id.content_container);
+                                c.removeAllViews();
+                                getLayoutInflater().inflate(R.layout.historial_clinico, c, true);
+                                setupHistorialClinicoView();
+                            });
+                        }
                     }
-                }
 
-                @Override
-                public void onTabUnselected(TabLayout.Tab tab) {}
+                    @Override
+                    public void onTabUnselected(TabLayout.Tab tab) {}
 
-                @Override
-                public void onTabReselected(TabLayout.Tab tab) {}
-            });
+                    @Override
+                    public void onTabReselected(TabLayout.Tab tab) {}
+                });
+            }
         }
 
         Button btnProximos = findViewById(R.id.btn_proximos);
@@ -953,7 +989,7 @@ public class MainActivity extends AppCompatActivity {
 
         highlightNavItem(R.id.nav_mas);
 
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.btnBack);
+        Toolbar toolbar = findViewById(R.id.btnBack);
         if (toolbar != null) {
             toolbar.setNavigationOnClickListener(v -> showMasView());
         }
@@ -1092,7 +1128,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText campoPassword(String hint) {
         EditText et = new EditText(this);
         et.setHint(hint);
-        et.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(8);
@@ -1431,7 +1467,9 @@ public class MainActivity extends AppCompatActivity {
                 boolean isProximo = !fecha.isBefore(refDate);
                 if (isProximo == proximos) {
                     for (EventoMascota ev : entry.getValue()) {
-                        list.add(new EventoConFecha(fecha, ev));
+                        if (viewingGlobalRecordatorios || mascotaActual == null || (ev.mascota != null && ev.mascota.equalsIgnoreCase(mascotaActual.nombre))) {
+                            list.add(new EventoConFecha(fecha, ev));
+                        }
                     }
                 }
             } catch (Exception ignored) {}
@@ -1483,6 +1521,16 @@ public class MainActivity extends AppCompatActivity {
         if (catLower.contains("cirug")) return R.drawable.ic_cirugia;
         if (catLower.contains("estudio") || catLower.contains("tratamiento")) return R.drawable.ic_pulse;
         return R.drawable.ic_calendar;
+    }
+
+    private int getBgColorForCategory(String categoria) {
+        if (categoria == null) return R.color.icon_teal_bg;
+        String catLower = categoria.toLowerCase();
+        if (catLower.contains("vacuna")) return R.color.icon_green_bg;
+        if (catLower.contains("control") || catLower.contains("consulta")) return R.color.icon_blue_bg;
+        if (catLower.contains("cirug")) return R.color.icon_pink_bg;
+        if (catLower.contains("desparasit")) return R.color.icon_orange_bg;
+        return R.color.icon_purple_bg;
     }
 
     private View buildReminderHomeCard(EventoConFecha ecf) {

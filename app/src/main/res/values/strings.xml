@@ -248,4 +248,5 @@
     <string name="motivo_otro">Otro motivo</string>
     <string name="btn_confirmar_baja">Confirmar baja</string>
     <string name="mascota_dada_de_baja_msg">Mascota dada de baja correctamente</string>
+    <string name="estado_mascota_activa">Estado: Activa</string>
 </resources>

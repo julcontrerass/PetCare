@@ -186,15 +186,32 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textView10" />
 
+            <!-- ESTADO DE LA MASCOTA -->
+            <TextView
+                android:id="@+id/tvPetStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_badge_green"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:text="@string/estado_mascota_activa"
+                android:textColor="@color/success_green"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView11" />
+
             <!-- SECCIÓN 1: INFORMACIÓN -->
             <LinearLayout
                 android:id="@+id/layout_informacion"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="16dp"
                 android:orientation="vertical"
                 android:visibility="visible"
-                app:layout_constraintTop_toBottomOf="@+id/textView11">
+                app:layout_constraintTop_toBottomOf="@+id/tvPetStatus">
 
                 <!-- Peso -->
                 <TextView
