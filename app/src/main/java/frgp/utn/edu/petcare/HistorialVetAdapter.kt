@@ -20,7 +20,8 @@ sealed class HistorialVetUIItem {
         val doctor: String,
         val notes: String,
         val iconRes: Int,
-        val category: HistorialCategory
+        val category: HistorialCategory,
+        val eventoId: Int = -1
     ) : HistorialVetUIItem()
 }
 
@@ -63,6 +64,14 @@ class HistorialVetAdapter(private var items: List<HistorialVetUIItem>) : Recycle
             holder.tvNotes.text = item.notes
             holder.tvNotes.visibility = if (item.notes.isBlank()) View.GONE else View.VISIBLE
             holder.ivIcon.setImageResource(item.iconRes)
+            holder.itemView.setOnClickListener {
+                if (item.eventoId >= 0) {
+                    it.context.startActivity(
+                        android.content.Intent(it.context, DetalleEventoVetActivity::class.java)
+                            .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, item.eventoId)
+                    )
+                }
+            }
         }
     }
 

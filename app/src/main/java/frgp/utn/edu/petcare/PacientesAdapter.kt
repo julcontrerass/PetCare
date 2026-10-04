@@ -8,20 +8,18 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-data class PacienteItem(
-    val name: String,
-    val breed: String,
-    val owner: String,
-    val photoRes: Int
-)
-
-class PacientesAdapter(private val items: List<PacienteItem>) : RecyclerView.Adapter<PacientesAdapter.ViewHolder>() {
+class PacientesAdapter(private var items: List<Paciente>) : RecyclerView.Adapter<PacientesAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ivPetPhoto: ImageView = view.findViewById(R.id.ivPetPhoto)
         val tvPetName: TextView = view.findViewById(R.id.tvPetName)
         val tvPetBreed: TextView = view.findViewById(R.id.tvPetBreed)
         val tvOwnerName: TextView = view.findViewById(R.id.tvOwnerName)
+    }
+
+    fun updateItems(newItems: List<Paciente>) {
+        items = newItems
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -31,13 +29,14 @@ class PacientesAdapter(private val items: List<PacienteItem>) : RecyclerView.Ada
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.tvPetName.text = item.name
-        holder.tvPetBreed.text = item.breed
-        holder.tvOwnerName.text = item.owner
-        holder.ivPetPhoto.setImageResource(item.photoRes)
+        holder.tvPetName.text = item.nombre
+        holder.tvPetBreed.text = item.razaYSexo
+        holder.tvOwnerName.text = "Propietario/a: ${item.propietario}"
+        holder.ivPetPhoto.setImageResource(item.fotoRes)
 
         holder.itemView.setOnClickListener {
             val intent = Intent(it.context, DetallePacienteActivity::class.java)
+            intent.putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, item.id)
             it.context.startActivity(intent)
         }
     }

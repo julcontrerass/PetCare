@@ -11,7 +11,7 @@ class RecordatoriosActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.recordatorios)
 
-        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayoutRecordatorios)
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewRecordatorios)
 
         // Datos de ejemplo

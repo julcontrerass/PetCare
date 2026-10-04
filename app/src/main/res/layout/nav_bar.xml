@@ -88,14 +88,14 @@
                 android:id="@+id/iv_nav_lista"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:contentDescription="@string/nav_calendario"
-                android:src="@drawable/ic_calendar"
+                android:contentDescription="@string/nav_recordatorios"
+                android:src="@drawable/ic_notifications"
                 app:tint="@color/text_gray" />
             <TextView
                 android:id="@+id/tv_nav_lista"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/nav_calendario"
+                android:text="@string/nav_recordatorios"
                 android:textColor="@color/text_gray"
                 android:textSize="12sp" />
         </LinearLayout>

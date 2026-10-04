@@ -24,6 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:paddingBottom="8dp"
+            android:id="@+id/tvPropNombre"
             android:text="María Fernández"
             android:textColor="@color/black"
             android:textSize="16sp"
@@ -47,6 +48,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:paddingBottom="8dp"
+            android:id="@+id/tvPropDireccion"
             android:text="Av. Santa Fe 1234, CABA"
             android:textColor="@color/black"
             android:textSize="16sp" />
@@ -69,6 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:paddingBottom="8dp"
+            android:id="@+id/tvPropTelefono"
             android:text="+54 11 4444-5555"
             android:textColor="@color/black"
             android:textSize="16sp" />
@@ -91,6 +94,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:paddingBottom="8dp"
+            android:id="@+id/tvPropEmail"
             android:text="m.fernandez@email.com"
             android:textColor="@color/black"
             android:textSize="16sp" />

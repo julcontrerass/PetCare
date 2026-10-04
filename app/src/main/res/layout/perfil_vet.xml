@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="Perfil"
+        app:titleCentered="true" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/vetNav"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvNombreVet"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Dr. Juan Pérez"
+                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDatosVet"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Matrícula"
+                android:textColor="@color/text_gray" />
+
+            <TextView
+                android:id="@+id/optEditarPerfil"
+                style="@style/VetMenuRow"
+                android:text="Editar perfil" />
+
+            <TextView
+                android:id="@+id/optCambiarPassword"
+                style="@style/VetMenuRow"
+                android:text="Cambiar contraseña" />
+
+            <TextView
+                android:id="@+id/optSolicitudes"
+                style="@style/VetMenuRow"
+                android:text="Solicitudes de acceso" />
+
+            <TextView
+                android:id="@+id/optNotificaciones"
+                style="@style/VetMenuRow"
+                android:text="Notificaciones" />
+
+            <TextView
+                android:id="@+id/optCerrarSesion"
+                style="@style/VetMenuRow"
+                android:text="Cerrar sesión"
+                android:textColor="@color/danger_red" />
+        </LinearLayout>
+    </ScrollView>
+
+    <include
+        android:id="@+id/vetNav"
+        layout="@layout/vet_bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

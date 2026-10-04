@@ -40,7 +40,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Hola, Dr. Juan 👨‍⚕️👋"
+                android:text="Hola 👋"
                 android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="@id/cvVetProfile"
@@ -94,6 +94,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:id="@+id/tvPacientesHoy"
                             android:text="12"
                             android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                             android:textColor="#00796B"
@@ -125,6 +126,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:id="@+id/tvConsultasPendientes"
                             android:text="5"
                             android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                             android:textColor="#F57C00"
@@ -156,6 +158,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:id="@+id/tvSolicitudesCount"
                             android:text="4"
                             android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                             android:textColor="#7B1FA2"

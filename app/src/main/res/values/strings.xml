@@ -3,7 +3,8 @@
     <string name="iniciar_sesi_n">Iniciar Sesión</string>
     <string name="rol_dueno">Soy dueño</string>
     <string name="rol_veterinario">Soy veterinario</string>
-    <string name="funcion_en_desarrollo">Función en desarrollo</string>
+    <string name="agregar_consulta">Agregar consulta</string>
+    <string name="consulta_guardada">Consulta guardada</string>
     <string name="agregar_paciente">Agregar paciente</string>
     <string name="crear_cuenta">Crear Cuenta</string>
     <string name="mascotainicio">mascotaInicio</string>
@@ -17,7 +18,7 @@
     <string name="control_general">Control general</string>
     <string name="home">Home</string>
     <string name="mascotas">Mascotas</string>
-    <string name="mas">Perfil</string>
+    <string name="mas">Más</string>
     <string name="luna">Luna</string>
     <string name="milo">Milo</string>
     <string name="cocker_spaniel_desc">Cocker spaniel\n6 años</string>
@@ -84,6 +85,7 @@
 
     <!-- Calendario -->
     <string name="calendario_title">Calendario</string>
+    <string name="nav_recordatorios">Recordatorios</string>
     <string name="nav_calendario">Calendario</string>
     <string name="btn_agregar_evento">Agregar evento</string>
     <string name="no_hay_eventos">No hay eventos este día</string>

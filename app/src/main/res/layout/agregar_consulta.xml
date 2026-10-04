@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/baseline_arrow_back_24"
+        app:title="Agregar consulta"
+        app:titleCentered="true" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/VetFormLabel" android:text="Paciente" />
+            <Spinner
+                android:id="@+id/spPaciente"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+            <TextView style="@style/VetFormLabel" android:text="Tipo de evento" />
+            <Spinner
+                android:id="@+id/spTipo"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+            <TextView style="@style/VetFormLabel" android:text="Fecha" />
+            <EditText
+                android:id="@+id/etFecha"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_edit_text"
+                android:focusable="false"
+                android:hint="Seleccionar fecha"
+                android:paddingHorizontal="12dp" />
+
+            <TextView style="@style/VetFormLabel" android:text="Hora" />
+            <EditText
+                android:id="@+id/etHora"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_edit_text"
+                android:focusable="false"
+                android:hint="Seleccionar hora"
+                android:paddingHorizontal="12dp" />
+
+            <TextView style="@style/VetFormLabel" android:text="Motivo / diagnóstico" />
+            <EditText
+                android:id="@+id/etMotivo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_edit_text"
+                android:hint="Ej: Revisión anual"
+                android:padding="12dp" />
+
+            <TextView style="@style/VetFormLabel" android:text="Notas" />
+            <EditText
+                android:id="@+id/etNotas"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:background="@drawable/bg_edit_text"
+                android:gravity="top"
+                android:hint="Observaciones, plan de tratamiento..."
+                android:inputType="textMultiLine"
+                android:padding="12dp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/btnGuardar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:backgroundTint="@color/primary_teal"
+        android:text="Guardar consulta" />
+</LinearLayout>

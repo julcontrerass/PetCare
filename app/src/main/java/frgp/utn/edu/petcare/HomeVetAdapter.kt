@@ -18,10 +18,20 @@ data class HomeVetItem(
     val time: String,
     val type: ItemType,
     val profileRes: Int? = null,
-    val timeAgo: String? = null
+    val timeAgo: String? = null,
+    val eventoId: Int? = null
 )
 
-class HomeVetAdapter(private val items: List<HomeVetItem>) : RecyclerView.Adapter<HomeVetAdapter.ViewHolder>() {
+class HomeVetAdapter(
+    private var items: List<HomeVetItem>,
+    private val onClick: (HomeVetItem) -> Unit = {}
+) : RecyclerView.Adapter<HomeVetAdapter.ViewHolder>() {
+
+    fun update(nuevos: List<HomeVetItem>) {
+        items = nuevos
+        notifyDataSetChanged()
+    }
+
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvTime: TextView = view.findViewById(R.id.tvTime)
@@ -54,6 +64,7 @@ class HomeVetAdapter(private val items: List<HomeVetItem>) : RecyclerView.Adapte
             holder.tvDescription.visibility = View.VISIBLE
             holder.tvDescription.text = item.timeAgo
         }
+        holder.itemView.setOnClickListener { onClick(item) }
     }
 
     override fun getItemCount() = items.size

@@ -16,9 +16,12 @@ class ResumenFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_resumen_paciente, container, false)
         val rvResumen = view.findViewById<RecyclerView>(R.id.rvResumen)
 
+        val paciente = DetallePacienteActivity.pacienteDe(requireActivity() as androidx.appcompat.app.AppCompatActivity)
+        val ultima = AgendaRepo.ultimaConsulta(paciente.id)
+        val proximo = AgendaRepo.proximoEvento(paciente.id)
         val items = listOf(
-            ResumenItem("Última consulta", "18 May 2026", R.drawable.ic_clock),
-            ResumenItem("Próximo recordatorio", "Vacuna antirrábica • 18 May 2027", R.drawable.ic_calendar),
+            ResumenItem("Última consulta", ultima?.let { "${Fechas.corta(it.fecha)} · ${it.motivo}" } ?: "Sin consultas", R.drawable.ic_clock),
+            ResumenItem("Próximo recordatorio", proximo?.let { "${it.motivo} • ${Fechas.corta(it.fecha)}" } ?: "Sin recordatorios", R.drawable.ic_calendar),
             ResumenItem("Veterinarios autorizados", "1 veterinario", R.drawable.ic_pencil),
             ResumenItem("Historial clínico", "Ver todos los eventos", R.drawable.ic_activity)
         )
@@ -26,7 +29,9 @@ class ResumenFragment : Fragment() {
         val adapter = ResumenAdapter(items)
         adapter.setOnItemClickListener { position ->
             if (position == 3) { // Historial clínico
-                startActivity(Intent(requireContext(), HistorialClinicoVetActivity::class.java))
+                val intent = Intent(requireContext(), HistorialClinicoVetActivity::class.java)
+                intent.putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, paciente.id)
+                startActivity(intent)
             }
         }
         rvResumen.adapter = adapter

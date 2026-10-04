@@ -30,6 +30,15 @@
         <activity android:name=".MisPacientesActivity" />
         <activity android:name=".DetallePacienteActivity" />
         <activity android:name=".HistorialClinicoVetActivity" />
+        <activity android:name=".SolicitudesVetActivity" android:exported="false" />
+        <activity android:name=".AgendaVetActivity" android:exported="false" />
+        <activity android:name=".PerfilVetActivity" android:exported="false" />
+        <activity
+            android:name=".AgregarConsultaActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".DetalleEventoVetActivity" android:exported="false" />
+        <activity android:name=".CarnetSaludActivity" android:exported="false" />
     </application>
 
 </manifest>

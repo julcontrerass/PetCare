@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:gravity="center"
+        android:text="@string/mas"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp">
+
+            <TextView android:id="@+id/optMiPerfil" style="@style/VetMenuRow" android:text="Mi perfil" />
+            <TextView android:id="@+id/optVeterinarios" style="@style/VetMenuRow" android:text="Veterinarios autorizados" />
+            <TextView android:id="@+id/optSolicitudes" style="@style/VetMenuRow" android:text="Solicitudes de acceso" />
+            <TextView android:id="@+id/optSalud" style="@style/VetMenuRow" android:text="Vacunas, tratamientos y documentos" />
+            <TextView android:id="@+id/optCalendario" style="@style/VetMenuRow" android:text="@string/nav_calendario" />
+            <TextView android:id="@+id/optNotificaciones" style="@style/VetMenuRow" android:text="Notificaciones" />
+            <TextView
+                android:id="@+id/optCerrarSesion"
+                style="@style/VetMenuRow"
+                android:text="Cerrar sesión"
+                android:textColor="@color/danger_red" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,7 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
-import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -10,6 +10,10 @@ object VetBottomNav {
     fun setup(activity: AppCompatActivity, selectedItemId: Int) {
         val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNavigation) ?: return
         bottomNav.selectedItemId = selectedItemId
+
+        activity.findViewById<View>(R.id.fabCenter)?.setOnClickListener {
+            activity.startActivity(Intent(activity, AgregarConsultaActivity::class.java))
+        }
 
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -22,17 +26,17 @@ object VetBottomNav {
                     irA(activity, MisPacientesActivity::class.java)
                     true
                 }
-                R.id.nav_agenda, R.id.nav_mas -> {
-                    mostrarEnDesarrollo(activity)
-                    false
+                R.id.nav_agenda -> {
+                    irA(activity, AgendaVetActivity::class.java)
+                    true
+                }
+                R.id.nav_mas -> {
+                    irA(activity, PerfilVetActivity::class.java)
+                    true
                 }
                 else -> false
             }
         }
-    }
-
-    fun mostrarEnDesarrollo(activity: AppCompatActivity) {
-        Toast.makeText(activity, R.string.funcion_en_desarrollo, Toast.LENGTH_SHORT).show()
     }
 
     private fun irA(activity: AppCompatActivity, destino: Class<*>) {

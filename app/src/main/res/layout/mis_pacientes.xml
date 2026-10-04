@@ -67,11 +67,14 @@
             app:tint="@color/text_gray" />
 
         <EditText
+            android:id="@+id/etBuscarPaciente"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:background="@null"
             android:hint="Buscar paciente..."
+            android:inputType="text"
+            android:maxLines="1"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
     </LinearLayout>

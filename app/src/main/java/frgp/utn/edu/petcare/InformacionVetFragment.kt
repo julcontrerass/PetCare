@@ -11,6 +11,12 @@ class InformacionVetFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_informacion_vet, container, false)
+        val view = inflater.inflate(R.layout.fragment_informacion_vet, container, false)
+        val p = DetallePacienteActivity.pacienteDe(requireActivity() as androidx.appcompat.app.AppCompatActivity)
+        view.findViewById<android.widget.TextView>(R.id.tvPeso).text = p.peso
+        view.findViewById<android.widget.TextView>(R.id.tvMicrochip).text = p.microchip
+        view.findViewById<android.widget.TextView>(R.id.tvColor).text = p.color
+        view.findViewById<android.widget.TextView>(R.id.tvObservaciones).text = p.observaciones
+        return view
     }
 }

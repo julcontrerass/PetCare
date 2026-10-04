@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -15,11 +16,15 @@ import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
+import android.widget.Spinner;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -38,6 +43,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -48,6 +54,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import kotlin.Unit;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -78,67 +87,192 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnCrearCuenta = findViewById(R.id.button2);
         if (btnCrearCuenta != null) {
-            btnCrearCuenta.setOnClickListener(v -> mostrarFuncionEnDesarrollo());
+            btnCrearCuenta.setOnClickListener(v -> mostrarRegistro());
         }
 
         Button btnIniciarSesion = findViewById(R.id.button);
-        btnIniciarSesion.setOnClickListener(v -> {
-            setContentView(R.layout.iniciar_sesion);
-            View loginRoot = findViewById(R.id.loginRoot);
-            ViewCompat.setOnApplyWindowInsetsListener(loginRoot, (v2, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v2.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(loginRoot);
+        btnIniciarSesion.setOnClickListener(v -> mostrarLogin());
+    }
 
-            // Selector de rol (dueño / veterinario)
-            rolVeterinarioSeleccionado = false;
-            MaterialButton btnRoleDueno = findViewById(R.id.btnRoleDueno);
-            MaterialButton btnRoleVeterinario = findViewById(R.id.btnRoleVeterinario);
-            if (btnRoleDueno != null && btnRoleVeterinario != null) {
+    private void aplicarInsets(View root) {
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
+    }
+
+    // Cuentas creadas en esta sesión (demo, sin backend): correo -> es veterinario
+    private final Map<String, Boolean> cuentasDemo = new HashMap<>();
+    private final Map<String, String> passwordsDemo = new HashMap<>();
+
+    private void mostrarLogin() {
+        setContentView(R.layout.iniciar_sesion);
+        aplicarInsets(findViewById(R.id.loginRoot));
+
+        // Selector de rol (dueño / veterinario)
+        rolVeterinarioSeleccionado = false;
+        MaterialButton btnRoleDueno = findViewById(R.id.btnRoleDueno);
+        MaterialButton btnRoleVeterinario = findViewById(R.id.btnRoleVeterinario);
+        if (btnRoleDueno != null && btnRoleVeterinario != null) {
+            actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
+            btnRoleDueno.setOnClickListener(v2 -> {
+                rolVeterinarioSeleccionado = false;
                 actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
-                btnRoleDueno.setOnClickListener(v2 -> {
-                    rolVeterinarioSeleccionado = false;
-                    actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
-                });
-                btnRoleVeterinario.setOnClickListener(v2 -> {
-                    rolVeterinarioSeleccionado = true;
-                    actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
-                });
-            }
+            });
+            btnRoleVeterinario.setOnClickListener(v2 -> {
+                rolVeterinarioSeleccionado = true;
+                actualizarSelectorRol(btnRoleDueno, btnRoleVeterinario);
+            });
+        }
 
-            View tvForgotPassword = findViewById(R.id.tvForgotPassword);
-            if (tvForgotPassword != null) {
-                tvForgotPassword.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
-            }
+        View tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        if (tvForgotPassword != null) {
+            tvForgotPassword.setOnClickListener(v2 -> mostrarRecuperarPassword());
+        }
 
-            View tvSignUp = findViewById(R.id.tvSignUp);
-            if (tvSignUp != null) {
-                tvSignUp.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
-            }
+        View tvSignUp = findViewById(R.id.tvSignUp);
+        if (tvSignUp != null) {
+            tvSignUp.setOnClickListener(v2 -> mostrarRegistro());
+        }
 
-            View btnGoogle = findViewById(R.id.btnGoogle);
-            if (btnGoogle != null) {
-                btnGoogle.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
-            }
+        View btnGoogle = findViewById(R.id.btnGoogle);
+        if (btnGoogle != null) {
+            btnGoogle.setOnClickListener(v2 -> mostrarLoginSocial("Google"));
+        }
 
-            View btnApple = findViewById(R.id.btnApple);
-            if (btnApple != null) {
-                btnApple.setOnClickListener(v2 -> mostrarFuncionEnDesarrollo());
-            }
+        View btnApple = findViewById(R.id.btnApple);
+        if (btnApple != null) {
+            btnApple.setOnClickListener(v2 -> mostrarLoginSocial("Apple"));
+        }
 
-            // Boton de ingreso
-            Button btnIngresar = findViewById(R.id.btnLogin);
-            if (btnIngresar != null) {
-                btnIngresar.setOnClickListener(v2 -> {
-                    if (rolVeterinarioSeleccionado) {
-                        startActivity(new Intent(this, HomeVeterinarioActivity.class));
-                    } else {
-                        showHomeView();
-                    }
-                });
+        // Boton de ingreso
+        Button btnIngresar = findViewById(R.id.btnLogin);
+        if (btnIngresar != null) {
+            btnIngresar.setOnClickListener(v2 -> {
+                EditText etEmail = findViewById(R.id.etEmail);
+                EditText etPassword = findViewById(R.id.etPassword);
+                String email = etEmail != null ? etEmail.getText().toString().trim().toLowerCase(Locale.ROOT) : "";
+                String password = etPassword != null ? etPassword.getText().toString() : "";
+                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    if (etEmail != null) etEmail.setError("Ingresá un correo válido");
+                    return;
+                }
+                if (password.isEmpty()) {
+                    if (etPassword != null) etPassword.setError("Ingresá tu contraseña");
+                    return;
+                }
+                if (cuentasDemo.containsKey(email) && !password.equals(passwordsDemo.get(email))) {
+                    if (etPassword != null) etPassword.setError("Contraseña incorrecta");
+                    return;
+                }
+                // Si la cuenta fue creada en el registro, el rol sale de ahí
+                boolean esVeterinario = cuentasDemo.containsKey(email)
+                        ? cuentasDemo.get(email) : rolVeterinarioSeleccionado;
+                if (esVeterinario) {
+                    startActivity(new Intent(this, HomeVeterinarioActivity.class));
+                } else {
+                    showHomeView();
+                }
+            });
+        }
+    }
+
+    /** Ingreso con cuenta social: sin backend, se simula la cuenta y se elige el rol. */
+    private void mostrarLoginSocial(String proveedor) {
+        new AlertDialog.Builder(this)
+                .setTitle("Continuar con " + proveedor)
+                .setMessage("Elegí cómo querés usar PetCare con esta cuenta.")
+                .setPositiveButton(R.string.rol_dueno, (d, w) -> showHomeView())
+                .setNegativeButton(R.string.rol_veterinario,
+                        (d, w) -> startActivity(new Intent(this, HomeVeterinarioActivity.class)))
+                .setNeutralButton(R.string.btn_cancelar, null)
+                .show();
+    }
+
+    private boolean registroComoVeterinario = false;
+
+    private void mostrarRegistro() {
+        setContentView(R.layout.registro);
+        aplicarInsets(findViewById(R.id.registroRoot));
+
+        registroComoVeterinario = false;
+        MaterialButton btnDueno = findViewById(R.id.btnRegRoleDueno);
+        MaterialButton btnVet = findViewById(R.id.btnRegRoleVet);
+        View llMatricula = findViewById(R.id.llMatricula);
+        Runnable actualizarRol = () -> {
+            MaterialButton sel = registroComoVeterinario ? btnVet : btnDueno;
+            MaterialButton nosel = registroComoVeterinario ? btnDueno : btnVet;
+            sel.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.primary_teal));
+            sel.setTextColor(ContextCompat.getColor(this, R.color.white));
+            nosel.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.light_gray));
+            nosel.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+            llMatricula.setVisibility(registroComoVeterinario ? View.VISIBLE : View.GONE);
+        };
+        btnDueno.setOnClickListener(v -> { registroComoVeterinario = false; actualizarRol.run(); });
+        btnVet.setOnClickListener(v -> { registroComoVeterinario = true; actualizarRol.run(); });
+        actualizarRol.run();
+
+        findViewById(R.id.btnBackRegistro).setOnClickListener(v -> mostrarPantallaInicial());
+
+        EditText etNombre = findViewById(R.id.etRegNombre);
+        EditText etEmail = findViewById(R.id.etRegEmail);
+        EditText etMatricula = findViewById(R.id.etRegMatricula);
+        EditText etPass = findViewById(R.id.etRegPassword);
+        EditText etPass2 = findViewById(R.id.etRegPassword2);
+        CheckBox cbTerminos = findViewById(R.id.cbTerminos);
+
+        findViewById(R.id.btnRegistrar).setOnClickListener(v -> {
+            String nombre = etNombre.getText().toString().trim();
+            String email = etEmail.getText().toString().trim().toLowerCase(Locale.ROOT);
+            String pass = etPass.getText().toString();
+            boolean ok = true;
+            if (nombre.isEmpty()) { etNombre.setError("Ingresá tu nombre"); ok = false; }
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                etEmail.setError("Correo inválido"); ok = false;
+            } else if (cuentasDemo.containsKey(email)) {
+                etEmail.setError("Ese correo ya está registrado"); ok = false;
             }
+            if (registroComoVeterinario && etMatricula.getText().toString().trim().isEmpty()) {
+                etMatricula.setError("Ingresá tu matrícula"); ok = false;
+            }
+            if (pass.length() < 6) { etPass.setError("Mínimo 6 caracteres"); ok = false; }
+            if (!pass.equals(etPass2.getText().toString())) {
+                etPass2.setError("Las contraseñas no coinciden"); ok = false;
+            }
+            if (!cbTerminos.isChecked()) {
+                Toast.makeText(this, "Tenés que aceptar los términos y condiciones", Toast.LENGTH_SHORT).show();
+                ok = false;
+            }
+            if (!ok) return;
+
+            inicializarPerfilSiNecesario();
+            cuentasDemo.put(email, registroComoVeterinario);
+            passwordsDemo.put(email, pass);
+            passwordUsuario = pass;
+            nombreUsuario = nombre;
+            emailUsuario = email;
+            Toast.makeText(this, "Cuenta creada. Iniciá sesión para continuar", Toast.LENGTH_LONG).show();
+            mostrarLogin();
+        });
+    }
+
+    private void mostrarRecuperarPassword() {
+        setContentView(R.layout.recuperar_password);
+        aplicarInsets(findViewById(R.id.recuperarRoot));
+
+        findViewById(R.id.btnBackRecuperar).setOnClickListener(v -> mostrarLogin());
+        EditText etEmail = findViewById(R.id.etRecuperarEmail);
+        View tvOk = findViewById(R.id.tvRecuperarOk);
+        findViewById(R.id.btnEnviarRecuperar).setOnClickListener(v -> {
+            String email = etEmail.getText().toString().trim();
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                etEmail.setError("Correo inválido");
+                tvOk.setVisibility(View.GONE);
+                return;
+            }
+            tvOk.setVisibility(View.VISIBLE);
         });
     }
 
@@ -151,10 +285,6 @@ public class MainActivity extends AppCompatActivity {
         seleccionado.setTextColor(ContextCompat.getColor(this, R.color.white));
         noSeleccionado.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.light_gray));
         noSeleccionado.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
-    }
-
-    private void mostrarFuncionEnDesarrollo() {
-        Toast.makeText(this, R.string.funcion_en_desarrollo, Toast.LENGTH_SHORT).show();
     }
 
     private void cerrarSesion() {
@@ -221,13 +351,15 @@ public class MainActivity extends AppCompatActivity {
 
         View petLuna = findViewById(R.id.pet_luna);
         if (petLuna != null) {
-            petLuna.setOnClickListener(v -> showPetDetailView());
+            petLuna.setOnClickListener(v -> showPetDetailView(demoPorNombre("Luna")));
         }
 
         View petMilo = findViewById(R.id.pet_milo);
         if (petMilo != null) {
-            petMilo.setOnClickListener(v -> showPetDetailView());
+            petMilo.setOnClickListener(v -> showPetDetailView(demoPorNombre("Milo")));
         }
+
+        ocultarMascotasEliminadas();
 
         View tvVerTodas = findViewById(R.id.tv_ver_todas_mascotas);
         if (tvVerTodas != null) {
@@ -331,13 +463,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void showPetDetailView(Mascota m) {
+        mascotaActual = m;
+        showPetDetailView();
+    }
+
+    private void llenarDetalleMascota() {
+        Mascota m = mascotaActual;
+        if (m == null) return;
+        setTextoSiExiste(R.id.textView9, m.nombre);
+        setTextoSiExiste(R.id.textView10, m.tipoRazaTxt);
+        setTextoSiExiste(R.id.textView11, m.nacSexoTxt);
+        setTextoSiExiste(R.id.editTextText, m.peso);
+        setTextoSiExiste(R.id.txtMicrochip, m.microchip);
+        setTextoSiExiste(R.id.editTextText2, m.color);
+        setTextoSiExiste(R.id.editTextText3, m.observaciones);
+        ImageView iv = findViewById(R.id.imageView3);
+        if (iv != null) {
+            if (m.fotoUri != null) {
+                iv.setImageURI(m.fotoUri);
+            } else if (m.fotoRes != 0) {
+                iv.setImageResource(m.fotoRes);
+            } else {
+                iv.setImageResource(R.drawable.ic_dog);
+            }
+        }
+    }
+
+    private void setTextoSiExiste(int id, String texto) {
+        TextView tv = findViewById(id);
+        if (tv != null) tv.setText(texto);
+    }
+
     private void showPetDetailView() {
+        if (mascotaActual == null) mascotaActual = mascotasDemo.get(0);
         ensureAppBaseSet();
         ViewGroup container = findViewById(R.id.content_container);
         container.removeAllViews();
         getLayoutInflater().inflate(R.layout.detalle_de_mascota, container, true);
 
         highlightNavItem(R.id.nav_mascotas);
+        llenarDetalleMascota();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -403,13 +569,71 @@ public class MainActivity extends AppCompatActivity {
 
         View btnMore = findViewById(R.id.btnMore);
         if (btnMore != null) {
-            btnMore.setOnClickListener(v -> mostrarFuncionEnDesarrollo());
+            btnMore.setOnClickListener(v -> mostrarMenuMascota(v));
+        }
+    }
+
+    private Mascota mascotaActual = null;
+
+    private void mostrarMenuMascota(View ancla) {
+        PopupMenu menu = new PopupMenu(this, ancla);
+        menu.getMenu().add(0, 1, 0, "Editar información");
+        menu.getMenu().add(0, 2, 1, "Cambiar foto");
+        menu.getMenu().add(0, 3, 2, "Agendar turno");
+        menu.getMenu().add(0, 4, 3, "Eliminar mascota");
+        menu.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case 1:
+                    showEditPetDetailDialog();
+                    break;
+                case 2:
+                    pickFotoDetalleLauncher.launch("image/*");
+                    break;
+                case 3:
+                    if (mascotaActual != null) mascotaNuevoEvento = mascotaActual.nombre;
+                    showNuevoEventoView(diaSeleccionado);
+                    break;
+                default:
+                    confirmarEliminarMascota();
+            }
+            return true;
+        });
+        menu.show();
+    }
+
+    private void confirmarEliminarMascota() {
+        if (mascotaActual == null) return;
+        Mascota m = mascotaActual;
+        new AlertDialog.Builder(this)
+                .setTitle("Eliminar mascota")
+                .setMessage("¿Querés eliminar a " + m.nombre + "? Se quitará de tus mascotas.")
+                .setPositiveButton("Eliminar", (d, w) -> {
+                    if (!mascotasNuevas.remove(m)) mascotasEliminadas.add(m.nombre);
+                    mascotaActual = null;
+                    agregarNotificacion("Mascota eliminada", m.nombre + " fue eliminada de tus mascotas.",
+                            "Ahora mismo", R.drawable.ic_dog);
+                    Toast.makeText(this, m.nombre + " eliminada", Toast.LENGTH_SHORT).show();
+                    showPetsView();
+                })
+                .setNegativeButton(R.string.btn_cancelar, null)
+                .show();
+    }
+
+    /** Oculta en las listas las mascotas demo que el usuario eliminó. */
+    private void ocultarMascotasEliminadas() {
+        Object[][] mapa = {
+                {R.id.pet_luna, "Luna"}, {R.id.pet_milo, "Milo"},
+                {R.id.layout_pet_1, "Mika"}, {R.id.layout_pet_2, "Koda"}, {R.id.layout_pet_3, "Luna"}};
+        for (Object[] par : mapa) {
+            View v = findViewById((Integer) par[0]);
+            if (v != null && mascotasEliminadas.contains((String) par[1])) v.setVisibility(View.GONE);
         }
     }
 
     private final ActivityResultLauncher<String> pickFotoDetalleLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri == null) return;
+                if (mascotaActual != null) mascotaActual.fotoUri = uri;
                 ImageView imageView3 = findViewById(R.id.imageView3);
                 if (imageView3 != null) {
                     imageView3.setImageURI(uri);
@@ -495,6 +719,15 @@ public class MainActivity extends AppCompatActivity {
                     if (tvMicrochip != null) tvMicrochip.setText(inputMicrochip.getText().toString());
                     if (tvColor != null) tvColor.setText(inputColor.getText().toString());
                     if (tvObs != null) tvObs.setText(inputObs.getText().toString());
+                    if (mascotaActual != null) {
+                        mascotaActual.nombre = inputNombre.getText().toString().trim();
+                        mascotaActual.tipoRazaTxt = inputRaza.getText().toString();
+                        mascotaActual.nacSexoTxt = inputNacSexo.getText().toString();
+                        mascotaActual.peso = inputPeso.getText().toString();
+                        mascotaActual.microchip = inputMicrochip.getText().toString();
+                        mascotaActual.color = inputColor.getText().toString();
+                        mascotaActual.observaciones = inputObs.getText().toString();
+                    }
                     Toast.makeText(this, "Información actualizada", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancelar", null)
@@ -588,7 +821,7 @@ public class MainActivity extends AppCompatActivity {
         if (btnEditarEvento != null) {
             btnEditarEvento.setOnClickListener(v -> {
                 bounceView(v);
-                Toast.makeText(this, "Editar evento", Toast.LENGTH_SHORT).show();
+                mostrarSelectorEventoParaEditar();
             });
         }
     }
@@ -599,7 +832,7 @@ public class MainActivity extends AppCompatActivity {
         container.removeAllViews();
         getLayoutInflater().inflate(R.layout.recordatorios, container, true);
 
-        highlightNavItem(-1);
+        highlightNavItem(R.id.nav_lista);
 
         setupRecordatoriosView();
     }
@@ -693,8 +926,70 @@ public class MainActivity extends AppCompatActivity {
         if (btnEditarEvento != null) {
             btnEditarEvento.setOnClickListener(v -> {
                 bounceView(v);
-                Toast.makeText(this, "Editar evento", Toast.LENGTH_SHORT).show();
+                mostrarSelectorEventoParaEditar();
             });
+        }
+    }
+
+    private void showMasView() {
+        ensureAppBaseSet();
+        ViewGroup container = findViewById(R.id.content_container);
+        container.removeAllViews();
+        getLayoutInflater().inflate(R.layout.mas_dueno, container, true);
+
+        highlightNavItem(R.id.nav_mas);
+
+        findViewById(R.id.optMiPerfil).setOnClickListener(v -> showProfileView());
+        findViewById(R.id.optVeterinarios).setOnClickListener(v -> showVeterinariosView());
+        findViewById(R.id.optSolicitudes).setOnClickListener(v -> showSolicitudesDuenoView());
+        findViewById(R.id.optSalud).setOnClickListener(v ->
+                startActivity(new Intent(this, CarnetSaludActivity.class)));
+        findViewById(R.id.optCalendario).setOnClickListener(v -> showCalendarView());
+        findViewById(R.id.optNotificaciones).setOnClickListener(v -> {
+            hayNotificacionesSinLeer = false;
+            actualizarBadgeNotificaciones();
+            showNotificationsDialog();
+        });
+        findViewById(R.id.optCerrarSesion).setOnClickListener(v -> cerrarSesion());
+    }
+
+    private void showSolicitudesDuenoView() {
+        ensureAppBaseSet();
+        ViewGroup container = findViewById(R.id.content_container);
+        container.removeAllViews();
+        getLayoutInflater().inflate(R.layout.solicitudes_dueno, container, true);
+
+        highlightNavItem(R.id.nav_mas);
+
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.btnBack);
+        if (toolbar != null) {
+            toolbar.setNavigationOnClickListener(v -> showMasView());
+        }
+
+        RecyclerView rv = findViewById(R.id.rvSolicitudesDueno);
+        if (rv != null) {
+            if (solicitudesDueno.isEmpty()) {
+                solicitudesDueno.add(new SolicitudItem("Dra. Laura Sosa", "Solicita acceso a Koda", "Hace 2 horas", R.drawable.luna));
+                solicitudesDueno.add(new SolicitudItem("Dr. Pablo Medina", "Solicita acceso a Mika", "Ayer", R.drawable.milo));
+                veterinariosSolicitantes.put("Dra. Laura Sosa", new Veterinario("Dra. Laura Sosa", "Control", "MP-24680"));
+                veterinariosSolicitantes.put("Dr. Pablo Medina", new Veterinario("Dr. Pablo Medina", "Vacuna", "MP-13579"));
+            }
+            rv.setAdapter(new SolicitudesAdapter(solicitudesDueno, (item, estado) -> {
+                if (estado == SolicitudItem.Estado.ACEPTADA) {
+                    Veterinario vet = veterinariosSolicitantes.get(item.getSolicitante());
+                    if (vet != null) {
+                        veterinariosDemo.add(vet);
+                        veterinariosExtra.add(vet);
+                    }
+                    agregarNotificacion("Solicitud aceptada",
+                            item.getSolicitante() + " ahora puede ver la ficha de tu mascota.",
+                            "Ahora mismo", R.drawable.ic_check_circle);
+                    Toast.makeText(this, item.getSolicitante() + " fue autorizado/a", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Solicitud rechazada", Toast.LENGTH_SHORT).show();
+                }
+                return Unit.INSTANCE;
+            }));
         }
     }
 
@@ -754,13 +1049,61 @@ public class MainActivity extends AppCompatActivity {
 
         View llCambiarContrasena = findViewById(R.id.llCambiarContrasena);
         if (llCambiarContrasena != null) {
-            llCambiarContrasena.setOnClickListener(v -> mostrarFuncionEnDesarrollo());
+            llCambiarContrasena.setOnClickListener(v -> mostrarDialogoCambiarPassword());
         }
 
         View llCerrarSesion = findViewById(R.id.llCerrarSesion);
         if (llCerrarSesion != null) {
             llCerrarSesion.setOnClickListener(v -> cerrarSesion());
         }
+    }
+
+    private void mostrarDialogoCambiarPassword() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dp(20), dp(16), dp(20), dp(4));
+        EditText etActual = campoPassword("Contraseña actual");
+        EditText etNueva = campoPassword("Nueva contraseña");
+        EditText etConfirmar = campoPassword("Confirmar nueva contraseña");
+        layout.addView(etActual);
+        layout.addView(etNueva);
+        layout.addView(etConfirmar);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Cambiar contraseña")
+                .setView(layout)
+                .setPositiveButton("Guardar", null)
+                .setNegativeButton(R.string.btn_cancelar, null)
+                .create();
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String actual = etActual.getText().toString();
+            String nueva = etNueva.getText().toString();
+            String error = null;
+            if (actual.isEmpty()) error = "Ingresá tu contraseña actual";
+            else if (passwordUsuario != null && !actual.equals(passwordUsuario)) error = "La contraseña actual es incorrecta";
+            else if (nueva.length() < 6) error = "La nueva contraseña debe tener al menos 6 caracteres";
+            else if (!nueva.equals(etConfirmar.getText().toString())) error = "Las contraseñas no coinciden";
+            else if (nueva.equals(actual)) error = "La nueva contraseña debe ser distinta a la actual";
+            if (error != null) {
+                Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            passwordUsuario = nueva;
+            Toast.makeText(this, "Contraseña actualizada", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        }));
+        dialog.show();
+    }
+
+    private EditText campoPassword(String hint) {
+        EditText et = new EditText(this);
+        et.setHint(hint);
+        et.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = dp(8);
+        et.setLayoutParams(lp);
+        return et;
     }
 
     private void showEditarPerfilView() {
@@ -830,17 +1173,19 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        ocultarMascotasEliminadas();
+
         View layoutPet1 = findViewById(R.id.layout_pet_1);
         if (layoutPet1 != null) {
-            layoutPet1.setOnClickListener(v -> showPetDetailView());
+            layoutPet1.setOnClickListener(v -> showPetDetailView(demoPorNombre("Mika")));
         }
         View layoutPet2 = findViewById(R.id.layout_pet_2);
         if (layoutPet2 != null) {
-            layoutPet2.setOnClickListener(v -> showPetDetailView());
+            layoutPet2.setOnClickListener(v -> showPetDetailView(demoPorNombre("Koda")));
         }
         View layoutPet3 = findViewById(R.id.layout_pet_3);
         if (layoutPet3 != null) {
-            layoutPet3.setOnClickListener(v -> showPetDetailView());
+            layoutPet3.setOnClickListener(v -> showPetDetailView(demoPorNombre("Luna")));
         }
 
         LinearLayout listaMascotasContainer = findViewById(R.id.listaMascotasContainer);
@@ -927,7 +1272,7 @@ public class MainActivity extends AppCompatActivity {
         inner.addView(textCol);
         card.addView(inner);
 
-        card.setOnClickListener(v -> showPetDetailView());
+        card.setOnClickListener(v -> showPetDetailView(m));
         return card;
     }
 
@@ -982,7 +1327,7 @@ public class MainActivity extends AppCompatActivity {
         tvRaza.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         item.addView(tvRaza);
 
-        item.setOnClickListener(v -> showPetDetailView());
+        item.setOnClickListener(v -> showPetDetailView(m));
 
         return item;
     }
@@ -1262,7 +1607,7 @@ public class MainActivity extends AppCompatActivity {
         relativeLayout.addView(infoCol);
         card.addView(relativeLayout);
 
-        card.setOnClickListener(v -> showPetDetailView());
+        card.setOnClickListener(v -> showPetDetailView(buscarMascota(ecf.evento.mascota)));
         return card;
     }
 
@@ -1534,10 +1879,10 @@ public class MainActivity extends AppCompatActivity {
             navMascotas.setOnClickListener(v -> showPetsView());
         }
         if (navLista != null) {
-            navLista.setOnClickListener(v -> showCalendarView());
+            navLista.setOnClickListener(v -> showRecordatoriosView());
         }
         if (navMas != null) {
-            navMas.setOnClickListener(v -> showProfileView());
+            navMas.setOnClickListener(v -> showMasView());
         }
         if (fabAdd != null) {
             fabAdd.setOnClickListener(v -> {
@@ -1587,6 +1932,7 @@ public class MainActivity extends AppCompatActivity {
         String veterinario;
         String hora;
         String observaciones;
+        LocalDate fecha;
 
         EventoMascota(String categoria, String mascota, String veterinario, String hora, String observaciones) {
             this.categoria = categoria;
@@ -1609,12 +1955,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private final List<Veterinario> veterinariosDemo = Arrays.asList(
+    private final List<Veterinario> veterinariosDemo = new ArrayList<>(Arrays.asList(
             new Veterinario("Dr. Alejandro Ramírez", "Vacuna", "MP-12345"),
             new Veterinario("Dra. Sofía Fernández", "Vacuna", "MP-77890"),
             new Veterinario("Dra. Carla Méndez", "Control", "MP-98765"),
             new Veterinario("Dr. Ricardo Soto", "Cirugía", "MP-45612"),
-            new Veterinario("Dra. Valentina Ríos", "Estudio / Tratamiento", "MP-33221"));
+            new Veterinario("Dra. Valentina Ríos", "Estudio / Tratamiento", "MP-33221")));
+
+    // Veterinarios agregados por el usuario o por solicitudes aceptadas (se vuelven a mostrar en "Veterinarios autorizados")
+    private final List<Veterinario> veterinariosExtra = new ArrayList<>();
+    private final List<SolicitudItem> solicitudesDueno = new ArrayList<>();
+    private final Map<String, Veterinario> veterinariosSolicitantes = new HashMap<>();
+    private final Set<String> mascotasEliminadas = new HashSet<>();
+    private String passwordUsuario = null;
 
     private static class Mascota {
         String nombre;
@@ -1622,6 +1975,14 @@ public class MainActivity extends AppCompatActivity {
         String raza;
         String fechaNacimiento;
         Uri fotoUri;
+        int fotoRes = 0;
+        // Datos de la ficha (se editan desde el detalle)
+        String tipoRazaTxt;
+        String nacSexoTxt;
+        String peso = "Sin datos";
+        String microchip = "Sin datos";
+        String color = "Sin datos";
+        String observaciones = "Sin observaciones";
 
         Mascota(String nombre, String tipo, String raza, String fechaNacimiento, Uri fotoUri) {
             this.nombre = nombre;
@@ -1629,7 +1990,46 @@ public class MainActivity extends AppCompatActivity {
             this.raza = raza;
             this.fechaNacimiento = fechaNacimiento;
             this.fotoUri = fotoUri;
+            this.tipoRazaTxt = (raza != null && !raza.isEmpty()) ? tipo + " - " + raza : tipo;
+            this.nacSexoTxt = fechaNacimiento != null && !fechaNacimiento.isEmpty()
+                    ? "Nacido el " + fechaNacimiento : "Fecha de nacimiento sin datos";
         }
+
+        static Mascota demo(String nombre, String tipo, String raza, String nacimiento, String sexo,
+                            int fotoRes, String peso, String microchip, String color, String obs) {
+            Mascota m = new Mascota(nombre, tipo, raza, nacimiento, null);
+            m.fotoRes = fotoRes;
+            m.nacSexoTxt = "Nacido el " + nacimiento + " - " + sexo;
+            m.peso = peso;
+            m.microchip = microchip;
+            m.color = color;
+            m.observaciones = obs;
+            return m;
+        }
+    }
+
+    private final List<Mascota> mascotasDemo = Arrays.asList(
+            Mascota.demo("Koda", "Perro", "Golden Retriever", "15 mar 2020", "Macho",
+                    R.drawable.milo, "28 kg", "985121054871236", "Dorado", "Alérgico a la penicilina"),
+            Mascota.demo("Mika", "Gato", "Europeo", "02 nov 2019", "Hembra",
+                    R.drawable.milo, "4 kg", "985121054870001", "Gris atigrado", "Sin observaciones"),
+            Mascota.demo("Luna", "Perro", "Cocker spaniel", "10 jun 2020", "Hembra",
+                    R.drawable.luna, "11 kg", "985121054870002", "Café", "Control dental pendiente"),
+            Mascota.demo("Milo", "Gato", "Siamés", "21 ene 2014", "Macho",
+                    R.drawable.milo, "5 kg", "985121054870003", "Crema y marrón", "Medicación para la tiroides"));
+
+    private Mascota buscarMascota(String nombre) {
+        for (Mascota m : mascotasNuevas) {
+            if (m.nombre.equals(nombre)) return m;
+        }
+        return demoPorNombre(nombre);
+    }
+
+    private Mascota demoPorNombre(String nombre) {
+        for (Mascota m : mascotasDemo) {
+            if (m.nombre.equals(nombre)) return m;
+        }
+        return mascotasDemo.get(0);
     }
 
     private final List<Mascota> mascotasNuevas = new ArrayList<>();
@@ -1789,7 +2189,9 @@ public class MainActivity extends AppCompatActivity {
             lista = new ArrayList<>();
             eventosPorFecha.put(key, lista);
         }
-        lista.add(new EventoMascota(categoria, mascota, veterinario, hora, observaciones));
+        EventoMascota evento = new EventoMascota(categoria, mascota, veterinario, hora, observaciones);
+        evento.fecha = fecha;
+        lista.add(evento);
     }
 
     private void seedEventosDemoSiNecesario() {
@@ -1817,7 +2219,7 @@ public class MainActivity extends AppCompatActivity {
         container.removeAllViews();
         getLayoutInflater().inflate(R.layout.calendario, container, true);
 
-        highlightNavItem(R.id.nav_lista);
+        highlightNavItem(R.id.nav_mas);
 
         View btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
@@ -2009,35 +2411,197 @@ public class MainActivity extends AppCompatActivity {
 
         card.addView(textCol);
 
-        card.setOnClickListener(v -> {
-            String vet = (evento.veterinario != null && !evento.veterinario.isEmpty()) ? evento.veterinario : "Veterinario no asignado";
-            String msg = "Mascota: " + evento.mascota + "\nCategoría: " + evento.categoria + "\nVeterinario: " + vet + "\nHora: " + evento.hora;
-            if (evento.observaciones != null && !evento.observaciones.isEmpty()) {
-                msg += "\nObservaciones: " + evento.observaciones;
-            }
-
-            new AlertDialog.Builder(this)
-                    .setTitle("Detalle del turno")
-                    .setMessage(msg)
-                    .setPositiveButton("Cerrar", null)
-                    .setNegativeButton("Simular cancelación de veterinario", (dialog, which) -> {
-                        List<EventoMascota> lista = eventosPorFecha.get(dateKey(diaSeleccionado));
-                        if (lista != null) {
-                            lista.remove(evento);
-                        }
-                        agregarNotificacion(
-                                "Turno cancelado por el veterinario",
-                                "El turno de " + evento.mascota + " (" + evento.categoria + ") fue cancelado por el veterinario.",
-                                "Ahora mismo",
-                                R.drawable.ic_cancel
-                        );
-                        Toast.makeText(this, "Turno cancelado. Se generó una notificación.", Toast.LENGTH_SHORT).show();
-                        renderEventosDia();
-                    })
-                    .show();
-        });
+        card.setOnClickListener(v -> mostrarDetalleTurno(evento));
 
         return card;
+    }
+
+    private void mostrarDetalleTurno(EventoMascota evento) {
+        BottomSheetDialog sheet = new BottomSheetDialog(this);
+        View vista = getLayoutInflater().inflate(R.layout.bottom_sheet_turno, null);
+        sheet.setContentView(vista);
+
+        int[] estilo = getEstiloCategoria(evento.categoria);
+        vista.findViewById(R.id.flTurnoIcono).setBackgroundResource(estilo[1]);
+        ImageView ivIcono = vista.findViewById(R.id.ivTurnoIcono);
+        ivIcono.setImageResource(estilo[0]);
+        ivIcono.setColorFilter(ContextCompat.getColor(this, estilo[2]));
+
+        ((TextView) vista.findViewById(R.id.tvTurnoTitulo)).setText(evento.categoria);
+        ((TextView) vista.findViewById(R.id.tvTurnoMascota)).setText(evento.mascota);
+
+        boolean proximo = evento.fecha != null && !evento.fecha.isBefore(LocalDate.now());
+        TextView tvEstado = vista.findViewById(R.id.tvTurnoEstado);
+        tvEstado.setText(proximo ? "Próximo" : "Realizado");
+        tvEstado.setBackgroundResource(proximo ? R.drawable.bg_badge_orange : R.drawable.bg_badge_green);
+        tvEstado.setTextColor(ContextCompat.getColor(this, proximo ? R.color.accent_orange : R.color.success_green));
+
+        String fechaTxt = evento.fecha != null
+                ? evento.fecha.getDayOfMonth() + " de " + MESES[evento.fecha.getMonthValue() - 1] + " de " + evento.fecha.getYear()
+                : "Sin fecha";
+        ((TextView) vista.findViewById(R.id.tvTurnoFecha)).setText(fechaTxt);
+        ((TextView) vista.findViewById(R.id.tvTurnoHora)).setText(evento.hora + " hs");
+        ((TextView) vista.findViewById(R.id.tvTurnoVet)).setText(
+                evento.veterinario != null && !evento.veterinario.isEmpty() ? evento.veterinario : "Sin asignar");
+        boolean hayObs = evento.observaciones != null && !evento.observaciones.isEmpty();
+        vista.findViewById(R.id.rowTurnoObs).setVisibility(hayObs ? View.VISIBLE : View.GONE);
+        if (hayObs) ((TextView) vista.findViewById(R.id.tvTurnoObs)).setText(evento.observaciones);
+
+        vista.findViewById(R.id.btnTurnoCancelar).setVisibility(proximo ? View.VISIBLE : View.GONE);
+        vista.findViewById(R.id.btnTurnoEditar).setOnClickListener(v -> {
+            sheet.dismiss();
+            mostrarDialogoEditarEvento(evento);
+        });
+        vista.findViewById(R.id.btnTurnoCancelar).setOnClickListener(v -> {
+            sheet.dismiss();
+            new AlertDialog.Builder(this)
+                    .setTitle("Cancelar turno")
+                    .setMessage("¿Querés cancelar el turno de " + evento.mascota + " (" + evento.categoria + ")?")
+                    .setPositiveButton("Cancelar turno", (d, w) -> {
+                        eliminarEvento(evento);
+                        agregarNotificacion("Cancelaste un turno",
+                                "Cancelaste el turno de " + evento.mascota + " (" + evento.categoria + ").",
+                                "Ahora mismo", R.drawable.ic_cancel);
+                        Toast.makeText(this, "Turno cancelado", Toast.LENGTH_SHORT).show();
+                        refrescarCalendarioSiVisible();
+                    })
+                    .setNegativeButton("Volver", null)
+                    .show();
+        });
+        vista.findViewById(R.id.tvTurnoSimular).setOnClickListener(v -> {
+            sheet.dismiss();
+            eliminarEvento(evento);
+            agregarNotificacion(
+                    "Turno cancelado por el veterinario",
+                    "El turno de " + evento.mascota + " (" + evento.categoria + ") fue cancelado por el veterinario.",
+                    "Ahora mismo",
+                    R.drawable.ic_cancel
+            );
+            Toast.makeText(this, "Turno cancelado. Se generó una notificación.", Toast.LENGTH_SHORT).show();
+            refrescarCalendarioSiVisible();
+        });
+        sheet.show();
+    }
+
+    private void eliminarEvento(EventoMascota evento) {
+        if (evento.fecha == null) return;
+        List<EventoMascota> lista = eventosPorFecha.get(dateKey(evento.fecha));
+        if (lista != null) lista.remove(evento);
+    }
+
+    private void refrescarCalendarioSiVisible() {
+        if (findViewById(R.id.listaEventosDia) != null) {
+            renderCalendario();
+            renderEventosDia();
+        }
+    }
+
+    private void mostrarDialogoEditarEvento(EventoMascota evento) {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dp(20), dp(16), dp(20), dp(4));
+
+        final LocalDate[] fecha = {evento.fecha != null ? evento.fecha : LocalDate.now()};
+        EditText etFecha = campoSoloLectura("Fecha");
+        etFecha.setText(fecha[0].getDayOfMonth() + " de " + MESES[fecha[0].getMonthValue() - 1] + " de " + fecha[0].getYear());
+        etFecha.setOnClickListener(v -> new DatePickerDialog(this, (view, y, m, d) -> {
+            fecha[0] = LocalDate.of(y, m + 1, d);
+            etFecha.setText(d + " de " + MESES[m] + " de " + y);
+        }, fecha[0].getYear(), fecha[0].getMonthValue() - 1, fecha[0].getDayOfMonth()).show());
+
+        EditText etHora = campoSoloLectura("Hora");
+        etHora.setText(evento.hora);
+        etHora.setOnClickListener(v -> {
+            String[] partes = etHora.getText().toString().split(":");
+            int h = 9, mi = 0;
+            try {
+                h = Integer.parseInt(partes[0]);
+                mi = Integer.parseInt(partes[1]);
+            } catch (Exception ignored) {
+            }
+            new TimePickerDialog(this, (view, hh, mm) ->
+                    etHora.setText(String.format(Locale.getDefault(), "%02d:%02d", hh, mm)), h, mi, true).show();
+        });
+
+        List<String> nombres = new ArrayList<>();
+        nombres.add("Sin asignar");
+        for (Veterinario vet : veterinariosDemo) nombres.add(vet.nombre);
+        Spinner spVet = new Spinner(this);
+        spVet.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, nombres));
+        int idx = nombres.indexOf(evento.veterinario);
+        spVet.setSelection(Math.max(idx, 0));
+
+        EditText etObs = new EditText(this);
+        etObs.setHint("Observaciones");
+        etObs.setText(evento.observaciones);
+        etObs.setMinLines(2);
+
+        layout.addView(etFecha);
+        layout.addView(etHora);
+        layout.addView(spVet);
+        layout.addView(etObs);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Editar turno de " + evento.mascota)
+                .setView(layout)
+                .setPositiveButton("Guardar", (d, w) -> {
+                    eliminarEvento(evento);
+                    evento.fecha = fecha[0];
+                    evento.hora = etHora.getText().toString();
+                    evento.veterinario = spVet.getSelectedItemPosition() == 0 ? "" : (String) spVet.getSelectedItem();
+                    evento.observaciones = etObs.getText().toString().trim();
+                    String key = dateKey(evento.fecha);
+                    List<EventoMascota> lista = eventosPorFecha.get(key);
+                    if (lista == null) {
+                        lista = new ArrayList<>();
+                        eventosPorFecha.put(key, lista);
+                    }
+                    lista.add(evento);
+                    agregarNotificacion("Modificaste un turno",
+                            "El turno de " + evento.mascota + " (" + evento.categoria + ") ahora es el "
+                                    + evento.fecha.getDayOfMonth() + " de " + MESES[evento.fecha.getMonthValue() - 1]
+                                    + " a las " + evento.hora + ".",
+                            "Ahora mismo", R.drawable.ic_calendar);
+                    Toast.makeText(this, "Turno actualizado", Toast.LENGTH_SHORT).show();
+                    refrescarCalendarioSiVisible();
+                })
+                .setNegativeButton(R.string.btn_cancelar, null)
+                .show();
+    }
+
+    private EditText campoSoloLectura(String hint) {
+        EditText et = new EditText(this);
+        et.setHint(hint);
+        et.setFocusable(false);
+        et.setClickable(true);
+        return et;
+    }
+
+    /** Botón "Editar evento" de las pestañas de la mascota: elige uno de sus eventos para editarlo. */
+    private void mostrarSelectorEventoParaEditar() {
+        String nombre = mascotaActual != null ? mascotaActual.nombre : null;
+        List<EventoMascota> propios = new ArrayList<>();
+        for (List<EventoMascota> lista : eventosPorFecha.values()) {
+            for (EventoMascota e : lista) {
+                if (nombre == null || nombre.equals(e.mascota)) propios.add(e);
+            }
+        }
+        if (propios.isEmpty()) {
+            Toast.makeText(this, "No hay eventos para editar", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Collections.sort(propios, (a, b) -> b.fecha.compareTo(a.fecha));
+        String[] etiquetas = new String[propios.size()];
+        for (int i = 0; i < propios.size(); i++) {
+            EventoMascota e = propios.get(i);
+            etiquetas[i] = e.fecha.getDayOfMonth() + " " + MESES_CORTO[e.fecha.getMonthValue() - 1] + " " + e.fecha.getYear()
+                    + " · " + e.categoria + " · " + e.mascota;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Elegí el evento a editar")
+                .setItems(etiquetas, (d, which) -> mostrarDialogoEditarEvento(propios.get(which)))
+                .setNegativeButton(R.string.btn_cancelar, null)
+                .show();
     }
 
     private void bounceView(View v) {
@@ -2555,6 +3119,10 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        for (Veterinario extra : veterinariosExtra) {
+            agregarVeterinarioALista(extra.nombre, extra.matricula);
+        }
+
         View btnAgregarVeterinario = findViewById(R.id.btnAgregarVeterinario);
         if (btnAgregarVeterinario != null) {
             btnAgregarVeterinario.setOnClickListener(v -> mostrarDialogoNuevoVeterinario());
@@ -2611,6 +3179,9 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(this, getString(R.string.hint_nombre_veterinario), Toast.LENGTH_SHORT).show();
                         return;
                     }
+                    Veterinario nuevo = new Veterinario(nombre, "Control", matricula);
+                    veterinariosDemo.add(nuevo);
+                    veterinariosExtra.add(nuevo);
                     agregarVeterinarioALista(nombre, matricula);
                 })
                 .setNegativeButton(R.string.btn_cancelar, null)
