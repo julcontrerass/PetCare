@@ -235,4 +235,24 @@ public class FuncionalidadTest {
         a.findViewById(R.id.btnEditarInfo).performClick();
         assertNotNull(ShadowDialog.getLatestDialog());
     }
+
+    @Test
+    public void dueno_veterinariosAutorizadosSeAbre() {
+        MainActivity a = loginDueno();
+        a.findViewById(R.id.nav_mas).performClick();
+        a.findViewById(R.id.optVeterinarios).performClick();
+        assertNotNull(a.findViewById(R.id.btnAgregarVeterinario));
+    }
+
+    @Test
+    public void dueno_bajaDeMascotaLaQuitaDeLaLista() {
+        MainActivity a = loginDueno();
+        a.findViewById(R.id.nav_mascotas).performClick();
+        a.findViewById(R.id.layout_pet_1).performClick();      // Mika
+        a.findViewById(R.id.btnDarDeBaja).performClick();
+        AlertDialog d = (AlertDialog) ShadowDialog.getLatestDialog();
+        d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        org.robolectric.shadows.ShadowLooper.idleMainLooper();
+        assertEquals(View.GONE, a.findViewById(R.id.layout_pet_1).getVisibility());
+    }
 }

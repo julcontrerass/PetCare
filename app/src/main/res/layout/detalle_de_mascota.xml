@@ -298,12 +298,26 @@
                     style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:layout_marginTop="32dp"
+                    android:layout_marginTop="24dp"
                     android:backgroundTint="@color/primary_teal"
                     android:text="@string/btn_editar_informacion"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="15sp"
+                    app:cornerRadius="8dp" />
+
+                <!-- BOTÓN DAR DE BAJA -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDarDeBaja"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/dar_de_baja_mascota"
+                    android:textAllCaps="false"
+                    android:textColor="@color/danger_red"
+                    android:textSize="15sp"
+                    app:strokeColor="@color/danger_red"
                     app:cornerRadius="8dp" />
 
             </LinearLayout>

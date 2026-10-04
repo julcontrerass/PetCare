@@ -39,7 +39,7 @@
         android:layout_height="40dp"
         android:layout_marginEnd="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/btn_agregar_veterinario"
+        android:contentDescription="@string/dialog_autorizar_veterinario"
         android:src="@drawable/ic_plus"
         app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
@@ -73,24 +73,91 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@null"
-            android:hint="@string/buscar_hint"
+            android:hint="@string/buscar_vet_hint"
             android:importantForAutofill="no"
             android:inputType="text"
             android:maxLines="1"
             android:textColor="@color/black"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
     </LinearLayout>
+
+    <HorizontalScrollView
+        android:id="@+id/filterScrollView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchBar">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="20dp">
+
+            <TextView
+                android:id="@+id/btnFiltroTodos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_selected"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="8dp"
+                android:text="@string/filtro_todos"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnFiltroActivos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="8dp"
+                android:text="@string/filtro_activos"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnFiltroPendientes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="8dp"
+                android:text="@string/filtro_pendientes"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnFiltroInactivos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_chip_unselected"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="8dp"
+                android:text="@string/filtro_inactivos"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollContent"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchBar">
+        app:layout_constraintTop_toBottomOf="@id/filterScrollView">
 
         <LinearLayout
             android:id="@+id/listaVeterinarios"
@@ -99,236 +166,6 @@
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
             android:paddingBottom="20dp">
-
-            <!-- Vet cards are injected here programmatically, plus these 3 static demo cards -->
-
-            <LinearLayout
-                android:id="@+id/cardVet1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_edit_text"
-                android:orientation="vertical"
-                android:padding="14dp"
-                android:tag="Dr. Alejandro Ramírez">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/vet_alejandro_ramirez"
-                        android:textColor="@color/black"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_badge_green"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp">
-
-                        <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_check_circle"
-                            app:tint="@color/success_green" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="@string/estado_activo"
-                            android:textColor="@color/success_green"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/matricula_mp12345"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/mascotas_asociadas_label"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/mascotas_koda_mika"
-                    android:textColor="@color/black"
-                    android:textSize="13sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/cardVet2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_edit_text"
-                android:orientation="vertical"
-                android:padding="14dp"
-                android:tag="Dra. Carla Méndez">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/vet_carla_mendez"
-                        android:textColor="@color/black"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_badge_orange"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp">
-
-                        <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_clock"
-                            app:tint="@color/accent_orange" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="@string/estado_pendiente"
-                            android:textColor="@color/accent_orange"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/matricula_mp98765"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/mascotas_asociadas_label"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/luna"
-                    android:textColor="@color/black"
-                    android:textSize="13sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/cardVet3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_edit_text"
-                android:orientation="vertical"
-                android:padding="14dp"
-                android:tag="Dr. Ricardo Soto">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/vet_ricardo_soto"
-                        android:textColor="@color/black"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_badge_red"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp">
-
-                        <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_cancel"
-                            app:tint="@color/danger_red" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="@string/estado_inactivo"
-                            android:textColor="@color/danger_red"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/matricula_mp45612"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/mascotas_asociadas_label"
-                    android:textColor="@color/text_gray"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/milo"
-                    android:textColor="@color/black"
-                    android:textSize="13sp" />
-            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvSinResultados"
