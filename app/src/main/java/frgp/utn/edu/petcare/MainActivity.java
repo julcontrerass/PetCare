@@ -745,6 +745,20 @@ public class MainActivity extends AppCompatActivity {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
+                    Calendar selectedCal = Calendar.getInstance();
+                    selectedCal.set(selectedYear, selectedMonth, selectedDay, 0, 0, 0);
+                    selectedCal.set(Calendar.MILLISECOND, 0);
+
+                    Calendar today = Calendar.getInstance();
+                    today.set(Calendar.HOUR_OF_DAY, 23);
+                    today.set(Calendar.MINUTE, 59);
+                    today.set(Calendar.SECOND, 59);
+
+                    if (selectedCal.after(today)) {
+                        Toast.makeText(this, "No podés seleccionar una fecha de nacimiento futura", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
                     String formattedDate = String.format(Locale.getDefault(), "%02d %s %d", selectedDay, meses[selectedMonth], selectedYear);
                     String currentText = editText.getText() != null ? editText.getText().toString() : "";
@@ -757,6 +771,7 @@ public class MainActivity extends AppCompatActivity {
                 },
                 year, month, day
         );
+        datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         datePickerDialog.show();
     }
 
@@ -2647,10 +2662,19 @@ public class MainActivity extends AppCompatActivity {
         final LocalDate[] fecha = {evento.fecha != null ? evento.fecha : LocalDate.now()};
         EditText etFecha = campoSoloLectura("Fecha");
         etFecha.setText(fecha[0].getDayOfMonth() + " de " + MESES[fecha[0].getMonthValue() - 1] + " de " + fecha[0].getYear());
-        etFecha.setOnClickListener(v -> new DatePickerDialog(this, (view, y, m, d) -> {
-            fecha[0] = LocalDate.of(y, m + 1, d);
-            etFecha.setText(d + " de " + MESES[m] + " de " + y);
-        }, fecha[0].getYear(), fecha[0].getMonthValue() - 1, fecha[0].getDayOfMonth()).show());
+        etFecha.setOnClickListener(v -> {
+            DatePickerDialog dpd = new DatePickerDialog(this, (view, y, m, d) -> {
+                LocalDate nuevaFecha = LocalDate.of(y, m + 1, d);
+                if (nuevaFecha.isBefore(LocalDate.now())) {
+                    Toast.makeText(this, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                fecha[0] = nuevaFecha;
+                etFecha.setText(d + " de " + MESES[m] + " de " + y);
+            }, fecha[0].getYear(), fecha[0].getMonthValue() - 1, fecha[0].getDayOfMonth());
+            dpd.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+            dpd.show();
+        });
 
         EditText etHora = campoSoloLectura("Hora");
         etHora.setText(evento.hora);
@@ -2688,6 +2712,10 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Editar turno de " + evento.mascota)
                 .setView(layout)
                 .setPositiveButton("Guardar", (d, w) -> {
+                    if (fecha[0].isBefore(LocalDate.now())) {
+                        Toast.makeText(this, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     eliminarEvento(evento);
                     evento.fecha = fecha[0];
                     evento.hora = etHora.getText().toString();
@@ -2780,7 +2808,9 @@ public class MainActivity extends AppCompatActivity {
 
         highlightNavItem(-1);
 
-        fechaEventoNuevo = fecha;
+        LocalDate fechaInicial = (fecha == null || fecha.isBefore(LocalDate.now())) ? LocalDate.now() : fecha;
+
+        fechaEventoNuevo = fechaInicial;
         mesEventoNuevo = YearMonth.from(fecha);
         stepperActual = 1;
         categoriaNuevoEvento = null;
@@ -2848,8 +2878,12 @@ public class MainActivity extends AppCompatActivity {
         View btnMesAnteriorMini = findViewById(R.id.btnMesAnteriorMini);
         if (btnMesAnteriorMini != null) {
             btnMesAnteriorMini.setOnClickListener(v -> {
-                mesEventoNuevo = mesEventoNuevo.minusMonths(1);
-                renderCalendarioMini();
+                if (mesEventoNuevo.isAfter(YearMonth.now())) {
+                    mesEventoNuevo = mesEventoNuevo.minusMonths(1);
+                    renderCalendarioMini();
+                } else {
+                    Toast.makeText(this, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
@@ -2894,11 +2928,19 @@ public class MainActivity extends AppCompatActivity {
                     stepperActual = 3;
                     actualizarStepperUI();
                 } else if (stepperActual == 3) {
+                    if (fechaEventoNuevo.isBefore(LocalDate.now())) {
+                        Toast.makeText(this, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     EditText etObservaciones = findViewById(R.id.etObservaciones);
                     observacionesNuevoEvento = etObservaciones != null ? etObservaciones.getText().toString().trim() : "";
                     stepperActual = 4;
                     actualizarStepperUI();
                 } else {
+                    if (fechaEventoNuevo.isBefore(LocalDate.now())) {
+                        Toast.makeText(this, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     agregarEvento(fechaEventoNuevo, categoriaNuevoEvento, mascotaNuevoEvento, veterinarioNuevoEvento, horaNuevoEvento, observacionesNuevoEvento);
                     diaSeleccionado = fechaEventoNuevo;
                     mesCalendarioActual = YearMonth.from(fechaEventoNuevo);
@@ -3106,6 +3148,7 @@ public class MainActivity extends AppCompatActivity {
         lp.setMargins(dp(2), dp(2), dp(2), dp(2));
         cell.setLayoutParams(lp);
 
+        boolean esPasado = fecha.isBefore(LocalDate.now());
         boolean seleccionado = fecha.equals(fechaEventoNuevo);
         if (seleccionado) {
             cell.setBackgroundResource(R.drawable.bg_day_selected);
@@ -3117,12 +3160,21 @@ public class MainActivity extends AppCompatActivity {
         FrameLayout.LayoutParams tvLp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
         tvDia.setLayoutParams(tvLp);
-        tvDia.setTextColor(ContextCompat.getColor(this, seleccionado ? R.color.white : R.color.black));
+        if (esPasado) {
+            tvDia.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
+            tvDia.setAlpha(0.4f);
+        } else {
+            tvDia.setTextColor(ContextCompat.getColor(this, seleccionado ? R.color.white : R.color.black));
+        }
         tvDia.setTextSize(13);
         cell.addView(tvDia);
 
         cell.setOnClickListener(v -> {
             bounceView(v);
+            if (esPasado) {
+                Toast.makeText(this, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show();
+                return;
+            }
             fechaEventoNuevo = fecha;
             renderCalendarioMini();
         });

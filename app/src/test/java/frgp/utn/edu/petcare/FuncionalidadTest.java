@@ -9,6 +9,9 @@ import androidx.appcompat.app.AlertDialog;
 import android.content.Intent;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.GridLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.tabs.TabLayout;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +28,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowDialog;
+import org.robolectric.shadows.ShadowLooper;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -67,7 +72,7 @@ public class FuncionalidadTest {
         a.findViewById(R.id.btnCancelarTurno).performClick();
         AlertDialog dialog = (AlertDialog) ShadowDialog.getLatestDialog();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-        org.robolectric.shadows.ShadowLooper.idleMainLooper();
+        ShadowLooper.idleMainLooper();
         assertEquals(EstadoEvento.CANCELADO, e.getEstado());
     }
 
@@ -84,7 +89,7 @@ public class FuncionalidadTest {
         RecyclerView rv = a.findViewById(R.id.rvAgenda);
         int proximos = rv.getAdapter().getItemCount();
         assertTrue(proximos > 0);
-        ((com.google.android.material.tabs.TabLayout) a.findViewById(R.id.tabLayoutAgenda)).getTabAt(2).select();
+        ((TabLayout) a.findViewById(R.id.tabLayoutAgenda)).getTabAt(2).select();
         assertTrue(rv.getAdapter().getItemCount() != proximos || AgendaRepo.INSTANCE.porEstado(EstadoEvento.CANCELADO).isEmpty());
     }
 
@@ -174,7 +179,7 @@ public class FuncionalidadTest {
         a.findViewById(R.id.btnGoogle).performClick();
         AlertDialog d = (AlertDialog) ShadowDialog.getLatestDialog();
         d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-        org.robolectric.shadows.ShadowLooper.idleMainLooper();
+        ShadowLooper.idleMainLooper();
         assertNotNull(a.findViewById(R.id.nav_home));
     }
 
@@ -210,17 +215,17 @@ public class FuncionalidadTest {
         a.findViewById(R.id.nav_mas).performClick();
         a.findViewById(R.id.optCalendario).performClick();
         // Mayo 2026 tiene eventos sembrados; se elige el 15
-        android.widget.GridLayout g = a.findViewById(R.id.gridCalendario);
+        GridLayout g = a.findViewById(R.id.gridCalendario);
         assertNotNull(g);
         for (int i = 0; i < g.getChildCount(); i++) {
             View celda = g.getChildAt(i);
-            if (celda instanceof android.widget.FrameLayout
-                    && ((TextView) ((android.widget.FrameLayout) celda).getChildAt(0)).getText().toString().equals("15")) {
+            if (celda instanceof FrameLayout
+                    && ((TextView) ((FrameLayout) celda).getChildAt(0)).getText().toString().equals("15")) {
                 celda.performClick();
                 break;
             }
         }
-        android.widget.LinearLayout lista = a.findViewById(R.id.listaEventosDia);
+        LinearLayout lista = a.findViewById(R.id.listaEventosDia);
         assertTrue(lista.getChildCount() > 0);
         lista.getChildAt(0).performClick();
         assertTrue(ShadowDialog.getLatestDialog() instanceof BottomSheetDialog);
@@ -252,7 +257,16 @@ public class FuncionalidadTest {
         a.findViewById(R.id.btnDarDeBaja).performClick();
         AlertDialog d = (AlertDialog) ShadowDialog.getLatestDialog();
         d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-        org.robolectric.shadows.ShadowLooper.idleMainLooper();
+        ShadowLooper.idleMainLooper();
         assertEquals(View.GONE, a.findViewById(R.id.layout_pet_1).getVisibility());
+    }
+
+    @Test
+    public void dueno_noPuedeAgendarTurnoEnFechaPasada() {
+        MainActivity a = loginDueno();
+        a.findViewById(R.id.nav_mas).performClick();
+        a.findViewById(R.id.optCalendario).performClick();
+        a.findViewById(R.id.btnAgregarEvento).performClick();
+        assertNotNull(a.findViewById(R.id.step1Content));
     }
 }

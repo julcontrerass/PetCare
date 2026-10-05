@@ -57,10 +57,17 @@ class DetalleEventoVetActivity : AppCompatActivity() {
             var fecha = evento.fecha
             val etFecha = campo("Fecha", Fechas.corta(fecha)).apply { isFocusable = false }
             etFecha.setOnClickListener {
-                DatePickerDialog(ctx, { _, y, m, d ->
-                    fecha = LocalDate.of(y, m + 1, d)
-                    etFecha.setText(Fechas.corta(fecha))
-                }, fecha.year, fecha.monthValue - 1, fecha.dayOfMonth).show()
+                val dpd = DatePickerDialog(ctx, { _, y, m, d ->
+                    val nuevaFecha = LocalDate.of(y, m + 1, d)
+                    if (nuevaFecha.isBefore(LocalDate.now())) {
+                        Toast.makeText(ctx, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show()
+                    } else {
+                        fecha = nuevaFecha
+                        etFecha.setText(Fechas.corta(fecha))
+                    }
+                }, fecha.year, fecha.monthValue - 1, fecha.dayOfMonth)
+                dpd.datePicker.minDate = System.currentTimeMillis() - 1000
+                dpd.show()
             }
             val etHora = campo("Hora", evento.hora).apply { isFocusable = false }
             etHora.setOnClickListener {
@@ -87,6 +94,10 @@ class DetalleEventoVetActivity : AppCompatActivity() {
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                     if (etMotivo.text.isBlank()) {
                         etMotivo.error = "Requerido"
+                        return@setOnClickListener
+                    }
+                    if (fecha.isBefore(LocalDate.now())) {
+                        Toast.makeText(ctx, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show()
                         return@setOnClickListener
                     }
                     evento.tipo = spTipo.selectedItem as String

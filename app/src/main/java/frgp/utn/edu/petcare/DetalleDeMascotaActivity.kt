@@ -124,6 +124,19 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
         val datePickerDialog = DatePickerDialog(
             this,
             { _, selectedYear, selectedMonth, selectedDay ->
+                val selectedCal = Calendar.getInstance().apply {
+                    set(selectedYear, selectedMonth, selectedDay, 0, 0, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val today = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                }
+                if (selectedCal.after(today)) {
+                    Toast.makeText(this, "No podés seleccionar una fecha de nacimiento futura", Toast.LENGTH_SHORT).show()
+                    return@DatePickerDialog
+                }
                 val meses = arrayOf("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
                 val formattedDate = String.format(Locale.getDefault(), "%02d %s %d", selectedDay, meses[selectedMonth], selectedYear)
                 val currentText = editText.text.toString()
@@ -136,6 +149,7 @@ class DetalleDeMascotaActivity : AppCompatActivity() {
             },
             year, month, day
         )
+        datePickerDialog.datePicker.maxDate = System.currentTimeMillis()
         datePickerDialog.show()
     }
 
