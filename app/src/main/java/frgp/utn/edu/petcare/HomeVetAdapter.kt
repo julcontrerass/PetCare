@@ -1,11 +1,13 @@
 package frgp.utn.edu.petcare
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
 enum class ItemType {
@@ -19,7 +21,8 @@ data class HomeVetItem(
     val type: ItemType,
     val profileRes: Int? = null,
     val timeAgo: String? = null,
-    val eventoId: Int? = null
+    val eventoId: Int? = null,
+    val isEnHorario: Boolean = false
 )
 
 class HomeVetAdapter(
@@ -32,14 +35,17 @@ class HomeVetAdapter(
         notifyDataSetChanged()
     }
 
-
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val rootLayout: View = view.findViewById(R.id.rootLayout)
         val tvTime: TextView = view.findViewById(R.id.tvTime)
         val cvProfile: CardView = view.findViewById(R.id.cvProfile)
         val ivProfile: ImageView = view.findViewById(R.id.ivProfile)
         val tvTitle: TextView = view.findViewById(R.id.tvTitle)
         val tvSubtitle: TextView = view.findViewById(R.id.tvSubtitle)
         val tvDescription: TextView = view.findViewById(R.id.tvDescription)
+        val tvBadge: TextView = view.findViewById(R.id.tvBadge)
+        val ivChevron: ImageView = view.findViewById(R.id.ivChevron)
+        val divider: View = view.findViewById(R.id.divider)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -49,9 +55,10 @@ class HomeVetAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
+        val context = holder.itemView.context
         holder.tvTitle.text = item.title
         holder.tvSubtitle.text = item.subtitle
-        
+
         if (item.type == ItemType.CONSULTA) {
             holder.tvTime.visibility = View.VISIBLE
             holder.cvProfile.visibility = View.GONE
@@ -64,6 +71,28 @@ class HomeVetAdapter(
             holder.tvDescription.visibility = View.VISIBLE
             holder.tvDescription.text = item.timeAgo
         }
+
+        if (item.isEnHorario) {
+            holder.rootLayout.setBackgroundResource(R.drawable.bg_item_en_horario)
+            holder.tvTime.setTextColor(ContextCompat.getColor(context, R.color.success_green))
+            holder.tvTitle.setTextColor(ContextCompat.getColor(context, R.color.success_green))
+            holder.tvBadge.visibility = View.VISIBLE
+            holder.tvBadge.text = "En horario"
+            holder.ivChevron.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(context, R.color.success_green)
+            )
+            holder.divider.visibility = View.GONE
+        } else {
+            holder.rootLayout.background = null
+            holder.tvTime.setTextColor(ContextCompat.getColor(context, R.color.black))
+            holder.tvTitle.setTextColor(ContextCompat.getColor(context, R.color.black))
+            holder.tvBadge.visibility = View.GONE
+            holder.ivChevron.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(context, R.color.text_gray)
+            )
+            holder.divider.visibility = View.VISIBLE
+        }
+
         holder.itemView.setOnClickListener { onClick(item) }
     }
 

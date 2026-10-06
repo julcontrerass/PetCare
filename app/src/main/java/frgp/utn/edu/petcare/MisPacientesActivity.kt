@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,6 +13,7 @@ import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 
@@ -33,6 +35,13 @@ class MisPacientesActivity : AppCompatActivity() {
         setContentView(R.layout.mis_pacientes)
 
         VetBottomNav.setup(this, R.id.nav_pacientes)
+
+        findViewById<Toolbar>(R.id.toolbar)?.setNavigationOnClickListener {
+            val intent = Intent(this, HomeVeterinarioActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+            finish()
+        }
 
         findViewById<View>(R.id.btnAgregarPaciente)?.setOnClickListener { mostrarAlta() }
 

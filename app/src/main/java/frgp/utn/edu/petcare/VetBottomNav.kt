@@ -40,9 +40,12 @@ object VetBottomNav {
     }
 
     private fun irA(activity: AppCompatActivity, destino: Class<*>) {
+        if (activity::class.java == destino) return
         val intent = Intent(activity, destino)
         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         activity.startActivity(intent)
-        activity.finish()
+        if (activity !is HomeVeterinarioActivity) {
+            activity.finish()
+        }
     }
 }

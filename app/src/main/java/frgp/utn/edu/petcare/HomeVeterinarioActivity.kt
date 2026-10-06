@@ -4,8 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import java.time.LocalTime
+import kotlin.math.abs
 
 class HomeVeterinarioActivity : AppCompatActivity() {
 
@@ -18,7 +21,11 @@ class HomeVeterinarioActivity : AppCompatActivity() {
         VetBottomNav.setup(this, R.id.nav_inicio)
 
         findViewById<View>(R.id.ivNotifications)?.setOnClickListener {
-            startActivity(Intent(this, SolicitudesVetActivity::class.java))
+            AlertDialog.Builder(this)
+                .setTitle("Notificaciones")
+                .setMessage("No tenés nuevas notificaciones.")
+                .setPositiveButton("Aceptar", null)
+                .show()
         }
         findViewById<View>(R.id.tvVerAgenda)?.setOnClickListener {
             startActivity(Intent(this, AgendaVetActivity::class.java))
@@ -33,8 +40,6 @@ class HomeVeterinarioActivity : AppCompatActivity() {
                     Intent(this, DetalleEventoVetActivity::class.java)
                         .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, item.eventoId)
                 )
-            } else {
-                startActivity(Intent(this, SolicitudesVetActivity::class.java))
             }
         }
         findViewById<RecyclerView>(R.id.rvConsultas).adapter = adapter
@@ -49,21 +54,36 @@ class HomeVeterinarioActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvGreeting).text = "Hola, ${PerfilVetRepo.nombre} 👋"
 
         val hoy = AgendaRepo.deHoy()
-        val pendientes = SolicitudesRepo.pendientesVeterinario()
         findViewById<TextView>(R.id.tvPacientesHoy).text = AgendaRepo.pacientesHoy().toString()
         findViewById<TextView>(R.id.tvConsultasPendientes).text = hoy.size.toString()
-        findViewById<TextView>(R.id.tvSolicitudesCount).text = pendientes.toString()
+
+        val now = LocalTime.now()
+        val nowMin = now.hour * 60 + now.minute
+
+        val enHorarioEventoId = hoy.firstOrNull { evento ->
+            try {
+                val parts = evento.hora.split(":")
+                val h = parts[0].toInt()
+                val m = parts[1].toInt()
+                val eventoMin = h * 60 + m
+                abs(nowMin - eventoMin) <= 45 || now.hour == h
+            } catch (e: Exception) {
+                false
+            }
+        }?.id
 
         val items = mutableListOf<HomeVetItem>()
         hoy.mapTo(items) {
-            HomeVetItem(PacientesRepo.porId(it.pacienteId).nombre, it.motivo, it.hora, ItemType.CONSULTA, eventoId = it.id)
+            val esEnHorario = (it.id == enHorarioEventoId)
+            HomeVetItem(
+                title = PacientesRepo.porId(it.pacienteId).nombre,
+                subtitle = it.motivo,
+                time = it.hora,
+                type = ItemType.CONSULTA,
+                eventoId = it.id,
+                isEnHorario = esEnHorario
+            )
         }
-        SolicitudesRepo.paraVeterinario
-            .filter { it.estado == SolicitudItem.Estado.PENDIENTE }
-            .mapTo(items) {
-                HomeVetItem("Nueva solicitud de acceso", "${it.solicitante} - ${it.paciente?.nombre.orEmpty()}",
-                    "", ItemType.SOLICITUD, it.fotoRes, it.hace)
-            }
         adapter.update(items)
     }
 }

@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 
 class PerfilVetActivity : AppCompatActivity() {
 
@@ -27,6 +28,13 @@ class PerfilVetActivity : AppCompatActivity() {
         setContentView(R.layout.perfil_vet)
 
         VetBottomNav.setup(this, R.id.nav_mas)
+
+        findViewById<Toolbar>(R.id.toolbar)?.setNavigationOnClickListener {
+            val intent = Intent(this, HomeVeterinarioActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+            finish()
+        }
 
         findViewById<View>(R.id.optEditarPerfil).setOnClickListener { editarPerfil() }
         findViewById<View>(R.id.optCambiarPassword).setOnClickListener { cambiarPassword() }

@@ -2,9 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingVertical="12dp"
+    android:paddingHorizontal="12dp"
+    android:layout_marginBottom="4dp"
     android:background="?attr/selectableItemBackground">
 
     <TextView
@@ -80,6 +83,17 @@
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             android:textColor="@color/text_gray" />
 
+        <TextView
+            android:id="@+id/tvBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="En horario"
+            android:textColor="@color/success_green"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <ImageView
@@ -93,6 +107,7 @@
         app:tint="@color/text_gray" />
 
     <View
+        android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/divider_light"

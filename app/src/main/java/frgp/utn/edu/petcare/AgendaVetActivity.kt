@@ -23,7 +23,12 @@ class AgendaVetActivity : AppCompatActivity() {
         setContentView(R.layout.agenda_vet)
 
         VetBottomNav.setup(this, R.id.nav_agenda)
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener {
+            val intent = Intent(this, HomeVeterinarioActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+            finish()
+        }
 
         tabLayout = findViewById(R.id.tabLayoutAgenda)
         tvVacia = findViewById(R.id.tvAgendaVacia)

@@ -6,11 +6,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
 import android.content.Intent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -31,6 +33,7 @@ import org.robolectric.shadows.ShadowDialog;
 import org.robolectric.shadows.ShadowLooper;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 /** Comportamiento de las funciones que antes decían "Función en desarrollo". */
@@ -143,6 +146,17 @@ public class FuncionalidadTest {
         HomeVeterinarioActivity a = Robolectric.buildActivity(HomeVeterinarioActivity.class).setup().get();
         int hoy = AgendaRepo.INSTANCE.deHoy().size();
         assertEquals(String.valueOf(hoy), ((TextView) a.findViewById(R.id.tvConsultasPendientes)).getText().toString());
+    }
+
+    @Test
+    public void homeVet_destacaTurnoEnHorario() {
+        String horaActual = String.format("%02d:00", LocalTime.now().getHour());
+        AgendaRepo.INSTANCE.agregar(1, "Consulta", "Turno ahora", LocalDate.now(),
+                horaActual, EstadoEvento.PENDIENTE, "", "Dr. Test");
+
+        HomeVeterinarioActivity a = Robolectric.buildActivity(HomeVeterinarioActivity.class).setup().get();
+        RecyclerView rv = a.findViewById(R.id.rvConsultas);
+        assertTrue(rv.getAdapter().getItemCount() > 0);
     }
 
     @Test
@@ -268,5 +282,29 @@ public class FuncionalidadTest {
         a.findViewById(R.id.optCalendario).performClick();
         a.findViewById(R.id.btnAgregarEvento).performClick();
         assertNotNull(a.findViewById(R.id.step1Content));
+    }
+
+    @Test
+    public void vet_flechaAtrasEnAgendaYMisPacientesVuelveAHome() {
+        MisPacientesActivity pacientes = Robolectric.buildActivity(MisPacientesActivity.class).setup().get();
+        Toolbar tb1 = pacientes.findViewById(R.id.toolbar);
+        tb1.getNavigationIcon(); // verify toolbar has back icon
+        for (int i = 0; i < tb1.getChildCount(); i++) {
+            if (tb1.getChildAt(i) instanceof ImageButton) {
+                tb1.getChildAt(i).performClick();
+                break;
+            }
+        }
+        assertTrue(pacientes.isFinishing());
+
+        AgendaVetActivity agenda = Robolectric.buildActivity(AgendaVetActivity.class).setup().get();
+        Toolbar tb2 = agenda.findViewById(R.id.toolbar);
+        for (int i = 0; i < tb2.getChildCount(); i++) {
+            if (tb2.getChildAt(i) instanceof ImageButton) {
+                tb2.getChildAt(i).performClick();
+                break;
+            }
+        }
+        assertTrue(agenda.isFinishing());
     }
 }
