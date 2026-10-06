@@ -39,6 +39,16 @@
             android:windowSoftInputMode="adjustResize" />
         <activity android:name=".DetalleEventoVetActivity" android:exported="false" />
         <activity android:name=".CarnetSaludActivity" android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="frgp.utn.edu.petcare.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

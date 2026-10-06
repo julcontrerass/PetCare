@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.widget.PopupMenu
 import android.widget.Toast
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -40,8 +41,10 @@ class DetallePacienteActivity : AppCompatActivity() {
 
         val paciente = pacienteDe(this)
         findViewById<android.widget.TextView>(R.id.tvPetName).text = paciente.nombre
-        findViewById<android.widget.TextView>(R.id.tvPetBreed).text = paciente.razaYSexo
-        findViewById<android.widget.TextView>(R.id.tvPetAge).text = paciente.nacimiento
+        findViewById<TextView>(R.id.tvPetBreed).text = paciente.razaYSexo
+        findViewById<TextView>(R.id.tvPetAge).text = paciente.nacimiento
+        findViewById<TextView>(R.id.tvPetOwner).text = "Propietario: ${paciente.propietario}"
+        findViewById<TextView>(R.id.tvPetOwnerContact).text = "Contacto: ${paciente.telefono}"
         findViewById<android.widget.ImageView>(R.id.ivPetPhoto).setImageResource(paciente.fotoRes)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -52,21 +55,11 @@ class DetallePacienteActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btnMorePaciente)?.setOnClickListener { v ->
             PopupMenu(this, v).apply {
-                menu.add(0, 1, 0, "Agregar consulta")
-                menu.add(0, 2, 1, "Ver historial clínico")
-                menu.add(0, 3, 2, "Llamar al propietario")
-                menu.add(0, 4, 3, "Enviar correo al propietario")
+                menu.add(0, 1, 0, "Llamar al propietario")
+                menu.add(0, 2, 1, "Enviar correo al propietario")
                 setOnMenuItemClickListener {
                     when (it.itemId) {
-                        1 -> startActivity(
-                            Intent(this@DetallePacienteActivity, AgregarConsultaActivity::class.java)
-                                .putExtra(EXTRA_PACIENTE_ID, paciente.id)
-                        )
-                        2 -> startActivity(
-                            Intent(this@DetallePacienteActivity, HistorialClinicoVetActivity::class.java)
-                                .putExtra(EXTRA_PACIENTE_ID, paciente.id)
-                        )
-                        3 -> abrirExterno(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + paciente.telefono.filter { c -> c.isDigit() || c == '+' })))
+                        1 -> abrirExterno(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + paciente.telefono.filter { c -> c.isDigit() || c == '+' })))
                         else -> abrirExterno(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + paciente.email)))
                     }
                     true
@@ -81,9 +74,9 @@ class DetallePacienteActivity : AppCompatActivity() {
             override fun getItemCount(): Int = 4
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
-                    0 -> ResumenFragment()
+                    0 -> InformeFragment()
                     1 -> InformacionVetFragment()
-                    2 -> PropietarioFragment()
+                    2 -> HistorialPacienteFragment()
                     3 -> ArchivosFragment()
                     else -> throw IllegalStateException("Invalid position $position")
                 }
@@ -92,9 +85,9 @@ class DetallePacienteActivity : AppCompatActivity() {
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
-                0 -> "Resumen"
+                0 -> "Informe"
                 1 -> "Información"
-                2 -> "Propietario"
+                2 -> "Historial clínico"
                 3 -> "Archivos"
                 else -> null
             }
