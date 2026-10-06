@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
@@ -11,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/baseline_arrow_back_24"
-        app:title="Agregar consulta"
+        app:title="Otorgar Turno / Consulta"
         app:titleCentered="true" />
 
     <ScrollView
@@ -25,11 +26,220 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/VetFormLabel" android:text="Paciente" />
-            <Spinner
-                android:id="@+id/spPaciente"
+            <!-- BÚSQUEDA DE DUEÑO POR DNI O EMAIL -->
+            <TextView
+                style="@style/VetFormLabel"
+                android:text="Buscar Dueño (DNI o Email)"
+                android:textStyle="bold" />
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp" />
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etBuscarDueno"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="Ej: julieta.gomez@email.com o 38123456"
+                    android:inputType="text"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuscarDueno"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="@color/primary_teal"
+                    android:text="Buscar"
+                    app:cornerRadius="8dp" />
+            </LinearLayout>
+
+            <!-- RESULTADO 1: DUEÑO ENCONTRADO Y SUS MASCOTAS -->
+            <LinearLayout
+                android:id="@+id/layoutDuenoEncontrado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_item_en_horario"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvDuenoInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Dueño: Julieta Gómez · julieta.gomez@email.com"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/VetFormLabel"
+                    android:layout_marginTop="8dp"
+                    android:text="Seleccionar Mascota de este dueño" />
+
+                <Spinner
+                    android:id="@+id/spMascotasDueno"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp" />
+            </LinearLayout>
+
+            <!-- RESULTADO 2: VISTA RÁPIDA O FALLBACK DE PACIENTES REGISTRADOS -->
+            <LinearLayout
+                android:id="@+id/layoutSeleccionDirecta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <TextView style="@style/VetFormLabel" android:text="O seleccionar de todos los pacientes registrados" />
+                <Spinner
+                    android:id="@+id/spPaciente"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp" />
+            </LinearLayout>
+
+            <!-- OPCIÓN DE REGISTRAR NUEVO DUEÑO Y MASCOTA -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleNuevoDueno"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="+ Registrar nuevo dueño y mascota"
+                android:textColor="@color/primary_teal"
+                app:strokeColor="@color/primary_teal"
+                app:cornerRadius="8dp" />
+
+            <!-- FORMULARIO DE NUEVO DUEÑO Y MASCOTA (OCULTO POR DEFECTO) -->
+            <LinearLayout
+                android:id="@+id/layoutNuevoDueno"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_edit_text"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Datos del Nuevo Dueño"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="@color/primary_teal"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etNuevoNombreDueno"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="Nombre y Apellido del dueño"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etNuevoDniDueno"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="DNI del dueño"
+                    android:inputType="number"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etNuevoTelefonoDueno"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="Teléfono de contacto"
+                    android:inputType="phone"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etNuevoEmailDueno"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="Email del dueño"
+                    android:inputType="textEmailAddress"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Datos de la Nueva Mascota"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="@color/primary_teal"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etNuevoNombreMascota"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="Nombre de la mascota"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/spNuevoEspecie"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1" />
+
+                    <Spinner
+                        android:id="@+id/spNuevoSexo"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/etNuevaRazaMascota"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_edit_text"
+                    android:hint="Raza (ej: Golden Retriever)"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="16dp"
+                android:background="@color/divider_light" />
+
+            <!-- DETALLES DE LA CONSULTA / TURNO -->
+            <TextView
+                style="@style/VetFormLabel"
+                android:text="Detalles del Turno / Evento"
+                android:textStyle="bold" />
 
             <TextView style="@style/VetFormLabel" android:text="Tipo de evento" />
             <Spinner
