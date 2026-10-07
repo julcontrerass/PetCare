@@ -263,7 +263,7 @@ public class FuncionalidadTest {
         assertEquals(HomeAdminActivity.class.getName(), nextIntent.getComponent().getClassName());
 
         HomeAdminActivity adminActivity = Robolectric.buildActivity(HomeAdminActivity.class).setup().get();
-        assertNotNull(adminActivity.findViewById(R.id.tabLayoutAdmin));
+        assertNotNull(adminActivity.findViewById(R.id.bottomNavigation));
         assertTrue(AdminRepo.INSTANCE.getListaVeterinarios().size() > 0);
         assertTrue(AdminRepo.INSTANCE.getListaDuenos().size() > 0);
     }

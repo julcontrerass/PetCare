@@ -1,109 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:strokeWidth="1dp"
-    app:strokeColor="@color/divider_color">
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/bg_card_white"
+    android:clickable="true"
+    android:elevation="2dp"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            app:cardBackgroundColor="@color/light_teal"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <TextView
+                android:id="@+id/tvVetIniciales"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="@color/teal_dark"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivVetFoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+        </androidx.cardview.widget.CardView>
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginHorizontal="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvVetNombre"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Dr. Juan Pérez"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/brand_navy"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvVetEstadoBadge"
-                android:layout_width="wrap_content"
+                android:id="@+id/tvVetMatriculaClinica"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_badge_green"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="4dp"
-                android:text="ACTIVO"
-                android:textColor="@color/success_green"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/text_gray"
+                android:textSize="13sp" />
         </LinearLayout>
 
         <TextView
-            android:id="@+id/tvVetMatriculaClinica"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Matrícula MP-12345 · Clínica Veterinaria Central"
-            android:textColor="@color/primary_teal"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvVetContacto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="juan.perez@clinica.com · +54 11 4000-1234"
-            android:textColor="@color/text_gray"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/tvVetEspecialidadHorarios"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="Especialidades: Cirugía, Dermatología"
-            android:textColor="@color/text_gray"
-            android:textSize="12sp" />
-
-        <LinearLayout
-            android:id="@+id/layoutAccionesRevision"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAprobarVet"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                android:layout_weight="1"
-                android:backgroundTint="@color/primary_teal"
-                android:text="Aprobar y Dar de Alta"
-                android:textSize="12sp"
-                app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRechazarVet"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:layout_weight="1"
-                android:text="Rechazar"
-                android:textColor="@color/danger_red"
-                android:textSize="12sp"
-                app:cornerRadius="8dp"
-                app:strokeColor="@color/danger_red" />
-        </LinearLayout>
-
+            android:id="@+id/tvVetEstadoBadge"
+            style="@style/HomePetChip"
+            android:layout_marginTop="0dp"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp" />
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tvVetEspecialidadHorarios"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:drawablePadding="8dp"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="2"
+        android:textColor="@color/brand_navy"
+        android:textSize="13.5sp"
+        app:drawableStartCompat="@drawable/ic_syringe"
+        app:drawableTint="@color/teal_dark" />
+
+    <TextView
+        android:id="@+id/tvVetContacto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:drawablePadding="8dp"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:textColor="@color/text_gray"
+        android:textSize="13sp"
+        app:drawableStartCompat="@drawable/ic_mail"
+        app:drawableTint="@color/teal_dark" />
+
+    <LinearLayout
+        android:id="@+id/layoutAccionesRevision"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRechazarVet"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:text="Rechazar"
+            android:textColor="@color/danger_red"
+            app:cornerRadius="23dp"
+            app:strokeColor="@color/danger_red" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAprobarVet"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/primary_teal"
+            android:maxLines="1"
+            android:text="Dar de alta"
+            android:textColor="@color/white"
+            app:cornerRadius="23dp" />
+    </LinearLayout>
+</LinearLayout>

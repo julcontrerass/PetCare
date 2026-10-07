@@ -478,7 +478,8 @@ class RegistroDuenoActivity : BaseActivity() {
             email = datos.email,
             telefono = datos.telefono,
             direccion = datos.direccion,
-            mascotas = listaMascotasTexto
+            mascotas = listaMascotasTexto,
+            fotoPath = datos.fotoPath
         )
 
         setResult(Activity.RESULT_OK, Intent().putExtra(EXTRA_DATOS, datos))

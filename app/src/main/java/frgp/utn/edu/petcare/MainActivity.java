@@ -197,6 +197,17 @@ public class MainActivity extends BaseActivity {
                     return;
                 }
 
+                // Veterinarios en revisión, rechazados o suspendidos y cuentas suspendidas no pueden ingresar
+                String bloqueo = AdminRepo.INSTANCE.motivoBloqueo(email);
+                if (bloqueo != null) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("No podés ingresar")
+                            .setMessage(bloqueo)
+                            .setPositiveButton("Entendido", null)
+                            .show();
+                    return;
+                }
+
                 // Si la cuenta fue creada en el registro, el rol sale de ahí
                 boolean esVeterinario = cuentasDemo.containsKey(email)
                         ? cuentasDemo.get(email) : rolVeterinarioSeleccionado;

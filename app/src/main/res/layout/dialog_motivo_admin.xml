@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card_white"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tvMotivoTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/brand_navy"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvMotivoAyuda"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/text_gray"
+        android:textSize="13.5sp" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/cgMotivos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="4dp" />
+
+    <EditText
+        android:id="@+id/etMotivoAdmin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_field_card"
+        android:gravity="top"
+        android:hint="Motivo (se lo mostramos al usuario)"
+        android:inputType="textMultiLine|textCapSentences"
+        android:minLines="3"
+        android:padding="14dp"
+        android:textColor="@color/brand_navy"
+        android:textColorHint="@color/text_gray"
+        android:textSize="15sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMotivoCancelar"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancelar"
+            android:textColor="@color/text_gray" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMotivoConfirmar"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/danger_red"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

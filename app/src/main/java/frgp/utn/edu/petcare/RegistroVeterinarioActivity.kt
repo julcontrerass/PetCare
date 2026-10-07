@@ -459,7 +459,9 @@ class RegistroVeterinarioActivity : BaseActivity() {
             direccion = texto(R.id.etVetDireccion),
             telefono = texto(R.id.etVetTelefono),
             especialidades = PerfilVetRepo.textoEspecialidades(),
-            horarios = PerfilVetRepo.textoHorarios()
+            horarios = PerfilVetRepo.textoHorarios(),
+            dni = texto(R.id.etVetDni),
+            fotoPath = fotoPath
         )
 
         AlertDialog.Builder(this)

@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/login_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="22dp"
+        android:paddingBottom="22dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            app:cardBackgroundColor="@color/light_teal"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <TextView
+                android:id="@+id/tvVetIniciales"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="@color/teal_dark"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivVetFoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+        </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvVetNombre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvVetEstado"
+                    style="@style/HomePetChip"
+                    android:layout_marginTop="6dp"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvVetAviso"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_info_banner"
+            android:padding="12dp"
+            android:textColor="@color/teal_dark"
+            android:textSize="13.5sp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="4dp">
+
+            <LinearLayout
+                android:id="@+id/filaVetDni"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_person"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="DNI" />
+
+                    <TextView
+                        android:id="@+id/tvVetDni"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetMatricula"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_medical"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Matrícula" />
+
+                    <TextView
+                        android:id="@+id/tvVetMatricula"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetClinica"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_medical_kit"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Veterinaria" />
+
+                    <TextView
+                        android:id="@+id/tvVetClinica"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetDireccion"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_location"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Dirección" />
+
+                    <TextView
+                        android:id="@+id/tvVetDireccion"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetTelefono"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Teléfono" />
+
+                    <TextView
+                        android:id="@+id/tvVetTelefono"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetEmail"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_mail"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Correo electrónico" />
+
+                    <TextView
+                        android:id="@+id/tvVetEmail"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetEspecialidades"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_syringe"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Especialidades" />
+
+                    <TextView
+                        android:id="@+id/tvVetEspecialidades"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetHorarios"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Días y horarios" />
+
+                    <TextView
+                        android:id="@+id/tvVetHorarios"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout
+                android:id="@+id/filaVetRegistro"
+                style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Se registró" />
+
+                    <TextView
+                        android:id="@+id/tvVetRegistro"
+                        style="@style/PetInfoValue" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVetLlamar"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:text="Llamar"
+                android:textColor="@color/primary_teal"
+                app:cornerRadius="24dp"
+                app:icon="@drawable/ic_phone"
+                app:iconTint="@color/primary_teal"
+                app:strokeColor="@color/primary_teal" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVetCorreo"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:text="Correo"
+                android:textColor="@color/primary_teal"
+                app:cornerRadius="24dp"
+                app:icon="@drawable/ic_mail"
+                app:iconTint="@color/primary_teal"
+                app:strokeColor="@color/primary_teal" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVetPrincipal"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="@color/primary_teal"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="26dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVetSecundario"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="8dp"
+            android:maxLines="1"
+            android:textColor="@color/danger_red"
+            android:textSize="15sp"
+            app:cornerRadius="25dp"
+            app:strokeColor="@color/danger_red" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
