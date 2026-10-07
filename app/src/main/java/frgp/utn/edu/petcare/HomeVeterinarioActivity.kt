@@ -55,6 +55,7 @@ class HomeVeterinarioActivity : AppCompatActivity() {
 
     private fun cargar() {
         findViewById<TextView>(R.id.tvGreeting).text = "Hola, ${PerfilVetRepo.nombre}"
+        VetUi.cargarFotoVet(findViewById(R.id.ivVetHomeFoto))
         val hoyFecha = java.time.LocalDate.now()
         findViewById<TextView>(R.id.tvVetDate).text =
             "${DIAS[hoyFecha.dayOfWeek.value - 1]} ${hoyFecha.dayOfMonth} de ${Fechas.mesAnio(hoyFecha).substringBefore(' ').lowercase()}"

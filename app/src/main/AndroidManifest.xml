@@ -27,6 +27,14 @@
         <activity
             android:name=".HomeVeterinarioActivity"
             android:exported="false" />
+        <activity
+            android:name=".RegistroDuenoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".RegistroVeterinarioActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".MisPacientesActivity" />
         <activity android:name=".DetallePacienteActivity" />
         <activity android:name=".HistorialClinicoVetActivity" />

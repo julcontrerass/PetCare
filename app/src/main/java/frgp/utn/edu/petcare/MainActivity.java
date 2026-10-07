@@ -196,6 +196,8 @@ public class MainActivity extends AppCompatActivity {
                 if (esVeterinario) {
                     startActivity(new Intent(this, HomeVeterinarioActivity.class));
                 } else {
+                    DatosRegistroDueno dueno = duenosRegistrados.get(email);
+                    if (dueno != null) cargarCuentaDueno(dueno); else restaurarDatosDemo();
                     showHomeView();
                 }
             });
@@ -216,6 +218,62 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean registroComoVeterinario = false;
 
+    // El alta del dueño también es un asistente de pasos aparte: devuelve sus datos y sus mascotas
+    private final Map<String, DatosRegistroDueno> duenosRegistrados = new HashMap<>();
+    private final androidx.activity.result.ActivityResultLauncher<Intent> registroDuenoLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                Intent data = result.getData();
+                if (result.getResultCode() != RESULT_OK || data == null) return;
+                DatosRegistroDueno datos = androidx.core.content.IntentCompat.getSerializableExtra(
+                        data, RegistroDuenoActivity.EXTRA_DATOS, DatosRegistroDueno.class);
+                if (datos == null) return;
+                cuentasDemo.put(datos.getEmail(), false);
+                passwordsDemo.put(datos.getEmail(), datos.getPassword());
+                duenosRegistrados.put(datos.getEmail(), datos);
+                Toast.makeText(this, "Cuenta creada. Iniciá sesión para continuar", Toast.LENGTH_LONG).show();
+                mostrarLogin();
+                EditText etEmailLogin = findViewById(R.id.etEmail);
+                if (etEmailLogin != null) etEmailLogin.setText(datos.getEmail());
+            });
+
+    // El alta del veterinario es un asistente de pasos aparte; devuelve el correo y la contraseña elegidos
+    private final androidx.activity.result.ActivityResultLauncher<Intent> registroVetLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                Intent data = result.getData();
+                if (result.getResultCode() != RESULT_OK || data == null) return;
+                String email = data.getStringExtra(RegistroVeterinarioActivity.EXTRA_EMAIL);
+                String pass = data.getStringExtra(RegistroVeterinarioActivity.EXTRA_PASSWORD);
+                if (email == null || pass == null) return;
+                cuentasDemo.put(email, true);
+                passwordsDemo.put(email, pass);
+                sincronizarVeterinarioRegistrado();
+                Toast.makeText(this, "Cuenta creada. Iniciá sesión para continuar", Toast.LENGTH_LONG).show();
+                mostrarLogin();
+                EditText etEmailLogin = findViewById(R.id.etEmail);
+                if (etEmailLogin != null) etEmailLogin.setText(email);
+            });
+
+    /**
+     * El veterinario de ejemplo del catálogo del dueño ("@jperez") representa al veterinario en sesión:
+     * cuando éste se registra con sus datos reales, el catálogo y los turnos de ejemplo pasan a usar su nombre.
+     */
+    private void sincronizarVeterinarioRegistrado() {
+        PerfilVetRepo perfil = PerfilVetRepo.INSTANCE;
+        List<Veterinario> todos = getTodosLosVeterinarios();
+        for (Veterinario vet : todos) {
+            if (!"@jperez".equals(vet.usuario)) continue;
+            String anterior = vet.nombre;
+            vet.nombre = perfil.getNombre();
+            vet.email = perfil.getEmail();
+            vet.matricula = perfil.getMatricula();
+            for (List<EventoMascota> eventos : eventosPorFecha.values()) {
+                for (EventoMascota ev : eventos) {
+                    if (anterior.equalsIgnoreCase(ev.veterinario)) ev.veterinario = perfil.getNombre();
+                }
+            }
+        }
+    }
+
     private void mostrarRegistro() {
         setContentView(R.layout.registro);
         aplicarInsets(findViewById(R.id.registroRoot));
@@ -223,15 +281,17 @@ public class MainActivity extends AppCompatActivity {
         registroComoVeterinario = false;
         MaterialButton btnDueno = findViewById(R.id.btnRegRoleDueno);
         MaterialButton btnVet = findViewById(R.id.btnRegRoleVet);
-        View llMatricula = findViewById(R.id.llMatricula);
+        View llAvisoDueno = findViewById(R.id.llAvisoDueno);
+        View llAvisoVet = findViewById(R.id.llAvisoVet);
         Runnable actualizarRol = () -> {
             MaterialButton sel = registroComoVeterinario ? btnVet : btnDueno;
             MaterialButton nosel = registroComoVeterinario ? btnDueno : btnVet;
             sel.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.primary_teal));
             sel.setTextColor(ContextCompat.getColor(this, R.color.white));
-            nosel.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.light_gray));
+            nosel.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.white));
             nosel.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
-            llMatricula.setVisibility(registroComoVeterinario ? View.VISIBLE : View.GONE);
+            llAvisoDueno.setVisibility(registroComoVeterinario ? View.GONE : View.VISIBLE);
+            llAvisoVet.setVisibility(registroComoVeterinario ? View.VISIBLE : View.GONE);
         };
         btnDueno.setOnClickListener(v -> { registroComoVeterinario = false; actualizarRol.run(); });
         btnVet.setOnClickListener(v -> { registroComoVeterinario = true; actualizarRol.run(); });
@@ -239,45 +299,17 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBackRegistro).setOnClickListener(v -> mostrarPantallaInicial());
 
-        EditText etNombre = findViewById(R.id.etRegNombre);
-        EditText etEmail = findViewById(R.id.etRegEmail);
-        EditText etMatricula = findViewById(R.id.etRegMatricula);
-        EditText etPass = findViewById(R.id.etRegPassword);
-        EditText etPass2 = findViewById(R.id.etRegPassword2);
-        CheckBox cbTerminos = findViewById(R.id.cbTerminos);
-
-        findViewById(R.id.btnRegistrar).setOnClickListener(v -> {
-            String nombre = etNombre.getText().toString().trim();
-            String email = etEmail.getText().toString().trim().toLowerCase(Locale.ROOT);
-            String pass = etPass.getText().toString();
-            boolean ok = true;
-            if (nombre.isEmpty()) { etNombre.setError("Ingresá tu nombre"); ok = false; }
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                etEmail.setError("Correo inválido"); ok = false;
-            } else if (cuentasDemo.containsKey(email)) {
-                etEmail.setError("Ese correo ya está registrado"); ok = false;
-            }
-            if (registroComoVeterinario && etMatricula.getText().toString().trim().isEmpty()) {
-                etMatricula.setError("Ingresá tu matrícula"); ok = false;
-            }
-            if (pass.length() < 6) { etPass.setError("Mínimo 6 caracteres"); ok = false; }
-            if (!pass.equals(etPass2.getText().toString())) {
-                etPass2.setError("Las contraseñas no coinciden"); ok = false;
-            }
-            if (!cbTerminos.isChecked()) {
-                Toast.makeText(this, "Tenés que aceptar los términos y condiciones", Toast.LENGTH_SHORT).show();
-                ok = false;
-            }
-            if (!ok) return;
-
-            inicializarPerfilSiNecesario();
-            cuentasDemo.put(email, registroComoVeterinario);
-            passwordsDemo.put(email, pass);
-            passwordUsuario = pass;
-            nombreUsuario = nombre;
-            emailUsuario = email;
-            Toast.makeText(this, "Cuenta creada. Iniciá sesión para continuar", Toast.LENGTH_LONG).show();
-            mostrarLogin();
+        findViewById(R.id.btnComenzarDueno).setOnClickListener(v -> {
+            Intent intent = new Intent(this, RegistroDuenoActivity.class);
+            intent.putStringArrayListExtra(RegistroDuenoActivity.EXTRA_EMAILS_REGISTRADOS,
+                    new java.util.ArrayList<>(cuentasDemo.keySet()));
+            registroDuenoLauncher.launch(intent);
+        });
+        findViewById(R.id.btnComenzarVet).setOnClickListener(v -> {
+            Intent intent = new Intent(this, RegistroVeterinarioActivity.class);
+            intent.putStringArrayListExtra(RegistroVeterinarioActivity.EXTRA_EMAILS_REGISTRADOS,
+                    new java.util.ArrayList<>(cuentasDemo.keySet()));
+            registroVetLauncher.launch(intent);
         });
     }
 
@@ -1121,6 +1153,8 @@ public class MainActivity extends AppCompatActivity {
                 ivProfilePic.setImageURI(profilePhotoUri);
                 ivProfilePic.setTranslationX(profileTranslationX);
                 ivProfilePic.setTranslationY(profileTranslationY);
+            } else {
+                cargarAvatarDueno(ivProfilePic);
             }
             ivProfilePic.setScaleType(profileScaleType);
             ivProfilePic.setOnClickListener(v -> {
@@ -1590,7 +1624,20 @@ public class MainActivity extends AppCompatActivity {
         return hoy.isBefore(LocalDate.of(2026, 5, 1)) ? LocalDate.of(2026, 5, 1) : hoy;
     }
 
+    /** Muestra la foto elegida; una cuenta nueva sin foto usa el avatar neutro en vez del de ejemplo. */
+    private void cargarAvatarDueno(ImageView iv) {
+        if (iv == null) return;
+        if (profilePhotoUri != null) iv.setImageURI(profilePhotoUri);
+        else if (respaldoDemo != null) iv.setImageResource(R.drawable.avatar_default);
+    }
+
     private void configurarHeaderHome() {
+        inicializarPerfilSiNecesario();
+        TextView saludo = findViewById(R.id.tv_welcome);
+        if (saludo != null && nombreUsuario != null && !nombreUsuario.trim().isEmpty()) {
+            saludo.setText("Hola, " + nombreUsuario.trim().split("\\s+")[0]);
+        }
+        cargarAvatarDueno(findViewById(R.id.iv_home_profile));
         TextView subtitulo = findViewById(R.id.tvHomeSubtitle);
         if (subtitulo != null) {
             LocalDate hoy = LocalDate.now();
@@ -2711,6 +2758,128 @@ public class MainActivity extends AppCompatActivity {
     private String emailUsuario;
     private String telefonoUsuario;
     private String direccionUsuario;
+
+    /** Foto de lo que había antes de entrar con una cuenta nueva, para volver a la cuenta de demostración. */
+    private static class EstadoDemo {
+        final Map<String, List<EventoMascota>> eventos = new HashMap<>();
+        final List<Veterinario> vetsEnOrden = new ArrayList<>();
+        final List<Veterinario> autorizados = new ArrayList<>();
+        final Map<Veterinario, String[]> estadoVets = new HashMap<>();
+        final Set<String> mascotasEliminadas = new HashSet<>();
+        final List<Mascota> mascotasNuevas = new ArrayList<>();
+        final List<SolicitudItem> solicitudes = new ArrayList<>();
+        final List<NotificacionItem> notificaciones = new ArrayList<>();
+        boolean solicitudesSembradas;
+        boolean hayNotificaciones;
+        boolean perfilInicializado;
+        String nombre, email, telefono, direccion, password;
+        Uri foto;
+    }
+
+    private EstadoDemo respaldoDemo = null;
+
+    /**
+     * Una cuenta recién creada arranca sin los datos de ejemplo: solo tiene lo que cargó al registrarse
+     * (sus datos y sus mascotas). Los datos de demostración se guardan y vuelven si entra a la cuenta de ejemplo.
+     */
+    private void cargarCuentaDueno(DatosRegistroDueno d) {
+        if (respaldoDemo == null) {
+            EstadoDemo r = new EstadoDemo();
+            for (Map.Entry<String, List<EventoMascota>> e : eventosPorFecha.entrySet()) {
+                r.eventos.put(e.getKey(), new ArrayList<>(e.getValue()));
+            }
+            r.vetsEnOrden.addAll(listaVeterinariosAutorizados);
+            r.vetsEnOrden.addAll(listaVeterinariosDisponibles);
+            r.autorizados.addAll(listaVeterinariosAutorizados);
+            for (Veterinario v : r.vetsEnOrden) r.estadoVets.put(v, new String[]{v.estado, v.mascotasAsociadas});
+            r.mascotasEliminadas.addAll(mascotasEliminadas);
+            r.mascotasNuevas.addAll(mascotasNuevas);
+            r.solicitudes.addAll(solicitudesDueno);
+            r.notificaciones.addAll(listaNotificaciones);
+            r.solicitudesSembradas = solicitudesDuenoSembradas;
+            r.hayNotificaciones = hayNotificacionesSinLeer;
+            r.perfilInicializado = perfilInicializado;
+            r.nombre = nombreUsuario;
+            r.email = emailUsuario;
+            r.telefono = telefonoUsuario;
+            r.direccion = direccionUsuario;
+            r.password = passwordUsuario;
+            r.foto = profilePhotoUri;
+            respaldoDemo = r;
+        }
+
+        eventosPorFecha.clear();
+        listaVeterinariosAutorizados.clear();
+        listaVeterinariosDisponibles.clear();
+        for (Veterinario v : respaldoDemo.vetsEnOrden) {
+            v.estado = "DISPONIBLE";
+            v.mascotasAsociadas = "";
+            listaVeterinariosDisponibles.add(v);
+        }
+        mascotasEliminadas.clear();
+        for (Mascota m : mascotasDemo) mascotasEliminadas.add(m.nombre);
+        mascotasNuevas.clear();
+        for (MascotaRegistro r : d.getMascotas()) {
+            Uri foto = r.getFotoPath() != null ? Uri.fromFile(new java.io.File(r.getFotoPath())) : null;
+            String nacimiento = r.getNacimiento().isEmpty() ? "-" : r.getNacimiento();
+            Mascota m = new Mascota(r.getNombre(), r.getTipo(),
+                    r.getRaza(), nacimiento, foto);
+            m.nacSexoTxt = (r.getNacimiento().isEmpty() ? "Fecha de nacimiento sin datos"
+                    : "Nacido el " + r.getNacimiento()) + " - " + r.getSexo();
+            if (!r.getPeso().isEmpty()) m.peso = r.getPeso();
+            if (!r.getColor().isEmpty()) m.color = r.getColor();
+            if (!r.getMicrochip().isEmpty()) m.microchip = r.getMicrochip();
+            if (!r.getObservaciones().isEmpty()) m.observaciones = r.getObservaciones();
+            mascotasNuevas.add(m);
+        }
+        solicitudesDueno.clear();
+        solicitudesDuenoSembradas = true;
+        listaNotificaciones.clear();
+        hayNotificacionesSinLeer = false;
+        mascotaActual = null;
+
+        perfilInicializado = true;
+        nombreUsuario = d.getNombre();
+        emailUsuario = d.getEmail();
+        telefonoUsuario = d.getTelefono();
+        direccionUsuario = d.getDireccion();
+        passwordUsuario = d.getPassword();
+        profilePhotoUri = d.getFotoPath() != null ? Uri.fromFile(new java.io.File(d.getFotoPath())) : null;
+    }
+
+    private void restaurarDatosDemo() {
+        EstadoDemo r = respaldoDemo;
+        if (r == null) return;
+        respaldoDemo = null;
+        eventosPorFecha.clear();
+        eventosPorFecha.putAll(r.eventos);
+        listaVeterinariosAutorizados.clear();
+        listaVeterinariosDisponibles.clear();
+        for (Veterinario v : r.vetsEnOrden) {
+            String[] estado = r.estadoVets.get(v);
+            v.estado = estado[0];
+            v.mascotasAsociadas = estado[1];
+            if (r.autorizados.contains(v)) listaVeterinariosAutorizados.add(v); else listaVeterinariosDisponibles.add(v);
+        }
+        mascotasEliminadas.clear();
+        mascotasEliminadas.addAll(r.mascotasEliminadas);
+        mascotasNuevas.clear();
+        mascotasNuevas.addAll(r.mascotasNuevas);
+        solicitudesDueno.clear();
+        solicitudesDueno.addAll(r.solicitudes);
+        solicitudesDuenoSembradas = r.solicitudesSembradas;
+        listaNotificaciones.clear();
+        listaNotificaciones.addAll(r.notificaciones);
+        hayNotificacionesSinLeer = r.hayNotificaciones;
+        mascotaActual = null;
+        perfilInicializado = r.perfilInicializado;
+        nombreUsuario = r.nombre;
+        emailUsuario = r.email;
+        telefonoUsuario = r.telefono;
+        direccionUsuario = r.direccion;
+        passwordUsuario = r.password;
+        profilePhotoUri = r.foto;
+    }
 
     private void inicializarPerfilSiNecesario() {
         if (!perfilInicializado) {

@@ -3,6 +3,7 @@ package frgp.utn.edu.petcare
 /** Perfil del veterinario en sesión (demo, en memoria). */
 object PerfilVetRepo {
     var nombre = "Dr. Juan Pérez"
+    var dni = "30123456"
     var matricula = "MP-12345"
     var clinica = "Clínica Veterinaria Central"
     var direccionClinica = "Av. Santa Fe 2345, CABA"

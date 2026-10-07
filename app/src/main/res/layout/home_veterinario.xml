@@ -38,6 +38,7 @@
                     app:cardElevation="2dp">
 
                     <ImageView
+                        android:id="@+id/ivVetHomeFoto"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:contentDescription="@null"

@@ -4,44 +4,58 @@
     android:id="@+id/registroRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/login_bg"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingHorizontal="24dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="24dp">
 
-        <ImageButton
+        <FrameLayout
             android:id="@+id/btnBackRegistro"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Volver"
-            android:src="@drawable/baseline_arrow_back_24" />
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/circular_white"
+            android:clickable="true"
+            android:contentDescription="@string/volver_atras"
+            android:elevation="2dp"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/baseline_arrow_back_24"
+                app:tint="@color/brand_navy" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
             android:text="Crear cuenta"
-            android:textColor="@color/black"
-            android:textSize="24sp"
+            android:textColor="@color/brand_navy"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="Elegí cómo vas a usar PetCare"
-            android:textColor="@color/text_gray" />
+            android:textColor="@color/text_gray"
+            android:textSize="14sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="20dp"
-            android:background="@color/white"
-            android:orientation="horizontal"
-            android:padding="2dp">
+            android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRegRoleDueno"
@@ -54,8 +68,8 @@
                 android:text="@string/rol_dueno"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:textSize="13sp"
-                app:cornerRadius="12dp" />
+                android:textSize="14sp"
+                app:cornerRadius="26dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRegRoleVet"
@@ -64,88 +78,114 @@
                 android:layout_height="match_parent"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:backgroundTint="@color/light_gray"
+                android:backgroundTint="@color/white"
                 android:elevation="0dp"
                 android:text="@string/rol_veterinario"
                 android:textAllCaps="false"
                 android:textColor="@color/text_gray"
-                android:textSize="13sp"
-                app:cornerRadius="12dp" />
+                android:textSize="14sp"
+                app:cornerRadius="26dp" />
         </LinearLayout>
 
-        <TextView style="@style/VetFormLabel" android:text="Nombre completo" />
-        <EditText
-            android:id="@+id/etRegNombre"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:autofillHints="name"
-            android:background="@drawable/bg_edit_text"
-            android:inputType="textPersonName"
-            android:paddingHorizontal="16dp" />
-
-        <TextView style="@style/VetFormLabel" android:text="Correo electrónico" />
-        <EditText
-            android:id="@+id/etRegEmail"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:autofillHints="emailAddress"
-            android:background="@drawable/bg_edit_text"
-            android:inputType="textEmailAddress"
-            android:paddingHorizontal="16dp" />
-
+        <!-- Cuenta de dueño: registro guiado -->
         <LinearLayout
-            android:id="@+id/llMatricula"
+            android:id="@+id/llAvisoDueno"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
             android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Registro de dueño"
+                android:textColor="@color/brand_navy"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Armamos tu cuenta y la de tus mascotas en 4 pasos. Lleva un par de minutos."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:lineSpacingExtra="6dp"
+                android:text="1  ·  Datos personales y foto\n2  ·  Domicilio\n3  ·  Tus mascotas\n4  ·  Correo y contraseña"
+                android:textColor="@color/teal_dark"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnComenzarDueno"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="18dp"
+                android:backgroundTint="@color/primary_teal"
+                android:text="Comenzar"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="28dp" />
+        </LinearLayout>
+
+        <!-- Cuenta de veterinario: registro guiado -->
+        <LinearLayout
+            android:id="@+id/llAvisoVet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="18dp"
             android:visibility="gone">
 
-            <TextView style="@style/VetFormLabel" android:text="Matrícula profesional" />
-            <EditText
-                android:id="@+id/etRegMatricula"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Registro profesional"
+                android:textColor="@color/brand_navy"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@drawable/bg_edit_text"
-                android:inputType="text"
-                android:paddingHorizontal="16dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Te pedimos unos datos para armar tu perfil. Son 5 pasos y lleva un par de minutos."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:lineSpacingExtra="6dp"
+                android:text="1  ·  Datos personales y foto\n2  ·  Matrícula y veterinaria\n3  ·  Especialidades\n4  ·  Días y horarios de atención\n5  ·  Correo y contraseña"
+                android:textColor="@color/teal_dark"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnComenzarVet"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="18dp"
+                android:backgroundTint="@color/primary_teal"
+                android:text="Comenzar"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="28dp" />
         </LinearLayout>
-
-        <TextView style="@style/VetFormLabel" android:text="Contraseña" />
-        <EditText
-            android:id="@+id/etRegPassword"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:autofillHints="newPassword"
-            android:background="@drawable/bg_edit_text"
-            android:inputType="textPassword"
-            android:paddingHorizontal="16dp" />
-
-        <TextView style="@style/VetFormLabel" android:text="Confirmar contraseña" />
-        <EditText
-            android:id="@+id/etRegPassword2"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:autofillHints="newPassword"
-            android:background="@drawable/bg_edit_text"
-            android:inputType="textPassword"
-            android:paddingHorizontal="16dp" />
-
-        <CheckBox
-            android:id="@+id/cbTerminos"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Acepto los términos y condiciones" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRegistrar"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="16dp"
-            android:backgroundTint="@color/primary_teal"
-            android:text="Crear cuenta"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            app:cornerRadius="8dp" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

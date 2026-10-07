@@ -152,6 +152,19 @@
     </style>
 
     <!-- Navegación inferior -->
+    <style name="ChipRegistro" parent="Widget.Material3.Chip.Filter">
+        <item name="android:checkable">true</item>
+        <item name="android:textColor">@color/chip_texto</item>
+        <item name="android:textSize">13.5sp</item>
+        <item name="chipBackgroundColor">@color/chip_fondo</item>
+        <item name="chipStrokeColor">@color/chip_borde</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipMinHeight">42dp</item>
+        <item name="chipCornerRadius">21dp</item>
+        <item name="checkedIconTint">@color/teal_dark</item>
+        <item name="checkedIconEnabled">true</item>
+    </style>
+
     <style name="NavIndicatorNone" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@android:color/transparent</item>
     </style>

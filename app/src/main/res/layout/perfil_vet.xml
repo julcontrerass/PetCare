@@ -115,6 +115,36 @@
             android:paddingVertical="4dp">
 
         <LinearLayout
+            android:id="@+id/llVetDni"
+            style="@style/PetInfoRow">
+
+            <FrameLayout style="@style/PetInfoIconBox">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_person"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="DNI" />
+
+                <TextView
+                    android:id="@+id/tvVetDniValue"
+                    style="@style/PetInfoValue"
+                    android:text="30123456" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
             android:id="@+id/llVetClinica"
             style="@style/PetInfoRow">
 

@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootRegDueno"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/login_bg"
+    tools:ignore="Overdraw">
+
+    <FrameLayout
+        android:id="@+id/btnBackRegDueno"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
+        android:contentDescription="@string/volver_atras"
+        android:elevation="2dp"
+        android:focusable="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/baseline_arrow_back_24"
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="14dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@id/btnBackRegDueno"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnBackRegDueno"
+        app:layout_constraintTop_toTopOf="@id/btnBackRegDueno">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Crear cuenta"
+            android:textColor="@color/brand_navy"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvPasoDueno"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_gray"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llProgresoDueno"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_marginHorizontal="17dp"
+        android:layout_marginTop="18dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/btnBackRegDueno" />
+
+    <ScrollView
+        android:id="@+id/scrollPasosDueno"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="22dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@id/barraPasosDueno"
+        app:layout_constraintTop_toBottomOf="@id/llProgresoDueno">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/paso1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_person"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Contanos quién sos"
+                android:textColor="@color/brand_navy"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Con estos datos armamos tu perfil de dueño."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <FrameLayout
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="22dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivDuenoFoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/light_teal"
+                    android:contentDescription="Foto de perfil"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_person"
+                    app:contentPadding="30dp"
+                    app:shapeAppearanceOverlay="@style/CircleImage"
+                    app:strokeColor="@color/white"
+                    app:strokeWidth="3dp"
+                    app:tint="@color/teal_dark" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnDuenoFoto"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_gravity="bottom|end"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/primary_teal"
+                    app:cardCornerRadius="17dp"
+                    app:cardElevation="2dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/cambiar_foto_perfil_desc"
+                        android:src="@drawable/ic_pencil"
+                        app:tint="@color/white" />
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:text="Foto de perfil (opcional)"
+                android:textColor="@color/text_gray"
+                android:textSize="12.5sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="18dp"
+                android:text="Nombre y apellido" />
+
+            <EditText
+                android:id="@+id/etDuenoNombre"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Ej: María Fernández"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="DNI" />
+
+            <EditText
+                android:id="@+id/etDuenoDni"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Sin puntos"
+                android:inputType="number"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="Teléfono de contacto" />
+
+            <EditText
+                android:id="@+id/etDuenoTelefono"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Ej: 11 4444-5555"
+                android:inputType="phone"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/paso2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_location"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Dónde vivís"
+                android:textColor="@color/brand_navy"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="El veterinario usa estos datos para contactarte."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="22dp"
+                android:text="Calle y número" />
+
+            <EditText
+                android:id="@+id/etDuenoDireccion"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Ej: Av. Santa Fe 1234"
+                android:inputType="textPostalAddress|textCapWords"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="Piso y departamento (opcional)" />
+
+            <EditText
+                android:id="@+id/etDuenoPiso"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Ej: 3° B"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="Ciudad o localidad" />
+
+            <EditText
+                android:id="@+id/etDuenoCiudad"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Ej: Ciudad Autónoma de Buenos Aires"
+                android:inputType="textPostalAddress|textCapWords"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/paso3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_dog"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Tus mascotas"
+                android:textColor="@color/brand_navy"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Cargá a tus compañeros. Después podés sumar más desde la app."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/llMascotasReg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tvSinMascotas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_info_banner"
+                android:padding="14dp"
+                android:text="Todavía no cargaste ninguna mascota. Podés agregarlas ahora o más tarde."
+                android:textColor="@color/teal_dark"
+                android:textSize="13.5sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAgregarMascotaReg"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:text="Agregar mascota"
+                android:textAllCaps="false"
+                android:textColor="@color/primary_teal"
+                android:textSize="15sp"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/ic_plus"
+                app:iconTint="@color/primary_teal"
+                app:strokeColor="@color/primary_teal" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/paso4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_lock"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Creá tu cuenta"
+                android:textColor="@color/brand_navy"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Con estos datos vas a iniciar sesión."
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="22dp"
+                android:text="Correo electrónico" />
+
+            <EditText
+                android:id="@+id/etDuenoEmail"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="nombre@correo.com"
+                android:inputType="textEmailAddress"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="Contraseña" />
+
+            <EditText
+                android:id="@+id/etDuenoPassword"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Mínimo 6 caracteres"
+                android:inputType="textPassword"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="Confirmar contraseña" />
+
+            <EditText
+                android:id="@+id/etDuenoPassword2"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_field_card"
+                android:hint="Repetí la contraseña"
+                android:inputType="textPassword"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/brand_navy"
+                android:textColorHint="@color/text_gray"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvResumenDueno"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_card_white"
+                android:elevation="2dp"
+                android:lineSpacingExtra="4dp"
+                android:padding="16dp"
+                android:textColor="@color/brand_navy"
+                android:textSize="13.5sp" />
+
+            <CheckBox
+                android:id="@+id/cbDuenoTerminos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:buttonTint="@color/primary_teal"
+                android:text="Acepto los términos y condiciones" />
+
+        </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/barraPasosDueno"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_nav_bar"
+        android:elevation="8dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDuenoAtras"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:text="Atrás"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_teal"
+            android:textSize="16sp"
+            app:cornerRadius="27dp"
+            app:strokeColor="@color/primary_teal" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDuenoSiguiente"
+            android:layout_width="0dp"
+            android:layout_height="54dp"
+            android:layout_weight="2"
+            android:backgroundTint="@color/primary_teal"
+            android:text="Continuar"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="27dp" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

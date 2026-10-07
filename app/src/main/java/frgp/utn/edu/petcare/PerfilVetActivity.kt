@@ -73,6 +73,7 @@ class PerfilVetActivity : AppCompatActivity() {
     private fun mostrarPerfil() {
         findViewById<TextView>(R.id.tvNombreVet)?.text = PerfilVetRepo.nombre
         findViewById<TextView>(R.id.tvDatosVet)?.text = "Matrícula ${PerfilVetRepo.matricula}"
+        findViewById<TextView>(R.id.tvVetDniValue)?.text = PerfilVetRepo.dni
         findViewById<TextView>(R.id.tvVetClinicaValue)?.text = PerfilVetRepo.clinica
         findViewById<TextView>(R.id.tvVetDireccionValue)?.text = PerfilVetRepo.direccionClinica
         findViewById<TextView>(R.id.tvVetPhoneValue)?.text = PerfilVetRepo.telefono
@@ -80,16 +81,7 @@ class PerfilVetActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvVetHorariosValue)?.text = PerfilVetRepo.textoHorarios()
         findViewById<TextView>(R.id.tvVetEspecialidadesValue)?.text = PerfilVetRepo.textoEspecialidades()
 
-        val ivFoto = findViewById<ImageView>(R.id.ivVetProfilePic)
-        if (!PerfilVetRepo.fotoUriString.isNullOrEmpty()) {
-            try {
-                ivFoto?.setImageURI(Uri.parse(PerfilVetRepo.fotoUriString))
-            } catch (e: Exception) {
-                ivFoto?.setImageResource(PerfilVetRepo.fotoRes)
-            }
-        } else {
-            ivFoto?.setImageResource(PerfilVetRepo.fotoRes)
-        }
+        VetUi.cargarFotoVet(findViewById<ImageView>(R.id.ivVetProfilePic))
     }
 
     private fun campo(hint: String, valor: String = "", tipo: Int = InputType.TYPE_CLASS_TEXT) = EditText(this).apply {
