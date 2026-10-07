@@ -50,7 +50,9 @@
         app:tabMode="fixed"
         app:tabRippleColor="@null"
         app:tabSelectedTextColor="@color/primary_teal"
-        app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge"
+        app:tabPaddingEnd="6dp"
+        app:tabPaddingStart="6dp"
+        app:tabTextAppearance="@style/TextAppearance.PetCare.Tab"
         app:tabTextColor="@color/text_gray">
 
         <com.google.android.material.tabs.TabItem

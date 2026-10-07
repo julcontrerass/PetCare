@@ -362,12 +362,12 @@
         android:elevation="8dp"
         android:orientation="vertical"
         android:paddingHorizontal="20dp"
-        android:paddingVertical="14dp">
+        android:paddingVertical="12dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnIniciarTurno"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
+            android:layout_height="50dp"
             android:backgroundTint="@color/primary_teal"
             android:text="Iniciar turno"
             android:textAllCaps="false"
@@ -383,8 +383,8 @@
             android:id="@+id/btnCompletar"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="6dp"
             android:text="Marcar como completado"
             android:textAllCaps="false"
             android:textColor="@color/primary_teal"
@@ -396,14 +396,14 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEditar"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="46dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Editar"
@@ -418,10 +418,11 @@
                 android:id="@+id/btnCancelarTurno"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="46dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Cancelar turno"
+                android:maxLines="1"
+                android:text="Cancelar"
                 android:textAllCaps="false"
                 android:textColor="@color/danger_red"
                 app:cornerRadius="26dp"

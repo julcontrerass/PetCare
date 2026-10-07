@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import java.time.LocalDate
 
-class AgregarConsultaActivity : AppCompatActivity() {
+class AgregarConsultaActivity : BaseActivity() {
 
     private var fecha: LocalDate? = null
     private var mascotasDuenoEncontrado = listOf<Paciente>()

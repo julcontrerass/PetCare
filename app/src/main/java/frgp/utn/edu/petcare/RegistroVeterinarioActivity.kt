@@ -30,7 +30,7 @@ import java.util.Locale
  * Alta de cuenta del veterinario en cinco pasos. Al terminar guarda los datos en [PerfilVetRepo]
  * y devuelve el correo y la contraseña para que la pantalla de inicio registre la cuenta.
  */
-class RegistroVeterinarioActivity : AppCompatActivity() {
+class RegistroVeterinarioActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_EMAILS_REGISTRADOS = "emails_registrados"

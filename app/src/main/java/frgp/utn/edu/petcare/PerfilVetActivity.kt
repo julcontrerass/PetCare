@@ -18,7 +18,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 
-class PerfilVetActivity : AppCompatActivity() {
+class PerfilVetActivity : BaseActivity() {
 
     companion object {
         private const val PREFS = "petcare_prefs"

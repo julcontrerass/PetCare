@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import java.time.LocalTime
 import kotlin.math.abs
 
-class HomeVeterinarioActivity : AppCompatActivity() {
+class HomeVeterinarioActivity : BaseActivity() {
 
     private lateinit var adapter: HomeVetAdapter
 

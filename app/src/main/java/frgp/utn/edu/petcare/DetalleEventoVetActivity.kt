@@ -14,7 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import java.time.LocalDate
 
-class DetalleEventoVetActivity : AppCompatActivity() {
+class DetalleEventoVetActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_EVENTO_ID = "evento_id"

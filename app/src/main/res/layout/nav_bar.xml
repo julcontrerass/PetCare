@@ -39,11 +39,15 @@
                 app:tint="@color/text_gray" />
             <TextView
                 android:id="@+id/tv_nav_home"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/home"
                 android:textColor="@color/text_gray"
+                android:gravity="center"
                 android:textSize="11sp"
+                app:autoSizeMaxTextSize="11sp"
+                app:autoSizeMinTextSize="8sp"
+                app:autoSizeTextType="uniform"
                 android:maxLines="1" />
         </LinearLayout>
 
@@ -65,11 +69,15 @@
                 app:tint="@color/text_gray" />
             <TextView
                 android:id="@+id/tv_nav_mascotas"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/mascotas"
                 android:textColor="@color/text_gray"
+                android:gravity="center"
                 android:textSize="11sp"
+                app:autoSizeMaxTextSize="11sp"
+                app:autoSizeMinTextSize="8sp"
+                app:autoSizeTextType="uniform"
                 android:maxLines="1" />
         </LinearLayout>
 
@@ -96,11 +104,15 @@
                 app:tint="@color/text_gray" />
             <TextView
                 android:id="@+id/tv_nav_lista"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_recordatorios"
                 android:textColor="@color/text_gray"
+                android:gravity="center"
                 android:textSize="11sp"
+                app:autoSizeMaxTextSize="11sp"
+                app:autoSizeMinTextSize="8sp"
+                app:autoSizeTextType="uniform"
                 android:maxLines="1" />
         </LinearLayout>
 
@@ -122,11 +134,15 @@
                 app:tint="@color/text_gray" />
             <TextView
                 android:id="@+id/tv_nav_mas"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/mas"
                 android:textColor="@color/text_gray"
+                android:gravity="center"
                 android:textSize="11sp"
+                app:autoSizeMaxTextSize="11sp"
+                app:autoSizeMinTextSize="8sp"
+                app:autoSizeTextType="uniform"
                 android:maxLines="1" />
         </LinearLayout>
 

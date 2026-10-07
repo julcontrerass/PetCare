@@ -18,6 +18,7 @@ public class FondoLoginView extends View {
 
     private static final float FRACCION_SUPERIOR = 0.35f;
     private static final float DESPLAZAMIENTO_INFERIOR_DP = 70f;
+    private static final float MIN_ALTO_MASCOTAS_DP = 720f;
 
     private final Drawable fondo;
 
@@ -47,6 +48,9 @@ public class FondoLoginView extends View {
         fondo.setBounds(0, 0, w, alto);
         fondo.draw(canvas);
         canvas.restore();
+
+        // En pantallas bajas las mascotas quedarían detrás del formulario: se dibuja solo la parte de arriba
+        if (h < Math.round(MIN_ALTO_MASCOTAS_DP * getResources().getDisplayMetrics().density)) return;
 
         int topInferior = h + desplazamiento - alto;
         canvas.save();

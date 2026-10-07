@@ -11,7 +11,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PetCare">
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -20,33 +20,33 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".DetalleDeMascotaActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".HomeVeterinarioActivity"
             android:exported="false" />
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".RegistroDuenoActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".RegistroVeterinarioActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".MisPacientesActivity" />
-        <activity android:name=".DetallePacienteActivity" />
-        <activity android:name=".HistorialClinicoVetActivity" />
-        <activity android:name=".SolicitudesVetActivity" android:exported="false" />
-        <activity android:name=".AgendaVetActivity" android:exported="false" />
-        <activity android:name=".PerfilVetActivity" android:exported="false" />
-        <activity
+        <activity android:screenOrientation="portrait" android:name=".MisPacientesActivity" />
+        <activity android:screenOrientation="portrait" android:name=".DetallePacienteActivity" />
+        <activity android:screenOrientation="portrait" android:name=".HistorialClinicoVetActivity" />
+        <activity android:screenOrientation="portrait" android:name=".SolicitudesVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".AgendaVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".PerfilVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait"
             android:name=".AgregarConsultaActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".DetalleEventoVetActivity" android:exported="false" />
-        <activity android:name=".CarnetSaludActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".DetalleEventoVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".CarnetSaludActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

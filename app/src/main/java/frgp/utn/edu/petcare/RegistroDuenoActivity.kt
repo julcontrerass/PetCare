@@ -34,7 +34,7 @@ import java.util.Locale
  * Alta de cuenta del dueño en cuatro pasos: datos personales, domicilio, mascotas y cuenta.
  * Devuelve un [DatosRegistroDueno] para que la pantalla de inicio cree la cuenta con sus mascotas.
  */
-class RegistroDuenoActivity : AppCompatActivity() {
+class RegistroDuenoActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_EMAILS_REGISTRADOS = "emails_registrados"

@@ -18,7 +18,7 @@ import com.google.android.material.tabs.TabLayout
 import java.util.Calendar
 import java.util.Locale
 
-class DetalleDeMascotaActivity : AppCompatActivity() {
+class DetalleDeMascotaActivity : BaseActivity() {
 
     private lateinit var imageView3: ImageView
     private lateinit var textView9: TextView

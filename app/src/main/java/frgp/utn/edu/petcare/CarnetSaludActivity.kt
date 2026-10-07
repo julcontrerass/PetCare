@@ -28,7 +28,7 @@ import java.util.Calendar
 import java.util.Locale
 
 /** Vacunas, tratamientos y documentos de las mascotas, con búsqueda y filtro por mascota. */
-class CarnetSaludActivity : AppCompatActivity() {
+class CarnetSaludActivity : BaseActivity() {
 
     private val tipos = TipoRegistro.values()
     private lateinit var adapter: RegistrosAdapter

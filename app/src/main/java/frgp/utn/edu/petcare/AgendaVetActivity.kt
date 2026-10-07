@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 
-class AgendaVetActivity : AppCompatActivity() {
+class AgendaVetActivity : BaseActivity() {
 
     private lateinit var adapter: AgendaAdapter
     private lateinit var tabLayout: TabLayout

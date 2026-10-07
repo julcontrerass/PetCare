@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 
-class HistorialClinicoVetActivity : AppCompatActivity() {
+class HistorialClinicoVetActivity : BaseActivity() {
 
     private lateinit var rvHistorial: RecyclerView
     private lateinit var adapter: HistorialVetAdapter
