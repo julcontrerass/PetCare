@@ -160,6 +160,10 @@ class AgregarConsultaActivity : BaseActivity() {
                 if (nomDueno.isBlank()) { etNuevoNombreDueno.error = "Requerido"; return@setOnClickListener }
                 if (nomMascota.isBlank()) { etNuevoNombreMascota.error = "Requerido"; return@setOnClickListener }
 
+                val emailNuevo = etNuevoEmailDueno.text.toString().trim().ifBlank { "Sin datos" }
+                val telNuevo = etNuevoTelefonoDueno.text.toString().trim().ifBlank { "Sin datos" }
+                val dniNuevo = etNuevoDniDueno.text.toString().trim().ifBlank { "Sin datos" }
+
                 pacienteElegido = PacientesRepo.agregar(
                     Paciente(
                         id = 0,
@@ -175,11 +179,20 @@ class AgregarConsultaActivity : BaseActivity() {
                         observaciones = "Sin observaciones",
                         propietario = nomDueno,
                         direccion = "Sin datos",
-                        telefono = etNuevoTelefonoDueno.text.toString().trim().ifBlank { "Sin datos" },
-                        email = etNuevoEmailDueno.text.toString().trim().ifBlank { "Sin datos" },
+                        telefono = telNuevo,
+                        email = emailNuevo,
                         ultimaConsulta = "Sin consultas",
                         proximoRecordatorio = "Sin recordatorios"
                     )
+                )
+
+                AdminRepo.registrarNuevoDueno(
+                    nombre = nomDueno,
+                    dni = dniNuevo,
+                    email = emailNuevo,
+                    telefono = telNuevo,
+                    direccion = "Sin datos",
+                    mascotas = listOf("$nomMascota (${spNuevoEspecie.selectedItem})")
                 )
             }
             // 2. Si se buscó un dueño existente

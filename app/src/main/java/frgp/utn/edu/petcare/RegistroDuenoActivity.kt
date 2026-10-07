@@ -469,6 +469,18 @@ class RegistroDuenoActivity : BaseActivity() {
             fotoPath = fotoPath,
             mascotas = mascotas.toList()
         )
+
+        val listaMascotasTexto = if (mascotas.isEmpty()) listOf("Sin mascotas por ahora") else mascotas.map { "${it.nombre} (${it.tipo}${if (it.raza.isNotBlank()) " - " + it.raza else ""})" }
+
+        AdminRepo.registrarNuevoDueno(
+            nombre = datos.nombre,
+            dni = datos.dni,
+            email = datos.email,
+            telefono = datos.telefono,
+            direccion = datos.direccion,
+            mascotas = listaMascotasTexto
+        )
+
         setResult(Activity.RESULT_OK, Intent().putExtra(EXTRA_DATOS, datos))
         finish()
     }

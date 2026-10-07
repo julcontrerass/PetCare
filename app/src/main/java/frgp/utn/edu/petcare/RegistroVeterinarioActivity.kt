@@ -450,10 +450,29 @@ class RegistroVeterinarioActivity : BaseActivity() {
         // Los turnos de demostración pasan a figurar a nombre del veterinario recién registrado
         AgendaRepo.eventos.filter { it.veterinario == nombreAnterior }.forEach { it.veterinario = nombre }
 
-        setResult(
-            Activity.RESULT_OK,
-            Intent().putExtra(EXTRA_EMAIL, email).putExtra(EXTRA_PASSWORD, password)
+        // Registrar en AdminRepo para revisión del Administrador
+        AdminRepo.registrarNuevoVet(
+            nombre = nombre,
+            email = email,
+            matricula = texto(R.id.etVetMatricula),
+            clinica = texto(R.id.etVetClinica),
+            direccion = texto(R.id.etVetDireccion),
+            telefono = texto(R.id.etVetTelefono),
+            especialidades = PerfilVetRepo.textoEspecialidades(),
+            horarios = PerfilVetRepo.textoHorarios()
         )
-        finish()
+
+        AlertDialog.Builder(this)
+            .setTitle("Registro en revisión")
+            .setMessage("¡Muchas gracias, $nombre!\nTus datos y matrícula (${PerfilVetRepo.matricula}) fueron enviados correctamente y están en proceso de revisión por el Administrador. Una vez verificados, tu cuenta será dada de alta.")
+            .setPositiveButton("Entendido") { _, _ ->
+                setResult(
+                    RESULT_OK,
+                    Intent().putExtra(EXTRA_EMAIL, email).putExtra(EXTRA_PASSWORD, password)
+                )
+                finish()
+            }
+            .setCancelable(false)
+            .show()
     }
 }

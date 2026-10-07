@@ -190,6 +190,13 @@ public class MainActivity extends BaseActivity {
                     if (etPassword != null) etPassword.setError("Contraseña incorrecta");
                     return;
                 }
+
+                // Ingreso como Administrador (admin@petcare.com)
+                if ("admin@petcare.com".equalsIgnoreCase(email) || email.startsWith("admin@")) {
+                    startActivity(new Intent(this, HomeAdminActivity.class));
+                    return;
+                }
+
                 // Si la cuenta fue creada en el registro, el rol sale de ahí
                 boolean esVeterinario = cuentasDemo.containsKey(email)
                         ? cuentasDemo.get(email) : rolVeterinarioSeleccionado;
