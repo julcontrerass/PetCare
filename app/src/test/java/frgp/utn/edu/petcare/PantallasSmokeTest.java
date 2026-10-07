@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -15,6 +16,9 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+
+import frgp.utn.edu.petcare.ui.auth.AuthActivity;
+import frgp.utn.edu.petcare.ui.dueno.DuenoActivity;
 
 /** Abre cada pantalla para detectar errores de inflado o de cableado en runtime. */
 @RunWith(RobolectricTestRunner.class)
@@ -63,8 +67,8 @@ public class PantallasSmokeTest {
     }
 
     @Test
-    public void mainActivity_loginRegistroYRecuperacion() {
-        MainActivity a = abrir(MainActivity.class);
+    public void auth_loginRegistroYRecuperacion() {
+        AuthActivity a = abrir(AuthActivity.class);
         a.findViewById(R.id.button2).performClick();           // Crear cuenta
         assertNotNull(a.findViewById(R.id.registroRoot));
         a.findViewById(R.id.btnBackRegistro).performClick();
@@ -78,19 +82,19 @@ public class PantallasSmokeTest {
     }
 
     @Test
-    public void mainActivity_registroDuenoLlevaAlHome() {
-        MainActivity a = abrir(MainActivity.class);
+    public void auth_elRegistroOfreceLosDosAsistentes() {
+        AuthActivity a = abrir(AuthActivity.class);
         a.findViewById(R.id.button2).performClick();
-        assertNotNull(a);
+        assertNotNull(a.findViewById(R.id.btnComenzarDueno));
+        a.findViewById(R.id.btnRegRoleVet).performClick();
+        assertEquals(View.VISIBLE, a.findViewById(R.id.llAvisoVet).getVisibility());
+        assertEquals(View.GONE, a.findViewById(R.id.llAvisoDueno).getVisibility());
     }
 
     @Test
-    public void mainActivity_navbarDuenoRecorreTodasLasPestanas() {
-        MainActivity a = abrir(MainActivity.class);
-        a.findViewById(R.id.button).performClick();
-        ((EditText) a.findViewById(R.id.etEmail)).setText("demo@mail.com");
-        ((EditText) a.findViewById(R.id.etPassword)).setText("123456");
-        a.findViewById(R.id.btnLogin).performClick();
-        assertNotNull(a);
+    public void dueno_seAbreConLaBarraInferiorYElInicio() {
+        DuenoActivity a = abrir(DuenoActivity.class);
+        assertNotNull(a.findViewById(R.id.nav_home));
+        assertNotNull(a.findViewById(R.id.tv_welcome));
     }
 }

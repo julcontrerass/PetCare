@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/login_bg"
-    tools:context=".MainActivity"
+    tools:context=".ui.dueno.DuenoActivity"
     tools:ignore="Overdraw">
 
     <androidx.core.widget.NestedScrollView
@@ -309,58 +309,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
-
-                    <!-- Pet Item 1 -->
-                    <LinearLayout
-                        android:id="@+id/pet_luna"
-                        style="@style/HomePetCard">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            style="@style/HomePetPhoto"
-                            android:contentDescription="@string/luna"
-                            android:src="@drawable/luna" />
-
-                        <TextView
-                            style="@style/HomePetName"
-                            android:text="@string/luna" />
-
-                        <TextView
-                            style="@style/HomePetDesc"
-                            android:text="@string/cocker_spaniel_desc" />
-
-                        <TextView
-                            android:id="@+id/chip_luna"
-                            style="@style/HomePetChip"
-                            android:background="@drawable/bg_chip_ok"
-                            android:text="@string/estado_al_dia"
-                            android:textColor="@color/success_green" />
-                    </LinearLayout>
-
-                    <!-- Pet Item 2 -->
-                    <LinearLayout
-                        android:id="@+id/pet_milo"
-                        style="@style/HomePetCard">
-
-                        <com.google.android.material.imageview.ShapeableImageView
-                            style="@style/HomePetPhoto"
-                            android:contentDescription="@string/milo"
-                            android:src="@drawable/milo" />
-
-                        <TextView
-                            style="@style/HomePetName"
-                            android:text="@string/milo" />
-
-                        <TextView
-                            style="@style/HomePetDesc"
-                            android:text="@string/siames_desc" />
-
-                        <TextView
-                            android:id="@+id/chip_milo"
-                            style="@style/HomePetChip"
-                            android:background="@drawable/bg_chip_ok"
-                            android:text="@string/estado_al_dia"
-                            android:textColor="@color/success_green" />
-                    </LinearLayout>
 
                     <!-- Add Button -->
                     <LinearLayout

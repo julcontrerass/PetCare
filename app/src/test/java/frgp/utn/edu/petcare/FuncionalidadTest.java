@@ -17,6 +17,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import frgp.utn.edu.petcare.data.DuenoRepo;
+import frgp.utn.edu.petcare.ui.auth.AuthActivity;
+import frgp.utn.edu.petcare.ui.dueno.DuenoActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ApplicationProvider;
 
@@ -169,74 +172,82 @@ public class FuncionalidadTest {
         assertEquals("Luna", ((TextView) a.findViewById(R.id.tvPetName)).getText().toString());
     }
 
-    private MainActivity loginDueno() {
-        MainActivity a = Robolectric.buildActivity(MainActivity.class).setup().get();
-        a.findViewById(R.id.button).performClick();
-        ((EditText) a.findViewById(R.id.etEmail)).setText("demo@mail.com");
-        ((EditText) a.findViewById(R.id.etPassword)).setText("123456");
-        a.findViewById(R.id.btnLogin).performClick();
-        return a;
+    private AuthActivity abrirAuth() {
+        return Robolectric.buildActivity(AuthActivity.class).setup().get();
+    }
+
+    /** Ingresa con la cuenta de demostración y abre el panel del dueño. */
+    private DuenoActivity loginDueno() {
+        AuthActivity auth = abrirAuth();
+        auth.findViewById(R.id.button).performClick();
+        ((EditText) auth.findViewById(R.id.etEmail)).setText("demo@mail.com");
+        ((EditText) auth.findViewById(R.id.etPassword)).setText("123456");
+        auth.findViewById(R.id.btnLogin).performClick();
+        Intent siguiente = Shadows.shadowOf(auth).getNextStartedActivity();
+        assertNotNull(siguiente);
+        assertEquals(DuenoActivity.class.getName(), siguiente.getComponent().getClassName());
+        return Robolectric.buildActivity(DuenoActivity.class).setup().get();
     }
 
     @Test
     public void login_validaCampos() {
-        MainActivity a = Robolectric.buildActivity(MainActivity.class).setup().get();
+        AuthActivity a = abrirAuth();
         a.findViewById(R.id.button).performClick();
         a.findViewById(R.id.btnLogin).performClick();
         assertNotNull("Sin datos no entra", a.findViewById(R.id.loginRoot));
+        assertNull(Shadows.shadowOf(a).getNextStartedActivity());
     }
 
     @Test
     public void loginSocial_ofreceElegirRol() {
-        MainActivity a = Robolectric.buildActivity(MainActivity.class).setup().get();
+        AuthActivity a = abrirAuth();
         a.findViewById(R.id.button).performClick();
         a.findViewById(R.id.btnGoogle).performClick();
         AlertDialog d = (AlertDialog) ShadowDialog.getLatestDialog();
         d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
         ShadowLooper.idleMainLooper();
+        Intent siguiente = Shadows.shadowOf(a).getNextStartedActivity();
+        assertEquals(DuenoActivity.class.getName(), siguiente.getComponent().getClassName());
+    }
+
+    @Test
+    public void dueno_homeSaludaYMuestraSusMascotas() {
+        DuenoActivity a = loginDueno();
+        assertEquals("Hola, Juan", ((TextView) a.findViewById(R.id.tv_welcome)).getText().toString());
         assertNotNull(a.findViewById(R.id.nav_home));
+        assertNotNull(a.findViewById(R.id.containerMisMascotasHome));
     }
 
     @Test
-    public void dueno_masNotificacionesYSolicitudes() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
+    public void dueno_laBarraInferiorRecorreLasSecciones() {
+        DuenoActivity a = loginDueno();
+
+        a.findViewById(R.id.nav_mascotas).performClick();
+        assertNotNull(a.findViewById(R.id.listaMascotasContainer));
+
+        a.findViewById(R.id.nav_lista).performClick();
+        assertNotNull(a.findViewById(R.id.btn_proximos));
+
+        a.findViewById(R.id.nav_home).performClick();
+        assertNotNull(a.findViewById(R.id.tv_welcome));
     }
 
     @Test
-    public void dueno_cambiarContrasenaAbreDialogo() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
+    public void dueno_laListaDeMascotasMuestraTodasLasDeLaCuenta() {
+        DuenoActivity a = loginDueno();
+        a.findViewById(R.id.nav_mascotas).performClick();
+        LinearLayout lista = a.findViewById(R.id.listaMascotasContainer);
+        assertTrue(lista.getChildCount() >= DuenoRepo.INSTANCE.getMascotas().size());
+        assertEquals("4 mascotas", ((TextView) a.findViewById(R.id.tvPetsCount)).getText().toString());
     }
 
     @Test
-    public void dueno_detalleDelTurnoEsUnBottomSheet() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
-    }
-
-    @Test
-    public void dueno_menuDeMascotaYEditarEvento() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
-    }
-
-    @Test
-    public void dueno_veterinariosAutorizadosSeAbre() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
-    }
-
-    @Test
-    public void dueno_bajaDeMascotaLaQuitaDeLaLista() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
-    }
-
-    @Test
-    public void dueno_noPuedeAgendarTurnoEnFechaPasada() {
-        MainActivity a = loginDueno();
-        assertNotNull(a);
+    public void dueno_elBotonAgregarMascotaAbreElFormulario() {
+        DuenoActivity a = loginDueno();
+        a.findViewById(R.id.nav_mascotas).performClick();
+        a.findViewById(R.id.btnAddPet).performClick();
+        assertNotNull(a.findViewById(R.id.etNombreMascota));
+        assertNotNull(a.findViewById(R.id.btnGuardarMascota));
     }
 
     @Test
@@ -252,7 +263,7 @@ public class FuncionalidadTest {
 
     @Test
     public void admin_loginYAprobacionDeVeterinarios() {
-        MainActivity a = Robolectric.buildActivity(MainActivity.class).setup().get();
+        AuthActivity a = abrirAuth();
         a.findViewById(R.id.button).performClick();
         ((EditText) a.findViewById(R.id.etEmail)).setText("admin@petcare.com");
         ((EditText) a.findViewById(R.id.etPassword)).setText("123456");

@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import frgp.utn.edu.petcare.ui.auth.AuthActivity
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 
@@ -60,7 +61,7 @@ class PerfilVetActivity : BaseActivity() {
                 .setTitle("Cerrar sesión")
                 .setMessage("¿Querés cerrar tu sesión?")
                 .setPositiveButton("Cerrar sesión") { _, _ ->
-                    val intent = Intent(this, MainActivity::class.java)
+                    val intent = Intent(this, AuthActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                     startActivity(intent)
                 }

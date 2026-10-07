@@ -14,6 +14,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
+import frgp.utn.edu.petcare.ui.auth.AuthActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -537,7 +538,7 @@ class HomeAdminActivity : BaseActivity() {
             .setTitle("Administrador")
             .setMessage("${AdminRepo.EMAIL_ADMIN}\n\nTenés acceso a todos los dueños y veterinarios de PetCare.")
             .setPositiveButton("Cerrar sesión") { _, _ ->
-                val intent = Intent(this, MainActivity::class.java)
+                val intent = Intent(this, AuthActivity::class.java)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 startActivity(intent)
             }

@@ -31,6 +31,40 @@ object Fechas {
     fun mesAnio(f: LocalDate) = "${mesesLargos[f.monthValue - 1]} ${f.year}"
     fun mesCorto(f: LocalDate) = meses[f.monthValue - 1].uppercase()
 
+    private val diasSemana = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+
+    /** "Mayo" a partir del número de mes (1 a 12). */
+    fun nombreMes(mes: Int) = mesesLargos[mes - 1]
+
+    /** "Mayo 2026" cuando se pasa un año-mes. */
+    fun mesAnio(ym: java.time.YearMonth) = "${mesesLargos[ym.monthValue - 1]} ${ym.year}"
+
+    /** "Ene", "Feb"... */
+    fun mesCorto(mes: Int) = meses[mes - 1]
+
+    fun diaSemana(f: LocalDate) = diasSemana[f.dayOfWeek.value - 1]
+
+    /** "15 de mayo de 2026". */
+    fun larga(f: LocalDate) = "${f.dayOfMonth} de ${nombreMes(f.monthValue).lowercase()} de ${f.year}"
+
+    /** "15 Mar 2026" ("15 mar 2026" o "15/03/2026" también se entienden). */
+    fun parsear(texto: String?): LocalDate? {
+        if (texto == null) return null
+        Regex("(\\d{1,2})\\s+([A-Za-zñÑ]{3,})\\.?\\s+(\\d{4})").find(texto)?.let { t ->
+            val mes = t.groupValues[2].lowercase().take(3)
+            val indice = meses.indexOfFirst { it.lowercase() == mes }
+            if (indice >= 0) {
+                return runCatching { LocalDate.of(t.groupValues[3].toInt(), indice + 1, t.groupValues[1].toInt()) }.getOrNull()
+            }
+        }
+        Regex("(\\d{1,2})/(\\d{1,2})/(\\d{4})").find(texto)?.let { n ->
+            return runCatching {
+                LocalDate.of(n.groupValues[3].toInt(), n.groupValues[2].toInt(), n.groupValues[1].toInt())
+            }.getOrNull()
+        }
+        return null
+    }
+
     fun relativa(f: LocalDate, hoy: LocalDate = LocalDate.now()): String = when (f) {
         hoy -> "Hoy"
         hoy.plusDays(1) -> "Mañana"
