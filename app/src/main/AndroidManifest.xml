@@ -47,6 +47,7 @@
             android:windowSoftInputMode="adjustResize" />
         <activity android:name=".DetalleEventoVetActivity" android:exported="false" />
         <activity android:name=".CarnetSaludActivity" android:exported="false" />
+        <activity android:name=".HomeAdminActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
