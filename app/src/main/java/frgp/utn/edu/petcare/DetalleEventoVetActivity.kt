@@ -1,7 +1,5 @@
 package frgp.utn.edu.petcare
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -55,27 +53,23 @@ class DetalleEventoVetActivity : AppCompatActivity() {
             val etMotivo = campo("Motivo", evento.motivo)
             var fecha = evento.fecha
             val etFecha = campo("Fecha", Fechas.corta(fecha)).apply { isFocusable = false }
-            etFecha.setOnClickListener {
-                val dpd = DatePickerDialog(ctx, { _, y, m, d ->
-                    val nuevaFecha = LocalDate.of(y, m + 1, d)
-                    if (nuevaFecha.isBefore(LocalDate.now())) {
-                        Toast.makeText(ctx, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show()
-                    } else {
-                        fecha = nuevaFecha
-                        etFecha.setText(Fechas.corta(fecha))
-                    }
-                }, fecha.year, fecha.monthValue - 1, fecha.dayOfMonth)
-                dpd.datePicker.minDate = System.currentTimeMillis() - 1000
-                dpd.show()
-            }
             val etHora = campo("Hora", evento.hora).apply { isFocusable = false }
+            etFecha.setOnClickListener {
+                SelectorFechaVet.mostrar(ctx, fecha) { nuevaFecha ->
+                    fecha = nuevaFecha
+                    etFecha.setText(Fechas.corta(fecha))
+                    val hora = etHora.text.toString()
+                    if (hora.isNotBlank() && DisponibilidadVet.validar(nuevaFecha, hora, evento.id) != null) {
+                        etHora.setText("")
+                        Toast.makeText(ctx, "Elegí otro horario para ese día", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
             etHora.setOnClickListener {
-                val partes = etHora.text.toString().split(":")
-                val h = partes.getOrNull(0)?.toIntOrNull() ?: 9
-                val m = partes.getOrNull(1)?.toIntOrNull() ?: 0
-                TimePickerDialog(ctx, { _, hh, mm ->
-                    etHora.setText(String.format("%02d:%02d", hh, mm))
-                }, h, m, true).show()
+                SelectorHoraVet.mostrar(ctx, fecha, etHora.text.toString().ifBlank { null }, evento.id) { hora ->
+                    etHora.setText(hora)
+                    etHora.error = null
+                }
             }
             val etNotas = campo("Notas", evento.notas).apply {
                 minLines = 3
@@ -95,8 +89,14 @@ class DetalleEventoVetActivity : AppCompatActivity() {
                         etMotivo.error = "Requerido"
                         return@setOnClickListener
                     }
-                    if (fecha.isBefore(LocalDate.now())) {
-                        Toast.makeText(ctx, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show()
+                    val hora = etHora.text.toString()
+                    // Si no se movió el turno no se revalida (puede ser de hoy y ya estar en curso)
+                    val cambioHorario = fecha != evento.fecha || hora != evento.hora
+                    val problema = if (hora.isBlank()) "Elegí un horario"
+                    else if (cambioHorario) DisponibilidadVet.validar(fecha, hora, evento.id) else null
+                    if (problema != null) {
+                        etHora.error = problema
+                        Toast.makeText(ctx, problema, Toast.LENGTH_LONG).show()
                         return@setOnClickListener
                     }
                     evento.tipo = spTipo.selectedItem as String
@@ -133,6 +133,13 @@ class DetalleEventoVetActivity : AppCompatActivity() {
             startActivity(
                 Intent(this, DetallePacienteActivity::class.java)
                     .putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, evento.pacienteId)
+            )
+        }
+        findViewById<View>(R.id.btnIniciarTurno).setOnClickListener {
+            startActivity(
+                Intent(this, DetallePacienteActivity::class.java)
+                    .putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, evento.pacienteId)
+                    .putExtra(EXTRA_EVENTO_ID, evento.id)
             )
         }
         findViewById<View>(R.id.btnEditar).setOnClickListener {
@@ -179,6 +186,7 @@ class DetalleEventoVetActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvPropietario).text = "Propietario/a: ${p.propietario}"
 
         val pendiente = evento.estado == EstadoEvento.PENDIENTE
+        findViewById<View>(R.id.btnIniciarTurno).visibility = if (pendiente) View.VISIBLE else View.GONE
         findViewById<View>(R.id.btnCompletar).visibility = if (pendiente) View.VISIBLE else View.GONE
         findViewById<View>(R.id.btnCancelarTurno).visibility = if (pendiente) View.VISIBLE else View.GONE
     }

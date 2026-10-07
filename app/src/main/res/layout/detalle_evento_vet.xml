@@ -365,16 +365,33 @@
         android:paddingVertical="14dp">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCompletar"
+            android:id="@+id/btnIniciarTurno"
             android:layout_width="match_parent"
             android:layout_height="54dp"
             android:backgroundTint="@color/primary_teal"
-            android:text="Marcar como completado"
+            android:text="Iniciar turno"
             android:textAllCaps="false"
             android:textColor="@color/white"
-            android:textSize="15sp"
+            android:textSize="16sp"
+            android:textStyle="bold"
             app:cornerRadius="27dp"
-            app:icon="@drawable/ic_check_circle" />
+            app:icon="@drawable/ic_arrow_forward"
+            app:iconGravity="textEnd"
+            app:iconTint="@color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCompletar"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="8dp"
+            android:text="Marcar como completado"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_teal"
+            app:cornerRadius="25dp"
+            app:icon="@drawable/ic_check_circle"
+            app:iconTint="@color/primary_teal"
+            app:strokeColor="@color/primary_teal" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -386,7 +403,7 @@
                 android:id="@+id/btnEditar"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="52dp"
+                android:layout_height="50dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Editar"
@@ -401,7 +418,7 @@
                 android:id="@+id/btnCancelarTurno"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="52dp"
+                android:layout_height="50dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="Cancelar turno"

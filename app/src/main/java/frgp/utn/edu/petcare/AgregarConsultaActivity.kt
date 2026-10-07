@@ -1,7 +1,5 @@
 package frgp.utn.edu.petcare
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -107,33 +105,32 @@ class AgregarConsultaActivity : AppCompatActivity() {
 
         // Pickers de Fecha y Hora (Nativos y totalmente estables)
         val etFecha = findViewById<EditText>(R.id.etFecha)
+        val etHora = findViewById<EditText>(R.id.etHora)
         etFecha.setOnClickListener {
-            val base = fecha ?: LocalDate.now()
-            val dpd = DatePickerDialog(this, { _, y, m, d ->
-                val seleccionada = LocalDate.of(y, m + 1, d)
-                val hoy = LocalDate.now()
-
-                if (seleccionada.isBefore(hoy)) {
-                    Toast.makeText(this, "No podés seleccionar una fecha pasada", Toast.LENGTH_SHORT).show()
-                    etFecha.error = "Fecha pasada no permitida"
-                    return@DatePickerDialog
-                }
-
-                fecha = seleccionada
-                etFecha.setText(Fechas.corta(fecha!!))
+            SelectorFechaVet.mostrar(this, fecha) { elegida ->
+                fecha = elegida
+                etFecha.setText(Fechas.corta(elegida))
                 etFecha.error = null
-            }, base.year, base.monthValue - 1, base.dayOfMonth)
-
-            dpd.datePicker.minDate = System.currentTimeMillis() - 1000
-            dpd.show()
+                // Si el horario ya cargado no sirve para el nuevo día, hay que elegirlo de nuevo
+                val hora = etHora.text.toString()
+                if (hora.isNotBlank() && DisponibilidadVet.validar(elegida, hora) != null) {
+                    etHora.setText("")
+                    Toast.makeText(this, "Elegí otro horario para ese día", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
-        val etHora = findViewById<EditText>(R.id.etHora)
         etHora.setOnClickListener {
-            TimePickerDialog(this, { _, h, m ->
-                etHora.setText(String.format("%02d:%02d", h, m))
-                etHora.error = null
-            }, 9, 0, true).show()
+            val f = fecha
+            if (f == null) {
+                etFecha.error = "Elegí primero la fecha"
+                Toast.makeText(this, "Elegí primero la fecha", Toast.LENGTH_SHORT).show()
+            } else {
+                SelectorHoraVet.mostrar(this, f, etHora.text.toString().ifBlank { null }, null) { hora ->
+                    etHora.setText(hora)
+                    etHora.error = null
+                }
+            }
         }
 
         val etMotivo = findViewById<EditText>(R.id.etMotivo)
@@ -146,6 +143,13 @@ class AgregarConsultaActivity : AppCompatActivity() {
             if (etHora.text.isBlank()) { etHora.error = "Requerido"; ok = false }
             if (etMotivo.text.isBlank()) { etMotivo.error = "Requerido"; ok = false }
             if (!ok) return@setOnClickListener
+
+            val problema = DisponibilidadVet.validar(fecha!!, etHora.text.toString())
+            if (problema != null) {
+                etHora.error = problema
+                Toast.makeText(this, problema, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
 
             var pacienteElegido: Paciente? = null
 

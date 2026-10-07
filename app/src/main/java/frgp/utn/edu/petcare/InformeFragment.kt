@@ -24,7 +24,10 @@ class InformeFragment : Fragment() {
         val etTratamiento = view.findViewById<EditText>(R.id.etTratamiento)
         val btnGuardar = view.findViewById<MaterialButton>(R.id.btnGuardarInforme)
 
-        etMotivo?.setText(informe.motivo)
+        val motivoTurno = AgendaRepo.porId(
+            requireActivity().intent.getIntExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, -1)
+        )?.motivo.orEmpty()
+        etMotivo?.setText(informe.motivo.ifBlank { motivoTurno })
         etDiagnostico?.setText(informe.diagnostico)
         etTratamiento?.setText(informe.tratamiento)
 
