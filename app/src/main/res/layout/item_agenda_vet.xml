@@ -1,55 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_card_white"
+    android:clickable="true"
+    android:elevation="2dp"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="14dp">
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/tvHora"
-        android:layout_width="64dp"
-        android:layout_height="wrap_content"
-        android:textColor="@color/primary_teal"
+        android:layout_width="62dp"
+        android:layout_height="46dp"
+        android:background="@drawable/bg_icon_tile"
+        android:gravity="center"
+        android:textColor="@color/teal_dark"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/tvPaciente"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/brand_navy"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvMotivo"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_gray" />
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_gray"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvEstadoAgenda"
+            style="@style/HomePetChip"
+            android:layout_marginTop="6dp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvEstadoAgenda"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="2dp"
-        android:textSize="12sp"
-        android:textStyle="bold" />
-
     <ImageView
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_chevron_right"
-        app:tint="@color/text_gray"
-        xmlns:app="http://schemas.android.com/apk/res-auto" />
+        app:tint="@color/text_gray" />
 </LinearLayout>

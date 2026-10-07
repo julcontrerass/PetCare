@@ -4,40 +4,63 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/login_bg"
     tools:ignore="Overdraw">
 
-    <ImageButton
+    <FrameLayout
         android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="20dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
         android:contentDescription="@string/volver_atras"
-        android:src="@drawable/baseline_arrow_back_24"
+        android:elevation="2dp"
+        android:focusable="true"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="@color/black" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/tvTitle"
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/baseline_arrow_back_24"
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
+
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="@string/editar_perfil_title"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        android:textStyle="bold"
+        android:layout_marginHorizontal="14dp"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btnBack" />
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/editar_perfil_title"
+            android:textColor="@color/brand_navy"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Actualizá tus datos de contacto"
+            android:textColor="@color/text_gray"
+            android:textSize="13sp" />
+    </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:fillViewport="true"
         app:layout_constraintBottom_toTopOf="@id/bottomBar"
         app:layout_constraintEnd_toEndOf="parent"
@@ -47,121 +70,118 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
             android:paddingBottom="20dp">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/PetInfoLabel"
                 android:text="@string/label_nombre_completo"
-                android:textColor="@color/black"
-                android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/etNombreCompleto"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:autofillHints="name"
-                android:background="@drawable/bg_edit_text"
-                android:hint="@string/hint_nombre_completo"
-                android:inputType="textPersonName"
-                android:padding="14dp"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
+            <LinearLayout
+                style="@style/CampoPerfil"
+                android:layout_marginTop="6dp">
+
+                <ImageView
+                    style="@style/CampoPerfilIcono"
+                    android:src="@drawable/ic_person" />
+
+                <EditText
+                    android:id="@+id/etNombreCompleto"
+                    style="@style/CampoPerfilTexto"
+                    android:autofillHints="name"
+                    android:inputType="textPersonName|textCapWords" />
+            </LinearLayout>
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/label_correo"
-                android:textColor="@color/black"
-                android:textSize="14sp"
+                style="@style/PetInfoLabel"
+                android:layout_marginTop="16dp"
+                android:text="Correo electrónico"
                 android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/etCorreo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:autofillHints="emailAddress"
-                android:background="@drawable/bg_edit_text"
-                android:hint="@string/hint_correo"
-                android:inputType="textEmailAddress"
-                android:padding="14dp"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
+            <LinearLayout
+                style="@style/CampoPerfil"
+                android:layout_marginTop="6dp">
+
+                <ImageView
+                    style="@style/CampoPerfilIcono"
+                    android:src="@drawable/ic_mail" />
+
+                <EditText
+                    android:id="@+id/etCorreo"
+                    style="@style/CampoPerfilTexto"
+                    android:autofillHints="emailAddress"
+                    android:inputType="textEmailAddress" />
+            </LinearLayout>
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/label_telefono"
-                android:textColor="@color/black"
-                android:textSize="14sp"
+                style="@style/PetInfoLabel"
+                android:layout_marginTop="16dp"
+                android:text="Teléfono"
                 android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/etTelefono"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:autofillHints="phone"
-                android:background="@drawable/bg_edit_text"
-                android:hint="@string/hint_telefono"
-                android:inputType="phone"
-                android:padding="14dp"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
+            <LinearLayout
+                style="@style/CampoPerfil"
+                android:layout_marginTop="6dp">
+
+                <ImageView
+                    style="@style/CampoPerfilIcono"
+                    android:src="@drawable/ic_phone" />
+
+                <EditText
+                    android:id="@+id/etTelefono"
+                    style="@style/CampoPerfilTexto"
+                    android:autofillHints="phone"
+                    android:inputType="phone" />
+            </LinearLayout>
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/label_direccion"
-                android:textColor="@color/black"
-                android:textSize="14sp"
+                style="@style/PetInfoLabel"
+                android:layout_marginTop="16dp"
+                android:text="Dirección"
                 android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/etDireccion"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:autofillHints="postalAddress"
-                android:background="@drawable/bg_edit_text"
-                android:hint="@string/hint_direccion"
-                android:inputType="textPostalAddress"
-                android:padding="14dp"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
+            <LinearLayout
+                style="@style/CampoPerfil"
+                android:layout_marginTop="6dp">
 
+                <ImageView
+                    style="@style/CampoPerfilIcono"
+                    android:src="@drawable/ic_location" />
+
+                <EditText
+                    android:id="@+id/etDireccion"
+                    style="@style/CampoPerfilTexto"
+                    android:autofillHints="postalAddress"
+                    android:inputType="textPostalAddress|textCapSentences" />
+            </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
     <LinearLayout
         android:id="@+id/bottomBar"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginBottom="20dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        android:background="@drawable/bg_nav_bar"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
             android:id="@+id/btnGuardarPerfil"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_chip_selected"
+            android:layout_height="54dp"
+            android:background="@drawable/bg_pill_teal"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
-            android:padding="14dp"
             android:text="@string/btn_guardar_perfil"
             android:textColor="@color/white"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
 

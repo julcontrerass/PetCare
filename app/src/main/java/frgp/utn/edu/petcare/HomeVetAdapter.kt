@@ -83,14 +83,14 @@ class HomeVetAdapter(
             )
             holder.divider.visibility = View.GONE
         } else {
-            holder.rootLayout.background = null
-            holder.tvTime.setTextColor(ContextCompat.getColor(context, R.color.black))
-            holder.tvTitle.setTextColor(ContextCompat.getColor(context, R.color.black))
+            holder.rootLayout.setBackgroundResource(R.drawable.bg_card_white)
+            holder.tvTime.setTextColor(ContextCompat.getColor(context, R.color.teal_dark))
+            holder.tvTitle.setTextColor(ContextCompat.getColor(context, R.color.brand_navy))
             holder.tvBadge.visibility = View.GONE
             holder.ivChevron.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(context, R.color.text_gray)
             )
-            holder.divider.visibility = View.VISIBLE
+            holder.divider.visibility = View.GONE
         }
 
         holder.itemView.setOnClickListener { onClick(item) }

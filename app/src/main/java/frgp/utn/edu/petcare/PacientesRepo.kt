@@ -81,6 +81,29 @@ object PacientesRepo {
         "Sin consultas", "Sin recordatorios"
     )
 
+    /**
+     * Cuando un dueño agenda un turno con este veterinario, la mascota pasa a ser su paciente
+     * sin pedir autorización. Si ya la tiene, devuelve la existente.
+     */
+    @JvmStatic
+    fun registrarDesdeDueno(
+        nombre: String, especie: String, raza: String, sexo: String, nacimiento: String,
+        fotoRes: Int, peso: String, microchip: String, color: String, observaciones: String,
+        propietario: String, direccion: String, telefono: String, email: String
+    ): Paciente {
+        lista.firstOrNull {
+            it.nombre.equals(nombre, ignoreCase = true) && it.propietario.equals(propietario, ignoreCase = true)
+        }?.let { return it }
+        return agregar(
+            Paciente(
+                0, nombre, especie, raza.ifBlank { especie }, sexo, nacimiento,
+                if (fotoRes != 0) fotoRes else R.drawable.ic_dog,
+                peso, microchip, color, observaciones, propietario, direccion, telefono, email,
+                "Sin consultas", "Sin recordatorios"
+            )
+        )
+    }
+
     fun porId(id: Int): Paciente = pacientes.firstOrNull { it.id == id } ?: pacientes.first()
 
     fun filtrar(consulta: String, especie: String?): List<Paciente> {

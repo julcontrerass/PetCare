@@ -17,6 +17,10 @@ class InformacionVetFragment : Fragment() {
         view.findViewById<android.widget.TextView>(R.id.tvMicrochip).text = p.microchip
         view.findViewById<android.widget.TextView>(R.id.tvColor).text = p.color
         view.findViewById<android.widget.TextView>(R.id.tvObservaciones).text = p.observaciones
+        view.findViewById<android.widget.TextView>(R.id.tvPropNombre).text = p.propietario
+        view.findViewById<android.widget.TextView>(R.id.tvPropDireccion).text = p.direccion
+        view.findViewById<android.widget.TextView>(R.id.tvPropTelefono).text = p.telefono
+        view.findViewById<android.widget.TextView>(R.id.tvPropEmail).text = p.email
         return view
     }
 }

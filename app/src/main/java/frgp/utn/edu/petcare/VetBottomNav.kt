@@ -8,6 +8,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 object VetBottomNav {
 
     fun setup(activity: AppCompatActivity, selectedItemId: Int) {
+        VetUi.barras(activity)
         val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNavigation) ?: return
         bottomNav.selectedItemId = selectedItemId
 
@@ -20,19 +21,19 @@ object VetBottomNav {
                 selectedItemId -> true
                 R.id.nav_inicio -> {
                     irA(activity, HomeVeterinarioActivity::class.java)
-                    true
+                    false
                 }
                 R.id.nav_pacientes -> {
                     irA(activity, MisPacientesActivity::class.java)
-                    true
+                    false
                 }
                 R.id.nav_agenda -> {
                     irA(activity, AgendaVetActivity::class.java)
-                    true
+                    false
                 }
                 R.id.nav_mas -> {
                     irA(activity, PerfilVetActivity::class.java)
-                    true
+                    false
                 }
                 else -> false
             }

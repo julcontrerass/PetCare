@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/HomePetCard">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivFoto"
+        style="@style/HomePetPhoto"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/tvNombre"
+        style="@style/HomePetName" />
+
+    <TextView
+        android:id="@+id/tvDesc"
+        style="@style/HomePetDesc" />
+
+    <TextView
+        android:id="@+id/tvChip"
+        style="@style/HomePetChip" />
+</LinearLayout>

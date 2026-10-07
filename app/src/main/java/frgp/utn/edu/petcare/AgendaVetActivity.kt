@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
@@ -23,7 +22,7 @@ class AgendaVetActivity : AppCompatActivity() {
         setContentView(R.layout.agenda_vet)
 
         VetBottomNav.setup(this, R.id.nav_agenda)
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener {
+        findViewById<View>(R.id.toolbar).setOnClickListener {
             val intent = Intent(this, HomeVeterinarioActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             startActivity(intent)
@@ -31,7 +30,7 @@ class AgendaVetActivity : AppCompatActivity() {
         }
 
         tabLayout = findViewById(R.id.tabLayoutAgenda)
-        tvVacia = findViewById(R.id.tvAgendaVacia)
+        tvVacia = findViewById(R.id.emptyAgenda)
         listOf("Próximos", "Completados", "Cancelados").forEach { tabLayout.addTab(tabLayout.newTab().setText(it)) }
 
         adapter = AgendaAdapter()
@@ -66,6 +65,17 @@ class AgendaVetActivity : AppCompatActivity() {
         }
         adapter.update(filas)
         tvVacia.visibility = if (filas.isEmpty()) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.rvAgenda).visibility = if (filas.isEmpty()) View.GONE else View.VISIBLE
+        val sinTurnos = when (tabLayout.selectedTabPosition) {
+            1 -> "No hay turnos completados"
+            2 -> "No hay turnos cancelados"
+            else -> "No hay turnos próximos"
+        }
+        tvVacia.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_calendar)
+        tvVacia.findViewById<TextView>(R.id.tvEmptyTitle).text = sinTurnos
+        tvVacia.findViewById<TextView>(R.id.tvEmptyMessage).text = "Los turnos agendados con vos aparecen acá"
+        val cantidad = eventos.size
+        findViewById<TextView>(R.id.tvAgendaCount).text = if (cantidad == 1) "1 turno" else "$cantidad turnos"
     }
 }
 
@@ -114,9 +124,9 @@ class AgendaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 h.tvMotivo.text = "${e.tipo} · ${e.motivo}"
                 h.tvEstado.text = e.estado.etiqueta
                 val (fondo, color) = when (e.estado) {
-                    EstadoEvento.PENDIENTE -> R.drawable.bg_badge_orange to R.color.accent_orange
-                    EstadoEvento.COMPLETADO -> R.drawable.bg_badge_green to R.color.success_green
-                    EstadoEvento.CANCELADO -> R.drawable.bg_badge_red to R.color.danger_red
+                    EstadoEvento.PENDIENTE -> R.drawable.bg_chip_warn to R.color.accent_orange_dark
+                    EstadoEvento.COMPLETADO -> R.drawable.bg_chip_ok to R.color.success_green
+                    EstadoEvento.CANCELADO -> R.drawable.bg_chip_danger to R.color.danger_red
                 }
                 h.tvEstado.setBackgroundResource(fondo)
                 h.tvEstado.setTextColor(ContextCompat.getColor(ctx, color))

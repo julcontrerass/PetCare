@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrimMas"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#55000000"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:id="@+id/cardMasMenu"
+        android:layout_width="272dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_menu_popup"
+        android:clickable="true"
+        android:elevation="16dp"
+        android:focusable="true"
+        android:orientation="vertical"
+        android:paddingVertical="8dp">
+
+        <LinearLayout
+            android:id="@+id/masMiPerfil"
+            style="@style/MasRow">
+
+            <FrameLayout style="@style/MasRowIconBox">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_person" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="Mi perfil" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/masVeterinarios"
+            style="@style/MasRow">
+
+            <FrameLayout style="@style/MasRowIconBox">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_medical_kit" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="Veterinarios autorizados" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/masSolicitudes"
+            style="@style/MasRow">
+
+            <FrameLayout style="@style/MasRowIconBox">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_key" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="Solicitudes de acceso" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/masSalud"
+            style="@style/MasRow">
+
+            <FrameLayout style="@style/MasRowIconBox">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_syringe" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="Vacunas y documentos" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/masCalendario"
+            style="@style/MasRow">
+
+            <FrameLayout style="@style/MasRowIconBox">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_calendar" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="Calendario" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/masNotificaciones"
+            style="@style/MasRow">
+
+            <FrameLayout style="@style/MasRowIconBox">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_notifications" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="Notificaciones" />
+
+            <View
+                android:id="@+id/masBadgeNotificaciones"
+                android:layout_width="9dp"
+                android:layout_height="9dp"
+                android:background="@drawable/bg_dot_red"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="4dp"
+            android:background="@color/divider_light" />
+
+        <LinearLayout
+            android:id="@+id/masCerrarSesion"
+            style="@style/MasRow">
+
+            <FrameLayout
+                style="@style/MasRowIconBox"
+                android:backgroundTint="@color/light_red">
+
+                <ImageView
+                    style="@style/MasRowIcon"
+                    android:src="@drawable/ic_logout"
+                    android:tint="@color/danger_red" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/MasRowText"
+                android:text="@string/cerrar_sesion"
+                android:textColor="@color/danger_red" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

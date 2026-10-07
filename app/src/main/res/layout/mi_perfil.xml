@@ -4,328 +4,427 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/login_bg"
     tools:ignore="Overdraw">
 
-    <!-- Header Background -->
-    <View
-        android:id="@+id/headerBackground"
-        android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:background="@color/light_teal"
-        app:layout_constraintTop_toTopOf="parent" />
+    <FrameLayout
+        android:id="@+id/btnBack"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
+        android:contentDescription="@string/volver_atras"
+        android:elevation="2dp"
+        android:focusable="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/baseline_arrow_back_24"
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tvHeaderTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:paddingBottom="16dp"
+        android:layout_marginHorizontal="14dp"
         android:text="@string/mi_perfil"
-        android:textColor="@color/black"
-        android:textSize="18sp"
+        android:textColor="@color/brand_navy"
+        android:textSize="24sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="16dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="24dp"
-            android:paddingBottom="24dp">
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="28dp">
 
-            <!-- Profile Image Section -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivProfilePic"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_marginTop="20dp"
-                android:padding="4dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/juani"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:shapeAppearanceOverlay="@style/CircleImage"
-                app:strokeColor="@color/white"
-                app:strokeWidth="4dp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnEditProfilePic"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="2dp"
-                app:layout_constraintBottom_toBottomOf="@+id/ivProfilePic"
-                app:layout_constraintEnd_toEndOf="@+id/ivProfilePic">
+            <!-- HERO -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_hero_card"
+                android:elevation="4dp">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:contentDescription="@string/cambiar_foto_perfil_desc"
-                    android:src="@drawable/ic_pencil"
-                    app:tint="@color/black" />
-            </com.google.android.material.card.MaterialCardView>
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="end|bottom"
+                    android:layout_marginEnd="-16dp"
+                    android:layout_marginBottom="-22dp"
+                    android:alpha="0.12"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no"
+                    android:rotation="-10"
+                    android:src="@drawable/ic_dog"
+                    app:tint="@color/white" />
 
-            <TextView
-                android:id="@+id/tvUserName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/user_name"
-                android:textColor="@color/black"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/ivProfilePic" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="18dp"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="20dp">
 
-            <!-- Account Info Section -->
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout
+                            android:layout_width="108dp"
+                            android:layout_height="108dp"
+                            android:background="@drawable/circular_white"
+                            android:padding="3dp">
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/ivProfilePic"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/juani"
+                                app:shapeAppearanceOverlay="@style/CircleImage" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:id="@+id/btnEditProfilePic"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_gravity="end|bottom"
+                            android:background="@drawable/circular_white"
+                            android:clickable="true"
+                            android:elevation="4dp"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cambiar_foto_perfil_desc"
+                                android:src="@drawable/ic_camera"
+                                app:tint="@color/primary_teal" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/user_name"
+                        android:textColor="@color/white"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_chip_glass"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="5dp"
+                        android:text="Propietario"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_chip_glass"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:paddingVertical="10dp">
+
+                            <TextView
+                                android:id="@+id/tvPerfilMascotas"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/white"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Mascotas"
+                                android:textColor="#D9FFFFFF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_chip_glass"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:paddingVertical="10dp">
+
+                            <TextView
+                                android:id="@+id/tvPerfilVets"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/white"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Veterinarios"
+                                android:textColor="#D9FFFFFF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- INFORMACIÓN DE LA CUENTA -->
             <TextView
                 android:id="@+id/tvInfoLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="@string/informacion_cuenta"
-                android:textColor="@color/text_gray"
-                android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvUserName" />
+                style="@style/EventoSeccion"
+                android:layout_marginTop="22dp"
+                android:text="@string/informacion_cuenta" />
 
-            <!-- Email -->
-            <LinearLayout
-                android:id="@+id/llEmail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/tvInfoLabel">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_mail"
-                    app:tint="@color/text_gray" />
-
-                <TextView
-                    android:id="@+id/tvUserEmailValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/user_email"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <!-- Phone -->
-            <LinearLayout
-                android:id="@+id/llPhone"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/llEmail">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_phone"
-                    app:tint="@color/text_gray" />
-
-                <TextView
-                    android:id="@+id/tvUserPhoneValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/user_phone"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <!-- Address -->
-            <LinearLayout
-                android:id="@+id/llAddress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/llPhone">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_location"
-                    app:tint="@color/text_gray" />
-
-                <TextView
-                    android:id="@+id/tvUserAddressValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/user_address"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <!-- Action List -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card_white"
+                android:elevation="2dp"
                 android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/llAddress">
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="4dp">
 
-                <!-- Editar datos -->
+                <LinearLayout
+                    android:id="@+id/llEmail"
+                    style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_mail" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="Correo electrónico" />
+
+                        <TextView
+                            android:id="@+id/tvUserEmailValue"
+                            style="@style/PetInfoValue" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/PetInfoDivider" />
+
+                <LinearLayout
+                    android:id="@+id/llPhone"
+                    style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_phone" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="Teléfono" />
+
+                        <TextView
+                            android:id="@+id/tvUserPhoneValue"
+                            style="@style/PetInfoValue" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/PetInfoDivider" />
+
+                <LinearLayout
+                    android:id="@+id/llAddress"
+                    style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_location" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="Dirección" />
+
+                        <TextView
+                            android:id="@+id/tvUserAddressValue"
+                            style="@style/PetInfoValue" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- CUENTA -->
+            <TextView
+                style="@style/EventoSeccion"
+                android:layout_marginTop="22dp"
+                android:text="Cuenta" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card_white"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="4dp">
+
                 <LinearLayout
                     android:id="@+id/llEditarDatos"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    style="@style/PetInfoRow"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+                    android:focusable="true">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_pencil"
-                        app:tint="@color/text_gray" />
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_pencil" />
+                    </FrameLayout>
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="@string/editar_datos"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
+                        style="@style/MasRowText"
+                        android:text="Editar datos personales" />
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/text_gray" />
                 </LinearLayout>
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/light_gray" />
+                <View style="@style/PetInfoDivider" />
 
-                <!-- Cambiar contraseña -->
                 <LinearLayout
                     android:id="@+id/llCambiarContrasena"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    style="@style/PetInfoRow"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+                    android:focusable="true">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:contentDescription="@null"
-                    android:src="@drawable/ic_key"
-                        app:tint="@color/text_gray" />
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_key" />
+                    </FrameLayout>
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="@string/cambiar_contrasena"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
+                        style="@style/MasRowText"
+                        android:text="@string/cambiar_contrasena" />
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/text_gray" />
                 </LinearLayout>
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/light_gray" />
+                <View style="@style/PetInfoDivider" />
 
-                <!-- Veterinarios autorizados -->
                 <LinearLayout
                     android:id="@+id/llVeterinarios"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    style="@style/PetInfoRow"
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+                    android:focusable="true">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:contentDescription="@null"
-                    android:src="@drawable/ic_medical"
-                        app:tint="@color/text_gray" />
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_medical_kit" />
+                    </FrameLayout>
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="@string/veterinarios_autorizados_menu"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/light_gray" />
-
-                <!-- Cerrar sesión -->
-                <LinearLayout
-                    android:id="@+id/llCerrarSesion"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+                        style="@style/MasRowText"
+                        android:text="Veterinarios con acceso" />
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:contentDescription="@null"
-                    android:src="@drawable/ic_logout"
+                        android:src="@drawable/ic_chevron_right"
                         app:tint="@color/text_gray" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="@string/cerrar_sesion"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
                 </LinearLayout>
-
             </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/llCerrarSesion"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="22dp"
+                android:backgroundTint="@color/white"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/cerrar_sesion"
+                android:textAllCaps="false"
+                android:textColor="@color/danger_red"
+                android:textSize="16sp"
+                app:cornerRadius="27dp"
+                app:icon="@drawable/ic_logout"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconTint="@color/danger_red"
+                app:strokeColor="@color/danger_red"
+                app:strokeWidth="1.5dp" />
+        </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

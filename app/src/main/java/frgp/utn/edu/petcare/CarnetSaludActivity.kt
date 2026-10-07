@@ -33,9 +33,9 @@ class CarnetSaludActivity : AppCompatActivity() {
     private val tipos = TipoRegistro.values()
     private lateinit var adapter: RegistrosAdapter
     private lateinit var etBuscar: EditText
-    private lateinit var spMascota: Spinner
+    private var mascotaFiltro: String? = null
     private lateinit var tabLayout: TabLayout
-    private lateinit var tvVacio: TextView
+    private lateinit var vacio: View
 
     private var pendienteDocumento: ((Uri, String) -> Unit)? = null
     private val pickDocumento = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -46,17 +46,14 @@ class CarnetSaludActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.carnet_salud)
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
 
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+        findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         etBuscar = findViewById(R.id.etBuscarRegistro)
-        spMascota = findViewById(R.id.spMascotaFiltro)
         tabLayout = findViewById(R.id.tabLayoutSalud)
-        tvVacio = findViewById(R.id.tvVacio)
+        vacio = findViewById(R.id.emptyRegistros)
 
-        spMascota.adapter = ArrayAdapter(
-            this, android.R.layout.simple_spinner_dropdown_item,
-            listOf("Todas las mascotas") + SaludRepo.mascotas
-        )
+        construirFiltroMascotas()
         tipos.forEach { tabLayout.addTab(tabLayout.newTab().setText(it.etiqueta)) }
 
         adapter = RegistrosAdapter(emptyList()) { confirmarEliminar(it) }
@@ -67,27 +64,78 @@ class CarnetSaludActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
-        spMascota.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) = refrescar()
-            override fun onNothingSelected(p: AdapterView<*>?) {}
-        }
         etBuscar.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) = refrescar()
             override fun afterTextChanged(s: Editable?) {}
         })
-        findViewById<ImageButton>(R.id.btnAgregarRegistro).setOnClickListener { mostrarDialogoAgregar() }
+        findViewById<View>(R.id.btnAgregarRegistro).setOnClickListener { mostrarDialogoAgregar() }
 
         refrescar()
     }
 
     private fun tipoActual(): TipoRegistro = tipos[tabLayout.selectedTabPosition.coerceAtLeast(0)]
 
+    private fun dp(valor: Int) = (valor * resources.displayMetrics.density).toInt()
+
+    private fun construirFiltroMascotas() {
+        val fila = findViewById<LinearLayout>(R.id.llFiltroMascotas)
+        fila.removeAllViews()
+        (listOf<String?>(null) + SaludRepo.mascotas).forEach { nombre ->
+            val chip = TextView(this).apply {
+                text = nombre ?: "Todas"
+                tag = nombre
+                textSize = 14f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setPadding(dp(18), dp(9), dp(18), dp(9))
+                elevation = dp(1).toFloat()
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginEnd = dp(10) }
+                setOnClickListener {
+                    mascotaFiltro = nombre
+                    refrescar()
+                }
+            }
+            fila.addView(chip)
+        }
+    }
+
+    private fun estiloFiltroMascotas() {
+        val fila = findViewById<LinearLayout>(R.id.llFiltroMascotas)
+        for (i in 0 until fila.childCount) {
+            val chip = fila.getChildAt(i) as TextView
+            val activo = chip.tag == mascotaFiltro
+            chip.setBackgroundResource(if (activo) R.drawable.bg_pill_teal else R.drawable.bg_pill_white)
+            chip.setTextColor(ContextCompat.getColor(this, if (activo) R.color.white else R.color.text_gray))
+        }
+    }
+
+    private fun actualizarResumen() {
+        val vacunas = SaludRepo.registros.filter { it.tipo == TipoRegistro.VACUNA }
+        findViewById<TextView>(R.id.tvStatAlDia).text = vacunas.count { it.estado == "Al día" }.toString()
+        findViewById<TextView>(R.id.tvStatPendientes).text =
+            vacunas.count { it.estado == "Próxima" || it.estado == "Vencida" }.toString()
+        findViewById<TextView>(R.id.tvStatDocs).text =
+            SaludRepo.registros.count { it.tipo == TipoRegistro.DOCUMENTO }.toString()
+    }
+
     private fun refrescar() {
-        val mascota = if (spMascota.selectedItemPosition > 0) SaludRepo.mascotas[spMascota.selectedItemPosition - 1] else null
-        val lista = SaludRepo.filtrar(tipoActual(), etBuscar.text.toString(), mascota)
+        val lista = SaludRepo.filtrar(tipoActual(), etBuscar.text.toString(), mascotaFiltro)
         adapter.update(lista)
-        tvVacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+        actualizarResumen()
+        estiloFiltroMascotas()
+
+        vacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+        findViewById<RecyclerView>(R.id.rvRegistros).visibility = if (lista.isEmpty()) View.GONE else View.VISIBLE
+        val icono = when (tipoActual()) {
+            TipoRegistro.VACUNA -> R.drawable.ic_syringe
+            TipoRegistro.TRATAMIENTO -> R.drawable.ic_pulse
+            TipoRegistro.DOCUMENTO -> R.drawable.ic_document
+        }
+        vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(icono)
+        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "No hay ${tipoActual().etiqueta.lowercase()} para mostrar"
+        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "Tocá + para agregar uno"
     }
 
     private fun confirmarEliminar(r: RegistroSalud) {
@@ -138,7 +186,7 @@ class CarnetSaludActivity : AppCompatActivity() {
             adapter = ArrayAdapter(
                 this@CarnetSaludActivity, android.R.layout.simple_spinner_dropdown_item, SaludRepo.mascotas
             )
-            if (spMascota.selectedItemPosition > 0) setSelection(spMascota.selectedItemPosition - 1)
+            mascotaFiltro?.let { setSelection(SaludRepo.mascotas.indexOf(it).coerceAtLeast(0)) }
         }
         layout.addView(spinner)
 
@@ -226,6 +274,8 @@ class RegistrosAdapter(
 ) : RecyclerView.Adapter<RegistrosAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val flIcono: View = view.findViewById(R.id.flIcono)
+        val ivIcono: android.widget.ImageView = view.findViewById(R.id.ivIcono)
         val tvTitulo: TextView = view.findViewById(R.id.tvTitulo)
         val tvEstado: TextView = view.findViewById(R.id.tvEstado)
         val tvMascotaFecha: TextView = view.findViewById(R.id.tvMascotaFecha)
@@ -253,14 +303,22 @@ class RegistrosAdapter(
             holder.tvEstado.visibility = View.VISIBLE
             holder.tvEstado.text = r.estado
             val (fondo, texto) = when (r.estado) {
-                "Vencida" -> R.drawable.bg_badge_red to R.color.danger_red
-                "Próxima" -> R.drawable.bg_badge_orange to R.color.accent_orange
-                "Finalizado" -> R.drawable.bg_badge_orange to R.color.text_gray
-                else -> R.drawable.bg_badge_green to R.color.success_green
+                "Vencida" -> R.drawable.bg_chip_danger to R.color.danger_red
+                "Próxima" -> R.drawable.bg_chip_warn to R.color.accent_orange_dark
+                "Finalizado" -> R.drawable.bg_chip_neutral to R.color.text_gray
+                else -> R.drawable.bg_chip_ok to R.color.success_green
             }
             holder.tvEstado.setBackgroundResource(fondo)
             holder.tvEstado.setTextColor(ContextCompat.getColor(ctx, texto))
         }
+        val (icono, fondoIcono, colorIcono) = when (r.tipo) {
+            TipoRegistro.VACUNA -> Triple(R.drawable.ic_syringe, R.color.light_green, R.color.success_green)
+            TipoRegistro.TRATAMIENTO -> Triple(R.drawable.ic_pulse, R.color.light_purple, R.color.accent_purple)
+            TipoRegistro.DOCUMENTO -> Triple(R.drawable.ic_document, R.color.light_orange, R.color.accent_orange)
+        }
+        holder.ivIcono.setImageResource(icono)
+        holder.ivIcono.setColorFilter(ContextCompat.getColor(ctx, colorIcono))
+        holder.flIcono.backgroundTintList = ContextCompat.getColorStateList(ctx, fondoIcono)
         holder.itemView.setOnLongClickListener { onLongClick(r); true }
     }
 

@@ -9,7 +9,6 @@ import android.widget.Toast
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
@@ -47,11 +46,7 @@ class DetallePacienteActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvPetOwnerContact).text = "Contacto: ${paciente.telefono}"
         findViewById<android.widget.ImageView>(R.id.ivPetPhoto).setImageResource(paciente.fotoRes)
 
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        toolbar.setNavigationOnClickListener { onBackPressed() }
+        findViewById<View>(R.id.toolbar).setOnClickListener { finish() }
 
         findViewById<View>(R.id.btnMorePaciente)?.setOnClickListener { v ->
             PopupMenu(this, v).apply {

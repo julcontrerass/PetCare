@@ -7,7 +7,6 @@ import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 
@@ -26,11 +25,7 @@ class HistorialClinicoVetActivity : AppCompatActivity() {
 
         paciente = PacientesRepo.porId(intent.getIntExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, -1))
 
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        toolbar.setNavigationOnClickListener { finish() }
+        findViewById<View>(R.id.toolbar).setOnClickListener { finish() }
 
         findViewById<TextView>(R.id.tvPetName).text = paciente.nombre
         findViewById<TextView>(R.id.tvPetBreed).text = paciente.razaYSexo
@@ -129,5 +124,12 @@ class HistorialClinicoVetActivity : AppCompatActivity() {
             )
         }
         adapter.updateItems(filas)
+
+        val vacio = findViewById<View>(R.id.emptyHistorialVet)
+        vacio.visibility = if (filas.isEmpty()) View.VISIBLE else View.GONE
+        rvHistorial.visibility = if (filas.isEmpty()) View.GONE else View.VISIBLE
+        vacio.findViewById<ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_document)
+        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "Sin registros"
+        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "No hay eventos de este tipo para ${paciente.nombre}"
     }
 }

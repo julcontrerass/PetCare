@@ -3,11 +3,13 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="primary_teal">#02797A</color>
+    <color name="brand_navy">#0B2A4A</color>
     <color name="light_gray">#F5F5F5</color>
     <color name="text_gray">#808080</color>
     <color name="light_teal">#E0F2F2</color>
     <color name="accent_orange">#F5A623</color>
     <color name="light_orange">#FFF3E0</color>
+    <color name="accent_orange_dark">#C77700</color>
     <color name="success_green">#1B8A5A</color>
     <color name="light_green">#E1F5EA</color>
     <color name="danger_red">#E5484D</color>
@@ -25,4 +27,7 @@
 
     <color name="divider_color">#CCCCCC</color>
     <color name="divider_light">#F0F0F0</color>
+    <color name="teal_dark">#0B4F4C</color>
+    <color name="login_bg">#F7F6F1</color>
+    <color name="login_field_stroke">#E1E6E4</color>
 </resources>

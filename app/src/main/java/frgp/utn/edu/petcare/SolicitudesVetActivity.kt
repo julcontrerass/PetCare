@@ -8,7 +8,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.RecyclerView
 
 class SolicitudesVetActivity : AppCompatActivity() {
@@ -17,10 +16,23 @@ class SolicitudesVetActivity : AppCompatActivity() {
         setContentView(R.layout.solicitudes_vet)
 
         VetBottomNav.setup(this, R.id.nav_inicio)
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+        findViewById<View>(R.id.toolbar).setOnClickListener { finish() }
+
+        val lista = SolicitudesRepo.paraVeterinario
+        val pendientes = lista.count { it.estado == SolicitudItem.Estado.PENDIENTE }
+        findViewById<TextView>(R.id.tvSolicitudesCount).text =
+            if (pendientes == 1) "1 pendiente" else "$pendientes pendientes"
+        val vacio = findViewById<View>(R.id.emptySolicitudes)
+        vacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+        vacio.findViewById<ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_person)
+        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "Sin solicitudes"
+        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "Cuando un dueño pida acceso aparece acá"
 
         findViewById<RecyclerView>(R.id.rvSolicitudes).adapter =
-            SolicitudesAdapter(SolicitudesRepo.paraVeterinario) { item, estado ->
+            SolicitudesAdapter(lista) { item, estado ->
+                val restantes = lista.count { it.estado == SolicitudItem.Estado.PENDIENTE }
+                findViewById<TextView>(R.id.tvSolicitudesCount).text =
+                    if (restantes == 1) "1 pendiente" else "$restantes pendientes"
                 if (estado == SolicitudItem.Estado.ACEPTADA) {
                     item.paciente?.let { PacientesRepo.agregar(it) }
                     Toast.makeText(this, "${item.paciente?.nombre ?: "Paciente"} se sumó a tus pacientes", Toast.LENGTH_SHORT).show()
@@ -64,6 +76,7 @@ class SolicitudesAdapter(
         if (!pendiente) {
             val aceptada = item.estado == SolicitudItem.Estado.ACEPTADA
             holder.tvEstado.text = if (aceptada) "Solicitud aceptada" else "Solicitud rechazada"
+            holder.tvEstado.setBackgroundResource(if (aceptada) R.drawable.bg_chip_ok else R.drawable.bg_chip_danger)
             holder.tvEstado.setTextColor(
                 holder.itemView.context.getColor(if (aceptada) R.color.success_green else R.color.danger_red)
             )

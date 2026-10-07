@@ -1,41 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="12dp"
-    android:paddingHorizontal="12dp"
-    android:layout_marginBottom="4dp"
-    android:background="?attr/selectableItemBackground">
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="2dp"
+    android:background="@drawable/bg_card_white"
+    android:clickable="true"
+    android:elevation="2dp"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp">
 
     <TextView
         android:id="@+id/tvTime"
-        android:layout_width="60dp"
-        android:layout_height="wrap_content"
-        android:text="10:00"
-        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-        android:textStyle="bold"
+        android:layout_width="64dp"
+        android:layout_height="44dp"
+        android:background="@drawable/bg_icon_tile"
         android:gravity="center"
+        android:textColor="@color/teal_dark"
+        android:textSize="15sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cvProfile"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:visibility="gone"
-        app:cardCornerRadius="20dp"
+        app:cardCornerRadius="22dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
         <ImageView
             android:id="@+id/ivProfile"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:contentDescription="@null"
             android:scaleType="centerCrop"
             android:src="@drawable/juani" />
     </androidx.cardview.widget.CardView>
@@ -51,10 +58,10 @@
         android:id="@+id/llTextContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="14dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/ivChevron"
+        app:layout_constraintEnd_toStartOf="@id/tvBadge"
         app:layout_constraintStart_toEndOf="@id/barrierLeadingIcon"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -62,44 +69,47 @@
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Max"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/brand_navy"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvSubtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Vacuna anual"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/text_gray" />
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_gray"
+            android:textSize="13.5sp" />
 
         <TextView
             android:id="@+id/tvDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Hace 1 hora"
-            android:visibility="gone"
-            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-            android:textColor="@color/text_gray" />
-
-        <TextView
-            android:id="@+id/tvBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="En horario"
-            android:textColor="@color/success_green"
-            android:textSize="11sp"
-            android:textStyle="bold"
+            android:textColor="@color/text_gray"
+            android:textSize="12sp"
             android:visibility="gone" />
-
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvBadge"
+        style="@style/HomePetChip"
+        android:layout_marginTop="0dp"
+        android:layout_marginEnd="6dp"
+        android:background="@drawable/bg_chip_ok"
+        android:textColor="@color/success_green"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/ivChevron"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/ivChevron"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:contentDescription="@null"
         android:src="@drawable/ic_chevron_right"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -108,10 +118,11 @@
 
     <View
         android:id="@+id/divider"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/divider_light"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginStart="60dp"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

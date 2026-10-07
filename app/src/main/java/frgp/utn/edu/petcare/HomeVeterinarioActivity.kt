@@ -30,6 +30,9 @@ class HomeVeterinarioActivity : AppCompatActivity() {
         findViewById<View>(R.id.tvVerAgenda)?.setOnClickListener {
             startActivity(Intent(this, AgendaVetActivity::class.java))
         }
+        findViewById<View>(R.id.tileSolicitudes)?.setOnClickListener {
+            startActivity(Intent(this, SolicitudesVetActivity::class.java))
+        }
         findViewById<View>(R.id.cvVetProfile)?.setOnClickListener {
             startActivity(Intent(this, PerfilVetActivity::class.java))
         }
@@ -51,7 +54,11 @@ class HomeVeterinarioActivity : AppCompatActivity() {
     }
 
     private fun cargar() {
-        findViewById<TextView>(R.id.tvGreeting).text = "Hola, ${PerfilVetRepo.nombre} 👋"
+        findViewById<TextView>(R.id.tvGreeting).text = "Hola, ${PerfilVetRepo.nombre}"
+        val hoyFecha = java.time.LocalDate.now()
+        findViewById<TextView>(R.id.tvVetDate).text =
+            "${DIAS[hoyFecha.dayOfWeek.value - 1]} ${hoyFecha.dayOfMonth} de ${Fechas.mesAnio(hoyFecha).substringBefore(' ').lowercase()}"
+        findViewById<TextView>(R.id.tvSolicitudesPend).text = SolicitudesRepo.pendientesVeterinario().toString()
 
         val hoy = AgendaRepo.deHoy()
         findViewById<TextView>(R.id.tvPacientesHoy).text = AgendaRepo.pacientesHoy().toString()
@@ -85,5 +92,49 @@ class HomeVeterinarioActivity : AppCompatActivity() {
             )
         }
         adapter.update(items)
+
+        val vacio = findViewById<View>(R.id.emptyConsultas)
+        vacio.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+        findViewById<RecyclerView>(R.id.rvConsultas).visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+        vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_calendar)
+        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "Sin consultas para hoy"
+        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "Cuando agenden un turno con vos aparece acá"
+
+        configurarHero(hoy, enHorarioEventoId)
+    }
+
+    private fun configurarHero(hoy: List<EventoVet>, enHorarioEventoId: Int?) {
+        val titulo = findViewById<TextView>(R.id.tvHeroTitle)
+        val subtitulo = findViewById<TextView>(R.id.tvHeroSubtitle)
+        val boton = findViewById<TextView>(R.id.btnHeroAction)
+        val icono = findViewById<android.widget.ImageView>(R.id.ivHeroIcon)
+        val siguiente = hoy.firstOrNull { it.id == enHorarioEventoId } ?: hoy.firstOrNull()
+
+        if (siguiente == null) {
+            findViewById<TextView>(R.id.tvHeroLabel).text = "Agenda libre"
+            titulo.text = "Sin consultas hoy"
+            subtitulo.text = "Revisá la agenda o cargá una consulta nueva."
+            boton.text = "Ver agenda"
+            icono.setImageResource(R.drawable.ic_check)
+            boton.setOnClickListener { startActivity(Intent(this, AgendaVetActivity::class.java)) }
+            return
+        }
+        val paciente = PacientesRepo.porId(siguiente.pacienteId)
+        findViewById<TextView>(R.id.tvHeroLabel).text =
+            if (siguiente.id == enHorarioEventoId) "En horario" else "Próxima consulta"
+        titulo.text = "${paciente.nombre} · ${siguiente.hora}"
+        subtitulo.text = "${siguiente.motivo} · ${paciente.propietario}"
+        boton.text = "Ver turno"
+        icono.setImageResource(R.drawable.ic_calendar)
+        boton.setOnClickListener {
+            startActivity(
+                Intent(this, DetalleEventoVetActivity::class.java)
+                    .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, siguiente.id)
+            )
+        }
+    }
+
+    private companion object {
+        val DIAS = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
     }
 }

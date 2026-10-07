@@ -33,6 +33,13 @@ class HistorialPacienteFragment : Fragment() {
         val eventosAdapter = HistorialVetAdapter(uiItems)
         rvEventos?.adapter = eventosAdapter
 
+        val vacio = view.findViewById<View>(R.id.emptyHistorial)
+        vacio.visibility = if (uiItems.isEmpty()) View.VISIBLE else View.GONE
+        rvEventos?.visibility = if (uiItems.isEmpty()) View.GONE else View.VISIBLE
+        vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_document)
+        vacio.findViewById<android.widget.TextView>(R.id.tvEmptyTitle).text = "Sin eventos clínicos"
+        vacio.findViewById<android.widget.TextView>(R.id.tvEmptyMessage).text = "Los turnos y consultas de este paciente aparecen acá"
+
         return view
     }
 }

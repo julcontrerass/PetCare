@@ -14,7 +14,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import java.time.LocalDate
 
 class DetalleEventoVetActivity : AppCompatActivity() {
@@ -128,7 +127,8 @@ class DetalleEventoVetActivity : AppCompatActivity() {
         }
         evento = encontrado
 
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+        VetUi.barras(this)
+        findViewById<View>(R.id.toolbar).setOnClickListener { finish() }
         findViewById<View>(R.id.cardPaciente).setOnClickListener {
             startActivity(
                 Intent(this, DetallePacienteActivity::class.java)

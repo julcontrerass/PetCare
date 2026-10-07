@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/login_bg"
     tools:context=".MainActivity"
     tools:ignore="Overdraw">
 
@@ -15,80 +15,265 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:padding="20dp">
 
             <!-- Header -->
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp">
-
-                <TextView
-                    android:id="@+id/tv_welcome"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_toStartOf="@+id/header_actions"
-                    android:text="@string/hola_juani"
-                    android:textColor="@color/black"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <LinearLayout
-                    android:id="@+id/header_actions"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                    <FrameLayout
-                        android:id="@+id/btn_notifications_container"
+                    <TextView
+                        android:id="@+id/tv_welcome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
+                        android:text="@string/hola_juan"
+                        android:textColor="@color/brand_navy"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvHomeSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/home_subtitulo"
+                        android:textColor="@color/text_gray"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/btn_notifications_container"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/circular_white"
+                    android:clickable="true"
+                    android:elevation="2dp"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/btn_notifications"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_notifications"
+                        app:tint="@color/brand_navy" />
+
+                    <View
+                        android:id="@+id/notification_badge"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="9dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_dot_red"
+                        android:visibility="visible" />
+                </FrameLayout>
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/iv_home_profile"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:contentDescription="@null"
+                    android:elevation="2dp"
+                    android:focusable="true"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/juani"
+                    app:shapeAppearanceOverlay="@style/CircleImage"
+                    app:strokeColor="@color/white"
+                    app:strokeWidth="2dp" />
+            </LinearLayout>
+
+            <!-- Hero: próximo evento -->
+            <FrameLayout
+                android:id="@+id/cardProximoEvento"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_hero_card"
+                android:elevation="4dp">
+
+                <ImageView
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="end|bottom"
+                    android:layout_marginEnd="-16dp"
+                    android:layout_marginBottom="-24dp"
+                    android:alpha="0.13"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no"
+                    android:rotation="-10"
+                    android:src="@drawable/ic_dog"
+                    app:tint="@color/white" />
+
+                <FrameLayout
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:layout_gravity="end|top"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginEnd="18dp"
+                    android:background="@drawable/bg_hero_icon">
+
+                    <ImageView
+                        android:id="@+id/ivHeroIcon"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="@color/white" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:id="@+id/tvHeroLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.06"
+                        android:text="@string/home_hero_label"
+                        android:textAllCaps="true"
+                        android:textColor="#D9FFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvHeroTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="60dp"
+                        android:text="@string/home_hero_sin_eventos"
+                        android:textColor="@color/white"
+                        android:textSize="21sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvHeroSubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:layout_marginEnd="40dp"
+                        android:text="@string/home_hero_sin_eventos_msg"
+                        android:textColor="#EBFFFFFF"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/btnHeroAction"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_pill_white"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackgroundBorderless">
+                        android:paddingHorizontal="18dp"
+                        android:paddingVertical="9dp"
+                        android:text="@string/home_hero_agendar"
+                        android:textColor="@color/primary_teal"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- Accesos rápidos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/qaNuevoEvento"
+                    style="@style/HomeQuickAction">
+
+                    <FrameLayout style="@style/HomeQuickTile">
 
                         <ImageView
-                            android:id="@+id/btn_notifications"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_notifications"
-                            app:tint="@color/black" />
-
-                        <View
-                            android:id="@+id/notification_badge"
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
-                            android:layout_gravity="top|end"
-                            android:background="@drawable/bg_dot_red"
-                            android:visibility="visible" />
+                            style="@style/HomeQuickIcon"
+                            android:src="@drawable/ic_calendar_plus"
+                            app:tint="@color/primary_teal" />
                     </FrameLayout>
 
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/iv_home_profile"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:contentDescription="@null"
-                        android:padding="2dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/juani"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:shapeAppearanceOverlay="@style/CircleImage" />
+                    <TextView
+                        style="@style/HomeQuickLabel"
+                        android:text="@string/home_qa_nuevo_evento" />
                 </LinearLayout>
-            </RelativeLayout>
+
+                <LinearLayout
+                    android:id="@+id/qaHistorial"
+                    style="@style/HomeQuickAction">
+
+                    <FrameLayout style="@style/HomeQuickTile">
+
+                        <ImageView
+                            style="@style/HomeQuickIcon"
+                            android:src="@drawable/ic_history"
+                            app:tint="@color/accent_purple" />
+                    </FrameLayout>
+
+                    <TextView
+                        style="@style/HomeQuickLabel"
+                        android:text="@string/home_qa_historial" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/qaVeterinarios"
+                    style="@style/HomeQuickAction">
+
+                    <FrameLayout style="@style/HomeQuickTile">
+
+                        <ImageView
+                            style="@style/HomeQuickIcon"
+                            android:src="@drawable/ic_medical_kit"
+                            app:tint="@color/success_green" />
+                    </FrameLayout>
+
+                    <TextView
+                        style="@style/HomeQuickLabel"
+                        android:text="@string/home_qa_veterinarios" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/qaDocumentos"
+                    style="@style/HomeQuickAction">
+
+                    <FrameLayout style="@style/HomeQuickTile">
+
+                        <ImageView
+                            style="@style/HomeQuickIcon"
+                            android:src="@drawable/ic_document"
+                            app:tint="@color/accent_orange" />
+                    </FrameLayout>
+
+                    <TextView
+                        style="@style/HomeQuickLabel"
+                        android:text="@string/home_qa_documentos" />
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- Mis Mascotas Section -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp">
+                android:layout_marginTop="22dp">
 
                 <TextView
                     android:id="@+id/tv_mis_mascotas_title"
@@ -97,7 +282,7 @@
                     android:layout_alignParentStart="true"
                     android:layout_toStartOf="@+id/tv_ver_todas_mascotas"
                     android:text="@string/mis_mascotas"
-                    android:textColor="@color/black"
+                    android:textColor="@color/brand_navy"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -108,13 +293,15 @@
                     android:layout_alignParentEnd="true"
                     android:text="@string/ver_todas"
                     android:textColor="@color/primary_teal"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
             </RelativeLayout>
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:clipToPadding="false"
+                android:paddingVertical="6dp"
                 android:scrollbars="none">
 
                 <LinearLayout
@@ -126,108 +313,89 @@
                     <!-- Pet Item 1 -->
                     <LinearLayout
                         android:id="@+id/pet_luna"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        style="@style/HomePetCard">
 
                         <com.google.android.material.imageview.ShapeableImageView
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
+                            style="@style/HomePetPhoto"
                             android:contentDescription="@string/luna"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/luna"
-                            app:shapeAppearanceOverlay="@style/RoundedCornerImage" />
+                            android:src="@drawable/luna" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/luna"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
+                            style="@style/HomePetName"
+                            android:text="@string/luna" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/cocker_spaniel_desc"
-                            android:textAlignment="center"
-                            android:textColor="@color/text_gray"
-                            android:textSize="12sp" />
+                            style="@style/HomePetDesc"
+                            android:text="@string/cocker_spaniel_desc" />
+
+                        <TextView
+                            android:id="@+id/chip_luna"
+                            style="@style/HomePetChip"
+                            android:background="@drawable/bg_chip_ok"
+                            android:text="@string/estado_al_dia"
+                            android:textColor="@color/success_green" />
                     </LinearLayout>
 
                     <!-- Pet Item 2 -->
                     <LinearLayout
                         android:id="@+id/pet_milo"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        style="@style/HomePetCard">
 
                         <com.google.android.material.imageview.ShapeableImageView
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
+                            style="@style/HomePetPhoto"
                             android:contentDescription="@string/milo"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/milo"
-                            app:shapeAppearanceOverlay="@style/RoundedCornerImage" />
+                            android:src="@drawable/milo" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/milo"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
+                            style="@style/HomePetName"
+                            android:text="@string/milo" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/siames_desc"
-                            android:textAlignment="center"
-                            android:textColor="@color/text_gray"
-                            android:textSize="12sp" />
+                            style="@style/HomePetDesc"
+                            android:text="@string/siames_desc" />
+
+                        <TextView
+                            android:id="@+id/chip_milo"
+                            style="@style/HomePetChip"
+                            android:background="@drawable/bg_chip_ok"
+                            android:text="@string/estado_al_dia"
+                            android:textColor="@color/success_green" />
                     </LinearLayout>
 
                     <!-- Add Button -->
                     <LinearLayout
                         android:id="@+id/btnAddPetHome"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_width="100dp"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_dashed_card"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <FrameLayout
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
-                            android:background="@drawable/bg_dashed_circle">
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_icon_teal">
 
                             <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
                                 android:layout_gravity="center"
                                 android:contentDescription="@null"
                                 android:src="@drawable/ic_plus"
-                                app:tint="@color/text_gray" />
+                                app:tint="@color/primary_teal" />
                         </FrameLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="6dp"
                             android:text="@string/nueva_mascota_home_label"
-                            android:textColor="@color/text_gray" />
+                            android:textColor="@color/primary_teal"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
             </HorizontalScrollView>
@@ -236,7 +404,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp">
+                android:layout_marginTop="16dp">
 
                 <TextView
                     android:id="@+id/tv_recordatorios_title"
@@ -245,7 +413,7 @@
                     android:layout_alignParentStart="true"
                     android:layout_toStartOf="@+id/tv_ver_todas_recordatorios"
                     android:text="@string/proximos_recordatorios"
-                    android:textColor="@color/black"
+                    android:textColor="@color/brand_navy"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -256,6 +424,7 @@
                     android:layout_alignParentEnd="true"
                     android:text="@string/ver_todas"
                     android:textColor="@color/primary_teal"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
             </RelativeLayout>
 
@@ -263,29 +432,47 @@
                 android:id="@+id/containerRecordatoriosHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginTop="2dp"
+                android:clipToPadding="false"
+                android:orientation="vertical" />
 
             <!-- Activity Section -->
-            <TextView
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="@string/actividad_reciente"
-                android:textColor="@color/black"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_toStartOf="@+id/tv_ver_actividad"
+                    android:text="@string/actividad_reciente"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_ver_actividad"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="@string/ver_historial"
+                    android:textColor="@color/primary_teal"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
             <LinearLayout
                 android:id="@+id/containerActividadRecienteHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="12dp"
+                android:clipToPadding="false"
+                android:orientation="vertical" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

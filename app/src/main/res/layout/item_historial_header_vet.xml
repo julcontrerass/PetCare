@@ -3,9 +3,9 @@
     android:id="@+id/tvHeader"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="10dp"
     android:text="Mayo 2026"
-    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-    android:textStyle="bold"
-    android:textColor="@color/black" />
+    android:textColor="@color/brand_navy"
+    android:textSize="17sp"
+    android:textStyle="bold" />

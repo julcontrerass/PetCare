@@ -3,9 +3,8 @@
     android:id="@+id/tvHeaderFecha"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/light_gray"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="8dp"
-    android:textColor="@color/text_gray"
-    android:textSize="13sp"
+    android:paddingTop="12dp"
+    android:paddingBottom="8dp"
+    android:textColor="@color/brand_navy"
+    android:textSize="15sp"
     android:textStyle="bold" />

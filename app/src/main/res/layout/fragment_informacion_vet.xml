@@ -1,107 +1,268 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
     android:fillViewport="true"
-    android:background="@color/white">
+    android:paddingBottom="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="16dp">
+        android:paddingHorizontal="20dp"
+        android:paddingTop="10dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            style="@style/EventoSeccion"
+            android:layout_marginBottom="10dp"
+            android:text="Datos clínicos" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Peso"
-            android:textColor="@color/text_gray"
-            android:textSize="13sp" />
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="4dp">
+
+            <LinearLayout style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_weight"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Peso" />
+
+                    <TextView
+                        android:id="@+id/tvPeso"
+                        style="@style/PetInfoValue"
+                        android:text="4.5 kg" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_chip"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Microchip" />
+
+                    <TextView
+                        android:id="@+id/tvMicrochip"
+                        style="@style/PetInfoValue"
+                        android:text="981020000123456" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_dog"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Color" />
+
+                    <TextView
+                        android:id="@+id/tvColor"
+                        style="@style/PetInfoValue"
+                        android:text="Marrón y Negro" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_document"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Observaciones" />
+
+                    <TextView
+                        android:id="@+id/tvObservaciones"
+                        style="@style/PetInfoValue"
+                        android:text="Sensibilidad a ciertos tipos de arena para gatos." />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
 
         <TextView
+            style="@style/EventoSeccion"
+            android:layout_marginTop="18dp"
+            android:layout_marginBottom="10dp"
+            android:text="Propietario" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:paddingBottom="8dp"
-            android:id="@+id/tvPeso"
-            android:text="4.5 kg"
-            android:textColor="@color/black"
-            android:textSize="16sp" />
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="4dp">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider_light" />
+            <LinearLayout style="@style/PetInfoRow">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Microchip"
-            android:textColor="@color/text_gray"
-            android:textSize="13sp" />
+                <FrameLayout style="@style/PetInfoIconBox">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:paddingBottom="8dp"
-            android:id="@+id/tvMicrochip"
-            android:text="981020000123456"
-            android:textColor="@color/black"
-            android:textSize="16sp" />
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_person"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider_light" />
+                <LinearLayout style="@style/PetInfoTexts">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Color"
-            android:textColor="@color/text_gray"
-            android:textSize="13sp" />
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Nombre completo" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:paddingBottom="8dp"
-            android:id="@+id/tvColor"
-            android:text="Marrón y Negro"
-            android:textColor="@color/black"
-            android:textSize="16sp" />
+                    <TextView
+                        android:id="@+id/tvPropNombre"
+                        style="@style/PetInfoValue"
+                        android:text="María Fernández" />
+                </LinearLayout>
+            </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider_light" />
+            <View style="@style/PetInfoDivider" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Observaciones"
-            android:textColor="@color/text_gray"
-            android:textSize="13sp" />
+            <LinearLayout style="@style/PetInfoRow">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:paddingBottom="12dp"
-            android:id="@+id/tvObservaciones"
-            android:text="Sensibilidad a ciertos tipos de arena para gatos."
-            android:textColor="@color/black"
-            android:textSize="16sp" />
+                <FrameLayout style="@style/PetInfoIconBox">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider_light" />
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_location"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
 
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Dirección" />
+
+                    <TextView
+                        android:id="@+id/tvPropDireccion"
+                        style="@style/PetInfoValue"
+                        android:text="Av. Santa Fe 1234, CABA" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Teléfono de contacto" />
+
+                    <TextView
+                        android:id="@+id/tvPropTelefono"
+                        style="@style/PetInfoValue"
+                        android:text="+54 11 4444-5555" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View style="@style/PetInfoDivider" />
+
+            <LinearLayout style="@style/PetInfoRow">
+
+                <FrameLayout style="@style/PetInfoIconBox">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_mail"
+                        app:tint="@color/teal_dark" />
+                </FrameLayout>
+
+                <LinearLayout style="@style/PetInfoTexts">
+
+                    <TextView
+                        style="@style/PetInfoLabel"
+                        android:text="Email" />
+
+                    <TextView
+                        android:id="@+id/tvPropEmail"
+                        style="@style/PetInfoValue"
+                        android:text="m.fernandez@email.com" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrollInfoMascota"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="28dp">
+
+            <!-- HERO -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_hero_card"
+                android:elevation="4dp">
+
+                <ImageView
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="end|bottom"
+                    android:layout_marginEnd="-16dp"
+                    android:layout_marginBottom="-22dp"
+                    android:alpha="0.12"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no"
+                    android:rotation="-10"
+                    android:src="@drawable/ic_dog"
+                    app:tint="@color/white" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="18dp"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="20dp">
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout
+                            android:id="@+id/petImageCard"
+                            android:layout_width="116dp"
+                            android:layout_height="116dp"
+                            android:background="@drawable/circular_white"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="3dp">
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/imageView3"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:clickable="true"
+                                android:contentDescription="@null"
+                                android:focusable="true"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/milo"
+                                app:shapeAppearanceOverlay="@style/CircleImage" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:id="@+id/btnCameraOverlay"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_gravity="end|bottom"
+                            android:background="@drawable/circular_white"
+                            android:clickable="true"
+                            android:elevation="4dp"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/cambiar_foto_desc"
+                                android:src="@drawable/ic_camera"
+                                app:tint="@color/primary_teal" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <!-- NOMBRE -->
+                    <TextView
+                        android:id="@+id/textView9"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/nombre_koda"
+                        android:textColor="@color/white"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <!-- RAZA / TIPO -->
+                    <TextView
+                        android:id="@+id/textView10"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:drawablePadding="6dp"
+                        android:gravity="center_vertical"
+                        android:text="@string/raza_koda"
+                        android:textColor="#F2FFFFFF"
+                        android:textSize="14sp"
+                        app:drawableStartCompat="@drawable/ic_dog"
+                        app:drawableTint="@color/white" />
+
+                    <!-- FECHA / SEXO -->
+                    <TextView
+                        android:id="@+id/textView11"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:gravity="center"
+                        android:text="@string/nacimiento_sexo_koda"
+                        android:textColor="#D9FFFFFF"
+                        android:textSize="13sp" />
+
+                    <!-- ESTADO DE LA MASCOTA -->
+                    <TextView
+                        android:id="@+id/tvPetStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_chip_glass"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="5dp"
+                        android:text="@string/estado_mascota_activa"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- RESUMEN RÁPIDO -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout style="@style/PetStatCard">
+
+                    <FrameLayout style="@style/PetStatIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_calendar" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvStatEdad"
+                        style="@style/PetStatValue" />
+
+                    <TextView
+                        style="@style/PetStatLabel"
+                        android:text="@string/stat_edad" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/PetStatCard">
+
+                    <FrameLayout style="@style/PetStatIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_weight" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvStatPeso"
+                        style="@style/PetStatValue" />
+
+                    <TextView
+                        style="@style/PetStatLabel"
+                        android:text="@string/label_peso" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/PetStatCard">
+
+                    <FrameLayout style="@style/PetStatIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_dog" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvStatSexo"
+                        style="@style/PetStatValue" />
+
+                    <TextView
+                        style="@style/PetStatLabel"
+                        android:text="@string/stat_sexo" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- SALUD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_card_white"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/salud_titulo"
+                        android:textColor="@color/brand_navy"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSaludEstado"
+                        style="@style/HomePetChip"
+                        android:layout_marginTop="0dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvSaludProximo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_gray"
+                    android:textSize="13.5sp"
+                    app:drawableStartCompat="@drawable/ic_calendar"
+                    app:drawableTint="@color/primary_teal" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnVerCarnet"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/btn_ver_carnet"
+                        android:textAllCaps="false"
+                        android:textColor="@color/primary_teal"
+                        android:textSize="13.5sp"
+                        app:cornerRadius="23dp"
+                        app:strokeColor="@color/primary_teal" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAgendarTurno"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/primary_teal"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/btn_agendar_turno"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="13.5sp"
+                        app:cornerRadius="23dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- SECCIÓN 1: INFORMACIÓN -->
+            <LinearLayout
+                android:id="@+id/layout_informacion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_card_white"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/datos_mascota_titulo"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- Peso -->
+                <LinearLayout style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_weight" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="@string/label_peso" />
+
+                        <TextView
+                            android:id="@+id/editTextText"
+                            style="@style/PetInfoValue"
+                            android:text="@string/valor_peso_koda" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/PetInfoDivider" />
+
+                <!-- Microchip -->
+                <LinearLayout style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_chip" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="@string/label_microchip" />
+
+                        <TextView
+                            android:id="@+id/txtMicrochip"
+                            style="@style/PetInfoValue"
+                            android:text="@string/valor_microchip_koda" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/PetInfoDivider" />
+
+                <!-- Color -->
+                <LinearLayout style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_drop" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="@string/label_color" />
+
+                        <TextView
+                            android:id="@+id/editTextText2"
+                            style="@style/PetInfoValue"
+                            android:text="@string/valor_color_koda" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/PetInfoDivider" />
+
+                <!-- Observaciones -->
+                <LinearLayout style="@style/PetInfoRow">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_document" />
+                    </FrameLayout>
+
+                    <LinearLayout style="@style/PetInfoTexts">
+
+                        <TextView
+                            style="@style/PetInfoLabel"
+                            android:text="@string/label_observaciones_mascota" />
+
+                        <TextView
+                            android:id="@+id/editTextText3"
+                            style="@style/PetInfoValue"
+                            android:text="@string/obs_alergia_koda" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- BOTÓN ACCIÓN EDITAR -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEditarInfo"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/primary_teal"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/btn_editar_informacion"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                app:cornerRadius="27dp"
+                app:icon="@drawable/ic_pencil"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconTint="@color/white" />
+
+            <!-- BOTÓN DAR DE BAJA -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDarDeBaja"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="6dp"
+                android:text="@string/dar_de_baja_mascota"
+                android:textAllCaps="false"
+                android:textColor="@color/danger_red"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>

@@ -7,7 +7,8 @@
     android:layout_height="wrap_content"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:background="@color/white"
+    android:background="@drawable/bg_nav_bar"
+    android:elevation="8dp"
     tools:ignore="Overdraw,UseCompoundDrawables">
 
     <LinearLayout

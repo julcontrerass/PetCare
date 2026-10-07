@@ -15,6 +15,7 @@ class PacientesAdapter(private var items: List<Paciente>) : RecyclerView.Adapter
         val tvPetName: TextView = view.findViewById(R.id.tvPetName)
         val tvPetBreed: TextView = view.findViewById(R.id.tvPetBreed)
         val tvOwnerName: TextView = view.findViewById(R.id.tvOwnerName)
+        val tvProximoTurno: TextView = view.findViewById(R.id.tvProximoTurno)
     }
 
     fun updateItems(newItems: List<Paciente>) {
@@ -31,7 +32,10 @@ class PacientesAdapter(private var items: List<Paciente>) : RecyclerView.Adapter
         val item = items[position]
         holder.tvPetName.text = item.nombre
         holder.tvPetBreed.text = item.razaYSexo
-        holder.tvOwnerName.text = "Propietario/a: ${item.propietario}"
+        holder.tvOwnerName.text = item.propietario
+        val proximo = AgendaRepo.proximoEvento(item.id)
+        holder.tvProximoTurno.text =
+            if (proximo != null) "Próximo turno · ${Fechas.relativa(proximo.fecha)} ${proximo.hora}" else "Sin turnos próximos"
         holder.ivPetPhoto.setImageResource(item.fotoRes)
 
         holder.itemView.setOnClickListener {

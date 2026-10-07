@@ -1,93 +1,252 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    android:orientation="vertical">
+    android:background="@color/login_bg"
+    android:fitsSystemWindows="true"
+    tools:ignore="Overdraw">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/baseline_arrow_back_24"
-        app:title="Salud"
-        app:titleCentered="true">
-
-        <ImageButton
-            android:id="@+id/btnAgregarRegistro"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="end"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Agregar"
-            android:src="@drawable/ic_plus"
-            app:tint="@color/black" />
-    </androidx.appcompat.widget.Toolbar>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/bg_search_bar"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="10dp">
+    <FrameLayout
+        android:id="@+id/btnBack"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
+        android:contentDescription="@string/volver_atras"
+        android:elevation="2dp"
+        android:focusable="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:importantForAccessibility="no"
-            android:src="@android:drawable/ic_menu_search"
-            app:tint="@color/text_gray" />
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/baseline_arrow_back_24"
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
 
-        <EditText
-            android:id="@+id/etBuscarRegistro"
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="14dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintEnd_toStartOf="@id/btnAgregarRegistro"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack">
+
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:background="@null"
-            android:hint="Buscar..."
-            android:inputType="text"
-            android:maxLines="1" />
+            android:text="Salud"
+            android:textColor="@color/brand_navy"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vacunas, tratamientos y documentos"
+            android:textColor="@color/text_gray"
+            android:textSize="13sp" />
     </LinearLayout>
 
-    <Spinner
-        android:id="@+id/spMascotaFiltro"
+    <FrameLayout
+        android:id="@+id/btnAgregarRegistro"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/circular_teal"
+        android:clickable="true"
+        android:contentDescription="@string/btn_agregar_veterinario"
+        android:elevation="3dp"
+        android:focusable="true"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnBack">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_plus"
+            app:tint="@color/white" />
+    </FrameLayout>
+
+    <!-- Resumen -->
+    <LinearLayout
+        android:id="@+id/llResumen"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="4dp" />
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="15dp"
+        android:layout_marginTop="18dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
+
+        <LinearLayout style="@style/PetStatCard">
+
+            <FrameLayout
+                style="@style/PetStatIconBox"
+                android:backgroundTint="@color/light_green">
+
+                <ImageView
+                    style="@style/PetStatIcon"
+                    android:src="@drawable/ic_check_circle"
+                    android:tint="@color/success_green" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvStatAlDia"
+                style="@style/PetStatValue" />
+
+            <TextView
+                style="@style/PetStatLabel"
+                android:text="Vacunas al día" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/PetStatCard">
+
+            <FrameLayout
+                style="@style/PetStatIconBox"
+                android:backgroundTint="@color/light_orange">
+
+                <ImageView
+                    style="@style/PetStatIcon"
+                    android:src="@drawable/ic_clock"
+                    android:tint="@color/accent_orange" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvStatPendientes"
+                style="@style/PetStatValue" />
+
+            <TextView
+                style="@style/PetStatLabel"
+                android:text="Por renovar" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/PetStatCard">
+
+            <FrameLayout
+                style="@style/PetStatIconBox"
+                android:backgroundTint="@color/light_purple">
+
+                <ImageView
+                    style="@style/PetStatIcon"
+                    android:src="@drawable/ic_document"
+                    android:tint="@color/accent_purple" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvStatDocs"
+                style="@style/PetStatValue" />
+
+            <TextView
+                style="@style/PetStatLabel"
+                android:text="Documentos" />
+        </LinearLayout>
+    </LinearLayout>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutSalud"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/login_bg"
+        app:layout_constraintTop_toBottomOf="@id/llResumen"
+        app:tabBackground="@drawable/tab_background_selector"
+        app:tabIndicator="@drawable/tab_indicator"
         app:tabIndicatorColor="@color/primary_teal"
+        app:tabIndicatorGravity="bottom"
         app:tabMode="fixed"
+        app:tabRippleColor="@null"
         app:tabSelectedTextColor="@color/primary_teal"
-        app:tabTextColor="@color/black" />
+        app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge"
+        app:tabTextColor="@color/text_gray" />
 
-    <FrameLayout
+    <LinearLayout
+        android:id="@+id/llBuscar"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_login_field"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tabLayoutSalud">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvRegistros"
-            android:layout_width="match_parent"
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_search"
+            app:tint="@color/text_gray" />
+
+        <EditText
+            android:id="@+id/etBuscarRegistro"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="Buscar..."
+            android:inputType="text"
+            android:maxLines="1"
+            android:textColor="@color/black"
+            android:textColorHint="@color/text_gray"
+            android:textSize="15sp" />
+    </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvVacio"
+    <HorizontalScrollView
+        android:id="@+id/scrollFiltroMascotas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="4dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/llBuscar">
+
+        <LinearLayout
+            android:id="@+id/llFiltroMascotas"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="No hay registros para mostrar"
-            android:textColor="@color/text_gray"
-            android:visibility="gone" />
-    </FrameLayout>
-</LinearLayout>
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvRegistros"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="20dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scrollFiltroMascotas"
+        tools:listitem="@layout/item_registro_salud" />
+
+    <include
+        android:id="@+id/emptyRegistros"
+        layout="@layout/view_empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="12dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/scrollFiltroMascotas" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -70,6 +70,14 @@ class ArchivosFragment : Fragment() {
             }
         }
         rvArchivos.adapter = adapter
+
+        val vacio = view?.findViewById<View>(R.id.emptyArchivos)
+        if (vacio != null) {
+            vacio.visibility = if (archivosActuales.isEmpty()) View.VISIBLE else View.GONE
+            vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_document)
+            vacio.findViewById<android.widget.TextView>(R.id.tvEmptyTitle).text = "Sin archivos"
+            vacio.findViewById<android.widget.TextView>(R.id.tvEmptyMessage).text = "Subí estudios, recetas o documentos del paciente"
+        }
     }
 
     private fun opcionesArchivo(item: ArchivoItem) {

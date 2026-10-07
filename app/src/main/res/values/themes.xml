@@ -3,6 +3,8 @@
     <style name="Base.Theme.PetCare" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:fontFamily">@font/nunito</item>
+        <item name="fontFamily">@font/nunito</item>
     </style>
 
     <style name="Theme.PetCare" parent="Base.Theme.PetCare" />
@@ -41,8 +43,358 @@
     <style name="VetFormLabel">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">16dp</item>
-        <item name="android:layout_marginBottom">4dp</item>
+        <item name="android:layout_marginTop">14dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Home del dueño -->
+    <style name="HomeQuickAction" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginHorizontal">5dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="HomeQuickTile" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:background">@drawable/bg_card_white</item>
+        <item name="android:elevation">2dp</item>
+    </style>
+
+    <style name="HomeQuickIcon" parent="">
+        <item name="android:layout_width">26dp</item>
+        <item name="android:layout_height">26dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:contentDescription">@null</item>
+    </style>
+
+    <style name="HomeQuickLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">@font/nunito_medium</item>
+        <item name="android:textColor">@color/teal_dark</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <style name="HomePetCard" parent="">
+        <item name="android:layout_width">128dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:background">@drawable/bg_card_white</item>
+        <item name="android:elevation">2dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="HomePetPhoto" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">96dp</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="shapeAppearanceOverlay">@style/RoundedCornerImageSmall</item>
+    </style>
+
+    <style name="HomePetName" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">7dp</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="HomePetDesc" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_gray</item>
+        <item name="android:textSize">11.5sp</item>
+    </style>
+
+    <!-- Perfil -->
+    <style name="CampoPerfil" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:background">@drawable/bg_login_field</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingHorizontal">18dp</item>
+    </style>
+
+    <style name="CampoPerfilIcono" parent="">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:contentDescription">@null</item>
+        <item name="android:tint">@color/text_gray</item>
+    </style>
+
+    <style name="CampoPerfilTexto" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">14dp</item>
+        <item name="android:background">@null</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textColorHint">@color/text_gray</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Navegación inferior -->
+    <style name="NavIndicatorNone" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+    </style>
+
+    <!-- Nuevo evento -->
+    <style name="StepCircle" parent="">
+        <item name="android:layout_width">34dp</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:background">@drawable/bg_step_pending</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="StepLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:textColor">@color/text_gray</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="EventoSeccion" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TipoEventoCard" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginHorizontal">5dp</item>
+        <item name="android:background">@drawable/bg_card_white</item>
+        <item name="android:elevation">2dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="TipoEventoContenido" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <style name="TipoEventoIconBox" parent="">
+        <item name="android:layout_width">46dp</item>
+        <item name="android:layout_height">46dp</item>
+        <item name="android:background">@drawable/bg_icon_tile</item>
+    </style>
+
+    <style name="TipoEventoTitulo" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TipoEventoDesc" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_gray</item>
+        <item name="android:textSize">12.5sp</item>
+    </style>
+
+    <style name="TipoEventoCheck" parent="">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:layout_gravity">top|end</item>
+        <item name="android:layout_margin">10dp</item>
+        <item name="android:contentDescription">@null</item>
+        <item name="android:src">@drawable/ic_check_circle</item>
+        <item name="android:tint">@color/primary_teal</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <!-- Menú Más -->
+    <style name="MasRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:paddingVertical">10dp</item>
+    </style>
+
+    <style name="MasRowIconBox" parent="">
+        <item name="android:layout_width">38dp</item>
+        <item name="android:layout_height">38dp</item>
+        <item name="android:background">@drawable/bg_icon_tile</item>
+    </style>
+
+    <style name="MasRowIcon" parent="">
+        <item name="android:layout_width">20dp</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:contentDescription">@null</item>
+        <item name="android:tint">@color/primary_teal</item>
+    </style>
+
+    <style name="MasRowText" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">14dp</item>
+        <item name="android:fontFamily">@font/nunito_medium</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- Mascotas -->
+    <style name="PetMiniChip" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:background">@drawable/bg_chip_neutral</item>
+        <item name="android:paddingHorizontal">9dp</item>
+        <item name="android:paddingVertical">3dp</item>
+        <item name="android:textColor">@color/teal_dark</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="PetFilterChip" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">10dp</item>
+        <item name="android:background">@drawable/bg_pill_white</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:elevation">1dp</item>
+        <item name="android:paddingHorizontal">18dp</item>
+        <item name="android:paddingVertical">9dp</item>
+        <item name="android:textColor">@color/text_gray</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="PetStatCard" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginHorizontal">5dp</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:background">@drawable/bg_card_white</item>
+        <item name="android:elevation">2dp</item>
+    </style>
+
+    <style name="PetStatIconBox" parent="">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:background">@drawable/bg_icon_tile</item>
+    </style>
+
+    <style name="PetStatIcon" parent="">
+        <item name="android:layout_width">20dp</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:contentDescription">@null</item>
+        <item name="android:tint">@color/primary_teal</item>
+    </style>
+
+    <style name="PetStatValue" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="PetStatLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_gray</item>
+        <item name="android:textSize">11.5sp</item>
+    </style>
+
+    <style name="PetInfoRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingVertical">12dp</item>
+    </style>
+
+    <style name="PetInfoIconBox" parent="">
+        <item name="android:layout_width">38dp</item>
+        <item name="android:layout_height">38dp</item>
+        <item name="android:background">@drawable/bg_icon_tile</item>
+    </style>
+
+    <style name="PetInfoTexts" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="PetInfoLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_gray</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="PetInfoValue" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">1dp</item>
+        <item name="android:fontFamily">@font/nunito_medium</item>
+        <item name="android:textColor">@color/brand_navy</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="PetInfoDivider" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginStart">50dp</item>
+        <item name="android:background">@color/divider_light</item>
+    </style>
+
+    <style name="HomePetChip" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">5dp</item>
+        <item name="android:paddingHorizontal">8dp</item>
+        <item name="android:paddingVertical">3dp</item>
+        <item name="android:textSize">10.5sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 </resources>

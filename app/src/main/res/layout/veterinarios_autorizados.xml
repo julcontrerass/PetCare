@@ -4,180 +4,200 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/login_bg"
     tools:ignore="Overdraw">
 
-    <ImageButton
+    <FrameLayout
         android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="20dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
         android:contentDescription="@string/volver_atras"
-        android:src="@drawable/baseline_arrow_back_24"
+        android:elevation="2dp"
+        android:focusable="true"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="@string/veterinarios_title"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btnBack" />
-
-    <ImageButton
-        android:id="@+id/btnAgregarVeterinario"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/dialog_autorizar_veterinario"
-        android:src="@drawable/ic_plus"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btnBack" />
-
-    <LinearLayout
-        android:id="@+id/searchBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_edit_text"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBack">
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
             android:contentDescription="@null"
-            android:src="@drawable/ic_search"
-            app:tint="@color/text_gray" />
+            android:src="@drawable/baseline_arrow_back_24"
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
 
-        <EditText
-            android:id="@+id/etBuscar"
-            android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="14dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintEnd_toStartOf="@id/btnAgregarVeterinario"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack">
+
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:background="@null"
-            android:hint="@string/buscar_vet_hint"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:maxLines="1"
-            android:textColor="@color/black"
+            android:text="Veterinarios"
+            android:textColor="@color/brand_navy"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvVetsCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_gray"
             android:textSize="13sp" />
     </LinearLayout>
 
-    <HorizontalScrollView
-        android:id="@+id/filterScrollView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:scrollbars="none"
+    <FrameLayout
+        android:id="@+id/btnAgregarVeterinario"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/circular_teal"
+        android:clickable="true"
+        android:contentDescription="@string/btn_agregar_veterinario"
+        android:elevation="3dp"
+        android:focusable="true"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchBar">
+        app:layout_constraintTop_toTopOf="@id/btnBack">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingHorizontal="20dp">
-
-            <TextView
-                android:id="@+id/btnFiltroTodos"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_chip_selected"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="@string/filtro_todos"
-                android:textColor="@color/white"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/btnFiltroActivos"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_chip_unselected"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="@string/filtro_activos"
-                android:textColor="@color/black"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/btnFiltroPendientes"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_chip_unselected"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="@string/filtro_pendientes"
-                android:textColor="@color/black"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/btnFiltroInactivos"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_chip_unselected"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp"
-                android:text="@string/filtro_inactivos"
-                android:textColor="@color/black"
-                android:textSize="13sp" />
-
-        </LinearLayout>
-    </HorizontalScrollView>
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_plus"
+            app:tint="@color/white" />
+    </FrameLayout>
 
     <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollContent"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="14dp"
         android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterScrollView">
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
 
         <LinearLayout
-            android:id="@+id/listaVeterinarios"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
-            android:paddingBottom="20dp">
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_info_banner"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_check_circle"
+                    app:tint="@color/primary_teal" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:text="Los veterinarios con un turno tuyo ven la ficha de tu mascota automáticamente. No hace falta autorizarlos."
+                    android:textColor="@color/teal_dark"
+                    android:textSize="13.5sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_login_field"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/text_gray" />
+
+                <EditText
+                    android:id="@+id/etBuscar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="@string/buscar_vet_hint"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/text_gray"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:paddingVertical="4dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btnFiltroTodos"
+                        style="@style/PetFilterChip"
+                        android:text="Todos" />
+
+                    <TextView
+                        android:id="@+id/btnFiltroActivos"
+                        style="@style/PetFilterChip"
+                        android:text="Con acceso" />
+
+                    <TextView
+                        android:id="@+id/btnFiltroInactivos"
+                        style="@style/PetFilterChip"
+                        android:text="Sin acceso" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <LinearLayout
+                android:id="@+id/listaVeterinarios"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical" />
 
             <TextView
                 android:id="@+id/tvSinResultados"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="16dp"
                 android:gravity="center"
                 android:text="@string/sin_resultados"
                 android:textColor="@color/text_gray"
-                android:textSize="13sp"
+                android:textSize="14sp"
                 android:visibility="gone" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

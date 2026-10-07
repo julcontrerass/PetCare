@@ -4,433 +4,510 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
-
-    <!-- Header Background -->
-    <View
-        android:id="@+id/headerBackground"
-        android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:background="@color/light_teal"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvHeaderTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:paddingBottom="16dp"
-        android:text="Perfil Profesional"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    android:background="@color/login_bg"
+    tools:ignore="Overdraw">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:clipToPadding="false"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/vetNav"
-        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle">
+        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="24dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp"
             android:paddingBottom="24dp">
 
-            <!-- Profile Image Section -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivVetProfilePic"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_marginTop="20dp"
-                android:padding="4dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/juani"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:shapeAppearanceOverlay="@style/CircleImage"
-                app:strokeColor="@color/white"
-                app:strokeWidth="4dp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btnEditVetProfilePic"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="2dp"
-                app:layout_constraintBottom_toBottomOf="@+id/ivVetProfilePic"
-                app:layout_constraintEnd_toEndOf="@+id/ivVetProfilePic">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@string/cambiar_foto_perfil_desc"
-                    android:src="@drawable/ic_pencil"
-                    app:tint="@color/black" />
-            </com.google.android.material.card.MaterialCardView>
-
             <TextView
-                android:id="@+id/tvNombreVet"
+                android:id="@+id/tvHeaderTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Dr. Juan Pérez"
-                android:textColor="@color/black"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/ivVetProfilePic" />
+                android:text="Perfil profesional"
+                android:textColor="@color/brand_navy"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvDatosVet"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Matrícula MP-12345"
-                android:textColor="@color/primary_teal"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvNombreVet" />
-
-            <!-- Datos de Contacto y Clínica -->
-            <TextView
-                android:id="@+id/tvLabelContacto"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Datos de Veterinaria y Contacto"
-                android:textColor="@color/text_gray"
-                android:textSize="13sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvDatosVet" />
-
-            <!-- Clínica -->
             <LinearLayout
-                android:id="@+id/llVetClinica"
+                android:id="@+id/heroPerfilVet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/tvLabelContacto">
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_hero_card"
+                android:elevation="3dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <FrameLayout
+                    android:layout_width="104dp"
+                    android:layout_height="104dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivVetProfilePic"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@null"
+                        android:padding="3dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/juani"
+                        app:shapeAppearanceOverlay="@style/CircleImage"
+                        app:strokeColor="@color/white"
+                        app:strokeWidth="3dp" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnEditVetProfilePic"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_gravity="bottom|end"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="17dp"
+                        app:cardElevation="2dp">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@string/cambiar_foto_perfil_desc"
+                            android:src="@drawable/ic_pencil"
+                            app:tint="@color/teal_dark" />
+                    </com.google.android.material.card.MaterialCardView>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvNombreVet"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Dr. Juan Pérez"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDatosVet"
+                    style="@style/HomePetChip"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_chip_glass"
+                    android:paddingVertical="4dp"
+                    android:text="Matrícula MP-12345"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/EventoSeccion"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="10dp"
+                android:text="Veterinaria y contacto" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="4dp">
+
+        <LinearLayout
+            android:id="@+id/llVetClinica"
+            style="@style/PetInfoRow">
+
+            <FrameLayout style="@style/PetInfoIconBox">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_medical"
-                    app:tint="@color/text_gray" />
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Clínica" />
 
                 <TextView
                     android:id="@+id/tvVetClinicaValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="Clínica Veterinaria Central"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    style="@style/PetInfoValue"
+                    android:text="Clínica Veterinaria Central" />
             </LinearLayout>
+        </LinearLayout>
 
-            <!-- Dirección -->
-            <LinearLayout
-                android:id="@+id/llVetDireccion"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/llVetClinica">
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
+            android:id="@+id/llVetDireccion"
+            style="@style/PetInfoRow">
+
+            <FrameLayout style="@style/PetInfoIconBox">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_location"
-                    app:tint="@color/text_gray" />
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Dirección" />
 
                 <TextView
                     android:id="@+id/tvVetDireccionValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="Av. Santa Fe 2345, CABA"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    style="@style/PetInfoValue"
+                    android:text="Av. Santa Fe 2345, CABA" />
             </LinearLayout>
+        </LinearLayout>
 
-            <!-- Teléfono -->
-            <LinearLayout
-                android:id="@+id/llVetPhone"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/llVetDireccion">
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
+            android:id="@+id/llVetPhone"
+            style="@style/PetInfoRow">
+
+            <FrameLayout style="@style/PetInfoIconBox">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_phone"
-                    app:tint="@color/text_gray" />
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Teléfono" />
 
                 <TextView
                     android:id="@+id/tvVetPhoneValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="+54 11 4000-1234"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    style="@style/PetInfoValue"
+                    android:text="+54 11 4000-1234" />
             </LinearLayout>
+        </LinearLayout>
 
-            <!-- Email -->
-            <LinearLayout
-                android:id="@+id/llVetEmail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/llVetPhone">
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
+            android:id="@+id/llVetEmail"
+            style="@style/PetInfoRow">
+
+            <FrameLayout style="@style/PetInfoIconBox">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_mail"
-                    app:tint="@color/text_gray" />
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Correo electrónico" />
 
                 <TextView
                     android:id="@+id/tvVetEmailValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="juan.perez@clinica.com"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    style="@style/PetInfoValue"
+                    android:text="juan.perez@clinica.com" />
             </LinearLayout>
+        </LinearLayout>
 
-            <!-- Sección Horarios y Especialidades -->
+        </LinearLayout>
+
             <TextView
-                android:id="@+id/tvLabelAtencion"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Disponibilidad y Especialidades"
-                android:textColor="@color/text_gray"
-                android:textSize="13sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/llVetEmail" />
+                style="@style/EventoSeccion"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="10dp"
+                android:text="Disponibilidad y especialidades" />
 
-            <!-- Días y Horarios -->
-            <LinearLayout
-                android:id="@+id/llVetHorarios"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/tvLabelAtencion">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="4dp">
+
+        <LinearLayout
+            android:id="@+id/llVetHorarios"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout style="@style/PetInfoIconBox">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_calendar"
-                    app:tint="@color/text_gray" />
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Días y horarios de atención" />
 
                 <TextView
                     android:id="@+id/tvVetHorariosValue"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="Lun a Vie: 09:00 - 18:00 hs · Sáb: 09:00 - 13:00 hs"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    style="@style/PetInfoValue"
+                    android:text="Lun a Vie: 09:00 - 18:00 hs · Sáb: 09:00 - 13:00 hs" />
             </LinearLayout>
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
 
-            <!-- Especialidades -->
-            <LinearLayout
-                android:id="@+id/llVetEspecialidades"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_edit_text"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                app:layout_constraintTop_toBottomOf="@id/llVetHorarios">
+        </LinearLayout>
+
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
+            android:id="@+id/llVetEspecialidades"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout style="@style/PetInfoIconBox">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_pencil"
-                    app:tint="@color/text_gray" />
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Especialidades" />
 
                 <TextView
                     android:id="@+id/tvVetEspecialidadesValue"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="Cirugía Veterinaria, Dermatología, Odontología"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
+                    style="@style/PetInfoValue"
+                    android:text="Cirugía Veterinaria, Dermatología, Odontología" />
             </LinearLayout>
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
 
-            <!-- Configuración y Acciones -->
-            <LinearLayout
-                android:layout_width="match_parent"
+        </LinearLayout>
+
+        </LinearLayout>
+
+            <TextView
+                style="@style/EventoSeccion"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="10dp"
+                android:text="Cuenta" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_white"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="4dp">
+
+        <LinearLayout
+            android:id="@+id/optEditarPerfil"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout
+                style="@style/PetInfoIconBox"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_pencil"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/llVetEspecialidades">
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_medium"
+                android:text="Editar perfil profesional"
+                android:textColor="@color/brand_navy"
+                android:textSize="15sp" />
 
-                <!-- Editar perfil -->
-                <LinearLayout
-                    android:id="@+id/optEditarPerfil"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+        </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_pencil"
-                        app:tint="@color/text_gray" />
+        <View style="@style/PetInfoDivider" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="Editar perfil profesional"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-                </LinearLayout>
+        <LinearLayout
+            android:id="@+id/optCambiarPassword"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider_light" />
+            <FrameLayout
+                style="@style/PetInfoIconBox"
+                android:background="@drawable/bg_icon_tile">
 
-                <!-- Cambiar contraseña -->
-                <LinearLayout
-                    android:id="@+id/optCambiarPassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_key"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_key"
-                        app:tint="@color/text_gray" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_medium"
+                android:text="Cambiar contraseña"
+                android:textColor="@color/brand_navy"
+                android:textSize="15sp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="Cambiar contraseña"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-                </LinearLayout>
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+        </LinearLayout>
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider_light" />
+        <View style="@style/PetInfoDivider" />
 
-                <!-- Notificaciones -->
-                <LinearLayout
-                    android:id="@+id/optNotificaciones"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+        <LinearLayout
+            android:id="@+id/optNotificaciones"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_notifications"
-                        app:tint="@color/text_gray" />
+            <FrameLayout
+                style="@style/PetInfoIconBox"
+                android:background="@drawable/bg_icon_tile">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="Notificaciones"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_notifications"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider_light" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_medium"
+                android:text="Notificaciones"
+                android:textColor="@color/brand_navy"
+                android:textSize="15sp" />
 
-                <!-- Cerrar sesión -->
-                <LinearLayout
-                    android:id="@+id/optCerrarSesion"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingVertical="12dp">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+        </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_logout"
-                        app:tint="@color/danger_red" />
+        <View style="@style/PetInfoDivider" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="Cerrar sesión"
-                        android:textColor="@color/danger_red"
-                        android:textSize="14sp" />
-                </LinearLayout>
+        <LinearLayout
+            android:id="@+id/optCerrarSesion"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
 
-            </LinearLayout>
+            <FrameLayout
+                style="@style/PetInfoIconBox"
+                android:background="@drawable/bg_chip_danger">
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_logout"
+                    app:tint="@color/danger_red" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_medium"
+                android:text="Cerrar sesión"
+                android:textColor="@color/danger_red"
+                android:textSize="15sp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+        </LinearLayout>
+
+        </LinearLayout>
+
+        </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
     <include
-        android:id="@+id/vetNav"
         layout="@layout/vet_bottom_nav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -5,62 +5,93 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     tools:context=".MainActivity">
-
-    <Button
-        android:id="@+id/button2"
-        android:layout_width="261dp"
-        android:layout_height="55dp"
-        android:layout_marginBottom="120dp"
-        android:backgroundTint="@color/white"
-        android:text="@string/crear_cuenta"
-        android:textColor="@color/primary_teal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button"
-        app:layout_constraintVertical_bias="0.0"
-        app:strokeColor="@color/primary_teal"
-        app:strokeWidth="2dp" />
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="324dp"
-        android:layout_height="417dp"
-        android:contentDescription="Logo"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        app:srcCompat="@drawable/whatsapp_image_2026_08_22_at_20_49_11"
-        tools:ignore="HardcodedText" />
-
-    <Button
-        android:id="@+id/button"
-        android:layout_width="261dp"
-        android:layout_height="55dp"
-        android:layout_marginBottom="120dp"
-        android:text="@string/iniciar_sesi_n"
-        android:backgroundTint="@color/primary_teal"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="40dp"
+        android:layout_marginTop="24dp"
+        android:contentDescription="@string/logo_description"
+        android:src="@drawable/logo_petcare"
+        app:layout_constraintDimensionRatio="H,840:648"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView"
-        app:layout_constraintVertical_bias="0.611" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/imageView2"
-        android:layout_width="316dp"
-        android:layout_height="484dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
         android:contentDescription="@string/mascotainicio"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:scaleType="fitEnd"
+        android:src="@drawable/mascotas_inicio"
+        android:translationY="12dp"
+        app:layout_constraintBottom_toTopOf="@id/panelBienvenida"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.684"
-        app:srcCompat="@drawable/_ca3b17b_daed_4cf7_b171_d0d686cc99b7" />
+        app:layout_constraintTop_toBottomOf="@id/imageView" />
+
+    <LinearLayout
+        android:id="@+id/panelBienvenida"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_welcome_panel"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="40dp"
+        android:paddingBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/bienvenida_titulo"
+            android:textColor="@color/brand_navy"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/bienvenida_subtitulo"
+            android:textColor="@color/text_gray"
+            android:textSize="16sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="32dp"
+            android:backgroundTint="@color/primary_teal"
+            android:text="@string/iniciar_sesi_n"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:cornerRadius="28dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button2"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/white"
+            android:text="@string/crear_cuenta"
+            android:textColor="@color/primary_teal"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:cornerRadius="28dp"
+            app:strokeColor="@color/primary_teal"
+            app:strokeWidth="2dp" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

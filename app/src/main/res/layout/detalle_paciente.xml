@@ -4,181 +4,231 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/login_bg"
+    tools:ignore="Overdraw">
 
-    <androidx.appcompat.widget.Toolbar
+    <FrameLayout
         android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent"
-        app:navigationIcon="@drawable/baseline_arrow_back_24">
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
+        android:contentDescription="@string/volver_atras"
+        android:elevation="2dp"
+        android:focusable="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
-            android:id="@+id/btnMorePaciente"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="end"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/mas_opciones_desc"
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/baseline_arrow_back_24"
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="14dp"
+        android:text="Ficha del paciente"
+        android:textColor="@color/brand_navy"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/toolbar"
+        app:layout_constraintEnd_toStartOf="@id/btnMorePaciente"
+        app:layout_constraintStart_toEndOf="@id/toolbar"
+        app:layout_constraintTop_toTopOf="@id/toolbar" />
+
+    <FrameLayout
+        android:id="@+id/btnMorePaciente"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/circular_white"
+        android:clickable="true"
+        android:contentDescription="@string/mas_opciones_desc"
+        android:elevation="2dp"
+        android:focusable="true"
+        app:layout_constraintBottom_toBottomOf="@id/toolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/toolbar">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
             android:src="@drawable/ic_more"
-            app:tint="@color/black" />
+            app:tint="@color/brand_navy" />
+    </FrameLayout>
 
-    </androidx.appcompat.widget.Toolbar>
-
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
+        android:id="@+id/heroPaciente"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_hero_card"
+        android:elevation="3dp"
+        android:orientation="vertical"
+        android:padding="16dp"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <!-- Profile Section -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cvPetPhoto"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="60dp"
-                app:cardElevation="0dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                android:layout_width="76dp"
+                android:layout_height="76dp"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp">
 
                 <ImageView
                     android:id="@+id/ivPetPhoto"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:contentDescription="@null"
                     android:scaleType="centerCrop"
                     android:src="@drawable/luna" />
             </androidx.cardview.widget.CardView>
 
-            <TextView
-                android:id="@+id/tvPetName"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Luna"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cvPetPhoto" />
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvPetBreed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Gato Siamés - Hembra"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="@color/black"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvPetName" />
+                <TextView
+                    android:id="@+id/tvPetName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Luna"
+                    android:textColor="@color/white"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvPetAge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="20 May 2018 (6 años)"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="@color/text_gray"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvPetBreed" />
+                <TextView
+                    android:id="@+id/tvPetBreed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Gato Siamés - Hembra"
+                    android:textColor="#E6FFFFFF"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvPetAge"
+                    style="@style/HomePetChip"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_chip_glass"
+                    android:text="20 May 2018 (6 años)"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="14dp"
+            android:background="#33FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvPetOwner"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:drawablePadding="8dp"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
                 android:text="Propietario: María Fernández"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="@color/text_gray"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvPetAge" />
+                android:textColor="@color/white"
+                android:textSize="13.5sp"
+                app:drawableStartCompat="@drawable/ic_person"
+                app:drawableTint="@color/white" />
 
             <TextView
                 android:id="@+id/tvPetOwnerContact"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="6dp"
+                android:drawablePadding="8dp"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
                 android:text="Contacto: +54 11 4444-5555"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="@color/text_gray"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvPetOwner" />
+                android:textColor="@color/white"
+                android:textSize="13.5sp"
+                app:drawableStartCompat="@drawable/ic_phone"
+                app:drawableTint="@color/white" />
+        </LinearLayout>
+    </LinearLayout>
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@color/white"
-                app:layout_constraintTop_toBottomOf="@id/tvPetOwnerContact"
-                app:tabIndicatorColor="@color/primary_teal"
-                app:tabIndicatorFullWidth="false"
-                app:tabIndicatorHeight="3dp"
-                app:tabMode="scrollable"
-                app:tabSelectedTextColor="@color/primary_teal"
-                app:tabTextColor="@color/text_gray"
-                app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge">
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Informe" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Información" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Historial clínico" />
-
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Archivos" />
-
-            </com.google.android.material.tabs.TabLayout>
-
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/viewPager"
-                android:layout_width="match_parent"
-                android:layout_height="500dp"
-                app:layout_constraintTop_toBottomOf="@id/tabLayout" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottomNavContainer"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_marginTop="6dp"
+        android:background="@color/login_bg"
+        app:layout_constraintTop_toBottomOf="@id/heroPaciente"
+        app:tabIndicatorColor="@color/primary_teal"
+        app:tabIndicatorFullWidth="false"
+        app:tabIndicatorHeight="3dp"
+        app:tabMode="scrollable"
+        app:tabRippleColor="@null"
+        app:tabSelectedTextColor="@color/primary_teal"
+        app:tabTextAppearance="@style/TextAppearance.Material3.LabelLarge"
+        app:tabTextColor="@color/text_gray">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomNavigation"
-            android:layout_width="match_parent"
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@color/white"
-            app:labelVisibilityMode="labeled"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:menu="@menu/bottom_nav_menu_vet"
-            app:itemIconTint="@color/primary_teal"
-            app:itemTextColor="@color/primary_teal" />
+            android:text="Informe" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Información" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Historial clínico" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Archivos" />
+    </com.google.android.material.tabs.TabLayout>
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout" />
+
+    <include
+        layout="@layout/vet_bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,7 +11,6 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import com.google.android.material.button.MaterialButton
 import java.time.LocalDate
 
@@ -24,7 +23,8 @@ class AgregarConsultaActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.agregar_consulta)
 
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+        VetUi.barras(this)
+        findViewById<View>(R.id.toolbar).setOnClickListener { finish() }
 
         val spPaciente = findViewById<Spinner>(R.id.spPaciente)
         val spTipo = findViewById<Spinner>(R.id.spTipo)

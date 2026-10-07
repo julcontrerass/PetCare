@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp">
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="2dp"
+    android:background="@drawable/bg_card_white"
+    android:clickable="true"
+    android:elevation="2dp"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="14dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cvPetPhoto"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        app:cardCornerRadius="32dp"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_width="68dp"
+        android:layout_height="68dp"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="0dp">
 
         <ImageView
             android:id="@+id/ivPetPhoto"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:contentDescription="@null"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_dog" />
     </androidx.cardview.widget.CardView>
@@ -29,57 +33,57 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/ivChevron"
-        app:layout_constraintStart_toEndOf="@id/cvPetPhoto"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/tvPetName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Koda"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/brand_navy"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvPetBreed"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Golden Retriever - Macho"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/text_gray" />
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_gray"
+            android:textSize="13.5sp" />
 
         <TextView
             android:id="@+id/tvOwnerName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Propietaria: Julieta Gómez"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/text_gray" />
+            android:layout_marginTop="2dp"
+            android:drawablePadding="6dp"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:textColor="@color/teal_dark"
+            android:textSize="13sp"
+            app:drawableStartCompat="@drawable/ic_person"
+            app:drawableTint="@color/teal_dark" />
 
+        <TextView
+            android:id="@+id/tvProximoTurno"
+            style="@style/HomePetChip"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_chip_neutral"
+            android:textColor="@color/teal_dark" />
     </LinearLayout>
 
     <ImageView
         android:id="@+id/ivChevron"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:contentDescription="@null"
         android:src="@drawable/ic_chevron_right"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/text_gray" />
 
-    <View
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:background="@color/divider_light"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/cvPetPhoto"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
