@@ -247,7 +247,9 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
                 HistorialItem(
                     evento.categoria, Fechas.corta(evento.fecha) + veterinario,
                     EstiloCategoria.icono(evento.categoria), EstiloCategoria.fondo(evento.categoria)
-                )
+                ) {
+                    host.dialogosEventos.mostrarDetalle(evento) { configurarHistorial() }
+                }
             }.ifEmpty {
                 listOf(
                     HistorialItem(

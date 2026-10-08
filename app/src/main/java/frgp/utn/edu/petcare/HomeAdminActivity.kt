@@ -534,15 +534,26 @@ class HomeAdminActivity : BaseActivity() {
     // ---------- Cuenta del administrador ----------
 
     private fun mostrarCuenta() {
-        AlertDialog.Builder(this)
-            .setTitle("Administrador")
-            .setMessage("${AdminRepo.EMAIL_ADMIN}\n\nTenés acceso a todos los dueños y veterinarios de PetCare.")
-            .setPositiveButton("Cerrar sesión") { _, _ ->
-                val intent = Intent(this, AuthActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                startActivity(intent)
-            }
-            .setNegativeButton("Cerrar", null)
-            .show()
+        val vista = layoutInflater.inflate(R.layout.sheet_admin_cuenta, null)
+        val sheet = crearSheet(vista)
+        vista.findViewById<TextView>(R.id.tvCuentaEmail).text = AdminRepo.EMAIL_ADMIN
+        vista.findViewById<TextView>(R.id.tvCuentaVets).text =
+            "${AdminRepo.vetsActivos()} activos de ${AdminRepo.listaVeterinarios.size}"
+        vista.findViewById<TextView>(R.id.tvCuentaDuenos).text =
+            "${AdminRepo.listaDuenos.size} dueños · ${AdminRepo.totalMascotas()} mascotas"
+        val pendientes = AdminRepo.pendientesRevisionCount()
+        vista.findViewById<TextView>(R.id.tvCuentaPendientes).text = when (pendientes) {
+            0 -> "Ninguna"
+            1 -> "1 pendiente"
+            else -> "$pendientes pendientes"
+        }
+        vista.findViewById<View>(R.id.btnCuentaVolver).setOnClickListener { sheet.dismiss() }
+        vista.findViewById<View>(R.id.btnCuentaCerrarSesion).setOnClickListener {
+            sheet.dismiss()
+            val intent = Intent(this, AuthActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(intent)
+        }
+        sheet.show()
     }
 }

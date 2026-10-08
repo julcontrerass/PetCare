@@ -13,7 +13,9 @@ data class HistorialItem(
     val title: String,
     val subtitle: String,
     val iconRes: Int,
-    val bgColorRes: Int
+    val bgColorRes: Int,
+    /** Qué hacer al tocar la tarjeta; sin esto la tarjeta no es tocable. */
+    val alTocar: (() -> Unit)? = null
 )
 
 class HistorialAdapter(private val items: List<HistorialItem>) : RecyclerView.Adapter<HistorialAdapter.ViewHolder>() {
@@ -24,6 +26,8 @@ class HistorialAdapter(private val items: List<HistorialItem>) : RecyclerView.Ad
         val tvTitle: TextView = view.findViewById(R.id.tvTitle)
         val tvSubtitle: TextView = view.findViewById(R.id.tvSubtitle)
         val timelineLine: View = view.findViewById(R.id.timeline_line)
+        val chevron: View? = view.findViewById(R.id.ivChevron)
+        val tarjeta: View? = view.findViewById(R.id.tarjetaHistorial)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -38,6 +42,13 @@ class HistorialAdapter(private val items: List<HistorialItem>) : RecyclerView.Ad
         holder.ivIcon.setImageResource(item.iconRes)
         holder.iconContainer.backgroundTintList = ContextCompat.getColorStateList(holder.itemView.context, item.bgColorRes)
         
+        val accion = item.alTocar
+        holder.chevron?.visibility = if (accion != null) View.VISIBLE else View.GONE
+        (holder.tarjeta ?: holder.itemView).let { destino ->
+            destino.setOnClickListener(accion?.let { a -> View.OnClickListener { a() } })
+            destino.isClickable = accion != null
+        }
+
         // Ocultar la línea en el último elemento
         holder.timelineLine.visibility = if (position == items.size - 1) View.INVISIBLE else View.VISIBLE
     }

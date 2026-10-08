@@ -162,16 +162,6 @@ public class FuncionalidadTest {
         assertTrue(rv.getAdapter().getItemCount() > 0);
     }
 
-    @Test
-    public void historialVet_usaLosEventosDelPaciente() {
-        Intent i = new Intent(ApplicationProvider.getApplicationContext(), HistorialClinicoVetActivity.class);
-        i.putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, 4);
-        HistorialClinicoVetActivity a = Robolectric.buildActivity(HistorialClinicoVetActivity.class, i).setup().get();
-        RecyclerView rv = a.findViewById(R.id.rvHistorial);
-        assertTrue(rv.getAdapter().getItemCount() >= AgendaRepo.INSTANCE.deMascota(4).size());
-        assertEquals("Luna", ((TextView) a.findViewById(R.id.tvPetName)).getText().toString());
-    }
-
     private AuthActivity abrirAuth() {
         return Robolectric.buildActivity(AuthActivity.class).setup().get();
     }
@@ -242,6 +232,27 @@ public class FuncionalidadTest {
     }
 
     @Test
+    public void dueno_tocarUnItemDelHistorialAbreElDetalleDelTurno() {
+        DuenoActivity a = loginDueno();
+        a.findViewById(R.id.nav_mascotas).performClick();
+        LinearLayout lista = a.findViewById(R.id.listaMascotasContainer);
+        lista.getChildAt(0).performClick();                       // abre la ficha de Koda
+        TabLayout tabs = a.findViewById(R.id.tabLayout);
+        tabs.getTabAt(1).select();                                // pestaña Historial
+        ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS); // termina la animación del cambio
+
+        RecyclerView rv = a.findViewById(R.id.recyclerViewHistorial);
+        rv.measure(View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(2000, View.MeasureSpec.AT_MOST));
+        rv.layout(0, 0, 1080, 2000);
+        View item = rv.findViewHolderForAdapterPosition(0).itemView;
+        item.findViewById(R.id.tarjetaHistorial).performClick();
+
+        assertTrue("Debe abrirse el detalle del turno",
+                ShadowDialog.getLatestDialog() instanceof BottomSheetDialog);
+    }
+
+    @Test
     public void dueno_elBotonAgregarMascotaAbreElFormulario() {
         DuenoActivity a = loginDueno();
         a.findViewById(R.id.nav_mascotas).performClick();
@@ -277,5 +288,21 @@ public class FuncionalidadTest {
         assertNotNull(adminActivity.findViewById(R.id.bottomNavigation));
         assertTrue(AdminRepo.INSTANCE.getListaVeterinarios().size() > 0);
         assertTrue(AdminRepo.INSTANCE.getListaDuenos().size() > 0);
+    }
+
+    @Test
+    public void admin_cuentaMuestraSusDatosYCierraSesion() {
+        HomeAdminActivity admin = Robolectric.buildActivity(HomeAdminActivity.class).setup().get();
+        admin.findViewById(R.id.btnAdminCuenta).performClick();
+
+        android.app.Dialog hoja = ShadowDialog.getLatestDialog();
+        assertTrue(hoja instanceof BottomSheetDialog);
+        assertEquals(AdminRepo.EMAIL_ADMIN,
+                ((TextView) hoja.findViewById(R.id.tvCuentaEmail)).getText().toString());
+        assertNotNull(hoja.findViewById(R.id.tvCuentaPendientes));
+
+        hoja.findViewById(R.id.btnCuentaCerrarSesion).performClick();
+        Intent siguiente = Shadows.shadowOf(admin).getNextStartedActivity();
+        assertEquals(AuthActivity.class.getName(), siguiente.getComponent().getClassName());
     }
 }

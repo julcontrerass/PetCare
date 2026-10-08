@@ -53,7 +53,10 @@ class EventosDialogos(private val host: DuenoActivity) {
         vista.findViewById<View>(R.id.rowTurnoObs).visibility = if (hayObservaciones) View.VISIBLE else View.GONE
         if (hayObservaciones) vista.findViewById<TextView>(R.id.tvTurnoObs).text = evento.observaciones
 
+        // Un turno que ya pasó queda como registro: no se edita ni se cancela
         vista.findViewById<View>(R.id.btnTurnoCancelar).visibility = if (proximo) View.VISIBLE else View.GONE
+        vista.findViewById<View>(R.id.btnTurnoEditar).visibility = if (proximo) View.VISIBLE else View.GONE
+        vista.findViewById<View>(R.id.tvTurnoSimular).visibility = if (proximo) View.VISIBLE else View.GONE
         vista.findViewById<View>(R.id.btnTurnoEditar).setOnClickListener {
             hoja.dismiss()
             editar(evento, alCambiar)
