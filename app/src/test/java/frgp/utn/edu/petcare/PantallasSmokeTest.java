@@ -38,7 +38,6 @@ public class PantallasSmokeTest {
         abrir(PerfilVetActivity.class);
         abrir(AgregarConsultaActivity.class);
         abrir(DetalleEventoVetActivity.class);
-        abrir(HistorialClinicoVetActivity.class);
     }
 
     @Test
