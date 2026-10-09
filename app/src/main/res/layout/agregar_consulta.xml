@@ -111,7 +111,7 @@
                         android:layout_height="50dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_login_field"
-                        android:hint="Ej: julieta.gomez@email.com"
+                        android:hint="Correo del dueño o DNI"
                         android:inputType="text"
                         android:maxLines="1"
                         android:paddingHorizontal="16dp"
@@ -144,7 +144,7 @@
                         android:id="@+id/tvDuenoInfo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Dueño: Julieta Gómez · julieta.gomez@email.com"
+                        tools:text="Dueño: Julieta Gómez · julieta.gomez@email.com"
                         android:textColor="@color/teal_dark"
                         android:textSize="13.5sp"
                         android:textStyle="bold" />

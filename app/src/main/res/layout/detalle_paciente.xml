@@ -97,7 +97,7 @@
                     android:layout_height="match_parent"
                     android:contentDescription="@null"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/luna" />
+                    android:src="@drawable/ic_dog" />
             </androidx.cardview.widget.CardView>
 
             <LinearLayout
@@ -113,7 +113,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="Luna"
+                    tools:text="Luna"
                     android:textColor="@color/white"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -124,7 +124,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="Gato Siamés - Hembra"
+                    tools:text="Gato Siamés - Hembra"
                     android:textColor="#E6FFFFFF"
                     android:textSize="14sp" />
 
@@ -133,7 +133,7 @@
                     style="@style/HomePetChip"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_chip_glass"
-                    android:text="20 May 2018 (6 años)"
+                    tools:text="20 May 2018 (6 años)"
                     android:textColor="@color/white" />
             </LinearLayout>
         </LinearLayout>
@@ -158,7 +158,7 @@
                 android:ellipsize="end"
                 android:gravity="center_vertical"
                 android:maxLines="1"
-                android:text="Propietario: María Fernández"
+                tools:text="Propietario: María Fernández"
                 android:textColor="@color/white"
                 android:textSize="13.5sp"
                 app:drawableStartCompat="@drawable/ic_person"
@@ -173,7 +173,7 @@
                 android:ellipsize="end"
                 android:gravity="center_vertical"
                 android:maxLines="1"
-                android:text="Contacto: +54 11 4444-5555"
+                tools:text="Contacto: +54 11 4444-5555"
                 android:textColor="@color/white"
                 android:textSize="13.5sp"
                 app:drawableStartCompat="@drawable/ic_phone"

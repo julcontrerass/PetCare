@@ -11,11 +11,14 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.RelativeCornerSize
 import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
 import frgp.utn.edu.petcare.ui.common.Efectos
@@ -36,7 +39,8 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private var categoria: String? = null
     private var mascota: String? = null
     private var veterinario: String? = null
-    private var hora: String? = "11:00"
+    private var hora: String? = null
+    private var ocupadas: Set<String> = emptySet()
     private var observaciones = ""
     private var fecha: LocalDate = LocalDate.now()
     private var mes: YearMonth = YearMonth.now()
@@ -44,8 +48,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     fun mostrar(fechaPedida: LocalDate?, mascotaPreseleccionada: String?) {
         host.mostrarContenido(R.layout.nuevo_evento, -1)
 
-        var inicial = if (fechaPedida == null || fechaPedida.isBefore(LocalDate.now())) LocalDate.now() else fechaPedida
-        if (DuenoRepo.horaValidaPara(inicial, "11:00") == null) inicial = inicial.plusDays(1)
+        val inicial = if (fechaPedida == null || fechaPedida.isBefore(LocalDate.now())) LocalDate.now() else fechaPedida
 
         fecha = inicial
         mes = YearMonth.from(inicial)
@@ -53,7 +56,8 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         categoria = null
         mascota = mascotaPreseleccionada
         veterinario = null
-        hora = DuenoRepo.horaValidaPara(inicial, "11:00")
+        hora = null
+        ocupadas = emptySet()
         observaciones = ""
 
         alTocar(R.id.btnBack) { host.irACalendario() }
@@ -115,10 +119,13 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private fun avanzarDelSegundoPaso() {
         val horaElegida = hora
         val nombre = mascota
+        val vet = DuenoRepo.buscarVeterinario(veterinario)
         when {
-            veterinario == null -> toast("Seleccioná un veterinario")
+            vet == null -> toast("Seleccioná un veterinario")
             fecha.isBefore(LocalDate.now()) -> toast("No podés seleccionar una fecha que ya pasó")
+            !DuenoRepo.trabajaEl(vet, fecha) -> toast("${vet.nombre} no atiende ese día")
             horaElegida == null || DuenoRepo.horaPasada(fecha, horaElegida) -> toast("Elegí un horario disponible")
+            horaElegida in ocupadas -> toast("Ese horario ya fue reservado, elegí otro")
             DuenoRepo.hayConflictoDeTurno(fecha, horaElegida, nombre) -> toast("$nombre ya tiene un turno en ese horario")
             else -> {
                 guardarObservaciones()
@@ -138,6 +145,20 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         host.mesCalendario = YearMonth.from(fecha)
         toast("Evento guardado")
         host.irACalendario()
+    }
+
+    /** Pide al servidor los horarios que ya reservaron otros dueños con el veterinario elegido ese día. */
+    private fun cargarOcupadas() {
+        val vet = DuenoRepo.buscarVeterinario(veterinario) ?: return
+        val dia = fecha
+        host.lifecycleScope.launch {
+            val reservadas = runCatching { DuenoRepo.horasOcupadas(vet, dia) }.getOrDefault(emptySet())
+            if (dia == fecha && vet.nombre == veterinario) {
+                ocupadas = reservadas
+                if (hora in ocupadas) hora = null
+                if (paso == 2) dibujarHoras()
+            }
+        }
     }
 
     private fun guardarObservaciones() {
@@ -179,14 +200,14 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
                 setBackgroundResource(if (activa) R.drawable.bg_pet_ring else R.drawable.circular_white)
                 elevation = dp(2).toFloat()
             }
-            if (m.fotoUri != null || m.fotoRes != 0) {
+            if (m.fotoUri != null || m.fotoPath != null) {
                 val foto = ShapeableImageView(host).apply {
                     layoutParams = FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
                     )
                     scaleType = ImageView.ScaleType.CENTER_CROP
                     shapeAppearanceModel = shapeAppearanceModel.toBuilder().setAllCornerSizes(RelativeCornerSize(0.5f)).build()
-                    if (m.fotoUri != null) setImageURI(m.fotoUri) else setImageResource(m.fotoRes)
+                    Imagenes.mostrar(this, m.fotoUri, m.fotoPath)
                 }
                 marco.addView(foto)
             } else {
@@ -237,7 +258,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val sinVeterinarios = vista<TextView>(R.id.tvSinVeterinarios)
         contenedor.removeAllViews()
 
-        val filtrados = DuenoRepo.todosLosVeterinarios().filter { it.especialidad == categoria }
+        val filtrados = DuenoRepo.veterinariosPara(categoria)
         if (filtrados.isEmpty()) {
             sinVeterinarios?.visibility = View.VISIBLE
             return
@@ -303,7 +324,9 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         tarjeta.setOnClickListener {
             Efectos.rebote(it)
             veterinario = vet.nombre
+            hora = null
             dibujarVeterinarios()
+            cargarOcupadas()
         }
         return tarjeta
     }
@@ -327,6 +350,8 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
     private fun casilleroDia(dia: LocalDate, numero: Int): FrameLayout {
         val casillero = FrameLayout(host).apply { layoutParams = parametrosCasillero() }
+        val vet = DuenoRepo.buscarVeterinario(veterinario)
+        val noAtiende = vet != null && !DuenoRepo.trabajaEl(vet, dia)
         val esPasado = dia.isBefore(LocalDate.now())
         val esHoy = dia == LocalDate.now()
         val seleccionado = dia == fecha
@@ -343,7 +368,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
                 texto.setTextColor(ContextCompat.getColor(host, R.color.white))
                 texto.setTypeface(texto.typeface, Typeface.BOLD)
             }
-            esPasado -> {
+            esPasado || noAtiende -> {
                 texto.setTextColor(ContextCompat.getColor(host, R.color.text_gray))
                 texto.alpha = 0.4f
             }
@@ -359,11 +384,16 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
                 toast("No podés seleccionar una fecha que ya pasó")
                 return@setOnClickListener
             }
+            if (noAtiende) {
+                toast("${vet?.nombre} no atiende ese día")
+                return@setOnClickListener
+            }
             Efectos.rebote(texto)
             fecha = dia
-            hora = DuenoRepo.horaValidaPara(dia, hora)
+            hora = null
             dibujarCalendarioMini()
             dibujarHoras()
+            cargarOcupadas()
         }
         return casillero
     }
@@ -372,9 +402,21 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val grilla = vista<GridLayout>(R.id.gridHoras) ?: return
         grilla.removeAllViews()
 
-        for (opcion in DuenoRepo.HORAS_EVENTO) {
+        val vet = DuenoRepo.buscarVeterinario(veterinario)
+        val horas = if (vet == null) emptyList() else DuenoRepo.horasDe(vet, fecha)
+        texto(
+            R.id.tvSinHoras,
+            when {
+                vet == null -> "Elegí un veterinario para ver sus horarios"
+                horas.isEmpty() -> "${vet.nombre} no atiende ese día"
+                else -> ""
+            }
+        )
+        vista<View>(R.id.tvSinHoras)?.visibility = if (horas.isEmpty()) View.VISIBLE else View.GONE
+
+        for (opcion in horas) {
             val pasada = DuenoRepo.horaPasada(fecha, opcion)
-            val ocupada = DuenoRepo.hayConflictoDeTurno(fecha, opcion, mascota)
+            val ocupada = opcion in ocupadas || DuenoRepo.hayConflictoDeTurno(fecha, opcion, mascota)
             val deshabilitada = pasada || ocupada
             val activa = opcion == hora && !deshabilitada
 
@@ -397,7 +439,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             chip.setOnClickListener {
                 when {
                     pasada -> toast("Ese horario ya pasó")
-                    ocupada -> toast("$mascota ya tiene un turno a esa hora")
+                    ocupada -> toast("Ese horario no está disponible")
                     else -> {
                         Efectos.rebote(it)
                         hora = opcion

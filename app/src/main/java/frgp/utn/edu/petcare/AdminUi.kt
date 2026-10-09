@@ -1,13 +1,12 @@
 package frgp.utn.edu.petcare
 
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import java.io.File
+import frgp.utn.edu.petcare.data.Imagenes
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -36,15 +35,12 @@ object AdminUi {
 
     /** Muestra la foto si existe; si no, las iniciales del nombre. */
     fun avatar(iniciales: TextView, foto: ImageView, nombre: String, fotoPath: String?) {
-        val archivo = fotoPath?.let { File(it) }
-        if (archivo != null && archivo.exists()) {
-            foto.setImageURI(Uri.fromFile(archivo))
-            foto.visibility = View.VISIBLE
-            iniciales.visibility = View.GONE
-        } else {
-            foto.visibility = View.GONE
-            iniciales.visibility = View.VISIBLE
-            iniciales.text = AdminRepo.iniciales(nombre)
+        iniciales.text = AdminRepo.iniciales(nombre)
+        foto.visibility = View.GONE
+        iniciales.visibility = View.VISIBLE
+        Imagenes.mostrar(foto, null, fotoPath) { hayFoto ->
+            foto.visibility = if (hayFoto) View.VISIBLE else View.GONE
+            iniciales.visibility = if (hayFoto) View.GONE else View.VISIBLE
         }
     }
 
@@ -67,6 +63,7 @@ object AdminUi {
         TipoActividad.RECHAZO -> R.drawable.ic_cancel to R.color.danger_red
         TipoActividad.SUSPENSION -> R.drawable.ic_lock to R.color.accent_orange_dark
         TipoActividad.REACTIVACION -> R.drawable.ic_check to R.color.success_green
+        TipoActividad.BAJA -> R.drawable.ic_cancel to R.color.text_gray
     }
 
     /** Arma la fila de una actividad; se usa en el inicio y en la pestaña de actividad. */

@@ -11,6 +11,7 @@ import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.ui.common.Efectos
@@ -64,9 +65,8 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
     /** Foto del dueño; una cuenta nueva sin foto usa el avatar neutro en vez del de ejemplo. */
     private fun cargarAvatar(imagen: ImageView?) {
         imagen ?: return
-        val foto = DuenoRepo.perfil.fotoUri
-        if (foto != null) imagen.setImageURI(foto)
-        else if (!DuenoRepo.esDemo) imagen.setImageResource(R.drawable.avatar_default)
+        imagen.setImageResource(R.drawable.avatar_default)
+        Imagenes.mostrar(imagen, DuenoRepo.perfil.fotoUri, DuenoRepo.perfil.fotoPath)
     }
 
     /** Tarjeta verde del principio: el próximo turno o la invitación a agendar uno. */
@@ -125,10 +125,12 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
     private fun tarjetaMascota(mascota: Mascota, padre: ViewGroup): View {
         val tarjeta = host.layoutInflater.inflate(R.layout.item_home_mascota, padre, false)
         val foto = tarjeta.findViewById<ShapeableImageView>(R.id.ivFoto)
-        when {
-            mascota.fotoUri != null -> foto.setImageURI(mascota.fotoUri)
-            mascota.fotoRes != 0 -> foto.setImageResource(mascota.fotoRes)
-            else -> {
+        Imagenes.mostrar(foto, mascota.fotoUri, mascota.fotoPath) { hayFoto ->
+            if (hayFoto) {
+                foto.background = null
+                foto.clearColorFilter()
+                foto.setPadding(0, 0, 0, 0)
+            } else {
                 foto.setImageResource(R.drawable.ic_dog)
                 foto.setBackgroundResource(R.drawable.bg_icon_teal)
                 foto.setColorFilter(ContextCompat.getColor(host, R.color.primary_teal))

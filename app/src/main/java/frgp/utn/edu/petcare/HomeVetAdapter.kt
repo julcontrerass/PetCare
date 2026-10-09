@@ -21,7 +21,7 @@ data class HomeVetItem(
     val type: ItemType,
     val profileRes: Int? = null,
     val timeAgo: String? = null,
-    val eventoId: Int? = null,
+    val eventoId: String? = null,
     val isEnHorario: Boolean = false
 )
 

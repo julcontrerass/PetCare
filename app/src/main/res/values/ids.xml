@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Marca la imagen que una vista está esperando, para no pisarla si la vista se reutiliza -->
+    <item name="tag_imagen" type="id" />
+</resources>

@@ -9,10 +9,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import frgp.utn.edu.petcare.data.Imagenes
 
 class SolicitudesVetActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.solicitudes_vet)
 
         VetBottomNav.setup(this, R.id.nav_inicio)
@@ -33,12 +35,11 @@ class SolicitudesVetActivity : BaseActivity() {
                 val restantes = lista.count { it.estado == SolicitudItem.Estado.PENDIENTE }
                 findViewById<TextView>(R.id.tvSolicitudesCount).text =
                     if (restantes == 1) "1 pendiente" else "$restantes pendientes"
-                if (estado == SolicitudItem.Estado.ACEPTADA) {
-                    item.paciente?.let { PacientesRepo.agregar(it) }
-                    Toast.makeText(this, "${item.paciente?.nombre ?: "Paciente"} se sumó a tus pacientes", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "Solicitud rechazada", Toast.LENGTH_SHORT).show()
-                }
+                val aceptada = estado == SolicitudItem.Estado.ACEPTADA
+                SolicitudesRepo.resolver(item, aceptada)
+                Toast.makeText(
+                    this, if (aceptada) "La mascota se sumó a tus pacientes" else "Solicitud rechazada", Toast.LENGTH_SHORT
+                ).show()
             }
     }
 }
@@ -65,7 +66,8 @@ class SolicitudesAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.ivFoto.setImageResource(item.fotoRes)
+        holder.ivFoto.setImageResource(R.drawable.avatar_default)
+        Imagenes.mostrar(holder.ivFoto, null, item.fotoPath)
         holder.tvSolicitante.text = item.solicitante
         holder.tvMascota.text = item.mascota
         holder.tvHace.text = item.hace

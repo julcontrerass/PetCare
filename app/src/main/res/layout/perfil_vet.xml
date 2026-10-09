@@ -54,7 +54,7 @@
                         android:contentDescription="@null"
                         android:padding="3dp"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/juani"
+                        android:src="@drawable/avatar_default"
                         app:shapeAppearanceOverlay="@style/CircleImage"
                         app:strokeColor="@color/white"
                         app:strokeWidth="3dp" />
@@ -84,7 +84,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Dr. Juan Pérez"
+                    tools:text="Dr. Juan Pérez"
                     android:textColor="@color/white"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -95,7 +95,7 @@
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_chip_glass"
                     android:paddingVertical="4dp"
-                    android:text="Matrícula MP-12345"
+                    tools:text="Matrícula MP-12345"
                     android:textColor="@color/white" />
             </LinearLayout>
 
@@ -138,7 +138,7 @@
                 <TextView
                     android:id="@+id/tvVetDniValue"
                     style="@style/PetInfoValue"
-                    android:text="30123456" />
+                    tools:text="30123456" />
             </LinearLayout>
         </LinearLayout>
 
@@ -168,7 +168,7 @@
                 <TextView
                     android:id="@+id/tvVetClinicaValue"
                     style="@style/PetInfoValue"
-                    android:text="Clínica Veterinaria Central" />
+                    tools:text="Clínica Veterinaria Central" />
             </LinearLayout>
         </LinearLayout>
 
@@ -198,7 +198,7 @@
                 <TextView
                     android:id="@+id/tvVetDireccionValue"
                     style="@style/PetInfoValue"
-                    android:text="Av. Santa Fe 2345, CABA" />
+                    tools:text="Av. Santa Fe 2345, CABA" />
             </LinearLayout>
         </LinearLayout>
 
@@ -228,7 +228,7 @@
                 <TextView
                     android:id="@+id/tvVetPhoneValue"
                     style="@style/PetInfoValue"
-                    android:text="+54 11 4000-1234" />
+                    tools:text="+54 11 4000-1234" />
             </LinearLayout>
         </LinearLayout>
 
@@ -258,7 +258,7 @@
                 <TextView
                     android:id="@+id/tvVetEmailValue"
                     style="@style/PetInfoValue"
-                    android:text="juan.perez@clinica.com" />
+                    tools:text="juan.perez@clinica.com" />
             </LinearLayout>
         </LinearLayout>
 
@@ -306,7 +306,7 @@
                 <TextView
                     android:id="@+id/tvVetHorariosValue"
                     style="@style/PetInfoValue"
-                    android:text="Lun a Vie: 09:00 - 18:00 hs · Sáb: 09:00 - 13:00 hs" />
+                    tools:text="Lun a Vie: 09:00 - 18:00 hs · Sáb: 09:00 - 13:00 hs" />
             </LinearLayout>
             <ImageView
                 android:layout_width="20dp"
@@ -346,7 +346,7 @@
                 <TextView
                     android:id="@+id/tvVetEspecialidadesValue"
                     style="@style/PetInfoValue"
-                    android:text="Cirugía Veterinaria, Dermatología, Odontología" />
+                    tools:text="Cirugía Veterinaria, Dermatología, Odontología" />
             </LinearLayout>
             <ImageView
                 android:layout_width="20dp"
@@ -531,6 +531,19 @@
                 android:src="@drawable/ic_chevron_right"
                 app:tint="@color/text_gray" />
         </LinearLayout>
+
+        <View style="@style/PetInfoDivider" />
+
+        <TextView
+            android:id="@+id/optEliminarCuenta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:padding="14dp"
+            android:text="Eliminar mi cuenta"
+            android:textColor="@color/text_gray"
+            android:textSize="14sp" />
 
         </LinearLayout>
 

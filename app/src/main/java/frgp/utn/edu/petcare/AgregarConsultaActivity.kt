@@ -8,17 +8,26 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Servicios
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 
 class AgregarConsultaActivity : BaseActivity() {
 
+    /** Mascota que aparece al buscar un dueño: [paciente] es null si todavía no fue compartida con el veterinario. */
+    private class Candidata(val mascotaId: String, val etiqueta: String, val paciente: Paciente?)
+
     private var fecha: LocalDate? = null
-    private var mascotasDuenoEncontrado = listOf<Paciente>()
+    private var candidatas = listOf<Candidata>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.agregar_consulta)
 
         VetUi.barras(this)
@@ -34,11 +43,11 @@ class AgregarConsultaActivity : BaseActivity() {
         spTipo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AgendaRepo.tipos)
 
         // Preselección por intent si viene de DetallePaciente
-        val preseleccionado = intent.getIntExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, -1)
+        val preseleccionado = intent.getStringExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID)
         val idx = pacientes.indexOfFirst { it.id == preseleccionado }
         if (idx >= 0) spPaciente.setSelection(idx)
 
-        // Elementos de Búsqueda y Nuevo Dueño
+        // Elementos de búsqueda y nuevo dueño
         val etBuscarDueno = findViewById<EditText>(R.id.etBuscarDueno)
         val btnBuscarDueno = findViewById<View>(R.id.btnBuscarDueno)
         val layoutDuenoEncontrado = findViewById<LinearLayout>(R.id.layoutDuenoEncontrado)
@@ -61,39 +70,48 @@ class AgregarConsultaActivity : BaseActivity() {
         spNuevoEspecie.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Perro", "Gato", "Otro"))
         spNuevoSexo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Macho", "Hembra"))
 
-        // Acción Búsqueda de Dueño por DNI o Email
+        // Búsqueda de un dueño por DNI o correo: primero entre mis pacientes y después en toda la plataforma
         btnBuscarDueno.setOnClickListener {
             val q = etBuscarDueno.text.toString().trim()
             if (q.isBlank()) {
                 Toast.makeText(this, "Ingresá un DNI o Email para buscar", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            val coincidentes = pacientes.filter { p ->
-                p.email.equals(q, ignoreCase = true) ||
-                p.propietario.contains(q, ignoreCase = true) ||
-                p.telefono.contains(q)
-            }
-
-            if (coincidentes.isNotEmpty()) {
-                mascotasDuenoEncontrado = coincidentes
-                layoutDuenoEncontrado.visibility = View.VISIBLE
-                layoutNuevoDueno.visibility = View.GONE
-                tvDuenoInfo.text = "Dueño encontrado: ${coincidentes.first().propietario} (${coincidentes.first().email})"
-
-                spMascotasDueno.adapter = ArrayAdapter(
-                    this, android.R.layout.simple_spinner_dropdown_item, coincidentes.map { "${it.nombre} (${it.razaYSexo})" }
-                )
-                Toast.makeText(this, "Dueño encontrado con ${coincidentes.size} mascota(s)", Toast.LENGTH_SHORT).show()
-            } else {
-                layoutDuenoEncontrado.visibility = View.GONE
-                layoutNuevoDueno.visibility = View.VISIBLE
-                if (q.contains("@")) etNuevoEmailDueno.setText(q) else etNuevoDniDueno.setText(q)
-                Toast.makeText(this, "No se encontró dueño con ese dato. Completá el formulario para registrarlo.", Toast.LENGTH_LONG).show()
+            btnBuscarDueno.isEnabled = false
+            lifecycleScope.launch {
+                try {
+                    val encontradas = buscarMascotas(q, pacientes)
+                    if (encontradas.isNotEmpty()) {
+                        candidatas = encontradas.map { it.candidata }
+                        layoutDuenoEncontrado.visibility = View.VISIBLE
+                        layoutNuevoDueno.visibility = View.GONE
+                        tvDuenoInfo.text = encontradas.first().etiquetaDueno
+                        spMascotasDueno.adapter = ArrayAdapter(
+                            this@AgregarConsultaActivity, android.R.layout.simple_spinner_dropdown_item,
+                            encontradas.map { it.candidata.etiqueta }
+                        )
+                        Toast.makeText(
+                            this@AgregarConsultaActivity, "Dueño encontrado con ${encontradas.size} mascota(s)", Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        candidatas = emptyList()
+                        layoutDuenoEncontrado.visibility = View.GONE
+                        layoutNuevoDueno.visibility = View.VISIBLE
+                        if (q.contains("@")) etNuevoEmailDueno.setText(q) else etNuevoDniDueno.setText(q)
+                        Toast.makeText(
+                            this@AgregarConsultaActivity,
+                            "No se encontró dueño con ese dato. Completá el formulario para registrarlo.", Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@AgregarConsultaActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                } finally {
+                    btnBuscarDueno.isEnabled = true
+                }
             }
         }
 
-        // Toggle Formulario Nuevo Dueño
+        // Toggle formulario nuevo dueño
         btnToggleNuevoDueno.setOnClickListener {
             if (layoutNuevoDueno.visibility == View.VISIBLE) {
                 layoutNuevoDueno.visibility = View.GONE
@@ -103,7 +121,7 @@ class AgregarConsultaActivity : BaseActivity() {
             }
         }
 
-        // Pickers de Fecha y Hora (Nativos y totalmente estables)
+        // Selectores de fecha y hora
         val etFecha = findViewById<EditText>(R.id.etFecha)
         val etHora = findViewById<EditText>(R.id.etHora)
         etFecha.setOnClickListener {
@@ -136,7 +154,6 @@ class AgregarConsultaActivity : BaseActivity() {
         val etMotivo = findViewById<EditText>(R.id.etMotivo)
         val etNotas = findViewById<EditText>(R.id.etNotas)
 
-        // Acción Guardar Consulta
         findViewById<View>(R.id.btnGuardar).setOnClickListener {
             var ok = true
             if (fecha == null) { etFecha.error = "Requerido"; ok = false }
@@ -160,50 +177,29 @@ class AgregarConsultaActivity : BaseActivity() {
                 if (nomDueno.isBlank()) { etNuevoNombreDueno.error = "Requerido"; return@setOnClickListener }
                 if (nomMascota.isBlank()) { etNuevoNombreMascota.error = "Requerido"; return@setOnClickListener }
 
-                val emailNuevo = etNuevoEmailDueno.text.toString().trim().ifBlank { "Sin datos" }
-                val telNuevo = etNuevoTelefonoDueno.text.toString().trim().ifBlank { "Sin datos" }
-                val dniNuevo = etNuevoDniDueno.text.toString().trim().ifBlank { "Sin datos" }
-
-                pacienteElegido = PacientesRepo.agregar(
-                    Paciente(
-                        id = 0,
-                        nombre = nomMascota,
-                        especie = spNuevoEspecie.selectedItem.toString(),
-                        raza = etNuevaRazaMascota.text.toString().trim().ifBlank { spNuevoEspecie.selectedItem.toString() },
-                        sexo = spNuevoSexo.selectedItem.toString(),
-                        nacimiento = "Sin datos",
-                        fotoRes = R.drawable.ic_dog,
-                        peso = "Sin datos",
-                        microchip = "Sin datos",
-                        color = "Sin datos",
-                        observaciones = "Sin observaciones",
-                        propietario = nomDueno,
-                        direccion = "Sin datos",
-                        telefono = telNuevo,
-                        email = emailNuevo,
-                        ultimaConsulta = "Sin consultas",
-                        proximoRecordatorio = "Sin recordatorios"
-                    )
-                )
-
-                AdminRepo.registrarNuevoDueno(
-                    nombre = nomDueno,
-                    dni = dniNuevo,
-                    email = emailNuevo,
-                    telefono = telNuevo,
-                    direccion = "Sin datos",
-                    mascotas = listOf("$nomMascota (${spNuevoEspecie.selectedItem})")
+                pacienteElegido = PacientesRepo.agregarManual(
+                    nombre = nomMascota,
+                    especie = spNuevoEspecie.selectedItem.toString(),
+                    raza = etNuevaRazaMascota.text.toString().trim(),
+                    sexo = spNuevoSexo.selectedItem.toString(),
+                    propietario = nomDueno,
+                    telefono = etNuevoTelefonoDueno.text.toString().trim(),
+                    email = etNuevoEmailDueno.text.toString().trim(),
+                    dni = etNuevoDniDueno.text.toString().trim()
                 )
             }
             // 2. Si se buscó un dueño existente
-            else if (layoutDuenoEncontrado.visibility == View.VISIBLE && mascotasDuenoEncontrado.isNotEmpty()) {
-                val idxMascota = spMascotasDueno.selectedItemPosition
-                pacienteElegido = mascotasDuenoEncontrado.getOrNull(idxMascota)
+            else if (layoutDuenoEncontrado.visibility == View.VISIBLE && candidatas.isNotEmpty()) {
+                val candidata = candidatas.getOrNull(spMascotasDueno.selectedItemPosition)
+                if (candidata != null && candidata.paciente == null) {
+                    pedirAcceso(candidata)
+                    return@setOnClickListener
+                }
+                pacienteElegido = candidata?.paciente
             }
             // 3. Selección de la lista general
             else {
-                val idxGen = spPaciente.selectedItemPosition
-                pacienteElegido = pacientes.getOrNull(idxGen)
+                pacienteElegido = pacientes.getOrNull(spPaciente.selectedItemPosition)
             }
 
             if (pacienteElegido == null) {
@@ -217,23 +213,65 @@ class AgregarConsultaActivity : BaseActivity() {
             val f = fecha!!
 
             val estado = if (f.isBefore(LocalDate.now())) EstadoEvento.COMPLETADO else EstadoEvento.PENDIENTE
-            AgendaRepo.agregar(pacienteElegido.id, tipo, motivo, f, etHora.text.toString(), estado, notas, PerfilVetRepo.nombre)
-            registrarEnCarnet(pacienteElegido.nombre, tipo, motivo, notas, Fechas.corta(f))
+            AgendaRepo.agregar(pacienteElegido.id, tipo, motivo, f, etHora.text.toString(), estado, notas)
+            registrarEnCarnet(pacienteElegido.id, tipo, motivo, notas, f)
 
             Toast.makeText(this, R.string.consulta_guardada, Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
-    private fun registrarEnCarnet(paciente: String, tipo: String, motivo: String, notas: String, fecha: String) {
+    private class Encontrada(val candidata: Candidata, val etiquetaDueno: String)
+
+    /** Mascotas de un dueño buscado por correo o DNI. */
+    private suspend fun buscarMascotas(q: String, propios: List<Paciente>): List<Encontrada> {
+        val locales = propios.filter { p -> p.email.equals(q, ignoreCase = true) || p.propietario.contains(q, ignoreCase = true) || p.telefono.contains(q) }
+        if (locales.isNotEmpty()) {
+            val primero = locales.first()
+            val etiqueta = "Dueño encontrado: ${primero.propietario} (${primero.email})"
+            return locales.map { Encontrada(Candidata(it.id, "${it.nombre} (${it.razaYSexo})", it), etiqueta) }
+        }
+        if (q.length < 6) return emptyList()
+        val duenos = Servicios.fuente.buscarDueno(q)
+        return duenos.flatMap { dueno ->
+            val etiqueta = "Dueño encontrado: ${dueno.nombre} (${dueno.email.orEmpty()})"
+            dueno.mascotas.map { m ->
+                val datos = m.jsonObject
+                val id = datos["id"]!!.jsonPrimitive.content
+                val nombre = datos["nombre"]!!.jsonPrimitive.content
+                val raza = datos["raza"]?.jsonPrimitive?.content?.takeIf { it != "null" } ?: datos["tipo"]?.jsonPrimitive?.content.orEmpty()
+                val propio = propios.firstOrNull { it.id == id }
+                Encontrada(Candidata(id, "$nombre ($raza)" + if (propio == null) " · sin acceso" else "", propio), etiqueta)
+            }
+        }
+    }
+
+    /** El veterinario todavía no puede ver la mascota: se le pide acceso al dueño y se agenda cuando lo acepte. */
+    private fun pedirAcceso(candidata: Candidata) {
+        lifecycleScope.launch {
+            try {
+                val resultado = Servicios.fuente.solicitarAcceso(candidata.mascotaId)
+                if (resultado == "activo") {
+                    PacientesRepo.cargar()
+                    Toast.makeText(this@AgregarConsultaActivity, "Ya tenés acceso. Volvé a buscar para agendar.", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(
+                        this@AgregarConsultaActivity,
+                        "Le pedimos acceso al dueño. Vas a poder agendar el turno cuando lo acepte.", Toast.LENGTH_LONG
+                    ).show()
+                    finish()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@AgregarConsultaActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun registrarEnCarnet(mascotaId: String, tipo: String, motivo: String, notas: String, fecha: LocalDate) {
         val detalle = notas.ifEmpty { "Registrado por el veterinario" }
         when (tipo) {
-            "Vacuna" -> SaludRepo.registros.add(
-                0, RegistroSalud(TipoRegistro.VACUNA, paciente, motivo, detalle, fecha, "Al día")
-            )
-            "Tratamiento" -> SaludRepo.registros.add(
-                0, RegistroSalud(TipoRegistro.TRATAMIENTO, paciente, motivo, detalle, "Desde $fecha", "Activo")
-            )
+            "Vacuna" -> SaludRepo.agregar(TipoRegistro.VACUNA, mascotaId, motivo, detalle, fecha)
+            "Tratamiento" -> SaludRepo.agregar(TipoRegistro.TRATAMIENTO, mascotaId, motivo, detalle, fecha)
         }
     }
 }

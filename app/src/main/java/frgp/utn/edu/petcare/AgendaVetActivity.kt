@@ -19,6 +19,7 @@ class AgendaVetActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.agenda_vet)
 
         VetBottomNav.setup(this, R.id.nav_agenda)
@@ -45,7 +46,9 @@ class AgendaVetActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (isFinishing) return
         refrescar()
+        actualizarDatosVeterinario { refrescar() }
     }
 
     private fun refrescar() {
@@ -120,7 +123,7 @@ class AgendaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 val e = fila.evento
                 val ctx = h.itemView.context
                 h.tvHora.text = e.hora
-                h.tvPaciente.text = PacientesRepo.porId(e.pacienteId).nombre
+                h.tvPaciente.text = PacientesRepo.nombreDe(e.pacienteId)
                 h.tvMotivo.text = "${e.tipo} · ${e.motivo}"
                 h.tvEstado.text = e.estado.etiqueta
                 val (fondo, color) = when (e.estado) {

@@ -56,7 +56,6 @@ class EventosDialogos(private val host: DuenoActivity) {
         // Un turno que ya pasó queda como registro: no se edita ni se cancela
         vista.findViewById<View>(R.id.btnTurnoCancelar).visibility = if (proximo) View.VISIBLE else View.GONE
         vista.findViewById<View>(R.id.btnTurnoEditar).visibility = if (proximo) View.VISIBLE else View.GONE
-        vista.findViewById<View>(R.id.tvTurnoSimular).visibility = if (proximo) View.VISIBLE else View.GONE
         vista.findViewById<View>(R.id.btnTurnoEditar).setOnClickListener {
             hoja.dismiss()
             editar(evento, alCambiar)
@@ -73,13 +72,6 @@ class EventosDialogos(private val host: DuenoActivity) {
                 }
                 .setNegativeButton("Volver", null)
                 .show()
-        }
-        // Simula que el veterinario cancela el turno, para ver la notificación que se genera
-        vista.findViewById<View>(R.id.tvTurnoSimular).setOnClickListener {
-            hoja.dismiss()
-            DuenoRepo.cancelarEvento(evento, porElVeterinario = true)
-            Toast.makeText(host, "Turno cancelado. Se generó una notificación.", Toast.LENGTH_SHORT).show()
-            alCambiar()
         }
         hoja.show()
     }

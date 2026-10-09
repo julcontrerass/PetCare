@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -15,29 +16,36 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import java.io.File
+import frgp.utn.edu.petcare.data.Errores
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ArchivosFragment : Fragment() {
+
+    companion object {
+        /** El servidor acepta archivos de hasta 15 MB. */
+        private const val TAMANO_MAXIMO = 15L * 1024 * 1024
+
+        private val EXTENSIONES = mapOf(
+            "PDF" to "application/pdf",
+            "JPG" to "image/jpeg",
+            "JPEG" to "image/jpeg",
+            "PNG" to "image/png",
+            "WEBP" to "image/webp",
+            "DOC" to "application/msword",
+            "DOCX" to "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    }
 
     private lateinit var rvArchivos: RecyclerView
     private var archivosActuales = listOf<ArchivoItem>()
 
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { selectedUri ->
-            val fileName = getFileName(selectedUri) ?: "Documento"
-            val extension = getExtension(fileName)
-            val paciente = DetallePacienteActivity.pacienteDe(requireActivity() as AppCompatActivity)
-
-            // Guardar copia local permanente en el almacenamiento interno de la app
-            val localFile = copyFileToInternalStorage(selectedUri, fileName, paciente.id)
-            val localPath = localFile?.absolutePath
-
-            ArchivosRepo.agregar(paciente.id, fileName, extension, selectedUri.toString(), localPath)
-            refrescar()
-            Toast.makeText(requireContext(), "Archivo '$fileName' subido correctamente", Toast.LENGTH_SHORT).show()
-        }
+        uri?.let { subirArchivo(it) }
     }
 
     override fun onCreateView(
@@ -52,7 +60,41 @@ class ArchivosFragment : Fragment() {
         }
 
         refrescar()
+        // La lista de archivos se pide al servidor al abrir la pestaña
+        val paciente = DetallePacienteActivity.pacienteDe(requireActivity() as AppCompatActivity)
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { ArchivosRepo.cargar(paciente.id) }
+                .onSuccess { refrescar() }
+                .onFailure { Toast.makeText(requireContext(), Errores.mensaje(it), Toast.LENGTH_SHORT).show() }
+        }
         return view
+    }
+
+    private fun subirArchivo(uri: Uri) {
+        val contexto = requireContext().applicationContext
+        val paciente = DetallePacienteActivity.pacienteDe(requireActivity() as AppCompatActivity)
+        val nombre = nombreDe(uri) ?: "Documento"
+        val extension = extensionDe(nombre)
+        if (extension.uppercase() !in EXTENSIONES) {
+            Toast.makeText(contexto, "Formato no admitido. Subí un PDF, una imagen o un documento de Word.", Toast.LENGTH_LONG).show()
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val bytes = withContext(Dispatchers.IO) {
+                    contexto.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                } ?: throw IllegalStateException("No se pudo leer el archivo")
+                if (bytes.size > TAMANO_MAXIMO) {
+                    Toast.makeText(contexto, "El archivo supera los 15 MB", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                ArchivosRepo.agregar(paciente.id, nombre, extension, bytes, mimeDe(extension))
+                refrescar()
+                Toast.makeText(contexto, "Archivo '$nombre' subido correctamente", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(contexto, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun refrescar() {
@@ -95,56 +137,24 @@ class ArchivosFragment : Fragment() {
             .show()
     }
 
+    /** Baja el archivo del servidor (la primera vez) y lo abre con la aplicación que corresponda. */
     private fun verArchivo(item: ArchivoItem) {
         val context = requireContext()
-        val mimeType = getMimeType(item.tipoExtension)
-
-        // 1. Intentar abrir con el archivo guardado localmente mediante FileProvider
-        if (!item.localPath.isNullOrEmpty()) {
-            val file = File(item.localPath)
-            if (file.exists()) {
-                try {
-                    val contentUri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
-                    )
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(contentUri, mimeType)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    startActivity(intent)
-                    return
-                } catch (e: Exception) {
-                    // Fallback si no hay visor externo
-                }
-            }
-        }
-
-        // 2. Intentar abrir con la URI original si está presente
-        if (!item.uriString.isNullOrEmpty()) {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
+                val archivo = ArchivosRepo.archivoLocal(item)
+                val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", archivo)
                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(Uri.parse(item.uriString), mimeType)
+                    setDataAndType(contentUri, mimeDe(item.tipoExtension))
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 startActivity(intent)
-                return
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(context, "No hay una aplicación para abrir este tipo de archivo", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                // Fallback a diálogo visor
+                Toast.makeText(context, Errores.mensaje(e), Toast.LENGTH_LONG).show()
             }
         }
-
-        // 3. Fallback: Diálogo visor integrado
-        mostrarDialogoVisualizador(item)
-    }
-
-    private fun mostrarDialogoVisualizador(item: ArchivoItem) {
-        AlertDialog.Builder(requireContext())
-            .setTitle(item.nombre)
-            .setMessage("Detalle: ${item.fecha}\nTipo de archivo: ${item.tipoExtension}\n\nDocumento guardado y listo para previsualización.")
-            .setPositiveButton("Aceptar", null)
-            .show()
     }
 
     private fun renombrarArchivo(item: ArchivoItem) {
@@ -164,7 +174,7 @@ class ArchivosFragment : Fragment() {
             .setPositiveButton("Guardar") { _, _ ->
                 val nuevoNombre = etNombre.text.toString().trim()
                 if (nuevoNombre.isNotBlank()) {
-                    ArchivosRepo.renombrar(item.id, nuevoNombre)
+                    ArchivosRepo.renombrar(item, nuevoNombre)
                     refrescar()
                     Toast.makeText(requireContext(), "Nombre actualizado", Toast.LENGTH_SHORT).show()
                 } else {
@@ -180,10 +190,7 @@ class ArchivosFragment : Fragment() {
             .setTitle("Eliminar archivo")
             .setMessage("¿Querés eliminar '${item.nombre}'?")
             .setPositiveButton("Eliminar") { _, _ ->
-                item.localPath?.let { path ->
-                    try { File(path).delete() } catch (e: Exception) { }
-                }
-                ArchivosRepo.eliminar(item.id)
+                ArchivosRepo.eliminar(item)
                 refrescar()
                 Toast.makeText(requireContext(), "Archivo eliminado", Toast.LENGTH_SHORT).show()
             }
@@ -191,61 +198,23 @@ class ArchivosFragment : Fragment() {
             .show()
     }
 
-    private fun copyFileToInternalStorage(uri: Uri, fileName: String, pacienteId: Int): File? {
-        return try {
-            val destFile = File(requireContext().filesDir, "doc_${pacienteId}_${System.currentTimeMillis()}_$fileName")
-            requireContext().contentResolver.openInputStream(uri)?.use { input ->
-                destFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            destFile
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private fun getFileName(uri: Uri): String? {
-        var result: String? = null
+    private fun nombreDe(uri: Uri): String? {
+        var resultado: String? = null
         if (uri.scheme == "content") {
-            val cursor = requireContext().contentResolver.query(uri, null, null, null, null)
-            cursor?.use {
+            requireContext().contentResolver.query(uri, null, null, null, null)?.use {
                 if (it.moveToFirst()) {
-                    val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    if (index >= 0) {
-                        result = it.getString(index)
-                    }
+                    val indice = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (indice >= 0) resultado = it.getString(indice)
                 }
             }
         }
-        if (result == null) {
-            result = uri.path
-            val cut = result?.lastIndexOf('/') ?: -1
-            if (cut != -1) {
-                result = result?.substring(cut + 1)
-            }
-        }
-        return result
+        return resultado ?: uri.path?.substringAfterLast('/')
     }
 
-    private fun getExtension(fileName: String): String {
-        val dot = fileName.lastIndexOf('.')
-        return if (dot >= 0 && dot < fileName.length - 1) {
-            fileName.substring(dot + 1).uppercase()
-        } else {
-            "DOC"
-        }
+    private fun extensionDe(nombre: String): String {
+        val punto = nombre.lastIndexOf('.')
+        return if (punto >= 0 && punto < nombre.length - 1) nombre.substring(punto + 1).lowercase() else "doc"
     }
 
-    private fun getMimeType(ext: String): String {
-        return when (ext.uppercase()) {
-            "PDF" -> "application/pdf"
-            "DOC", "DOCX" -> "application/msword"
-            "JPG", "JPEG" -> "image/jpeg"
-            "PNG" -> "image/png"
-            "TXT" -> "text/plain"
-            else -> "*/*"
-        }
-    }
+    private fun mimeDe(extension: String): String = EXTENSIONES[extension.uppercase()] ?: "application/octet-stream"
 }

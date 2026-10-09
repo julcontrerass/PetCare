@@ -1,7 +1,6 @@
 package frgp.utn.edu.petcare
 
 import android.app.Activity
-import android.net.Uri
 import android.widget.ImageView
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
@@ -9,6 +8,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import frgp.utn.edu.petcare.data.Imagenes
 
 /** Ajustes de pantalla compartidos por las vistas del veterinario. */
 object VetUi {
@@ -16,16 +16,8 @@ object VetUi {
     /** Muestra la foto del veterinario en sesión: la que subió o, si no hay, la de su perfil por defecto. */
     fun cargarFotoVet(imagen: ImageView?) {
         imagen ?: return
-        val uri = PerfilVetRepo.fotoUriString
-        if (!uri.isNullOrEmpty()) {
-            try {
-                imagen.setImageURI(Uri.parse(uri))
-                return
-            } catch (e: Exception) {
-                // Si la imagen ya no está disponible se usa la de por defecto
-            }
-        }
-        imagen.setImageResource(PerfilVetRepo.fotoRes)
+        imagen.setImageResource(R.drawable.avatar_default)
+        Imagenes.mostrar(imagen, PerfilVetRepo.fotoUri, PerfilVetRepo.fotoPath)
     }
 
     /**

@@ -91,7 +91,7 @@
                     android:elevation="2dp"
                     android:focusable="true"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/juani"
+                    android:src="@drawable/avatar_default"
                     app:shapeAppearanceOverlay="@style/CircleImage"
                     app:strokeColor="@color/white"
                     app:strokeWidth="2dp" />

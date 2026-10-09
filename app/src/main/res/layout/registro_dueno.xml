@@ -181,7 +181,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:background="@drawable/bg_field_card"
-                android:hint="Ej: María Fernández"
+                android:hint="Nombre y apellido"
                 android:inputType="textPersonName|textCapWords"
                 android:maxLines="1"
                 android:paddingHorizontal="16dp"

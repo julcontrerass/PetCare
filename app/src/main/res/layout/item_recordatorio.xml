@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -62,7 +63,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Vacuna múltiple"
+                tools:text="Vacuna múltiple"
                 android:textColor="@color/brand_navy"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -72,7 +73,7 @@
                 style="@style/HomePetChip"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="0dp"
-                android:text="Falta 5 días" />
+                tools:text="Falta 5 días" />
         </LinearLayout>
 
         <TextView
@@ -82,7 +83,7 @@
             android:layout_marginTop="4dp"
             android:drawablePadding="6dp"
             android:gravity="center_vertical"
-            android:text="Koda"
+            tools:text="Koda"
             android:textColor="@color/teal_dark"
             android:textSize="13.5sp"
             android:textStyle="bold"
@@ -94,7 +95,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="15 May 2026"
+            tools:text="15 May 2026"
             android:textColor="@color/text_gray"
             android:textSize="12.5sp" />
     </LinearLayout>

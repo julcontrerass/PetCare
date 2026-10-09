@@ -1,35 +1,52 @@
 package frgp.utn.edu.petcare
 
-class SolicitudItem @JvmOverloads constructor(
+import frgp.utn.edu.petcare.data.Servicios
+
+class SolicitudItem(
+    val id: String,
     val solicitante: String,
     val mascota: String,
     val hace: String,
-    val fotoRes: Int,
-    var estado: Estado = Estado.PENDIENTE,
-    /** Paciente que se suma al veterinario al aceptar (solo solicitudes del lado veterinario). */
-    val paciente: Paciente? = null
+    val fotoPath: String? = null,
+    var estado: Estado = Estado.PENDIENTE
 ) {
     enum class Estado { PENDIENTE, ACEPTADA, RECHAZADA }
 }
 
-/** Solicitudes de acceso de la sesión (demo, en memoria). */
+/** Dueños que quieren compartir una mascota con el veterinario en sesión. */
 object SolicitudesRepo {
 
-    /** Dueños que comparten una mascota con el veterinario. */
-    val paraVeterinario: MutableList<SolicitudItem> = mutableListOf(
-        SolicitudItem(
-            "Marcos Pérez", "Quiere compartir a Max", "Hace 1 hora", R.drawable.juani,
-            paciente = PacientesRepo.nuevo("Max", PacientesRepo.ESPECIE_PERRO, "Labrador", "Macho", "Marcos Pérez", "+54 11 5555-0101")
-        ),
-        SolicitudItem(
-            "Ana García", "Quiere compartir a Rocky", "Hace 3 horas", R.drawable.luna,
-            paciente = PacientesRepo.nuevo("Rocky", PacientesRepo.ESPECIE_PERRO, "Beagle", "Macho", "Ana García", "+54 11 5555-0202")
-        ),
-        SolicitudItem(
-            "Lucía Díaz", "Quiere compartir a Nina", "Ayer", R.drawable.milo,
-            paciente = PacientesRepo.nuevo("Nina", PacientesRepo.ESPECIE_GATO, "Común europeo", "Hembra", "Lucía Díaz", "+54 11 5555-0303")
-        )
-    )
+    val paraVeterinario: MutableList<SolicitudItem> = mutableListOf()
+
+    fun limpiar() = paraVeterinario.clear()
+
+    suspend fun cargar() {
+        val f = Servicios.fuente
+        val pendientes = f.accesos().filter { it.estado == "pendiente" && it.iniciadoPor == "dueno" }
+        val mascotas = f.mascotasDelVeterinario().associateBy { it.id }
+        val lista = pendientes.map { a ->
+            val mascota = mascotas[a.mascotaId]
+            val dueno = mascota?.dueno?.nombre ?: mascota?.propietarioNombre ?: "Un dueño"
+            SolicitudItem(
+                id = a.id, solicitante = dueno,
+                mascota = "Quiere compartir a ${mascota?.nombre ?: "una mascota"}",
+                hace = Fechas.haceTexto(a.createdAt)
+            )
+        }
+        paraVeterinario.clear()
+        paraVeterinario.addAll(lista)
+    }
 
     fun pendientesVeterinario() = paraVeterinario.count { it.estado == SolicitudItem.Estado.PENDIENTE }
+
+    /** El veterinario acepta o rechaza que un dueño le comparta una mascota. */
+    fun resolver(item: SolicitudItem, aceptar: Boolean) {
+        item.estado = if (aceptar) SolicitudItem.Estado.ACEPTADA else SolicitudItem.Estado.RECHAZADA
+        Servicios.escribir(
+            alFallar = { cargar(); PacientesRepo.cargar(); Servicios.avisarCambio() },
+            alTerminar = { PacientesRepo.cargar(); Servicios.avisarCambio() }
+        ) {
+            Servicios.fuente.actualizarAcceso(item.id, if (aceptar) "activo" else "rechazado")
+        }
+    }
 }

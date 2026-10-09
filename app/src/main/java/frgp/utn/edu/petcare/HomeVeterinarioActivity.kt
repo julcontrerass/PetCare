@@ -16,17 +16,12 @@ class HomeVeterinarioActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.home_veterinario)
 
         VetBottomNav.setup(this, R.id.nav_inicio)
 
-        findViewById<View>(R.id.ivNotifications)?.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Notificaciones")
-                .setMessage("No tenés nuevas notificaciones.")
-                .setPositiveButton("Aceptar", null)
-                .show()
-        }
+        findViewById<View>(R.id.ivNotifications)?.setOnClickListener { NotificacionesVet.mostrar(this) }
         findViewById<View>(R.id.tvVerAgenda)?.setOnClickListener {
             startActivity(Intent(this, AgendaVetActivity::class.java))
         }
@@ -50,7 +45,9 @@ class HomeVeterinarioActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (isFinishing) return
         cargar()
+        actualizarDatosVeterinario { cargar() }
     }
 
     private fun cargar() {
@@ -84,7 +81,7 @@ class HomeVeterinarioActivity : BaseActivity() {
         hoy.mapTo(items) {
             val esEnHorario = (it.id == enHorarioEventoId)
             HomeVetItem(
-                title = PacientesRepo.porId(it.pacienteId).nombre,
+                title = PacientesRepo.nombreDe(it.pacienteId),
                 subtitle = it.motivo,
                 time = it.hora,
                 type = ItemType.CONSULTA,
@@ -104,7 +101,7 @@ class HomeVeterinarioActivity : BaseActivity() {
         configurarHero(hoy, enHorarioEventoId)
     }
 
-    private fun configurarHero(hoy: List<EventoVet>, enHorarioEventoId: Int?) {
+    private fun configurarHero(hoy: List<EventoVet>, enHorarioEventoId: String?) {
         val titulo = findViewById<TextView>(R.id.tvHeroTitle)
         val subtitulo = findViewById<TextView>(R.id.tvHeroSubtitle)
         val boton = findViewById<TextView>(R.id.btnHeroAction)
@@ -123,8 +120,8 @@ class HomeVeterinarioActivity : BaseActivity() {
         val paciente = PacientesRepo.porId(siguiente.pacienteId)
         findViewById<TextView>(R.id.tvHeroLabel).text =
             if (siguiente.id == enHorarioEventoId) "En horario" else "Próxima consulta"
-        titulo.text = "${paciente.nombre} · ${siguiente.hora}"
-        subtitulo.text = "${siguiente.motivo} · ${paciente.propietario}"
+        titulo.text = "${paciente?.nombre ?: "Paciente"} · ${siguiente.hora}"
+        subtitulo.text = "${siguiente.motivo} · ${paciente?.propietario.orEmpty()}"
         boton.text = "Ver turno"
         icono.setImageResource(R.drawable.ic_calendar)
         boton.setOnClickListener {

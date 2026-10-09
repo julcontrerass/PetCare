@@ -24,13 +24,34 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
+import androidx.lifecycle.lifecycleScope
+import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Servicios
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 import java.util.Calendar
+import java.util.UUID
 import java.util.Locale
 
 /** Vacunas, tratamientos y documentos de las mascotas, con búsqueda y filtro por mascota. */
 class CarnetSaludActivity : BaseActivity() {
 
-    private val tipos = TipoRegistro.values()
+    companion object {
+        private const val TAMANO_MAXIMO = 15L * 1024 * 1024
+        private val EXTENSIONES = mapOf(
+            "PDF" to "application/pdf",
+            "JPG" to "image/jpeg",
+            "JPEG" to "image/jpeg",
+            "PNG" to "image/png",
+            "WEBP" to "image/webp",
+            "DOC" to "application/msword",
+            "DOCX" to "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    }
+
+    private val tipos = TipoRegistro.entries
     private lateinit var adapter: RegistrosAdapter
     private lateinit var etBuscar: EditText
     private var mascotaFiltro: String? = null
@@ -45,6 +66,7 @@ class CarnetSaludActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.carnet_salud)
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
 
@@ -81,10 +103,10 @@ class CarnetSaludActivity : BaseActivity() {
     private fun construirFiltroMascotas() {
         val fila = findViewById<LinearLayout>(R.id.llFiltroMascotas)
         fila.removeAllViews()
-        (listOf<String?>(null) + SaludRepo.mascotas).forEach { nombre ->
+        (listOf<Paciente?>(null) + PacientesRepo.pacientes).forEach { paciente ->
             val chip = TextView(this).apply {
-                text = nombre ?: "Todas"
-                tag = nombre
+                text = paciente?.nombre ?: "Todas"
+                tag = paciente?.id
                 textSize = 14f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                 setPadding(dp(18), dp(9), dp(18), dp(9))
@@ -93,7 +115,7 @@ class CarnetSaludActivity : BaseActivity() {
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply { marginEnd = dp(10) }
                 setOnClickListener {
-                    mascotaFiltro = nombre
+                    mascotaFiltro = paciente?.id
                     refrescar()
                 }
             }
@@ -143,11 +165,37 @@ class CarnetSaludActivity : BaseActivity() {
             .setTitle("Eliminar registro")
             .setMessage("¿Eliminar \"${r.titulo}\"?")
             .setPositiveButton("Eliminar") { _, _ ->
-                SaludRepo.registros.remove(r)
+                SaludRepo.eliminar(r)
                 refrescar()
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+
+    /** Sube el documento al bucket `archivos` y recién entonces lo suma al carnet. */
+    private fun subirDocumento(mascotaId: String, titulo: String, nombre: String, uri: Uri, fecha: LocalDate) {
+        val extension = nombre.substringAfterLast('.', "").lowercase()
+        val mime = EXTENSIONES[extension.uppercase()]
+        if (mime == null) {
+            Toast.makeText(this, "Formato no admitido. Subí un PDF, una imagen o un documento de Word.", Toast.LENGTH_LONG).show()
+            return
+        }
+        lifecycleScope.launch {
+            try {
+                val bytes = withContext(Dispatchers.IO) { contentResolver.openInputStream(uri)?.use { it.readBytes() } }
+                    ?: throw IllegalStateException("No se pudo leer el archivo")
+                if (bytes.size > TAMANO_MAXIMO) {
+                    Toast.makeText(this@CarnetSaludActivity, "El archivo supera los 15 MB", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                val ruta = "$mascotaId/${UUID.randomUUID()}.$extension"
+                Servicios.fuente.subir(ArchivosRepo.BUCKET, ruta, bytes, mime)
+                SaludRepo.agregar(TipoRegistro.DOCUMENTO, mascotaId, titulo, nombre, fecha, archivoPath = ruta)
+                refrescar()
+            } catch (e: Exception) {
+                Toast.makeText(this@CarnetSaludActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun nombreArchivo(uri: Uri): String {
@@ -184,9 +232,10 @@ class CarnetSaludActivity : BaseActivity() {
         }
         val spinner = Spinner(this).apply {
             adapter = ArrayAdapter(
-                this@CarnetSaludActivity, android.R.layout.simple_spinner_dropdown_item, SaludRepo.mascotas
+                this@CarnetSaludActivity, android.R.layout.simple_spinner_dropdown_item,
+                PacientesRepo.pacientes.map { it.nombre }
             )
-            mascotaFiltro?.let { setSelection(SaludRepo.mascotas.indexOf(it).coerceAtLeast(0)) }
+            mascotaFiltro?.let { id -> setSelection(PacientesRepo.pacientes.indexOfFirst { it.id == id }.coerceAtLeast(0)) }
         }
         layout.addView(spinner)
 
@@ -244,22 +293,23 @@ class CarnetSaludActivity : BaseActivity() {
                     return@setOnClickListener
                 }
                 val extra = etExtra?.text?.toString()?.trim().orEmpty()
-                val registro = when (tipo) {
-                    TipoRegistro.VACUNA -> RegistroSalud(
-                        tipo, spinner.selectedItem as String, titulo,
-                        if (extra.isEmpty()) "Sin próxima dosis" else "Próxima dosis: $extra", fecha, "Al día"
+                val paciente = PacientesRepo.pacientes.getOrNull(spinner.selectedItemPosition)
+                if (paciente == null) {
+                    Toast.makeText(this, "Elegí una mascota", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                val fechaElegida = Fechas.parsear(fecha) ?: LocalDate.now()
+                when (tipo) {
+                    TipoRegistro.VACUNA -> SaludRepo.agregar(
+                        tipo, paciente.id, titulo, null, fechaElegida, proximaDosis = Fechas.parsear(extra)
                     )
-                    TipoRegistro.TRATAMIENTO -> RegistroSalud(
-                        tipo, spinner.selectedItem as String, titulo,
-                        extra.ifEmpty { "Sin indicaciones" }, "Desde $fecha", "Activo"
+                    TipoRegistro.TRATAMIENTO -> SaludRepo.agregar(
+                        tipo, paciente.id, titulo, extra.ifEmpty { "Sin indicaciones" }, fechaElegida
                     )
-                    TipoRegistro.DOCUMENTO -> RegistroSalud(
-                        tipo, spinner.selectedItem as String, titulo,
-                        nombreSeleccionado ?: "Documento",
-                        fecha.ifEmpty { "Hoy" }, null, archivo.toString()
+                    TipoRegistro.DOCUMENTO -> subirDocumento(
+                        paciente.id, titulo, nombreSeleccionado ?: "Documento", archivo!!, fechaElegida
                     )
                 }
-                SaludRepo.registros.add(0, registro)
                 refrescar()
                 dialog.dismiss()
             }

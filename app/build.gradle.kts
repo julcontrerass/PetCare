@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -18,6 +19,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Claves públicas del proyecto de Supabase: la seguridad la da RLS en la base, no el secreto de la clave
+        buildConfigField("String", "SUPABASE_URL", "\"https://ffzgeywirlcihcdqbeiz.supabase.co\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"sb_publishable_J2W3mg3jhbnGsQwVMB-Zaw_ZFN9tHC9\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -39,6 +48,14 @@ android {
 }
 
 dependencies {
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.storage)
+    implementation(libs.ktor.okhttp)
+    implementation(libs.serialization.json)
+    implementation(libs.coroutines.android)
+    implementation(libs.lifecycle.runtime)
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)

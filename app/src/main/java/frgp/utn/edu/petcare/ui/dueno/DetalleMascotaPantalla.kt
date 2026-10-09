@@ -25,6 +25,7 @@ import frgp.utn.edu.petcare.HistorialAdapter
 import frgp.utn.edu.petcare.HistorialItem
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.Sexo
@@ -129,7 +130,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
 
     private fun elegirFoto() {
         host.pedirImagen { uri ->
-            mascota?.fotoUri = uri
+            mascota?.let { DuenoRepo.cambiarFotoMascota(it, uri) }
             vista<ImageView>(R.id.imageView3)?.setImageURI(uri)
         }
     }
@@ -144,11 +145,8 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
         texto(R.id.editTextText2, m.color)
         texto(R.id.editTextText3, m.observaciones)
         vista<ImageView>(R.id.imageView3)?.let {
-            when {
-                m.fotoUri != null -> it.setImageURI(m.fotoUri)
-                m.fotoRes != 0 -> it.setImageResource(m.fotoRes)
-                else -> it.setImageResource(R.drawable.ic_dog)
-            }
+            it.setImageResource(R.drawable.ic_dog)
+            Imagenes.mostrar(it, m.fotoUri, m.fotoPath)
         }
         llenarResumen(m)
     }
@@ -220,6 +218,20 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
                     toast("El nombre no puede quedar vacío")
                     return@setPositiveButton
                 }
+                val microchip = inputMicrochip.text.toString().trim()
+                if (microchip.isNotEmpty() && microchip != SIN_DATOS && !microchip.matches(Regex("[0-9]{15}"))) {
+                    toast("El microchip tiene 15 números")
+                    return@setPositiveButton
+                }
+                val peso = inputPeso.text.toString().trim()
+                if (peso.isNotEmpty() && peso != SIN_DATOS && !DuenoRepo.pesoValido(peso)) {
+                    toast("Ingresá el peso en kilos, por ejemplo 12 o 3,5")
+                    return@setPositiveButton
+                }
+                if (DuenoRepo.mascotas.any { it !== m && it.nombre.equals(nombre, ignoreCase = true) }) {
+                    toast("Ya tenés una mascota con ese nombre")
+                    return@setPositiveButton
+                }
                 m.nombre = nombre
                 m.tipo = selectorTipo.selectedItem as String
                 m.raza = inputRaza.text.toString().trim()
@@ -229,6 +241,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
                 m.microchip = inputMicrochip.text.toString().trim().ifEmpty { SIN_DATOS }
                 m.color = inputColor.text.toString().trim().ifEmpty { SIN_DATOS }
                 m.observaciones = inputObservaciones.text.toString().trim().ifEmpty { "Sin observaciones" }
+                DuenoRepo.guardarMascota(m)
                 vista<Toolbar>(R.id.toolbar)?.findViewById<TextView>(R.id.toolbar_title)?.text = m.nombre
                 llenarFicha()
                 toast("Información actualizada")

@@ -28,7 +28,7 @@ object DisponibilidadVet {
     private fun formato(min: Int) = "%02d:%02d".format(min / 60, min % 60)
 
     /** Un turno pendiente ocupa el horario si se superpone con la duración de otro. */
-    fun ocupado(fecha: LocalDate, hora: String, ignorarId: Int? = null): Boolean {
+    fun ocupado(fecha: LocalDate, hora: String, ignorarId: String? = null): Boolean {
         val m = minutos(hora) ?: return false
         return AgendaRepo.eventos.any { e ->
             e.id != ignorarId && e.estado == EstadoEvento.PENDIENTE && e.fecha == fecha &&
@@ -45,7 +45,7 @@ object DisponibilidadVet {
     }
 
     /** Todos los horarios de la franja de atención, marcando cuáles siguen libres. */
-    fun horarios(fecha: LocalDate, ignorarId: Int? = null): List<Horario> {
+    fun horarios(fecha: LocalDate, ignorarId: String? = null): List<Horario> {
         if (!trabajaEl(fecha)) return emptyList()
         val inicio = minutos(PerfilVetRepo.horaApertura) ?: return emptyList()
         val fin = minutos(PerfilVetRepo.horaCierre) ?: return emptyList()
@@ -60,7 +60,7 @@ object DisponibilidadVet {
     }
 
     /** Devuelve el motivo por el que no se puede agendar, o null si está todo bien. */
-    fun validar(fecha: LocalDate, hora: String, ignorarId: Int? = null): String? {
+    fun validar(fecha: LocalDate, hora: String, ignorarId: String? = null): String? {
         if (fecha.isBefore(LocalDate.now())) return "No podés seleccionar una fecha que ya pasó"
         if (!trabajaEl(fecha)) return "No atendés los ${nombreDia(fecha).lowercase()}"
         val m = minutos(hora) ?: return "Elegí un horario"

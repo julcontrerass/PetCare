@@ -32,6 +32,7 @@ class MisPacientesActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.mis_pacientes)
 
         VetBottomNav.setup(this, R.id.nav_pacientes)
@@ -80,10 +81,15 @@ class MisPacientesActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::adapter.isInitialized) {
-            actualizarContadores()
-            aplicarFiltros()
+        if (isFinishing) return
+        val redibujar = {
+            if (::adapter.isInitialized) {
+                actualizarContadores()
+                aplicarFiltros()
+            }
         }
+        redibujar()
+        actualizarDatosVeterinario(redibujar)
     }
 
     private fun actualizarContadores() {
@@ -133,12 +139,10 @@ class MisPacientesActivity : BaseActivity() {
                 if (nombre.text.isBlank()) { nombre.error = "Requerido"; ok = false }
                 if (propietario.text.isBlank()) { propietario.error = "Requerido"; ok = false }
                 if (!ok) return@setOnClickListener
-                PacientesRepo.agregar(
-                    PacientesRepo.nuevo(
-                        nombre.text.toString().trim(), spEspecie.selectedItem as String,
-                        raza.text.toString().trim(), spSexo.selectedItem as String,
-                        propietario.text.toString().trim(), telefono.text.toString().trim()
-                    )
+                PacientesRepo.agregarManual(
+                    nombre.text.toString().trim(), spEspecie.selectedItem as String,
+                    raza.text.toString().trim(), spSexo.selectedItem as String,
+                    propietario.text.toString().trim(), telefono.text.toString().trim()
                 )
                 actualizarContadores()
                 aplicarFiltros()

@@ -9,6 +9,7 @@ import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.model.Mascota
 
 /** Lista de mascotas con filtro por tipo. */
@@ -77,19 +78,10 @@ class MascotasPantalla(host: DuenoActivity) : Pantalla(host) {
 
         val foto = item.findViewById<ShapeableImageView>(R.id.ivFoto)
         val inicial = item.findViewById<TextView>(R.id.tvInicial)
-        when {
-            mascota.fotoUri != null -> {
-                foto.setImageURI(mascota.fotoUri)
-                inicial.visibility = View.GONE
-            }
-            mascota.fotoRes != 0 -> {
-                foto.setImageResource(mascota.fotoRes)
-                inicial.visibility = View.GONE
-            }
-            else -> {
-                foto.visibility = View.GONE
-                inicial.text = mascota.inicial
-            }
+        inicial.text = mascota.inicial
+        Imagenes.mostrar(foto, mascota.fotoUri, mascota.fotoPath) { hayFoto ->
+            foto.visibility = if (hayFoto) View.VISIBLE else View.GONE
+            inicial.visibility = if (hayFoto) View.GONE else View.VISIBLE
         }
 
         item.findViewById<TextView>(R.id.tvNombre).text = mascota.nombre

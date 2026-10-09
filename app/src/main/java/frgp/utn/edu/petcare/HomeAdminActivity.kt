@@ -1,6 +1,9 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import kotlinx.coroutines.launch
+import frgp.utn.edu.petcare.data.Servicios
+import androidx.lifecycle.lifecycleScope
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -14,7 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
-import frgp.utn.edu.petcare.ui.auth.AuthActivity
+import frgp.utn.edu.petcare.data.Sesion
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -46,6 +49,7 @@ class HomeAdminActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.home_admin)
         VetUi.barras(this)
 
@@ -83,7 +87,17 @@ class HomeAdminActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (isFinishing) return
         refrescarTodo()
+        Servicios.alCambiarDatos = { refrescarTodo() }
+        lifecycleScope.launch {
+            runCatching { AdminRepo.cargar() }.onSuccess { refrescarTodo() }
+        }
+    }
+
+    override fun onPause() {
+        Servicios.alCambiarDatos = null
+        super.onPause()
     }
 
     // ---------- Configuración inicial ----------
@@ -156,7 +170,7 @@ class HomeAdminActivity : BaseActivity() {
         findViewById<View>(R.id.tileAdminDuenos).setOnClickListener { bottomNav.selectedItemId = R.id.nav_admin_duenos }
         findViewById<View>(R.id.tileAdminMascotas).setOnClickListener { bottomNav.selectedItemId = R.id.nav_admin_duenos }
         findViewById<View>(R.id.tileAdminTurnos).setOnClickListener {
-            val hoy = AgendaRepo.deHoy().size
+            val hoy = AdminRepo.turnosHoy()
             Toast.makeText(
                 this,
                 if (hoy == 1) "Hay 1 turno pendiente para hoy" else "Hay $hoy turnos pendientes para hoy",
@@ -244,7 +258,7 @@ class HomeAdminActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvStatVets).text = AdminRepo.vetsActivos().toString()
         findViewById<TextView>(R.id.tvStatDuenos).text = AdminRepo.listaDuenos.size.toString()
         findViewById<TextView>(R.id.tvStatMascotas).text = AdminRepo.totalMascotas().toString()
-        findViewById<TextView>(R.id.tvStatTurnos).text = AgendaRepo.deHoy().size.toString()
+        findViewById<TextView>(R.id.tvStatTurnos).text = AdminRepo.turnosHoy().toString()
 
         val contenedorPend = findViewById<android.widget.LinearLayout>(R.id.llPendientesInicio)
         contenedorPend.removeAllViews()
@@ -536,7 +550,7 @@ class HomeAdminActivity : BaseActivity() {
     private fun mostrarCuenta() {
         val vista = layoutInflater.inflate(R.layout.sheet_admin_cuenta, null)
         val sheet = crearSheet(vista)
-        vista.findViewById<TextView>(R.id.tvCuentaEmail).text = AdminRepo.EMAIL_ADMIN
+        vista.findViewById<TextView>(R.id.tvCuentaEmail).text = Sesion.perfil?.email.orEmpty()
         vista.findViewById<TextView>(R.id.tvCuentaVets).text =
             "${AdminRepo.vetsActivos()} activos de ${AdminRepo.listaVeterinarios.size}"
         vista.findViewById<TextView>(R.id.tvCuentaDuenos).text =
@@ -550,9 +564,7 @@ class HomeAdminActivity : BaseActivity() {
         vista.findViewById<View>(R.id.btnCuentaVolver).setOnClickListener { sheet.dismiss() }
         vista.findViewById<View>(R.id.btnCuentaCerrarSesion).setOnClickListener {
             sheet.dismiss()
-            val intent = Intent(this, AuthActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            startActivity(intent)
+            Sesion.cerrarYVolver(this)
         }
         sheet.show()
     }

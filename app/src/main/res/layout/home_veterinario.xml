@@ -43,7 +43,7 @@
                         android:layout_height="match_parent"
                         android:contentDescription="@null"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/juani" />
+                        android:src="@drawable/avatar_default" />
                 </androidx.cardview.widget.CardView>
 
                 <LinearLayout

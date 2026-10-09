@@ -68,6 +68,7 @@ class NotificacionesDialogo(private val host: DuenoActivity) {
         TipoNotificacion.TURNO -> Estilo(R.drawable.bg_icon_purple, R.color.accent_purple, R.drawable.ic_calendar)
         TipoNotificacion.ACCESO -> Estilo(R.drawable.bg_icon_teal, R.color.success_green, R.drawable.ic_check_circle)
         TipoNotificacion.MASCOTA -> Estilo(R.drawable.bg_icon_teal, R.color.primary_teal, R.drawable.ic_dog)
+        TipoNotificacion.CUENTA -> Estilo(R.drawable.bg_icon_orange, R.color.accent_orange, R.drawable.ic_lock)
     }
 
     /** "Ahora mismo", "Hace 5 min", "Hace 2 h" o "Hace 3 días". */

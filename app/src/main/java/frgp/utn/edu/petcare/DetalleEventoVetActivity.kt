@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
+import frgp.utn.edu.petcare.data.Imagenes
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -104,6 +105,7 @@ class DetalleEventoVetActivity : BaseActivity() {
                     evento.fecha = fecha
                     evento.hora = etHora.text.toString()
                     evento.notas = etNotas.text.toString().trim()
+                    AgendaRepo.guardar(evento)
                     alGuardar()
                     dialog.dismiss()
                 }
@@ -116,9 +118,10 @@ class DetalleEventoVetActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.detalle_evento_vet)
 
-        val id = intent.getIntExtra(EXTRA_EVENTO_ID, -1)
+        val id = intent.getStringExtra(EXTRA_EVENTO_ID)
         val encontrado = AgendaRepo.porId(id)
         if (encontrado == null) {
             Toast.makeText(this, "No se encontró el turno", Toast.LENGTH_SHORT).show()
@@ -149,16 +152,16 @@ class DetalleEventoVetActivity : BaseActivity() {
             }
         }
         findViewById<View>(R.id.btnCompletar).setOnClickListener {
-            evento.estado = EstadoEvento.COMPLETADO
+            AgendaRepo.cambiarEstado(evento, EstadoEvento.COMPLETADO)
             Toast.makeText(this, "Turno marcado como completado", Toast.LENGTH_SHORT).show()
             mostrar()
         }
         findViewById<View>(R.id.btnCancelarTurno).setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Cancelar turno")
-                .setMessage("¿Cancelar el turno de ${PacientesRepo.porId(evento.pacienteId).nombre}?")
+                .setMessage("¿Cancelar el turno de ${PacientesRepo.nombreDe(evento.pacienteId)}?")
                 .setPositiveButton("Cancelar turno") { _, _ ->
-                    evento.estado = EstadoEvento.CANCELADO
+                    AgendaRepo.cambiarEstado(evento, EstadoEvento.CANCELADO)
                     Toast.makeText(this, "Turno cancelado", Toast.LENGTH_SHORT).show()
                     mostrar()
                 }
@@ -180,10 +183,13 @@ class DetalleEventoVetActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvVeterinario).text = evento.veterinario
         findViewById<TextView>(R.id.tvNotas).text = evento.notas.ifBlank { "Sin notas" }
 
-        findViewById<ImageView>(R.id.ivPaciente).setImageResource(p.fotoRes)
-        findViewById<TextView>(R.id.tvPaciente).text = p.nombre
-        findViewById<TextView>(R.id.tvPacienteRaza).text = p.razaYSexo
-        findViewById<TextView>(R.id.tvPropietario).text = "Propietario/a: ${p.propietario}"
+        findViewById<ImageView>(R.id.ivPaciente).let {
+            it.setImageResource(R.drawable.ic_dog)
+            Imagenes.mostrar(it, null, p?.fotoPath)
+        }
+        findViewById<TextView>(R.id.tvPaciente).text = p?.nombre ?: "Mascota"
+        findViewById<TextView>(R.id.tvPacienteRaza).text = p?.razaYSexo.orEmpty()
+        findViewById<TextView>(R.id.tvPropietario).text = "Propietario/a: ${p?.propietario ?: "Sin datos"}"
 
         val pendiente = evento.estado == EstadoEvento.PENDIENTE
         findViewById<View>(R.id.btnIniciarTurno).visibility = if (pendiente) View.VISIBLE else View.GONE

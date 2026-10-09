@@ -1,6 +1,16 @@
 package frgp.utn.edu.petcare
 
+import frgp.utn.edu.petcare.data.Servicios
+import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.data.remoto.NuevoTurnoDto
+import frgp.utn.edu.petcare.data.remoto.TurnoDto
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.util.UUID
 
 enum class EstadoEvento(val etiqueta: String) {
     PENDIENTE("Pendiente"),
@@ -9,15 +19,16 @@ enum class EstadoEvento(val etiqueta: String) {
 }
 
 data class EventoVet(
-    val id: Int,
-    var pacienteId: Int,
+    val id: String,
+    var pacienteId: String,
     var tipo: String,
     var motivo: String,
     var fecha: LocalDate,
     var hora: String,
     var estado: EstadoEvento,
     var notas: String,
-    var veterinario: String
+    var veterinario: String,
+    var veterinarioId: String? = null
 )
 
 object Fechas {
@@ -71,42 +82,105 @@ object Fechas {
         hoy.minusDays(1) -> "Ayer"
         else -> corta(f)
     }
+
+    /** Convierte la fecha con zona horaria que manda el servidor a la hora local del teléfono. */
+    fun instante(texto: String?): LocalDateTime =
+        runCatching { OffsetDateTime.parse(texto).atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime() }
+            .getOrDefault(LocalDateTime.now())
+
+    /** "Hace 5 min", "Hace 2 horas", "Ayer" o la fecha, según cuánto pasó. */
+    fun haceTexto(texto: String?, ahora: LocalDateTime = LocalDateTime.now()): String {
+        val momento = instante(texto)
+        val minutos = java.time.Duration.between(momento, ahora).toMinutes().coerceAtLeast(0)
+        return when {
+            minutos < 1 -> "Ahora"
+            minutos < 60 -> "Hace $minutos min"
+            minutos < 24 * 60 -> "Hace ${minutos / 60} ${if (minutos / 60 == 1L) "hora" else "horas"}"
+            else -> relativa(momento.toLocalDate(), ahora.toLocalDate())
+        }
+    }
 }
 
-/** Turnos y consultas del veterinario (datos de demostración en memoria). */
+/** Turnos y consultas del veterinario en sesión. */
 object AgendaRepo {
 
     val tipos = listOf("Consulta", "Vacuna", "Tratamiento", "Cirugía", "Control", "Otro")
 
-    private var siguienteId = 1
     val eventos: MutableList<EventoVet> = mutableListOf()
 
-    init {
-        val hoy = LocalDate.now()
-        val vet = PerfilVetRepo.nombre
-        agregar(3, "Vacuna", "Vacuna anual", hoy, "10:00", EstadoEvento.PENDIENTE, "Traer carnet de vacunación.", vet)
-        agregar(4, "Cirugía", "Cirugía (revisión)", hoy, "11:30", EstadoEvento.PENDIENTE, "Control de puntos y cicatrización.", vet)
-        agregar(1, "Consulta", "Consulta por picazón", hoy, "15:00", EstadoEvento.PENDIENTE, "Rascado frecuente en las orejas.", vet)
-        agregar(5, "Control", "Control general", hoy, "16:30", EstadoEvento.PENDIENTE, "", vet)
-        agregar(2, "Control", "Control de peso", hoy.plusDays(1), "09:30", EstadoEvento.PENDIENTE, "", vet)
-        agregar(1, "Vacuna", "Refuerzo antirrábico", hoy.plusDays(3), "12:00", EstadoEvento.PENDIENTE, "", vet)
-        agregar(4, "Consulta", "Revisión anual", hoy.minusDays(18), "10:00", EstadoEvento.COMPLETADO, "Todo normal. Control en 1 año.", vet)
-        agregar(4, "Tratamiento", "Desparasitación", hoy.minusDays(40), "11:00", EstadoEvento.COMPLETADO, "Siguiente dosis en 3 meses.", vet)
-        agregar(1, "Consulta", "Análisis de sangre", hoy.minusDays(30), "16:00", EstadoEvento.COMPLETADO, "Resultados normales.", vet)
-        agregar(3, "Control", "Control general", hoy.minusDays(10), "10:30", EstadoEvento.COMPLETADO, "", vet)
-        agregar(2, "Consulta", "Consulta dermatológica", hoy.minusDays(5), "14:00", EstadoEvento.CANCELADO, "Cancelado por el propietario.", vet)
+    fun limpiar() = eventos.clear()
+
+    suspend fun cargar() {
+        val nuevos = Servicios.fuente.turnos().map(::aEvento)
+        eventos.clear()
+        eventos.addAll(nuevos)
     }
 
+    private fun aEvento(t: TurnoDto) = EventoVet(
+        id = t.id, pacienteId = t.mascotaId, tipo = t.categoria,
+        motivo = t.motivo?.takeIf { it.isNotBlank() } ?: t.categoria,
+        fecha = LocalDate.parse(t.fecha), hora = t.hora.take(5),
+        estado = when (t.estado) {
+            "completado" -> EstadoEvento.COMPLETADO
+            "cancelado" -> EstadoEvento.CANCELADO
+            else -> EstadoEvento.PENDIENTE
+        },
+        notas = t.notas.orEmpty(), veterinario = PerfilVetRepo.nombre, veterinarioId = t.veterinarioId
+    )
+
+    private val alFallar: suspend () -> Unit = {
+        cargar()
+        Servicios.avisarCambio()
+    }
+
+    /** Agenda un turno propio. El servidor valida que el horario esté libre y dentro de la atención. */
     fun agregar(
-        pacienteId: Int, tipo: String, motivo: String, fecha: LocalDate, hora: String,
-        estado: EstadoEvento, notas: String, veterinario: String
+        pacienteId: String, tipo: String, motivo: String, fecha: LocalDate, hora: String,
+        estado: EstadoEvento, notas: String
     ): EventoVet {
-        val e = EventoVet(siguienteId++, pacienteId, tipo, motivo, fecha, hora, estado, notas, veterinario)
+        val id = UUID.randomUUID().toString()
+        val vetId = Sesion.usuarioId
+        val e = EventoVet(id, pacienteId, tipo, motivo, fecha, hora, estado, notas, PerfilVetRepo.nombre, vetId)
         eventos.add(e)
+        Servicios.escribir(alFallar = alFallar) {
+            Servicios.fuente.crearTurno(
+                NuevoTurnoDto(
+                    id = id, mascotaId = pacienteId, veterinarioId = vetId, categoria = tipo, motivo = motivo,
+                    fecha = fecha.toString(), hora = "$hora:00", estado = nombreEstado(estado),
+                    notas = notas.ifBlank { null }, creadoPor = vetId ?: error("No hay una sesión iniciada")
+                )
+            )
+        }
         return e
     }
 
-    fun porId(id: Int): EventoVet? = eventos.firstOrNull { it.id == id }
+    /** Guarda en el servidor los cambios hechos a un turno (tipo, motivo, fecha, hora y notas). */
+    fun guardar(e: EventoVet) {
+        Servicios.escribir(alFallar = alFallar) {
+            Servicios.fuente.actualizarTurno(e.id, buildJsonObject {
+                put("categoria", e.tipo)
+                put("motivo", e.motivo)
+                put("fecha", e.fecha.toString())
+                put("hora", "${e.hora}:00")
+                put("notas", e.notas.ifBlank { null })
+            })
+        }
+    }
+
+    fun cambiarEstado(e: EventoVet, estado: EstadoEvento) {
+        e.estado = estado
+        Servicios.escribir(alFallar = alFallar) {
+            Servicios.fuente.actualizarTurno(e.id, buildJsonObject { put("estado", nombreEstado(estado)) })
+        }
+    }
+
+    private fun nombreEstado(estado: EstadoEvento) = when (estado) {
+        EstadoEvento.PENDIENTE -> "pendiente"
+        EstadoEvento.COMPLETADO -> "completado"
+        EstadoEvento.CANCELADO -> "cancelado"
+    }
+
+    fun porId(id: String?): EventoVet? = eventos.firstOrNull { it.id == id }
 
     private val orden = compareBy<EventoVet>({ it.fecha }, { it.hora })
 
@@ -119,14 +193,14 @@ object AgendaRepo {
     fun porEstado(estado: EstadoEvento): List<EventoVet> =
         eventos.filter { it.estado == estado }.sortedWith(orden.reversed())
 
-    fun deMascota(pacienteId: Int): List<EventoVet> =
+    fun deMascota(pacienteId: String): List<EventoVet> =
         eventos.filter { it.pacienteId == pacienteId }.sortedWith(orden.reversed())
 
-    fun ultimaConsulta(pacienteId: Int): EventoVet? =
+    fun ultimaConsulta(pacienteId: String): EventoVet? =
         eventos.filter { it.pacienteId == pacienteId && it.estado == EstadoEvento.COMPLETADO }
             .maxWithOrNull(compareBy({ it.fecha }, { it.hora }))
 
-    fun proximoEvento(pacienteId: Int): EventoVet? =
+    fun proximoEvento(pacienteId: String): EventoVet? =
         proximos().firstOrNull { it.pacienteId == pacienteId }
 
     fun pacientesHoy(): Int = deHoy().map { it.pacienteId }.distinct().size

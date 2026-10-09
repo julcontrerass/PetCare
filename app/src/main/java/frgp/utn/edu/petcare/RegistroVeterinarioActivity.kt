@@ -18,6 +18,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.lifecycleScope
+import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Registro
+import kotlinx.coroutines.launch
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.android.material.button.MaterialButton
@@ -33,9 +37,8 @@ import java.util.Locale
 class RegistroVeterinarioActivity : BaseActivity() {
 
     companion object {
-        const val EXTRA_EMAILS_REGISTRADOS = "emails_registrados"
         const val EXTRA_EMAIL = "email"
-        const val EXTRA_PASSWORD = "password"
+        const val EXTRA_CONFIRMAR_CORREO = "confirmar_correo"
 
         private const val ESTADO_PASO = "paso"
         private const val ESTADO_ESPECIALIDADES = "especialidades"
@@ -63,7 +66,6 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private lateinit var segmentos: List<View>
     private lateinit var btnAtras: MaterialButton
     private lateinit var btnSiguiente: MaterialButton
-    private lateinit var emailsRegistrados: List<String>
 
     private val elegirFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { guardarFoto(it) }
@@ -74,8 +76,6 @@ class RegistroVeterinarioActivity : BaseActivity() {
         setContentView(R.layout.registro_vet)
         VetUi.barras(this, conPadding = false)
         ajustarInsets()
-
-        emailsRegistrados = intent.getStringArrayListExtra(EXTRA_EMAILS_REGISTRADOS) ?: arrayListOf()
 
         savedInstanceState?.let {
             paso = it.getInt(ESTADO_PASO)
@@ -277,8 +277,6 @@ class RegistroVeterinarioActivity : BaseActivity() {
         val email = texto(R.id.etVetEmail).lowercase(Locale.ROOT)
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             ok = error(R.id.etVetEmail, "Correo inválido")
-        } else if (emailsRegistrados.contains(email)) {
-            ok = error(R.id.etVetEmail, "Ese correo ya está registrado")
         }
         return ok
     }
@@ -428,53 +426,52 @@ class RegistroVeterinarioActivity : BaseActivity() {
     }
 
     private fun crearCuenta() {
-        val email = texto(R.id.etVetEmail).lowercase(Locale.ROOT)
-        val password = findViewById<EditText>(R.id.etVetPassword).text.toString()
-        val nombreAnterior = PerfilVetRepo.nombre
         val nombre = nombreCompleto()
-
-        PerfilVetRepo.nombre = nombre
-        PerfilVetRepo.dni = texto(R.id.etVetDni)
-        PerfilVetRepo.telefono = texto(R.id.etVetTelefono)
-        PerfilVetRepo.matricula = texto(R.id.etVetMatricula)
-        PerfilVetRepo.clinica = texto(R.id.etVetClinica)
-        PerfilVetRepo.direccionClinica = texto(R.id.etVetDireccion)
-        PerfilVetRepo.email = email
-        PerfilVetRepo.password = password
-        PerfilVetRepo.fotoUriString = fotoPath?.let { Uri.fromFile(File(it)).toString() }
-        PerfilVetRepo.fotoRes = R.drawable.avatar_default
-        System.arraycopy(especialidades, 0, PerfilVetRepo.especialidadesSeleccionadas, 0, especialidades.size)
-        System.arraycopy(dias, 0, PerfilVetRepo.diasSeleccionados, 0, dias.size)
-        PerfilVetRepo.horaApertura = apertura
-        PerfilVetRepo.horaCierre = cierre
-        // Los turnos de demostración pasan a figurar a nombre del veterinario recién registrado
-        AgendaRepo.eventos.filter { it.veterinario == nombreAnterior }.forEach { it.veterinario = nombre }
-
-        // Registrar en AdminRepo para revisión del Administrador
-        AdminRepo.registrarNuevoVet(
+        val datos = DatosRegistroVeterinario(
             nombre = nombre,
-            email = email,
+            dni = texto(R.id.etVetDni),
+            telefono = texto(R.id.etVetTelefono),
+            email = texto(R.id.etVetEmail).lowercase(Locale.ROOT),
+            password = findViewById<EditText>(R.id.etVetPassword).text.toString(),
             matricula = texto(R.id.etVetMatricula),
             clinica = texto(R.id.etVetClinica),
-            direccion = texto(R.id.etVetDireccion),
-            telefono = texto(R.id.etVetTelefono),
-            especialidades = PerfilVetRepo.textoEspecialidades(),
-            horarios = PerfilVetRepo.textoHorarios(),
-            dni = texto(R.id.etVetDni),
+            direccionClinica = texto(R.id.etVetDireccion),
+            especialidades = PerfilVetRepo.todasLasEspecialidades.filterIndexed { i, _ -> especialidades[i] },
+            dias = dias.indices.filter { dias[it] }.map { it + 1 },
+            apertura = apertura,
+            cierre = cierre,
             fotoPath = fotoPath
         )
-
-        AlertDialog.Builder(this)
-            .setTitle("Registro en revisión")
-            .setMessage("¡Muchas gracias, $nombre!\nTus datos y matrícula (${PerfilVetRepo.matricula}) fueron enviados correctamente y están en proceso de revisión por el Administrador. Una vez verificados, tu cuenta será dada de alta.")
-            .setPositiveButton("Entendido") { _, _ ->
-                setResult(
-                    RESULT_OK,
-                    Intent().putExtra(EXTRA_EMAIL, email).putExtra(EXTRA_PASSWORD, password)
-                )
-                finish()
+        btnSiguiente.isEnabled = false
+        btnSiguiente.text = "Creando cuenta..."
+        lifecycleScope.launch {
+            try {
+                val resultado = Registro.veterinario(datos)
+                AlertDialog.Builder(this@RegistroVeterinarioActivity)
+                    .setTitle("Registro en revisión")
+                    .setMessage(
+                        "¡Muchas gracias, $nombre!\nTus datos y matrícula (${datos.matricula}) fueron enviados correctamente " +
+                            "y están en proceso de revisión por el Administrador. Una vez verificados, tu cuenta será dada de alta."
+                    )
+                    .setPositiveButton("Entendido") { _, _ ->
+                        setResult(
+                            RESULT_OK,
+                            Intent().putExtra(EXTRA_EMAIL, datos.email)
+                                .putExtra(EXTRA_CONFIRMAR_CORREO, !resultado.sesionIniciada)
+                        )
+                        finish()
+                    }
+                    .setCancelable(false)
+                    .show()
+            } catch (e: Registro.CorreoYaRegistrado) {
+                btnSiguiente.isEnabled = true
+                btnSiguiente.text = "Crear cuenta"
+                error(R.id.etVetEmail, "Ese correo ya está registrado")
+            } catch (e: Exception) {
+                btnSiguiente.isEnabled = true
+                btnSiguiente.text = "Crear cuenta"
+                Toast.makeText(this@RegistroVeterinarioActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
             }
-            .setCancelable(false)
-            .show()
+        }
     }
 }

@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import frgp.utn.edu.petcare.data.Imagenes
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -20,8 +21,10 @@ class DetallePacienteActivity : BaseActivity() {
     companion object {
         const val EXTRA_PACIENTE_ID = "paciente_id"
 
+        /** El paciente de la pantalla; solo se llama después de comprobar que existe. */
         fun pacienteDe(activity: AppCompatActivity): Paciente =
-            PacientesRepo.porId(activity.intent.getIntExtra(EXTRA_PACIENTE_ID, -1))
+            PacientesRepo.porId(activity.intent.getStringExtra(EXTRA_PACIENTE_ID))
+                ?: error("El paciente ya no está disponible")
     }
 
     private fun abrirExterno(intent: Intent) {
@@ -34,17 +37,26 @@ class DetallePacienteActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         setContentView(R.layout.detalle_paciente)
 
         VetBottomNav.setup(this, R.id.nav_pacientes)
 
-        val paciente = pacienteDe(this)
+        val paciente = PacientesRepo.porId(intent.getStringExtra(EXTRA_PACIENTE_ID))
+        if (paciente == null) {
+            Toast.makeText(this, "No se encontró la mascota", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
         findViewById<android.widget.TextView>(R.id.tvPetName).text = paciente.nombre
         findViewById<TextView>(R.id.tvPetBreed).text = paciente.razaYSexo
         findViewById<TextView>(R.id.tvPetAge).text = paciente.nacimiento
         findViewById<TextView>(R.id.tvPetOwner).text = "Propietario: ${paciente.propietario}"
         findViewById<TextView>(R.id.tvPetOwnerContact).text = "Contacto: ${paciente.telefono}"
-        findViewById<android.widget.ImageView>(R.id.ivPetPhoto).setImageResource(paciente.fotoRes)
+        findViewById<android.widget.ImageView>(R.id.ivPetPhoto).let {
+            it.setImageResource(R.drawable.ic_dog)
+            Imagenes.mostrar(it, null, paciente.fotoPath)
+        }
 
         findViewById<View>(R.id.toolbar).setOnClickListener { finish() }
 

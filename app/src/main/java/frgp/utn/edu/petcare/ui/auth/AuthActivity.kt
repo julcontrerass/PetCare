@@ -11,21 +11,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.content.IntentCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
-import frgp.utn.edu.petcare.AdminRepo
 import frgp.utn.edu.petcare.BaseActivity
-import frgp.utn.edu.petcare.DatosRegistroDueno
 import frgp.utn.edu.petcare.HomeAdminActivity
 import frgp.utn.edu.petcare.HomeVeterinarioActivity
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.RegistroDuenoActivity
 import frgp.utn.edu.petcare.RegistroVeterinarioActivity
-import frgp.utn.edu.petcare.data.CuentasRepo
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Servicios
+import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.ui.dueno.DuenoActivity
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
@@ -34,40 +34,91 @@ import java.util.Locale
  */
 class AuthActivity : BaseActivity() {
 
-    private var rolVeterinarioSeleccionado = false
     private var registroComoVeterinario = false
 
     private val registroDuenoLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { resultado ->
-            val datos = resultado.data?.let {
-                IntentCompat.getSerializableExtra(it, RegistroDuenoActivity.EXTRA_DATOS, DatosRegistroDueno::class.java)
-            }
+            val datos = resultado.data
             if (resultado.resultCode != RESULT_OK || datos == null) return@registerForActivityResult
-            CuentasRepo.registrarDueno(datos)
-            cuentaCreada(datos.email)
+            cuentaCreada(
+                datos.getStringExtra(RegistroDuenoActivity.EXTRA_EMAIL).orEmpty(),
+                datos.getBooleanExtra(RegistroDuenoActivity.EXTRA_CONFIRMAR_CORREO, false),
+                esVeterinario = false
+            )
         }
 
     private val registroVetLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { resultado ->
             val datos = resultado.data
             if (resultado.resultCode != RESULT_OK || datos == null) return@registerForActivityResult
-            val email = datos.getStringExtra(RegistroVeterinarioActivity.EXTRA_EMAIL)
-            val password = datos.getStringExtra(RegistroVeterinarioActivity.EXTRA_PASSWORD)
-            if (email == null || password == null) return@registerForActivityResult
-            CuentasRepo.registrarVeterinario(email, password)
-            cuentaCreada(email)
+            cuentaCreada(
+                datos.getStringExtra(RegistroVeterinarioActivity.EXTRA_EMAIL).orEmpty(),
+                datos.getBooleanExtra(RegistroVeterinarioActivity.EXTRA_CONFIRMAR_CORREO, false),
+                esVeterinario = true
+            )
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         mostrarPantallaInicial()
+        retomarSesion()
     }
 
-    private fun cuentaCreada(email: String) {
-        Toast.makeText(this, "Cuenta creada. Iniciá sesión para continuar", Toast.LENGTH_LONG).show()
-        mostrarLogin()
-        findViewById<EditText>(R.id.etEmail)?.setText(email)
+    /** Si el teléfono todavía tiene una sesión abierta, entra directo al panel que corresponde. */
+    private fun retomarSesion() {
+        lifecycleScope.launch {
+            Sesion.restaurar()?.let { atender(it) }
+        }
+    }
+
+    /** Lleva al panel de la cuenta o, si no puede ingresar, explica por qué. */
+    private fun atender(resultado: Sesion.Resultado) {
+        when (resultado) {
+            is Sesion.Resultado.Listo -> {
+                val destino = when (resultado.rol) {
+                    Sesion.Rol.DUENO -> DuenoActivity::class.java
+                    Sesion.Rol.VETERINARIO -> HomeVeterinarioActivity::class.java
+                    Sesion.Rol.ADMIN -> HomeAdminActivity::class.java
+                }
+                startActivity(Intent(this, destino))
+                finish()
+            }
+            is Sesion.Resultado.Bloqueada -> AlertDialog.Builder(this)
+                .setTitle("No podés ingresar")
+                .setMessage(resultado.mensaje)
+                .setPositiveButton("Entendido", null)
+                .show()
+        }
+    }
+
+    private fun cuentaCreada(email: String, confirmarCorreo: Boolean, esVeterinario: Boolean) {
+        if (confirmarCorreo) {
+            mostrarLogin()
+            findViewById<EditText>(R.id.etEmail)?.setText(email)
+            AlertDialog.Builder(this)
+                .setTitle("Confirmá tu correo")
+                .setMessage("Te mandamos un mensaje a $email. Abrilo para activar la cuenta y después iniciá sesión.")
+                .setPositiveButton("Entendido", null)
+                .show()
+            return
+        }
+        lifecycleScope.launch {
+            if (esVeterinario) {
+                // La cuenta queda en revisión hasta que el administrador verifique la matrícula
+                Sesion.cerrar()
+                mostrarLogin()
+                findViewById<EditText>(R.id.etEmail)?.setText(email)
+            } else {
+                val resultado = runCatching { Sesion.restaurar() }.getOrNull()
+                if (resultado != null) {
+                    atender(resultado)
+                } else {
+                    mostrarLogin()
+                    findViewById<EditText>(R.id.etEmail)?.setText(email)
+                }
+            }
+        }
     }
 
     private fun aplicarInsets(raiz: View) {
@@ -104,25 +155,8 @@ class AuthActivity : BaseActivity() {
         setContentView(R.layout.iniciar_sesion)
         aplicarInsets(findViewById(R.id.loginRoot))
 
-        rolVeterinarioSeleccionado = false
-        val btnDueno = findViewById<MaterialButton>(R.id.btnRoleDueno)
-        val btnVeterinario = findViewById<MaterialButton>(R.id.btnRoleVeterinario)
-        if (btnDueno != null && btnVeterinario != null) {
-            actualizarSelectorRol(btnDueno, btnVeterinario, rolVeterinarioSeleccionado)
-            btnDueno.setOnClickListener {
-                rolVeterinarioSeleccionado = false
-                actualizarSelectorRol(btnDueno, btnVeterinario, false)
-            }
-            btnVeterinario.setOnClickListener {
-                rolVeterinarioSeleccionado = true
-                actualizarSelectorRol(btnDueno, btnVeterinario, true)
-            }
-        }
-
         findViewById<View>(R.id.tvForgotPassword)?.setOnClickListener { mostrarRecuperarPassword() }
         findViewById<View>(R.id.tvSignUp)?.setOnClickListener { mostrarRegistro() }
-        findViewById<View>(R.id.btnGoogle)?.setOnClickListener { mostrarLoginSocial("Google") }
-        findViewById<View>(R.id.btnApple)?.setOnClickListener { mostrarLoginSocial("Apple") }
         findViewById<Button>(R.id.btnLogin)?.setOnClickListener { intentarIngresar() }
     }
 
@@ -140,56 +174,18 @@ class AuthActivity : BaseActivity() {
             etPassword?.error = "Ingresá tu contraseña"
             return
         }
-        if (password.length < 6) {
-            etPassword?.error = "Mínimo 6 caracteres"
-            return
+
+        val boton = findViewById<Button>(R.id.btnLogin)
+        boton.isEnabled = false
+        lifecycleScope.launch {
+            try {
+                atender(Sesion.ingresar(email, password))
+            } catch (e: Exception) {
+                Toast.makeText(this@AuthActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+            } finally {
+                boton.isEnabled = true
+            }
         }
-        if (CuentasRepo.passwordIncorrecta(email, password)) {
-            etPassword?.error = "Contraseña incorrecta"
-            return
-        }
-
-        // Ingreso como administrador
-        if (email == AdminRepo.EMAIL_ADMIN || email.startsWith("admin@")) {
-            startActivity(Intent(this, HomeAdminActivity::class.java))
-            return
-        }
-
-        // Veterinarios en revisión, rechazados o suspendidos y cuentas suspendidas no pueden ingresar
-        AdminRepo.motivoBloqueo(email)?.let { bloqueo ->
-            AlertDialog.Builder(this)
-                .setTitle("No podés ingresar")
-                .setMessage(bloqueo)
-                .setPositiveButton("Entendido", null)
-                .show()
-            return
-        }
-
-        // Si la cuenta se creó en el registro, el rol sale de ahí
-        val esVeterinario = when (CuentasRepo.rolDe(email)) {
-            CuentasRepo.Rol.VETERINARIO -> true
-            CuentasRepo.Rol.DUENO -> false
-            null -> rolVeterinarioSeleccionado
-        }
-        if (esVeterinario) abrirVeterinario() else abrirDueno(email)
-    }
-
-    private fun abrirVeterinario() = startActivity(Intent(this, HomeVeterinarioActivity::class.java))
-
-    private fun abrirDueno(email: String) {
-        DuenoRepo.entrar(email)
-        startActivity(Intent(this, DuenoActivity::class.java))
-    }
-
-    /** Ingreso con cuenta social: sin backend, se simula la cuenta y se elige el rol. */
-    private fun mostrarLoginSocial(proveedor: String) {
-        AlertDialog.Builder(this)
-            .setTitle("Continuar con $proveedor")
-            .setMessage("Elegí cómo querés usar PetCare con esta cuenta.")
-            .setPositiveButton(R.string.rol_dueno) { _, _ -> abrirDueno("") }
-            .setNegativeButton(R.string.rol_veterinario) { _, _ -> abrirVeterinario() }
-            .setNeutralButton(R.string.btn_cancelar, null)
-            .show()
     }
 
     // ---------- Registro y recuperación ----------
@@ -214,14 +210,10 @@ class AuthActivity : BaseActivity() {
 
         findViewById<View>(R.id.btnBackRegistro).setOnClickListener { mostrarPantallaInicial() }
         findViewById<View>(R.id.btnComenzarDueno).setOnClickListener {
-            val intent = Intent(this, RegistroDuenoActivity::class.java)
-                .putStringArrayListExtra(RegistroDuenoActivity.EXTRA_EMAILS_REGISTRADOS, CuentasRepo.correosRegistrados())
-            registroDuenoLauncher.launch(intent)
+            registroDuenoLauncher.launch(Intent(this, RegistroDuenoActivity::class.java))
         }
         findViewById<View>(R.id.btnComenzarVet).setOnClickListener {
-            val intent = Intent(this, RegistroVeterinarioActivity::class.java)
-                .putStringArrayListExtra(RegistroVeterinarioActivity.EXTRA_EMAILS_REGISTRADOS, CuentasRepo.correosRegistrados())
-            registroVetLauncher.launch(intent)
+            registroVetLauncher.launch(Intent(this, RegistroVeterinarioActivity::class.java))
         }
     }
 
@@ -232,14 +224,26 @@ class AuthActivity : BaseActivity() {
         findViewById<View>(R.id.btnBackRecuperar).setOnClickListener { mostrarLogin() }
         val etEmail = findViewById<EditText>(R.id.etRecuperarEmail)
         val avisoEnviado = findViewById<View>(R.id.tvRecuperarOk)
-        findViewById<View>(R.id.btnEnviarRecuperar).setOnClickListener {
+        val boton = findViewById<View>(R.id.btnEnviarRecuperar)
+        boton.setOnClickListener {
             val email = etEmail.text.toString().trim()
             if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 etEmail.error = "Correo inválido"
                 avisoEnviado.visibility = View.GONE
                 return@setOnClickListener
             }
-            avisoEnviado.visibility = View.VISIBLE
+            boton.isEnabled = false
+            lifecycleScope.launch {
+                try {
+                    Servicios.fuente.recuperarPassword(email)
+                    avisoEnviado.visibility = View.VISIBLE
+                } catch (e: Exception) {
+                    avisoEnviado.visibility = View.GONE
+                    Toast.makeText(this@AuthActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                } finally {
+                    boton.isEnabled = true
+                }
+            }
         }
     }
 

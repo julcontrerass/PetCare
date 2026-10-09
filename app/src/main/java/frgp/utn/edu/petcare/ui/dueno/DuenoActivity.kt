@@ -15,7 +15,13 @@ import frgp.utn.edu.petcare.CarnetSaludActivity
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.model.Mascota
-import frgp.utn.edu.petcare.ui.auth.AuthActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import frgp.utn.edu.petcare.data.Servicios
+import frgp.utn.edu.petcare.data.Sesion
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -51,6 +57,9 @@ class DuenoActivity : BaseActivity() {
 
     private var enInicio = true
 
+    /** Cómo volver a dibujar la sección visible cuando llegan datos nuevos (null en los formularios). */
+    private var refrescable: (() -> Unit)? = null
+
     private val selectorDeImagen = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) alElegirImagen?.invoke(uri)
     }
@@ -58,6 +67,7 @@ class DuenoActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (volverSiNoHaySesion()) return
         enableEdgeToEdge()
         setContentView(R.layout.app_base)
         ajustarInsets()
@@ -76,7 +86,26 @@ class DuenoActivity : BaseActivity() {
             }
         })
 
+        Servicios.alCambiarDatos = {
+            actualizarBadgeNotificaciones()
+            refrescable?.invoke()
+        }
+        // Mientras la pantalla está a la vista se piden cada tanto los cambios que hacen los veterinarios
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(INTERVALO_ACTUALIZACION_MS)
+                    runCatching { DuenoRepo.recargarDerivados() }
+                }
+            }
+        }
+
         irAHome()
+    }
+
+    override fun onDestroy() {
+        Servicios.alCambiarDatos = null
+        super.onDestroy()
     }
 
     private fun ajustarInsets() {
@@ -125,31 +154,47 @@ class DuenoActivity : BaseActivity() {
 
     // ---------- Navegación ----------
 
-    fun irAHome() = pantallaHome.mostrar()
+    fun irAHome() = mostrarSeccion { pantallaHome.mostrar() }
 
-    fun irAMascotas() = pantallaMascotas.mostrar()
+    fun irAMascotas() = mostrarSeccion { pantallaMascotas.mostrar() }
 
-    fun irANuevaMascota() = pantallaNuevaMascota.mostrar()
+    fun irANuevaMascota() {
+        refrescable = null
+        pantallaNuevaMascota.mostrar()
+    }
 
     fun irADetalleMascota(mascota: Mascota) {
         mascotaActual = mascota
+        refrescable = null
         pantallaDetalleMascota.mostrar()
     }
 
-    fun irARecordatorios() = pantallaRecordatorios.mostrar()
+    fun irARecordatorios() = mostrarSeccion { pantallaRecordatorios.mostrar() }
 
-    fun irACalendario() = pantallaCalendario.mostrar()
+    fun irACalendario() = mostrarSeccion { pantallaCalendario.mostrar() }
 
     /** Asistente para agendar un evento; [mascota] deja elegida la mascota del primer paso. */
-    fun irANuevoEvento(fecha: LocalDate?, mascota: String? = null) = pantallaNuevoEvento.mostrar(fecha, mascota)
+    fun irANuevoEvento(fecha: LocalDate?, mascota: String? = null) {
+        refrescable = null
+        pantallaNuevoEvento.mostrar(fecha, mascota)
+    }
 
-    fun irAPerfil() = pantallaPerfil.mostrar()
+    fun irAPerfil() = mostrarSeccion { pantallaPerfil.mostrar() }
 
-    fun irAEditarPerfil() = pantallaEditarPerfil.mostrar()
+    fun irAEditarPerfil() {
+        refrescable = null
+        pantallaEditarPerfil.mostrar()
+    }
 
-    fun irAVeterinarios() = pantallaVeterinarios.mostrar()
+    fun irAVeterinarios() = mostrarSeccion { pantallaVeterinarios.mostrar() }
 
-    fun irASolicitudes() = pantallaSolicitudes.mostrar()
+    fun irASolicitudes() = mostrarSeccion { pantallaSolicitudes.mostrar() }
+
+    /** Muestra una sección que se puede volver a dibujar sola cuando cambian los datos. */
+    private fun mostrarSeccion(dibujar: () -> Unit) {
+        refrescable = dibujar
+        dibujar()
+    }
 
     fun mostrarNotificaciones() = notificaciones.mostrar()
 
@@ -157,8 +202,10 @@ class DuenoActivity : BaseActivity() {
 
     fun cerrarSesion() {
         barra.quitarMenu()
-        val intent = Intent(this, AuthActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        startActivity(intent)
+        Sesion.cerrarYVolver(this)
+    }
+
+    private companion object {
+        const val INTERVALO_ACTUALIZACION_MS = 30_000L
     }
 }

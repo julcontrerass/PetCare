@@ -52,9 +52,6 @@
     <string name="correo_electr_nico">Correo electrónico</string>
     <string name="contrase_a">Contraseña</string>
     <string name="no_tienes_cuenta">¿No tenés cuenta?</string>
-    <string name="google">Google</string>
-    <string name="o_continu_con">o continuá con</string>
-    <string name="apple">Apple</string>
     <string name="olvidaste_tu_contrase_a">¿Olvidaste tu contraseña?</string>
     <string name="ejemplo_correo_com">ejemplo@correo.com</string>
     <string name="volver_atras">Volver atrás</string>
@@ -115,17 +112,10 @@
     <!-- Detalle de mascota -->
     <string name="mas_opciones_desc">Más opciones</string>
     <string name="cambiar_foto_desc">Cambiar foto</string>
-    <string name="nombre_koda">Koda</string>
-    <string name="raza_koda">Perro - Golden Retriever</string>
-    <string name="nacimiento_sexo_koda">Nacido el 15 mar 2020 - Macho</string>
     <string name="label_peso">Peso</string>
-    <string name="valor_peso_koda">28 kg</string>
     <string name="label_microchip">Microchip</string>
-    <string name="valor_microchip_koda">985121054871236</string>
     <string name="label_color">Color</string>
-    <string name="valor_color_koda">Dorado</string>
     <string name="label_observaciones_mascota">Observaciones</string>
-    <string name="obs_alergia_koda">Alérgico a la penicilina</string>
     <string name="btn_editar_informacion">Editar información</string>
 
     <!-- Mi perfil -->

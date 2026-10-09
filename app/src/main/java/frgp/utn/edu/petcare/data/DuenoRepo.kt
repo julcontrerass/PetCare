@@ -1,14 +1,18 @@
 package frgp.utn.edu.petcare.data
 
-import frgp.utn.edu.petcare.AgendaRepo
-import frgp.utn.edu.petcare.DatosRegistroDueno
-import frgp.utn.edu.petcare.EstadoEvento
+import android.net.Uri
 import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.PacientesRepo
-import frgp.utn.edu.petcare.PerfilVetRepo
-import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.SolicitudItem
+import frgp.utn.edu.petcare.data.remoto.AccesoDto
+import frgp.utn.edu.petcare.data.remoto.MascotaDto
+import frgp.utn.edu.petcare.data.remoto.NotificacionDto
+import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
+import frgp.utn.edu.petcare.data.remoto.NuevoTurnoDto
+import frgp.utn.edu.petcare.data.remoto.PerfilDto
+import frgp.utn.edu.petcare.data.remoto.TurnoDto
+import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
+import frgp.utn.edu.petcare.model.EstadoTurno
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.NotificacionDueno
@@ -17,84 +21,268 @@ import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.Sexo
 import frgp.utn.edu.petcare.model.TipoNotificacion
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.time.LocalDate
 import java.time.LocalTime
-import android.net.Uri
-import java.io.File
 
-/** Todo lo que pertenece a la cuenta de un dueño. */
-class EstadoDueno(
-    val perfil: PerfilDueno,
-    val esDemo: Boolean,
+/** Todo lo que pertenece a la cuenta del dueño en sesión. */
+private class EstadoDueno(
+    var perfil: PerfilDueno = PerfilDueno("", "", "", ""),
     val mascotas: MutableList<Mascota> = mutableListOf(),
     val eventos: MutableList<EventoMascota> = mutableListOf(),
     val autorizados: MutableList<VeterinarioAcceso> = mutableListOf(),
     val disponibles: MutableList<VeterinarioAcceso> = mutableListOf(),
     val solicitudes: MutableList<SolicitudItem> = mutableListOf(),
-    val solicitantes: MutableMap<String, VeterinarioAcceso> = mutableMapOf(),
     val notificaciones: MutableList<NotificacionDueno> = mutableListOf(),
-    var hayNotificacionesSinLeer: Boolean = false
+    var accesos: List<AccesoDto> = emptyList(),
+    var veterinarios: Map<String, PerfilDto> = emptyMap()
 )
 
 /**
- * Datos del dueño en sesión (en memoria, sin servidor). Cada cuenta tiene su propio [EstadoDueno]:
- * la de demostración arranca con mascotas, turnos y veterinarios de ejemplo; una cuenta nueva solo
- * tiene lo que cargó al registrarse. Cuando haya base de datos, esta clase es el punto a reemplazar.
+ * Datos del dueño en sesión. Guarda una copia en memoria de lo que dice el servidor para que las pantallas
+ * lean sin esperar, y manda cada cambio a Supabase en segundo plano. Lo que el servidor genera solo (accesos
+ * por turno, avisos) se vuelve a pedir después de cada cambio.
  */
 object DuenoRepo {
 
     const val CATEGORIA_VACUNA = "Vacuna"
     val CATEGORIAS_EVENTO = listOf("Vacuna", "Control", "Cirugía", "Estudio / Tratamiento")
-    val HORAS_EVENTO = listOf("09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00")
 
-    private const val CLAVE_DEMO = "demo"
-    private val estados = mutableMapOf<String, EstadoDueno>()
-    private var claveActual = CLAVE_DEMO
+    /** Duración de cada turno; coincide con la franja que controla la base de datos. */
+    const val DURACION_TURNO_MIN = 30
 
-    private val actual: EstadoDueno
-        get() = estados.getOrPut(claveActual) { crearDemo() }
-
-    // ---------- Sesión ----------
-
-    /** Selecciona los datos de la cuenta que ingresa; cualquier correo sin registro usa la cuenta de demostración. */
-    fun entrar(email: String) {
-        val clave = email.lowercase()
-        claveActual = if (estados.containsKey(clave)) clave else CLAVE_DEMO
-    }
-
-    /** Crea la cuenta del dueño con sus datos y mascotas del registro. */
-    fun registrar(datos: DatosRegistroDueno) {
-        val perfil = PerfilDueno(
-            nombre = datos.nombre, email = datos.email, telefono = datos.telefono,
-            direccion = datos.direccion, password = datos.password,
-            fotoUri = datos.fotoPath?.let { Uri.fromFile(File(it)) }
+    /** Especialidades del veterinario que atienden cada tipo de evento. */
+    private val ESPECIALIDADES_POR_EVENTO = mapOf(
+        "Vacuna" to listOf("Vacunación y prevención", "Desparasitación"),
+        "Control" to listOf("Consulta general", "Control de peso y Nutrición"),
+        "Cirugía" to listOf("Cirugía Veterinaria"),
+        "Estudio / Tratamiento" to listOf(
+            "Análisis de laboratorio", "Ecografía y Radiografía", "Dermatología", "Odontología", "Desparasitación"
         )
-        val estado = EstadoDueno(perfil, esDemo = false)
-        datos.mascotas.forEach { r ->
-            estado.mascotas.add(
-                Mascota(
-                    nombre = r.nombre, tipo = r.tipo, raza = r.raza,
-                    nacimiento = Fechas.parsear(r.nacimiento), sexo = Sexo.deTexto(r.sexo),
-                    fotoUri = r.fotoPath?.let { Uri.fromFile(File(it)) },
-                    peso = r.peso.ifBlank { SIN_DATOS }, color = r.color.ifBlank { SIN_DATOS },
-                    microchip = r.microchip.ifBlank { SIN_DATOS },
-                    observaciones = r.observaciones.ifBlank { "Sin observaciones" }
-                )
-            )
-        }
-        estado.disponibles.addAll(catalogo().onEach { it.estado = EstadoAcceso.DISPONIBLE })
-        estados[datos.email.lowercase()] = estado
+    )
+
+    private var estado = EstadoDueno()
+
+    val perfil: PerfilDueno get() = estado.perfil
+    val mascotas: MutableList<Mascota> get() = estado.mascotas
+    val eventos: MutableList<EventoMascota> get() = estado.eventos
+    val autorizados: MutableList<VeterinarioAcceso> get() = estado.autorizados
+    val disponibles: MutableList<VeterinarioAcceso> get() = estado.disponibles
+    val solicitudes: MutableList<SolicitudItem> get() = estado.solicitudes
+    val notificaciones: List<NotificacionDueno> get() = estado.notificaciones
+    val hayNotificacionesSinLeer: Boolean get() = estado.notificaciones.any { !it.leida }
+
+    // ---------- Carga ----------
+
+    fun limpiar() {
+        estado = EstadoDueno()
     }
 
-    val esDemo: Boolean get() = actual.esDemo
-    val perfil: PerfilDueno get() = actual.perfil
-    val mascotas: MutableList<Mascota> get() = actual.mascotas
-    val eventos: MutableList<EventoMascota> get() = actual.eventos
-    val autorizados: MutableList<VeterinarioAcceso> get() = actual.autorizados
-    val disponibles: MutableList<VeterinarioAcceso> get() = actual.disponibles
-    val solicitudes: MutableList<SolicitudItem> get() = actual.solicitudes
-    val notificaciones: List<NotificacionDueno> get() = actual.notificaciones
-    val hayNotificacionesSinLeer: Boolean get() = actual.hayNotificacionesSinLeer
+    /** Pide al servidor todo lo del dueño y lo deja listo para las pantallas. */
+    suspend fun cargar(perfilDto: PerfilDto) = coroutineScope {
+        val f = Servicios.fuente
+        val mascotasDto = async { f.misMascotas() }
+        val turnosDto = async { f.turnos() }
+        val catalogo = async { f.catalogoVeterinarios() }
+        val accesosDto = async { f.accesos() }
+        val avisos = async { f.notificaciones() }
+
+        val nuevo = EstadoDueno(perfil = aPerfil(perfilDto))
+        nuevo.mascotas.addAll(mascotasDto.await().map(::aMascota))
+        nuevo.veterinarios = catalogo.await().associateBy { it.id }
+        nuevo.accesos = accesosDto.await()
+        nuevo.eventos.addAll(turnosDto.await().filter { t -> t.estado != "cancelado" && nuevo.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, nuevo) })
+        nuevo.notificaciones.addAll(avisos.await().map(::aNotificacion))
+        reconstruirVeterinarios(nuevo)
+        estado = nuevo
+    }
+
+    /** Vuelve a pedir lo que el servidor modifica por su cuenta (accesos, avisos) y avisa a la pantalla. */
+    suspend fun recargarDerivados() {
+        val f = Servicios.fuente
+        val actual = estado
+        val accesos = f.accesos()
+        val catalogo = f.catalogoVeterinarios()
+        val avisos = f.notificaciones()
+        val turnos = f.turnos()
+        actual.accesos = accesos
+        actual.veterinarios = catalogo.associateBy { it.id }
+        reconstruirVeterinarios(actual)
+        actual.eventos.clear()
+        actual.eventos.addAll(turnos.filter { t -> t.estado != "cancelado" && actual.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, actual) })
+        actual.notificaciones.clear()
+        actual.notificaciones.addAll(avisos.map(::aNotificacion))
+        Servicios.avisarCambio()
+    }
+
+    /** Descarta la copia local y vuelve a pedir todo; se usa cuando el servidor rechazó un cambio. */
+    suspend fun recargarTodo() {
+        val perfilDto = Servicios.fuente.miPerfil()
+        cargar(perfilDto)
+        Servicios.avisarCambio()
+    }
+
+    private fun recargarAlTerminar(): suspend () -> Unit = { recargarDerivados() }
+    private fun recargarSiFalla(): suspend () -> Unit = { recargarTodo() }
+
+    // ---------- Conversión de filas ----------
+
+    private fun aPerfil(p: PerfilDto): PerfilDueno {
+        val ajuste = p.fotoAjuste
+        return PerfilDueno(
+            nombre = p.nombre, email = p.email, telefono = p.telefono.orEmpty(), direccion = p.direccion.orEmpty(),
+            dni = p.privados?.dni.orEmpty(), fotoPath = p.fotoPath,
+            ajusteFoto = AjusteFoto.entries.firstOrNull { it.name == ajuste?.get("ajuste")?.jsonPrimitive?.content }
+                ?: AjusteFoto.LLENAR,
+            desplazamientoFotoX = ajuste?.get("x")?.jsonPrimitive?.doubleOrNull?.toFloat() ?: 0f,
+            desplazamientoFotoY = ajuste?.get("y")?.jsonPrimitive?.doubleOrNull?.toFloat() ?: 0f
+        )
+    }
+
+    private fun aMascota(m: MascotaDto) = Mascota(
+        nombre = m.nombre, tipo = m.tipo, raza = m.raza.orEmpty(),
+        nacimiento = m.nacimiento?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+        sexo = Sexo.deTexto(m.sexo), fotoPath = m.fotoPath, id = m.id,
+        peso = textoDePeso(m.pesoKg), microchip = m.microchip?.takeIf { it.isNotBlank() } ?: SIN_DATOS,
+        color = m.color?.takeIf { it.isNotBlank() } ?: SIN_DATOS,
+        observaciones = m.observaciones?.takeIf { it.isNotBlank() } ?: "Sin observaciones"
+    )
+
+    private fun aEvento(t: TurnoDto, e: EstadoDueno): EventoMascota {
+        val mascota = e.mascotas.firstOrNull { it.id == t.mascotaId }?.nombre.orEmpty()
+        return EventoMascota(
+            categoria = t.categoria, mascota = mascota, veterinario = t.veterinarioId?.let { nombreVeterinario(e, it) }.orEmpty(),
+            hora = t.hora.take(5), observaciones = t.notas.orEmpty(), fecha = LocalDate.parse(t.fecha),
+            id = t.id, mascotaId = t.mascotaId, veterinarioId = t.veterinarioId,
+            estado = if (t.estado == "completado") EstadoTurno.COMPLETADO else EstadoTurno.PENDIENTE
+        )
+    }
+
+    private fun aNotificacion(n: NotificacionDto) = NotificacionDueno(
+        tipo = when (n.tipo) {
+            "mascota" -> TipoNotificacion.MASCOTA
+            "cancelacion" -> TipoNotificacion.CANCELACION
+            "acceso" -> TipoNotificacion.ACCESO
+            "cuenta" -> TipoNotificacion.CUENTA
+            else -> TipoNotificacion.TURNO
+        },
+        titulo = n.titulo, mensaje = n.mensaje, creada = Fechas.instante(n.createdAt), leida = n.leida
+    )
+
+    private fun nombreVeterinario(e: EstadoDueno, id: String) = e.veterinarios[id]?.nombre.orEmpty()
+
+    private fun aVeterinario(p: PerfilDto, estadoAcceso: EstadoAcceso, mascotas: Collection<String>): VeterinarioAcceso {
+        val datos = p.veterinarios
+        return VeterinarioAcceso(
+            nombre = p.nombre, usuario = "@" + p.email.substringBefore('@'), email = p.email,
+            matricula = datos?.matricula.orEmpty(),
+            especialidad = datos?.especialidades?.firstOrNull() ?: "Consulta general",
+            estado = estadoAcceso, mascotas = mascotas, id = p.id, fotoPath = p.fotoPath,
+            especialidades = datos?.especialidades.orEmpty(),
+            diasAtencion = datos?.diasAtencion.orEmpty().toSet(),
+            apertura = (datos?.horaApertura ?: "09:00").take(5), cierre = (datos?.horaCierre ?: "18:00").take(5)
+        )
+    }
+
+    /**
+     * Arma las listas de veterinarios y de solicitudes a partir de los accesos del servidor:
+     * quien pidió acceso y todavía no fue aceptado aparece como solicitud; quien tiene al menos un acceso
+     * activo o pendiente (iniciado por el dueño) como veterinario autorizado; el resto, como disponible.
+     */
+    private fun reconstruirVeterinarios(e: EstadoDueno) {
+        val nombrePorMascota = e.mascotas.associate { it.id to it.nombre }
+        val accesos = e.accesos.filter { it.mascotaId in nombrePorMascota }
+        e.autorizados.clear()
+        e.disponibles.clear()
+        e.solicitudes.clear()
+
+        val porVeterinario = accesos.groupBy { it.veterinarioId }
+        for ((vetId, lista) in porVeterinario) {
+            val perfilVet = e.veterinarios[vetId]?.takeIf { it.estado == "activo" } ?: continue
+            for (a in lista.filter { it.estado == "pendiente" && it.iniciadoPor == "veterinario" }) {
+                e.solicitudes.add(
+                    SolicitudItem(
+                        id = a.id, solicitante = perfilVet.nombre,
+                        mascota = "Solicita acceso a ${nombrePorMascota[a.mascotaId]}",
+                        hace = Fechas.haceTexto(a.createdAt), fotoPath = perfilVet.fotoPath
+                    )
+                )
+            }
+            val propios = lista.filterNot { it.estado == "pendiente" && it.iniciadoPor == "veterinario" }
+            if (propios.isEmpty()) continue
+            val estadoAcceso = when {
+                propios.any { it.estado == "activo" } -> EstadoAcceso.ACTIVO
+                propios.any { it.estado == "pendiente" } -> EstadoAcceso.PENDIENTE
+                else -> EstadoAcceso.INACTIVO
+            }
+            val conAcceso = propios.filter { it.estado == "activo" || it.estado == "pendiente" }
+                .mapNotNull { nombrePorMascota[it.mascotaId] }
+            e.autorizados.add(aVeterinario(perfilVet, estadoAcceso, conAcceso))
+        }
+        val yaListados = porVeterinario.keys
+        e.veterinarios.values.filter { it.id !in yaListados && it.estado == "activo" }.forEach {
+            e.disponibles.add(aVeterinario(it, EstadoAcceso.DISPONIBLE, emptyList()))
+        }
+    }
+
+    // ---------- Perfil ----------
+
+    /** Guarda los datos editables del perfil (el correo es el de la cuenta y no se cambia desde acá). */
+    fun guardarPerfil(nombre: String, telefono: String, direccion: String) {
+        perfil.nombre = nombre
+        perfil.telefono = telefono
+        perfil.direccion = direccion
+        Servicios.escribir(alFallar = recargarSiFalla()) {
+            Servicios.fuente.actualizarPerfil(buildJsonObject {
+                put("nombre", nombre)
+                put("telefono", telefono.ifBlank { null })
+                put("direccion", direccion.ifBlank { null })
+            })
+        }
+    }
+
+    /** Guarda cómo se acomoda la foto dentro del círculo del perfil. */
+    fun guardarAjusteFoto() {
+        val p = perfil
+        Servicios.escribir {
+            Servicios.fuente.actualizarPerfil(buildJsonObject {
+                put("foto_ajuste", buildJsonObject {
+                    put("ajuste", p.ajusteFoto.name)
+                    put("x", p.desplazamientoFotoX)
+                    put("y", p.desplazamientoFotoY)
+                })
+            })
+        }
+    }
+
+    /** Sube la foto de perfil elegida y la guarda en el perfil. */
+    fun cambiarFotoPerfil(uri: Uri) {
+        val p = perfil
+        val anterior = p.fotoPath
+        p.fotoUri = uri
+        Servicios.escribir {
+            val usuario = Sesion.usuarioId ?: return@escribir
+            val ruta = Imagenes.subirFoto(Imagenes.prepararFoto(uri), usuario)
+            Servicios.fuente.actualizarPerfil(buildJsonObject {
+                put("foto_path", ruta)
+                put("foto_ajuste", buildJsonObject {
+                    put("ajuste", p.ajusteFoto.name)
+                    put("x", p.desplazamientoFotoX)
+                    put("y", p.desplazamientoFotoY)
+                })
+            })
+            p.fotoPath = ruta
+            Imagenes.borrarFoto(anterior)
+        }
+    }
 
     // ---------- Mascotas ----------
 
@@ -102,13 +290,64 @@ object DuenoRepo {
 
     fun agregarMascota(mascota: Mascota) {
         mascotas.add(mascota)
-        notificar(TipoNotificacion.MASCOTA, "Agregaste una nueva mascota",
-            "Agregaste a ${mascota.nombre} (${mascota.tipo}) a tus mascotas.")
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            val usuario = Sesion.usuarioId ?: error("No hay una sesión iniciada")
+            val ruta = mascota.fotoUri?.let { Imagenes.subirFoto(Imagenes.prepararFoto(it), usuario) }
+            mascota.fotoPath = ruta ?: mascota.fotoPath
+            Servicios.fuente.crearMascota(
+                NuevaMascotaDto(
+                    id = mascota.id, duenoId = usuario, nombre = mascota.nombre, tipo = mascota.tipo,
+                    raza = mascota.raza.ifBlank { null }, nacimiento = mascota.nacimiento?.toString(),
+                    sexo = mascota.sexo?.name?.lowercase(), pesoKg = pesoDeTexto(mascota.peso),
+                    microchip = mascota.microchip.takeIf { it != SIN_DATOS }, color = mascota.color.takeIf { it != SIN_DATOS },
+                    observaciones = mascota.observaciones.takeIf { it != "Sin observaciones" }, fotoPath = ruta
+                )
+            )
+        }
+    }
+
+    /** El peso se escribe en kilos ("12", "3,5" o "12 kg") y tiene que ser mayor que cero. */
+    fun pesoValido(texto: String): Boolean = (pesoDeTexto(texto) ?: 0.0) > 0.0
+
+    /** Guarda los datos editados de una mascota. */
+    fun guardarMascota(m: Mascota) {
+        eventos.filter { it.mascotaId == m.id }.forEach { it.mascota = m.nombre }
+        Servicios.escribir(alFallar = recargarSiFalla()) {
+            Servicios.fuente.actualizarMascota(m.id, buildJsonObject {
+                put("nombre", m.nombre)
+                put("raza", m.raza.ifBlank { null })
+                put("nacimiento", m.nacimiento?.toString())
+                put("sexo", m.sexo?.name?.lowercase())
+                put("peso_kg", pesoDeTexto(m.peso))
+                put("microchip", m.microchip.takeIf { it != SIN_DATOS })
+                put("color", m.color.takeIf { it != SIN_DATOS })
+                put("observaciones", m.observaciones.takeIf { it != "Sin observaciones" })
+            })
+        }
+    }
+
+    fun cambiarFotoMascota(m: Mascota, uri: Uri) {
+        val anterior = m.fotoPath
+        m.fotoUri = uri
+        Servicios.escribir {
+            val usuario = Sesion.usuarioId ?: return@escribir
+            val ruta = Imagenes.subirFoto(Imagenes.prepararFoto(uri), usuario)
+            Servicios.fuente.actualizarMascota(m.id, buildJsonObject { put("foto_path", ruta) })
+            m.fotoPath = ruta
+            Imagenes.borrarFoto(anterior)
+        }
     }
 
     fun darDeBajaMascota(mascota: Mascota) {
         mascotas.remove(mascota)
-        notificar(TipoNotificacion.MASCOTA, "Mascota dada de baja", "${mascota.nombre} fue dada de baja de tus mascotas.")
+        // Los turnos que le quedaban se cancelan para que no queden colgados en la agenda del veterinario
+        val turnos = eventos.filter { it.mascotaId == mascota.id }.map { it.id }
+        eventos.removeAll { it.mascotaId == mascota.id }
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            turnos.forEach { Servicios.fuente.actualizarTurno(it, buildJsonObject { put("estado", "cancelado") }) }
+            Servicios.fuente.actualizarMascota(mascota.id, buildJsonObject { put("activa", false) })
+            Imagenes.borrarFoto(mascota.fotoPath)
+        }
     }
 
     /** Estado de salud que se muestra en las tarjetas: hay una vacuna agendada en los próximos 30 días. */
@@ -163,90 +402,111 @@ object DuenoRepo {
         return runCatching { LocalTime.parse(hora).isBefore(LocalTime.now()) }.getOrDefault(false)
     }
 
-    /** La hora preferida si todavía no pasó; si no, la primera hora libre del día (null si ya no queda ninguna). */
-    fun horaValidaPara(fecha: LocalDate, preferida: String?): String? {
-        if (preferida != null && !horaPasada(fecha, preferida)) return preferida
-        return HORAS_EVENTO.firstOrNull { !horaPasada(fecha, it) }
+    /** Veterinarios que atienden este tipo de evento; si ninguno cargó esa especialidad se ofrecen todos. */
+    fun veterinariosPara(categoria: String?): List<VeterinarioAcceso> {
+        val todos = todosLosVeterinarios()
+        val buscadas = ESPECIALIDADES_POR_EVENTO[categoria] ?: return todos
+        return todos.filter { vet -> vet.especialidades.any { it in buscadas } }.ifEmpty { todos }
     }
+
+    fun trabajaEl(vet: VeterinarioAcceso, fecha: LocalDate): Boolean = fecha.dayOfWeek.value in vet.diasAtencion
+
+    /** Horarios de turno ("HH:mm") que el veterinario ofrece ese día, uno cada [DURACION_TURNO_MIN] minutos. */
+    fun horasDe(vet: VeterinarioAcceso, fecha: LocalDate): List<String> {
+        if (!trabajaEl(vet, fecha)) return emptyList()
+        fun minutos(hora: String) = hora.substringBefore(':').toInt() * 60 + hora.substringAfter(':').toInt()
+        val horas = mutableListOf<String>()
+        var t = minutos(vet.apertura)
+        val fin = minutos(vet.cierre)
+        while (t + DURACION_TURNO_MIN <= fin) {
+            horas.add("%02d:%02d".format(t / 60, t % 60))
+            t += DURACION_TURNO_MIN
+        }
+        return horas
+    }
+
+    /** Horarios en los que el veterinario ya tiene otro turno ese día (la lista de turnos ajenos no es visible). */
+    suspend fun horasOcupadas(vet: VeterinarioAcceso, fecha: LocalDate): Set<String> =
+        Servicios.fuente.horariosOcupados(vet.id, fecha.toString()).toSet()
 
     fun hayConflictoDeTurno(fecha: LocalDate, hora: String, mascota: String?): Boolean =
         mascota != null && eventos.any { it.fecha == fecha && it.hora == hora && it.mascota.equals(mascota, ignoreCase = true) }
 
-    /** Agenda el turno, da acceso al veterinario y lo comparte con su agenda si es el veterinario de la otra vista. */
+    /** Agenda el turno. El servidor valida el horario del veterinario y le da acceso a la mascota. */
     fun agendarEvento(
         fecha: LocalDate, categoria: String, mascota: String, veterinario: String, hora: String, observaciones: String
     ) {
-        eventos.add(EventoMascota(categoria, mascota, veterinario, hora, observaciones, fecha))
-        compartirTurnoConVeterinario(fecha, categoria, mascota, veterinario, hora, observaciones)
-        val conVet = if (veterinario.isNotEmpty()) " con $veterinario" else ""
-        notificar(
-            TipoNotificacion.TURNO, "Tienes un nuevo turno",
-            "Tienes un nuevo turno de $categoria para $mascota$conVet el ${fecha.dayOfMonth}/${fecha.monthValue} a las $hora hs."
+        val m = buscarMascota(mascota) ?: return
+        val vet = buscarVeterinario(veterinario)
+        val evento = EventoMascota(
+            categoria, mascota, veterinario, hora, observaciones, fecha,
+            mascotaId = m.id, veterinarioId = vet?.id?.ifBlank { null }
         )
+        eventos.add(evento)
+        if (vet != null && veterinario.isNotEmpty()) autorizarPorTurno(veterinario, mascota, true)
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            val usuario = Sesion.usuarioId ?: error("No hay una sesión iniciada")
+            Servicios.fuente.crearTurno(
+                NuevoTurnoDto(
+                    id = evento.id, mascotaId = m.id, veterinarioId = evento.veterinarioId, categoria = categoria,
+                    fecha = fecha.toString(), hora = "$hora:00", notas = observaciones.ifBlank { null }, creadoPor = usuario
+                )
+            )
+        }
     }
 
-    fun cancelarEvento(evento: EventoMascota, porElVeterinario: Boolean = false) {
+    fun cancelarEvento(evento: EventoMascota) {
         eventos.remove(evento)
-        if (porElVeterinario) {
-            notificar(TipoNotificacion.CANCELACION, "Turno cancelado por el veterinario",
-                "El turno de ${evento.mascota} (${evento.categoria}) fue cancelado por el veterinario.")
-        } else {
-            notificar(TipoNotificacion.CANCELACION, "Cancelaste un turno",
-                "Cancelaste el turno de ${evento.mascota} (${evento.categoria}).")
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.actualizarTurno(evento.id, buildJsonObject { put("estado", "cancelado") })
         }
     }
 
     fun modificarEvento(
         evento: EventoMascota, fecha: LocalDate, hora: String, veterinario: String, observaciones: String
     ) {
+        val vet = buscarVeterinario(veterinario)
         evento.fecha = fecha
         evento.hora = hora
         evento.veterinario = veterinario
+        evento.veterinarioId = vet?.id?.ifBlank { null }
         evento.observaciones = observaciones
         if (veterinario.isNotEmpty()) autorizarPorTurno(veterinario, evento.mascota, true)
-        notificar(
-            TipoNotificacion.TURNO, "Modificaste un turno",
-            "El turno de ${evento.mascota} (${evento.categoria}) ahora es el ${fecha.dayOfMonth} de " +
-                "${Fechas.nombreMes(fecha.monthValue)} a las $hora."
-        )
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.actualizarTurno(evento.id, buildJsonObject {
+                put("fecha", fecha.toString())
+                put("hora", "$hora:00")
+                put("veterinario_id", evento.veterinarioId)
+                put("notas", observaciones.ifBlank { null })
+            })
+        }
     }
 
     // ---------- Veterinarios y accesos ----------
 
     fun todosLosVeterinarios(): List<VeterinarioAcceso> = autorizados + disponibles
 
-    fun buscarVeterinario(nombre: String?): VeterinarioAcceso? = buscarVeterinario(actual, nombre)
-
-    private fun buscarVeterinario(estado: EstadoDueno, nombre: String?): VeterinarioAcceso? {
-        if (nombre == null) return null
-        return (estado.autorizados + estado.disponibles).firstOrNull { it.nombre.equals(nombre.trim(), ignoreCase = true) }
+    fun buscarVeterinario(nombre: String?): VeterinarioAcceso? {
+        if (nombre.isNullOrBlank()) return null
+        return todosLosVeterinarios().firstOrNull { it.nombre.equals(nombre.trim(), ignoreCase = true) }
     }
 
     fun tieneTurnoCon(veterinario: String, mascota: String): Boolean =
         eventos.any { it.veterinario.equals(veterinario, ignoreCase = true) && it.mascota.equals(mascota, ignoreCase = true) }
 
     /**
-     * Tener un turno con el veterinario alcanza para que vea la ficha de la mascota: no hay que esperar
-     * ninguna autorización. Devuelve true si el veterinario pasó a tener acceso en este momento.
+     * Tener un turno con el veterinario alcanza para que vea la ficha de la mascota: el servidor crea el acceso
+     * al agendar. Acá solo se refleja en pantalla. Devuelve true si el veterinario pasó a tener acceso ahora.
      */
-    fun autorizarPorTurno(nombreVet: String, mascota: String, reactivar: Boolean): Boolean =
-        autorizarPorTurno(actual, nombreVet, mascota, reactivar)
-
-    private fun autorizarPorTurno(estado: EstadoDueno, nombreVet: String, mascota: String, reactivar: Boolean): Boolean {
-        val vet = buscarVeterinario(estado, nombreVet) ?: return false
+    fun autorizarPorTurno(nombreVet: String, mascota: String, reactivar: Boolean): Boolean {
+        val vet = buscarVeterinario(nombreVet) ?: return false
         if (vet.estado == EstadoAcceso.INACTIVO && !reactivar) return false
         val teniaAcceso = vet.estado == EstadoAcceso.ACTIVO && mascota in vet.mascotas
-        estado.disponibles.remove(vet)
-        if (vet !in estado.autorizados) estado.autorizados.add(vet)
+        disponibles.remove(vet)
+        if (vet !in autorizados) autorizados.add(vet)
         vet.estado = EstadoAcceso.ACTIVO
         vet.mascotas.add(mascota)
         return !teniaAcceso
-    }
-
-    /** Deja los accesos coherentes con los turnos cargados. */
-    private fun sincronizarAccesoPorTurnos(estado: EstadoDueno) {
-        (estado.autorizados + estado.disponibles).filter { it.estado != EstadoAcceso.INACTIVO }.forEach { it.mascotas.clear() }
-        estado.eventos.sortedBy { it.fecha }.forEach { autorizarPorTurno(estado, it.veterinario, it.mascota, false) }
     }
 
     fun turnosDeVeterinario(vet: VeterinarioAcceso): Int =
@@ -261,25 +521,32 @@ object DuenoRepo {
 
     fun revocarAcceso(vet: VeterinarioAcceso) {
         vet.estado = EstadoAcceso.INACTIVO
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.actualizarAccesosDeVeterinario(vet.id, "inactivo")
+        }
     }
 
     fun restablecerAcceso(vet: VeterinarioAcceso) {
         vet.estado = EstadoAcceso.ACTIVO
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.actualizarAccesosDeVeterinario(vet.id, "activo")
+        }
     }
 
     /** Autoriza a un veterinario del catálogo para que vea todas las mascotas actuales. */
     fun autorizarVeterinario(candidato: VeterinarioAcceso) {
-        val existente = autorizados.firstOrNull { it.matricula.equals(candidato.matricula, ignoreCase = true) }
+        val existente = autorizados.firstOrNull { it.id == candidato.id }
         if (existente != null) {
             existente.estado = EstadoAcceso.ACTIVO
         } else {
             disponibles.remove(candidato)
-            autorizados.add(
-                VeterinarioAcceso(
-                    candidato.nombre, candidato.usuario, candidato.email, candidato.matricula,
-                    candidato.especialidad, EstadoAcceso.ACTIVO, mascotas.map { it.nombre }
-                )
-            )
+            candidato.estado = EstadoAcceso.ACTIVO
+            candidato.mascotas.addAll(mascotas.map { it.nombre })
+            autorizados.add(candidato)
+        }
+        val ids = mascotas.map { it.id }
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.compartirMascotas(ids, candidato.id)
         }
     }
 
@@ -287,169 +554,47 @@ object DuenoRepo {
     fun candidatosAAutorizar(consulta: String): List<VeterinarioAcceso> {
         val q = consulta.trim().lowercase()
         return disponibles.filter { vet ->
-            val yaAutorizado = autorizados.any {
-                it.matricula.equals(vet.matricula, ignoreCase = true) && it.estado != EstadoAcceso.INACTIVO
-            }
+            val yaAutorizado = autorizados.any { it.id == vet.id && it.estado != EstadoAcceso.INACTIVO }
             !yaAutorizado && (q.isEmpty() || listOf(vet.nombre, vet.usuario, vet.email, vet.matricula).any { it.lowercase().contains(q) })
         }
     }
 
     // ---------- Solicitudes de acceso ----------
 
-    fun aceptarSolicitud(item: SolicitudItem) {
-        val vet = actual.solicitantes[item.solicitante]
-        val mascota = item.mascota.replace("Solicita acceso a ", "")
-        if (vet != null && vet !in autorizados) {
-            vet.estado = EstadoAcceso.ACTIVO
-            vet.mascotas.clear()
-            vet.mascotas.add(mascota)
-            disponibles.remove(vet)
-            autorizados.add(vet)
-        }
-        notificar(TipoNotificacion.ACCESO, "Solicitud aceptada", "${item.solicitante} ahora puede ver la ficha de tu mascota.")
-    }
-
-    /** Quien ya tiene un turno con la mascota no necesita que se lo autorice: se acepta solo. */
-    fun resolverSolicitudesPorTurno() {
-        solicitudes.filter { it.estado == SolicitudItem.Estado.PENDIENTE }.forEach { item ->
-            val mascota = item.mascota.replace("Solicita acceso a ", "")
-            if (tieneTurnoCon(item.solicitante, mascota)) {
-                autorizarPorTurno(item.solicitante, mascota, true)
-                item.estado = SolicitudItem.Estado.ACEPTADA
-            }
+    /** El dueño acepta o rechaza el pedido de un veterinario para ver una mascota. */
+    fun resolverSolicitud(item: SolicitudItem, aceptar: Boolean) {
+        item.estado = if (aceptar) SolicitudItem.Estado.ACEPTADA else SolicitudItem.Estado.RECHAZADA
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.actualizarAcceso(item.id, if (aceptar) "activo" else "rechazado")
         }
     }
 
     // ---------- Notificaciones ----------
 
-    fun notificar(tipo: TipoNotificacion, titulo: String, mensaje: String) {
-        actual.notificaciones.add(0, NotificacionDueno(tipo, titulo, mensaje))
-        actual.hayNotificacionesSinLeer = true
-    }
-
     fun marcarNotificacionesLeidas() {
-        actual.hayNotificacionesSinLeer = false
+        if (estado.notificaciones.none { !it.leida }) return
+        estado.notificaciones.forEach { it.leida = true }
+        Servicios.escribir { Servicios.fuente.marcarNotificacionesLeidas() }
     }
 
     fun limpiarNotificaciones() {
-        actual.notificaciones.clear()
-        actual.hayNotificacionesSinLeer = false
+        estado.notificaciones.clear()
+        Servicios.escribir { Servicios.fuente.borrarNotificaciones() }
     }
 
-    // ---------- Vista del veterinario ----------
+    // ---------- Utilidades ----------
 
-    /**
-     * El veterinario de ejemplo del catálogo ("@jperez") representa al veterinario en sesión: cuando éste se
-     * registra con sus datos reales, el catálogo y los turnos de ejemplo pasan a usar su nombre.
-     */
-    fun sincronizarVeterinarioRegistrado() {
-        val perfilVet = PerfilVetRepo
-        estados.values.forEach { estado ->
-            (estado.autorizados + estado.disponibles).filter { it.usuario == "@jperez" }.forEach { vet ->
-                val anterior = vet.nombre
-                vet.nombre = perfilVet.nombre
-                vet.email = perfilVet.email
-                vet.matricula = perfilVet.matricula
-                estado.eventos.filter { it.veterinario.equals(anterior, ignoreCase = true) }
-                    .forEach { it.veterinario = perfilVet.nombre }
-            }
-        }
-    }
+    private fun pesoDeTexto(texto: String): Double? =
+        Regex("(\\d+(?:[.,]\\d+)?)").find(texto)?.groupValues?.get(1)?.replace(',', '.')?.toDoubleOrNull()
 
-    /** Acceso automático del veterinario y, si es el de la otra vista, la mascota y el turno le aparecen. */
-    private fun compartirTurnoConVeterinario(
-        fecha: LocalDate, categoria: String, mascota: String, nombreVet: String, hora: String, observaciones: String
-    ) {
-        if (nombreVet.isEmpty()) return
-        if (autorizarPorTurno(nombreVet, mascota, true)) {
-            notificar(
-                TipoNotificacion.ACCESO, "Acceso por turno",
-                "$nombreVet ya puede ver la ficha de $mascota por el turno del ${fecha.dayOfMonth}/${fecha.monthValue}."
-            )
-        }
-        if (!nombreVet.equals(PerfilVetRepo.nombre, ignoreCase = true)) return
-
-        val m = buscarMascota(mascota) ?: return
-        val especie = if (m.tipo.equals("Perro", true) || m.tipo.equals("Gato", true)) m.tipo else PacientesRepo.ESPECIE_OTRO
-        fun dato(valor: String?) = valor?.takeIf { it.isNotBlank() } ?: SIN_DATOS
-        val paciente = PacientesRepo.registrarDesdeDueno(
-            m.nombre, especie, dato(m.raza), m.sexo?.etiqueta ?: SIN_DATOS,
-            m.nacimiento?.let { Fechas.corta(it) } ?: SIN_DATOS, m.fotoRes, dato(m.peso),
-            dato(m.microchip), dato(m.color), dato(m.observaciones),
-            dato(perfil.nombre), dato(perfil.direccion), dato(perfil.telefono), dato(perfil.email)
-        )
-        val tipo = when (categoria) {
-            "Vacuna" -> "Vacuna"
-            "Control" -> "Control"
-            "Cirugía" -> "Cirugía"
-            else -> "Tratamiento"
-        }
-        AgendaRepo.agregar(
-            paciente.id, tipo, if (categoria == "Vacuna") "Vacunación" else categoria, fecha, hora,
-            EstadoEvento.PENDIENTE, observaciones, nombreVet
-        )
-    }
-
-    // ---------- Datos de demostración ----------
-
-    private fun catalogo(): List<VeterinarioAcceso> = listOf(
-        VeterinarioAcceso("Dr. Alejandro Ramírez", "@aramirez", "alejandro.ramirez@petcare.com", "MP-23456", "Vacuna", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso("Dra. Carla Méndez", "@cmendez", "carla.mendez@petcare.com", "MP-98765", "Control", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso("Dr. Ricardo Soto", "@rsoto", "ricardo.soto@petcare.com", "MP-45612", "Cirugía", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso("Dra. Sofía Fernández", "@sfernandez", "sofia.fernandez@petcare.com", "MP-77890", "Vacuna", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso("Dra. Valentina Ríos", "@vrios", "valentina.rios@petcare.com", "MP-33221", "Estudio / Tratamiento", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso("Dr. Gabriel Lucero", "@glucero", "gabriel.lucero@petcare.com", "MP-55443", "Cirugía", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso("Dra. Mariana Costa", "@mcosta", "mariana.costa@petcare.com", "MP-88112", "Control", EstadoAcceso.DISPONIBLE),
-        VeterinarioAcceso(PerfilVetRepo.nombre, "@jperez", PerfilVetRepo.email, PerfilVetRepo.matricula, "Control", EstadoAcceso.DISPONIBLE)
-    )
-
-    private fun crearDemo(): EstadoDueno {
-        val estado = EstadoDueno(
-            PerfilDueno("Juan Perez", "juan.perez@example.com", "+54 11 1234–5678", "Calle Falsa 123"),
-            esDemo = true
-        )
-        estado.mascotas.addAll(
-            listOf(
-                Mascota("Koda", "Perro", "Golden Retriever", LocalDate.of(2020, 3, 15), Sexo.MACHO, fotoRes = R.drawable.luna,
-                    peso = "28 kg", microchip = "985121054871236", color = "Dorado", observaciones = "Alérgico a la penicilina"),
-                Mascota("Mika", "Gato", "Europeo", LocalDate.of(2019, 11, 2), Sexo.HEMBRA, fotoRes = R.drawable.milo,
-                    peso = "4 kg", microchip = "985121054870001", color = "Gris atigrado"),
-                Mascota("Luna", "Perro", "Cocker spaniel", LocalDate.of(2020, 6, 10), Sexo.HEMBRA, fotoRes = R.drawable.luna,
-                    peso = "11 kg", microchip = "985121054870002", color = "Café", observaciones = "Control dental pendiente"),
-                Mascota("Milo", "Gato", "Siamés", LocalDate.of(2014, 1, 21), Sexo.MACHO, fotoRes = R.drawable.milo,
-                    peso = "5 kg", microchip = "985121054870003", color = "Crema y marrón", observaciones = "Medicación para la tiroides")
-            )
-        )
-
-        val vets = catalogo().associateBy { it.usuario }
-        vets.getValue("@aramirez").apply { this.estado = EstadoAcceso.ACTIVO; mascotas.addAll(listOf("Koda", "Mika")) }
-        vets.getValue("@cmendez").apply { this.estado = EstadoAcceso.PENDIENTE; mascotas.add("Luna") }
-        vets.getValue("@rsoto").apply { this.estado = EstadoAcceso.INACTIVO; mascotas.add("Milo") }
-        estado.autorizados.addAll(listOf(vets.getValue("@aramirez"), vets.getValue("@cmendez"), vets.getValue("@rsoto")))
-        estado.disponibles.addAll(vets.values.filter { it !in estado.autorizados })
-
-        // Turnos de ejemplo relativos a hoy: los próximos y los de las últimas semanas
-        val hoy = LocalDate.now()
-        fun turno(dias: Long, cat: String, mascota: String, vet: String, hora: String, obs: String = "") =
-            estado.eventos.add(EventoMascota(cat, mascota, vet, hora, obs, hoy.plusDays(dias)))
-        turno(2, "Vacuna", "Koda", "Dr. Alejandro Ramírez", "11:00")
-        turno(2, "Control", "Mika", "Dra. Carla Méndez", "11:00")
-        turno(7, "Cirugía", "Milo", "Dr. Ricardo Soto", "09:00")
-        turno(7, "Vacuna", "Luna", "Dra. Sofía Fernández", "14:00")
-        turno(9, "Control", "Koda", "Dra. Carla Méndez", "16:00")
-        turno(15, "Estudio / Tratamiento", "Mika", "Dra. Valentina Ríos", "10:00")
-        turno(15, "Vacuna", "Milo", "Dr. Alejandro Ramírez", "13:00")
-        turno(-3, "Control general", "Milo", "Dra. Carla Méndez", "10:00", "Chequeo de rutina OK")
-        turno(-11, "Vacuna múltiple", "Luna", "Dr. Alejandro Ramírez", "12:00", "Refuerzo anual aplicado")
-        turno(-18, "Consulta veterinaria", "Koda", PerfilVetRepo.nombre, "15:30", "Control de peso")
-        turno(-25, "Desparasitación", "Mika", "Dra. Valentina Ríos", "11:00", "Dosis completada")
-        sincronizarAccesoPorTurnos(estado)
-
-        // Solicitudes de acceso pendientes
-        estado.solicitudes.add(SolicitudItem("Dra. Laura Sosa", "Solicita acceso a Koda", "Hace 2 horas", R.drawable.luna))
-        estado.solicitudes.add(SolicitudItem("Dr. Pablo Medina", "Solicita acceso a Mika", "Ayer", R.drawable.milo))
-        estado.solicitantes["Dra. Laura Sosa"] = VeterinarioAcceso.desdeNombre("Dra. Laura Sosa", "Control", "MP-24680")
-        estado.solicitantes["Dr. Pablo Medina"] = VeterinarioAcceso.desdeNombre("Dr. Pablo Medina", "Vacuna", "MP-13579")
-        return estado
+    private fun textoDePeso(kg: Double?): String = when {
+        kg == null -> SIN_DATOS
+        kg % 1.0 == 0.0 -> "${kg.toInt()} kg"
+        else -> "$kg kg"
     }
 }
+
+private fun JsonObject.getOrNull(clave: String) = this[clave]?.takeIf { it !is JsonNull }
+
+@Suppress("unused")
+private fun jsonDe(valor: String?) = if (valor == null) JsonNull else JsonPrimitive(valor)

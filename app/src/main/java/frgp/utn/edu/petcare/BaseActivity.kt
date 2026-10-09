@@ -1,6 +1,12 @@
 package frgp.utn.edu.petcare
 
 import android.content.Context
+import kotlinx.coroutines.launch
+import frgp.utn.edu.petcare.data.Servicios
+import androidx.lifecycle.lifecycleScope
+import frgp.utn.edu.petcare.ui.auth.AuthActivity
+import frgp.utn.edu.petcare.data.Sesion
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +22,38 @@ open class BaseActivity : AppCompatActivity() {
         // La app solo tiene diseño claro: con el modo oscuro del sistema los textos y las barras quedarían ilegibles
         delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_NO
         super.onCreate(savedInstanceState)
+    }
+
+    /**
+     * Si el sistema recrea una pantalla del panel después de matar la aplicación, los datos en memoria ya no
+     * están: se vuelve al ingreso. Las pantallas lo llaman al empezar `onCreate` y salen si devuelve true.
+     */
+    protected fun volverSiNoHaySesion(): Boolean {
+        if (Sesion.activa) return false
+        startActivity(
+            Intent(this, AuthActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        )
+        finish()
+        return true
+    }
+
+    private var avisoDeCambios: (() -> Unit)? = null
+
+    /**
+     * Para las pantallas del veterinario: vuelve a pedir sus datos al servidor y llama a [redibujar] cuando llegan
+     * (también cuando un cambio hecho en la pantalla fue rechazado y hubo que volver a los datos reales).
+     */
+    protected fun actualizarDatosVeterinario(redibujar: () -> Unit) {
+        avisoDeCambios = redibujar
+        Servicios.alCambiarDatos = redibujar
+        lifecycleScope.launch {
+            runCatching { Sesion.recargarVeterinario() }.onSuccess { redibujar() }
+        }
+    }
+
+    override fun onDestroy() {
+        if (avisoDeCambios != null && Servicios.alCambiarDatos === avisoDeCambios) Servicios.alCambiarDatos = null
+        super.onDestroy()
     }
 
     override fun attachBaseContext(newBase: Context) {

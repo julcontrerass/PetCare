@@ -1,11 +1,11 @@
 package frgp.utn.edu.petcare.model
 
 import android.net.Uri
-import androidx.annotation.DrawableRes
 import frgp.utn.edu.petcare.Fechas
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Period
+import java.util.UUID
 
 const val SIN_DATOS = "Sin datos"
 
@@ -24,8 +24,11 @@ class Mascota(
     var raza: String = "",
     var nacimiento: LocalDate? = null,
     var sexo: Sexo? = null,
+    /** Foto elegida en este dispositivo; se muestra mientras se sube o hasta que llega la del servidor. */
     var fotoUri: Uri? = null,
-    @DrawableRes var fotoRes: Int = 0,
+    /** Ruta de la foto en el bucket `fotos` del servidor. */
+    var fotoPath: String? = null,
+    val id: String = UUID.randomUUID().toString(),
     var peso: String = SIN_DATOS,
     var microchip: String = SIN_DATOS,
     var color: String = SIN_DATOS,
@@ -65,8 +68,14 @@ class EventoMascota(
     var veterinario: String,
     var hora: String,
     var observaciones: String,
-    var fecha: LocalDate
+    var fecha: LocalDate,
+    val id: String = UUID.randomUUID().toString(),
+    var mascotaId: String = "",
+    var veterinarioId: String? = null,
+    var estado: EstadoTurno = EstadoTurno.PENDIENTE
 )
+
+enum class EstadoTurno { PENDIENTE, COMPLETADO, CANCELADO }
 
 enum class EstadoAcceso { ACTIVO, INACTIVO, PENDIENTE, DISPONIBLE }
 
@@ -78,28 +87,29 @@ class VeterinarioAcceso(
     var matricula: String,
     val especialidad: String,
     var estado: EstadoAcceso,
-    mascotas: Collection<String> = emptyList()
+    mascotas: Collection<String> = emptyList(),
+    val id: String = "",
+    var fotoPath: String? = null,
+    /** Todas las especialidades que cargó el veterinario. */
+    val especialidades: List<String> = emptyList(),
+    /** Días de atención: 1 = lunes ... 7 = domingo. */
+    val diasAtencion: Set<Int> = emptySet(),
+    val apertura: String = "09:00",
+    val cierre: String = "18:00"
 ) {
     val mascotas: MutableSet<String> = LinkedHashSet(mascotas)
 
     val tieneAcceso: Boolean get() = estado == EstadoAcceso.ACTIVO
-
-    companion object {
-        /** Veterinario nuevo con usuario y correo generados a partir del nombre. */
-        fun desdeNombre(nombre: String, especialidad: String, matricula: String): VeterinarioAcceso {
-            val base = nombre.lowercase().replace(Regex("[^a-z]"), "")
-            return VeterinarioAcceso(nombre, "@$base", "$base@petcare.com", matricula, especialidad, EstadoAcceso.ACTIVO)
-        }
-    }
 }
 
-enum class TipoNotificacion { MASCOTA, TURNO, CANCELACION, ACCESO }
+enum class TipoNotificacion { MASCOTA, TURNO, CANCELACION, ACCESO, CUENTA }
 
 class NotificacionDueno(
     val tipo: TipoNotificacion,
     val titulo: String,
     val mensaje: String,
-    val creada: LocalDateTime = LocalDateTime.now()
+    val creada: LocalDateTime = LocalDateTime.now(),
+    var leida: Boolean = false
 )
 
 enum class AjusteFoto { LLENAR, COMPLETA, CENTRADA }
@@ -109,8 +119,9 @@ class PerfilDueno(
     var email: String,
     var telefono: String,
     var direccion: String,
-    var password: String? = null,
+    var dni: String = "",
     var fotoUri: Uri? = null,
+    var fotoPath: String? = null,
     var ajusteFoto: AjusteFoto = AjusteFoto.LLENAR,
     var desplazamientoFotoX: Float = 0f,
     var desplazamientoFotoY: Float = 0f

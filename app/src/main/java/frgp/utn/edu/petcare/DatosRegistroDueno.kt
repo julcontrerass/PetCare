@@ -27,3 +27,21 @@ data class DatosRegistroDueno(
     val fotoPath: String? = null,
     val mascotas: List<MascotaRegistro> = emptyList()
 ) : Serializable
+
+/** Todo lo que se pide al veterinario al crear su cuenta. */
+data class DatosRegistroVeterinario(
+    val nombre: String,
+    val dni: String,
+    val telefono: String,
+    val email: String,
+    val password: String,
+    val matricula: String,
+    val clinica: String,
+    val direccionClinica: String,
+    val especialidades: List<String>,
+    /** Días de atención como en la base: 1 = lunes ... 7 = domingo. */
+    val dias: List<Int>,
+    val apertura: String,
+    val cierre: String,
+    val fotoPath: String? = null
+) : Serializable

@@ -20,6 +20,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.lifecycleScope
+import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Registro
+import kotlinx.coroutines.launch
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.android.material.button.MaterialButton
@@ -37,8 +41,8 @@ import java.util.Locale
 class RegistroDuenoActivity : BaseActivity() {
 
     companion object {
-        const val EXTRA_EMAILS_REGISTRADOS = "emails_registrados"
-        const val EXTRA_DATOS = "datos_registro_dueno"
+        const val EXTRA_EMAIL = "email"
+        const val EXTRA_CONFIRMAR_CORREO = "confirmar_correo"
 
         private const val ESTADO_PASO = "paso"
         private const val ESTADO_FOTO = "foto"
@@ -57,7 +61,6 @@ class RegistroDuenoActivity : BaseActivity() {
     private lateinit var segmentos: List<View>
     private lateinit var btnAtras: MaterialButton
     private lateinit var btnSiguiente: MaterialButton
-    private lateinit var emailsRegistrados: List<String>
 
     // La foto que se está eligiendo: la del dueño o la de la mascota del diálogo abierto
     private var destinoFoto: (String) -> Unit = {}
@@ -70,8 +73,6 @@ class RegistroDuenoActivity : BaseActivity() {
         setContentView(R.layout.registro_dueno)
         VetUi.barras(this, conPadding = false)
         ajustarInsets()
-
-        emailsRegistrados = intent.getStringArrayListExtra(EXTRA_EMAILS_REGISTRADOS) ?: arrayListOf()
 
         savedInstanceState?.let {
             paso = it.getInt(ESTADO_PASO)
@@ -236,8 +237,6 @@ class RegistroDuenoActivity : BaseActivity() {
         val email = texto(R.id.etDuenoEmail).lowercase(Locale.ROOT)
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             ok = error(R.id.etDuenoEmail, "Correo inválido")
-        } else if (emailsRegistrados.contains(email)) {
-            ok = error(R.id.etDuenoEmail, "Ese correo ya está registrado")
         }
         return ok
     }
@@ -469,20 +468,26 @@ class RegistroDuenoActivity : BaseActivity() {
             fotoPath = fotoPath,
             mascotas = mascotas.toList()
         )
-
-        val listaMascotasTexto = if (mascotas.isEmpty()) listOf("Sin mascotas por ahora") else mascotas.map { "${it.nombre} (${it.tipo}${if (it.raza.isNotBlank()) " - " + it.raza else ""})" }
-
-        AdminRepo.registrarNuevoDueno(
-            nombre = datos.nombre,
-            dni = datos.dni,
-            email = datos.email,
-            telefono = datos.telefono,
-            direccion = datos.direccion,
-            mascotas = listaMascotasTexto,
-            fotoPath = datos.fotoPath
-        )
-
-        setResult(Activity.RESULT_OK, Intent().putExtra(EXTRA_DATOS, datos))
-        finish()
+        btnSiguiente.isEnabled = false
+        btnSiguiente.text = "Creando cuenta..."
+        lifecycleScope.launch {
+            try {
+                val resultado = Registro.dueno(datos)
+                setResult(
+                    Activity.RESULT_OK,
+                    Intent().putExtra(EXTRA_EMAIL, datos.email).putExtra(EXTRA_CONFIRMAR_CORREO, !resultado.sesionIniciada)
+                )
+                finish()
+            } catch (e: Registro.CorreoYaRegistrado) {
+                btnSiguiente.isEnabled = true
+                btnSiguiente.text = "Crear cuenta"
+                paso = 3
+                error(R.id.etDuenoEmail, "Ese correo ya está registrado")
+            } catch (e: Exception) {
+                btnSiguiente.isEnabled = true
+                btnSiguiente.text = "Crear cuenta"
+                Toast.makeText(this@RegistroDuenoActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+            }
+        }
     }
 }

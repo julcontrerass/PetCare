@@ -259,17 +259,11 @@ class SolicitudesPantalla(host: DuenoActivity) : Pantalla(host) {
         host.mostrarContenido(R.layout.solicitudes_dueno, -1)
         alTocar(R.id.btnBack) { host.irAHome() }
 
-        // Quien ya tiene un turno con la mascota no necesita que se lo autorice
-        DuenoRepo.resolverSolicitudesPorTurno()
-
         vista<androidx.recyclerview.widget.RecyclerView>(R.id.rvSolicitudesDueno)?.adapter =
             frgp.utn.edu.petcare.SolicitudesAdapter(DuenoRepo.solicitudes) { item, estado ->
-                if (estado == frgp.utn.edu.petcare.SolicitudItem.Estado.ACEPTADA) {
-                    DuenoRepo.aceptarSolicitud(item)
-                    toast("${item.solicitante} fue autorizado/a")
-                } else {
-                    toast("Solicitud rechazada")
-                }
+                val aceptada = estado == frgp.utn.edu.petcare.SolicitudItem.Estado.ACEPTADA
+                DuenoRepo.resolverSolicitud(item, aceptada)
+                toast(if (aceptada) "${item.solicitante} fue autorizado/a" else "Solicitud rechazada")
                 actualizarContador()
             }
         actualizarContador()

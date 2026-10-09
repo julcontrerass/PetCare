@@ -8,6 +8,12 @@ material = "1.14.0"
 activity = "1.13.0"
 constraintlayout = "2.2.2"
 activityKtx = "1.8.0"
+supabase = "3.2.6"
+ktor = "3.2.3"
+coroutines = "1.10.2"
+serialization = "1.9.0"
+lifecycle = "2.9.4"
+kotlin = "2.2.10"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -19,6 +25,15 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 
+supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }
+supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt" }
+supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt" }
+supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" }
+ktor-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

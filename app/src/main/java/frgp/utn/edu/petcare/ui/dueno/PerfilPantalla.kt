@@ -11,10 +11,15 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.CuentasRepo
+import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.Servicios
+import kotlinx.coroutines.launch
 import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
+import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
 import frgp.utn.edu.petcare.ui.common.Efectos
 
 private fun AjusteFoto.escala() = when (this) {
@@ -35,16 +40,13 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
         texto(R.id.tvPerfilVets, DuenoRepo.autorizados.count { it.estado == EstadoAcceso.ACTIVO }.toString())
 
         vista<ShapeableImageView>(R.id.ivProfilePic)?.let { imagen ->
-            if (perfil.fotoUri != null) {
-                imagen.setImageURI(perfil.fotoUri)
-                imagen.translationX = perfil.desplazamientoFotoX
-                imagen.translationY = perfil.desplazamientoFotoY
-            } else if (!DuenoRepo.esDemo) {
-                imagen.setImageResource(R.drawable.avatar_default)
-            }
+            imagen.setImageResource(R.drawable.avatar_default)
+            Imagenes.mostrar(imagen, perfil.fotoUri, perfil.fotoPath)
+            imagen.translationX = perfil.desplazamientoFotoX
+            imagen.translationY = perfil.desplazamientoFotoY
             imagen.scaleType = perfil.ajusteFoto.escala()
             imagen.setOnClickListener {
-                if (perfil.fotoUri == null) {
+                if (perfil.fotoUri == null && perfil.fotoPath == null) {
                     toast("Primero elegí una foto tocando el ícono del lápiz")
                     return@setOnClickListener
                 }
@@ -63,6 +65,7 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
         alTocar(R.id.llEditarDatos) { host.irAEditarPerfil() }
         alTocar(R.id.llCambiarContrasena) { cambiarPassword() }
         alTocar(R.id.llCerrarSesion) { host.cerrarSesion() }
+        alTocar(R.id.llEliminarCuenta) { BajaDeCuenta.confirmar(host) }
     }
 
     private fun elegirAjusteDeFoto(imagen: ImageView) {
@@ -74,6 +77,7 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
             .setItems(opciones) { _, cual ->
                 DuenoRepo.perfil.ajusteFoto = ajustes[cual]
                 imagen.scaleType = ajustes[cual].escala()
+                DuenoRepo.guardarAjusteFoto()
                 toast(avisos[cual])
             }
             .setNegativeButton("Cancelar", null)
@@ -112,10 +116,10 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
         layoutDialogo.findViewById<Button>(R.id.btnCancelCrop).setOnClickListener { dialogo.dismiss() }
         layoutDialogo.findViewById<Button>(R.id.btnSaveCrop).setOnClickListener {
             val perfil = DuenoRepo.perfil
-            perfil.fotoUri = uri
             // La imagen de la vista previa mide 400dp y la del perfil 120dp: el desplazamiento se escala 120/400
             perfil.desplazamientoFotoX = previsualizacion.translationX * 0.3f
             perfil.desplazamientoFotoY = previsualizacion.translationY * 0.3f
+            DuenoRepo.cambiarFotoPerfil(uri)
             vista<ShapeableImageView>(R.id.ivProfilePic)?.let {
                 it.setImageURI(uri)
                 it.scaleType = perfil.ajusteFoto.escala()
@@ -156,12 +160,10 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
             .create()
         dialogo.setOnShowListener {
             dialogo.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val perfil = DuenoRepo.perfil
                 val actual = etActual.text.toString()
                 val nueva = etNueva.text.toString()
                 val error = when {
                     actual.isEmpty() -> "Ingresá tu contraseña actual"
-                    perfil.password != null && actual != perfil.password -> "La contraseña actual es incorrecta"
                     nueva.length < 6 -> "La nueva contraseña debe tener al menos 6 caracteres"
                     nueva != etConfirmar.text.toString() -> "Las contraseñas no coinciden"
                     nueva == actual -> "La nueva contraseña debe ser distinta a la actual"
@@ -171,10 +173,19 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
                     toast(error)
                     return@setOnClickListener
                 }
-                perfil.password = nueva
-                CuentasRepo.cambiarPassword(perfil.email, nueva)
-                toast("Contraseña actualizada")
-                dialogo.dismiss()
+                val boton = dialogo.getButton(AlertDialog.BUTTON_POSITIVE)
+                boton.isEnabled = false
+                host.lifecycleScope.launch {
+                    try {
+                        Servicios.fuente.cambiarPassword(DuenoRepo.perfil.email, actual, nueva)
+                        toast("Contraseña actualizada")
+                        dialogo.dismiss()
+                    } catch (e: Exception) {
+                        boton.isEnabled = true
+                        val mensaje = Errores.mensaje(e)
+                        toast(if (mensaje.startsWith("Correo o contraseña")) "La contraseña actual es incorrecta" else mensaje)
+                    }
+                }
             }
         }
         dialogo.show()
@@ -194,21 +205,23 @@ class EditarPerfilPantalla(host: DuenoActivity) : Pantalla(host) {
         val etDireccion = vista<EditText>(R.id.etDireccion)
         etNombre?.setText(perfil.nombre)
         etCorreo?.setText(perfil.email)
+        // El correo es el de la cuenta: se cambia desde la configuración de acceso, no desde el perfil
+        etCorreo?.isEnabled = false
         etTelefono?.setText(perfil.telefono)
         etDireccion?.setText(perfil.direccion)
 
         alTocar(R.id.btnBack) { host.irAPerfil() }
         alTocarConRebote(R.id.btnGuardarPerfil) {
             val nombre = etNombre?.text?.toString()?.trim().orEmpty()
-            val correo = etCorreo?.text?.toString()?.trim().orEmpty()
-            if (nombre.isEmpty() || correo.isEmpty()) {
-                toast("Completá al menos el nombre y el correo")
+            if (nombre.isEmpty()) {
+                toast("Completá tu nombre")
                 return@alTocarConRebote
             }
-            perfil.nombre = nombre
-            perfil.email = correo
-            perfil.telefono = etTelefono?.text?.toString()?.trim().orEmpty()
-            perfil.direccion = etDireccion?.text?.toString()?.trim().orEmpty()
+            DuenoRepo.guardarPerfil(
+                nombre,
+                etTelefono?.text?.toString()?.trim().orEmpty(),
+                etDireccion?.text?.toString()?.trim().orEmpty()
+            )
             toast(R.string.perfil_actualizado_msg)
             host.irAPerfil()
         }

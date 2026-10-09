@@ -65,7 +65,7 @@
                                 android:contentDescription="@null"
                                 android:focusable="true"
                                 android:scaleType="centerCrop"
-                                android:src="@drawable/milo"
+                                android:src="@drawable/ic_dog"
                                 app:shapeAppearanceOverlay="@style/CircleImage" />
                         </FrameLayout>
 
@@ -95,7 +95,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="@string/nombre_koda"
+                        android:text=""
                         android:textColor="@color/white"
                         android:textSize="26sp"
                         android:textStyle="bold" />
@@ -108,7 +108,7 @@
                         android:layout_marginTop="4dp"
                         android:drawablePadding="6dp"
                         android:gravity="center_vertical"
-                        android:text="@string/raza_koda"
+                        android:text=""
                         android:textColor="#F2FFFFFF"
                         android:textSize="14sp"
                         app:drawableStartCompat="@drawable/ic_dog"
@@ -121,7 +121,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:gravity="center"
-                        android:text="@string/nacimiento_sexo_koda"
+                        android:text=""
                         android:textColor="#D9FFFFFF"
                         android:textSize="13sp" />
 
@@ -327,7 +327,7 @@
                         <TextView
                             android:id="@+id/editTextText"
                             style="@style/PetInfoValue"
-                            android:text="@string/valor_peso_koda" />
+                            android:text="" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -352,7 +352,7 @@
                         <TextView
                             android:id="@+id/txtMicrochip"
                             style="@style/PetInfoValue"
-                            android:text="@string/valor_microchip_koda" />
+                            android:text="" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -377,7 +377,7 @@
                         <TextView
                             android:id="@+id/editTextText2"
                             style="@style/PetInfoValue"
-                            android:text="@string/valor_color_koda" />
+                            android:text="" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -402,7 +402,7 @@
                         <TextView
                             android:id="@+id/editTextText3"
                             style="@style/PetInfoValue"
-                            android:text="@string/obs_alergia_koda" />
+                            android:text="" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

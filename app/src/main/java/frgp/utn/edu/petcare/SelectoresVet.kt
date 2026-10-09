@@ -126,7 +126,7 @@ object SelectorFechaVet {
 object SelectorHoraVet {
 
     fun mostrar(
-        activity: AppCompatActivity, fecha: LocalDate, horaActual: String?, ignorarId: Int?,
+        activity: AppCompatActivity, fecha: LocalDate, horaActual: String?, ignorarId: String?,
         alElegir: (String) -> Unit
     ) {
         val vista = LayoutInflater.from(activity).inflate(R.layout.dialog_hora_vet, null)

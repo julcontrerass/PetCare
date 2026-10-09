@@ -106,7 +106,7 @@
                                 android:layout_height="match_parent"
                                 android:contentDescription="@null"
                                 android:scaleType="centerCrop"
-                                android:src="@drawable/juani"
+                                android:src="@drawable/avatar_default"
                                 app:shapeAppearanceOverlay="@style/CircleImage" />
                         </FrameLayout>
 
@@ -424,6 +424,18 @@
                 app:iconTint="@color/danger_red"
                 app:strokeColor="@color/danger_red"
                 app:strokeWidth="1.5dp" />
+
+            <TextView
+                android:id="@+id/llEliminarCuenta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:padding="14dp"
+                android:text="Eliminar mi cuenta"
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

@@ -260,15 +260,4 @@
             app:iconTint="@color/danger_red"
             app:strokeColor="@color/danger_red" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/tvTurnoSimular"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/selectableItemBackground"
-        android:gravity="center"
-        android:paddingVertical="14dp"
-        android:text="Simular cancelación del veterinario"
-        android:textColor="@color/text_gray"
-        android:textSize="13sp" />
 </LinearLayout>
