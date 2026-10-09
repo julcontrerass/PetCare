@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.app.TimePickerDialog
 import android.view.View
 import android.widget.ArrayAdapter
@@ -9,7 +10,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -62,16 +62,18 @@ class EventosDialogos(private val host: DuenoActivity) {
         }
         vista.findViewById<View>(R.id.btnTurnoCancelar).setOnClickListener {
             hoja.dismiss()
-            AlertDialog.Builder(host)
-                .setTitle("Cancelar turno")
-                .setMessage("¿Querés cancelar el turno de ${evento.mascota} (${evento.categoria})?")
-                .setPositiveButton("Cancelar turno") { _, _ ->
-                    DuenoRepo.cancelarEvento(evento)
-                    Toast.makeText(host, "Turno cancelado", Toast.LENGTH_SHORT).show()
-                    alCambiar()
-                }
-                .setNegativeButton("Volver", null)
-                .show()
+            val conVeterinario = evento.veterinario.takeIf { it.isNotEmpty() }?.let { " con $it" }.orEmpty()
+            Avisos.confirmar(
+                host, "¿Cancelar este turno?",
+                "Vas a cancelar el turno de ${evento.mascota} (${evento.categoria}) del " +
+                    "${Fechas.corta(evento.fecha)} a las ${evento.hora} hs$conVeterinario." +
+                    if (evento.veterinario.isNotEmpty()) " Se le avisa al veterinario." else "",
+                textoAceptar = "Cancelar turno"
+            ) {
+                DuenoRepo.cancelarEvento(evento)
+                Avisos.mostrar(host, "Turno cancelado")
+                alCambiar()
+            }
         }
         hoja.show()
     }
@@ -95,7 +97,7 @@ class EventosDialogos(private val host: DuenoActivity) {
             DatePickerDialog(host, { _, anio, mes, dia ->
                 val nueva = LocalDate.of(anio, mes + 1, dia)
                 if (nueva.isBefore(LocalDate.now())) {
-                    Toast.makeText(host, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(host, "No podés seleccionar una fecha que ya pasó")
                 } else {
                     fecha = nueva
                     etFecha.setText(Fechas.larga(nueva))
@@ -131,12 +133,12 @@ class EventosDialogos(private val host: DuenoActivity) {
             .setView(formulario)
             .setPositiveButton("Guardar") { _, _ ->
                 if (fecha.isBefore(LocalDate.now())) {
-                    Toast.makeText(host, "No podés seleccionar una fecha que ya pasó", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(host, "No podés seleccionar una fecha que ya pasó")
                     return@setPositiveButton
                 }
                 val veterinario = if (selectorVeterinario.selectedItemPosition == 0) "" else selectorVeterinario.selectedItem as String
                 DuenoRepo.modificarEvento(evento, fecha, etHora.text.toString(), veterinario, etObservaciones.text.toString().trim())
-                Toast.makeText(host, "Turno actualizado", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(host, "Turno actualizado")
                 alCambiar()
             }
             .setNegativeButton(R.string.btn_cancelar, null)
@@ -147,7 +149,7 @@ class EventosDialogos(private val host: DuenoActivity) {
     fun elegirParaEditar(mascota: String?) {
         val propios = DuenoRepo.eventosDeMascota(mascota).sortedByDescending { it.fecha }
         if (propios.isEmpty()) {
-            Toast.makeText(host, "No hay eventos para editar", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(host, "No hay eventos para editar")
             return
         }
         val etiquetas = propios.map {

@@ -1,9 +1,9 @@
 package frgp.utn.edu.petcare.data
 
 import android.content.Context
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import frgp.utn.edu.petcare.data.remoto.FuenteDatos
 import frgp.utn.edu.petcare.data.remoto.SupabaseFuente
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +52,7 @@ object Servicios {
 
     fun mostrarError(mensaje: String) {
         val ctx = contexto ?: return
-        principal.post { Toast.makeText(ctx, mensaje, Toast.LENGTH_LONG).show() }
+        principal.post { Avisos.error(ctx, mensaje) }
     }
 
     /**

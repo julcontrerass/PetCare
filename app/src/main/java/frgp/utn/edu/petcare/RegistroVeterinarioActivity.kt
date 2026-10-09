@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.app.Activity
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
@@ -12,7 +13,6 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -219,7 +219,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private fun validarDatosPersonales(): Boolean {
         var ok = true
         if (titulo == null) {
-            Toast.makeText(this, "Elegí si sos Dr. o Dra.", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Elegí si sos Dr. o Dra.")
             ok = false
         }
         if (texto(R.id.etVetTelefono).count { it.isDigit() } < 8) ok = error(R.id.etVetTelefono, "Ingresá un teléfono válido")
@@ -251,13 +251,11 @@ class RegistroVeterinarioActivity : BaseActivity() {
 
     private fun validarHorario(): Boolean {
         if (dias.none { it }) {
-            Toast.makeText(this, "Elegí al menos un día de atención", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Elegí al menos un día de atención")
             return false
         }
         if (minutos(cierre) - minutos(apertura) < DisponibilidadVet.DURACION_MIN) {
-            Toast.makeText(
-                this, "El horario de cierre tiene que ser posterior al de apertura", Toast.LENGTH_SHORT
-            ).show()
+            Avisos.mostrar(this, "El horario de cierre tiene que ser posterior al de apertura")
             return false
         }
         return true
@@ -266,7 +264,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private fun validarCuenta(): Boolean {
         var ok = true
         if (!findViewById<CheckBox>(R.id.cbVetTerminos).isChecked) {
-            Toast.makeText(this, "Tenés que aceptar los términos y condiciones", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Tenés que aceptar los términos y condiciones")
             ok = false
         }
         val pass = findViewById<EditText>(R.id.etVetPassword).text.toString()
@@ -300,7 +298,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             fotoPath = destino.absolutePath
             mostrarFoto(destino.absolutePath)
         } catch (e: Exception) {
-            Toast.makeText(this, "No pudimos cargar la imagen", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "No pudimos cargar la imagen")
         }
     }
 
@@ -447,22 +445,19 @@ class RegistroVeterinarioActivity : BaseActivity() {
         lifecycleScope.launch {
             try {
                 val resultado = Registro.veterinario(datos)
-                AlertDialog.Builder(this@RegistroVeterinarioActivity)
-                    .setTitle("Registro en revisión")
-                    .setMessage(
-                        "¡Muchas gracias, $nombre!\nTus datos y matrícula (${datos.matricula}) fueron enviados correctamente " +
-                            "y están en proceso de revisión por el Administrador. Una vez verificados, tu cuenta será dada de alta."
+                Avisos.informar(
+                    this@RegistroVeterinarioActivity, "Registro en revisión",
+                    "¡Muchas gracias, $nombre!\nTus datos y matrícula (${datos.matricula}) fueron enviados correctamente " +
+                        "y están en proceso de revisión por el Administrador. Una vez verificados, tu cuenta será dada de alta.",
+                    cancelable = false
+                ) {
+                    setResult(
+                        RESULT_OK,
+                        Intent().putExtra(EXTRA_EMAIL, datos.email)
+                            .putExtra(EXTRA_CONFIRMAR_CORREO, !resultado.sesionIniciada)
                     )
-                    .setPositiveButton("Entendido") { _, _ ->
-                        setResult(
-                            RESULT_OK,
-                            Intent().putExtra(EXTRA_EMAIL, datos.email)
-                                .putExtra(EXTRA_CONFIRMAR_CORREO, !resultado.sesionIniciada)
-                        )
-                        finish()
-                    }
-                    .setCancelable(false)
-                    .show()
+                    finish()
+                }
             } catch (e: Registro.CorreoYaRegistrado) {
                 btnSiguiente.isEnabled = true
                 btnSiguiente.text = "Crear cuenta"
@@ -470,7 +465,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             } catch (e: Exception) {
                 btnSiguiente.isEnabled = true
                 btnSiguiente.text = "Crear cuenta"
-                Toast.makeText(this@RegistroVeterinarioActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(this@RegistroVeterinarioActivity, Errores.mensaje(e))
             }
         }
     }

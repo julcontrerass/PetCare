@@ -1,8 +1,8 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.view.View
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.widget.TextView
-import android.widget.Toast
 import frgp.utn.edu.petcare.ui.common.Efectos
 
 /**
@@ -15,9 +15,9 @@ abstract class Pantalla(protected val host: DuenoActivity) {
 
     protected fun dp(valor: Int) = host.dp(valor)
 
-    protected fun toast(texto: String) = Toast.makeText(host, texto, Toast.LENGTH_SHORT).show()
+    protected fun toast(texto: String) = Avisos.mostrar(host, texto)
 
-    protected fun toast(recurso: Int) = Toast.makeText(host, recurso, Toast.LENGTH_SHORT).show()
+    protected fun toast(recurso: Int) = Avisos.mostrar(host, recurso)
 
     protected fun alTocar(id: Int, accion: (View) -> Unit) {
         vista<View>(id)?.setOnClickListener(accion)

@@ -1,11 +1,11 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -46,7 +46,7 @@ class InformeFragment : Fragment() {
             val t = etTratamiento?.text?.toString().orEmpty()
 
             InformesRepo.guardar(paciente.id, m, d, t, turnoId)
-            Toast.makeText(requireContext(), "Informe guardado correctamente", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(requireContext(), "Informe guardado correctamente")
         }
 
         return view

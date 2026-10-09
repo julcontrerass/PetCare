@@ -1,13 +1,13 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import frgp.utn.edu.petcare.data.Errores
@@ -74,7 +74,7 @@ class AgregarConsultaActivity : BaseActivity() {
         btnBuscarDueno.setOnClickListener {
             val q = etBuscarDueno.text.toString().trim()
             if (q.isBlank()) {
-                Toast.makeText(this, "Ingresá un DNI o Email para buscar", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Ingresá un DNI o Email para buscar")
                 return@setOnClickListener
             }
             btnBuscarDueno.isEnabled = false
@@ -90,21 +90,16 @@ class AgregarConsultaActivity : BaseActivity() {
                             this@AgregarConsultaActivity, android.R.layout.simple_spinner_dropdown_item,
                             encontradas.map { it.candidata.etiqueta }
                         )
-                        Toast.makeText(
-                            this@AgregarConsultaActivity, "Dueño encontrado con ${encontradas.size} mascota(s)", Toast.LENGTH_SHORT
-                        ).show()
+                        Avisos.mostrar(this@AgregarConsultaActivity, "Dueño encontrado con ${encontradas.size} mascota(s)")
                     } else {
                         candidatas = emptyList()
                         layoutDuenoEncontrado.visibility = View.GONE
                         layoutNuevoDueno.visibility = View.VISIBLE
                         if (q.contains("@")) etNuevoEmailDueno.setText(q) else etNuevoDniDueno.setText(q)
-                        Toast.makeText(
-                            this@AgregarConsultaActivity,
-                            "No se encontró dueño con ese dato. Completá el formulario para registrarlo.", Toast.LENGTH_LONG
-                        ).show()
+                        Avisos.mostrar(this@AgregarConsultaActivity, "No se encontró dueño con ese dato. Completá el formulario para registrarlo.")
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(this@AgregarConsultaActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                    Avisos.error(this@AgregarConsultaActivity, Errores.mensaje(e))
                 } finally {
                     btnBuscarDueno.isEnabled = true
                 }
@@ -133,7 +128,7 @@ class AgregarConsultaActivity : BaseActivity() {
                 val hora = etHora.text.toString()
                 if (hora.isNotBlank() && DisponibilidadVet.validar(elegida, hora) != null) {
                     etHora.setText("")
-                    Toast.makeText(this, "Elegí otro horario para ese día", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "Elegí otro horario para ese día")
                 }
             }
         }
@@ -142,7 +137,7 @@ class AgregarConsultaActivity : BaseActivity() {
             val f = fecha
             if (f == null) {
                 etFecha.error = "Elegí primero la fecha"
-                Toast.makeText(this, "Elegí primero la fecha", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Elegí primero la fecha")
             } else {
                 SelectorHoraVet.mostrar(this, f, etHora.text.toString().ifBlank { null }, null) { hora ->
                     etHora.setText(hora)
@@ -164,7 +159,7 @@ class AgregarConsultaActivity : BaseActivity() {
             val problema = DisponibilidadVet.validar(fecha!!, etHora.text.toString())
             if (problema != null) {
                 etHora.error = problema
-                Toast.makeText(this, problema, Toast.LENGTH_LONG).show()
+                Avisos.mostrar(this, problema)
                 return@setOnClickListener
             }
 
@@ -203,7 +198,7 @@ class AgregarConsultaActivity : BaseActivity() {
             }
 
             if (pacienteElegido == null) {
-                Toast.makeText(this, "Seleccioná o registrá una mascota", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Seleccioná o registrá una mascota")
                 return@setOnClickListener
             }
 
@@ -216,7 +211,7 @@ class AgregarConsultaActivity : BaseActivity() {
             AgendaRepo.agregar(pacienteElegido.id, tipo, motivo, f, etHora.text.toString(), estado, notas)
             registrarEnCarnet(pacienteElegido.id, tipo, motivo, notas, f)
 
-            Toast.makeText(this, R.string.consulta_guardada, Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, R.string.consulta_guardada)
             finish()
         }
     }
@@ -253,16 +248,13 @@ class AgregarConsultaActivity : BaseActivity() {
                 val resultado = Servicios.fuente.solicitarAcceso(candidata.mascotaId)
                 if (resultado == "activo") {
                     PacientesRepo.cargar()
-                    Toast.makeText(this@AgregarConsultaActivity, "Ya tenés acceso. Volvé a buscar para agendar.", Toast.LENGTH_LONG).show()
+                    Avisos.mostrar(this@AgregarConsultaActivity, "Ya tenés acceso. Volvé a buscar para agendar.")
                 } else {
-                    Toast.makeText(
-                        this@AgregarConsultaActivity,
-                        "Le pedimos acceso al dueño. Vas a poder agendar el turno cuando lo acepte.", Toast.LENGTH_LONG
-                    ).show()
+                    Avisos.mostrar(this@AgregarConsultaActivity, "Le pedimos acceso al dueño. Vas a poder agendar el turno cuando lo acepte.")
                     finish()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@AgregarConsultaActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(this@AgregarConsultaActivity, Errores.mensaje(e))
             }
         }
     }

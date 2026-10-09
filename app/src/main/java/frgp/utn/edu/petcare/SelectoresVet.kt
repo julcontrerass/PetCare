@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.graphics.Paint
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -9,7 +10,6 @@ import android.view.ViewGroup
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -88,9 +88,7 @@ object SelectorFechaVet {
                         celda.setBackgroundResource(R.drawable.bg_dia_bloqueado)
                         celda.setTextColor(ContextCompat.getColor(ctx, R.color.white))
                         celda.setOnClickListener {
-                            Toast.makeText(
-                                ctx, "No atendés los ${DisponibilidadVet.nombreDia(fecha).lowercase()}", Toast.LENGTH_SHORT
-                            ).show()
+                            Avisos.mostrar(ctx, "No atendés los ${DisponibilidadVet.nombreDia(fecha).lowercase()}")
                         }
                     }
                     else -> {
@@ -158,7 +156,7 @@ object SelectorHoraVet {
                     chip.setTextColor(ContextCompat.getColor(activity, R.color.text_gray))
                     chip.paintFlags = chip.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                     chip.setOnClickListener {
-                        Toast.makeText(activity, "Ese horario no está disponible", Toast.LENGTH_SHORT).show()
+                        Avisos.mostrar(activity, "Ese horario no está disponible")
                     }
                 }
                 h.hora == horaActual -> {

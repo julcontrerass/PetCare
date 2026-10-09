@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.app.TimePickerDialog
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -12,7 +13,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
@@ -37,7 +37,7 @@ class PerfilVetActivity : BaseActivity() {
         uri?.let {
             PerfilVetRepo.cambiarFoto(it)
             mostrarPerfil()
-            Toast.makeText(this, "Foto de perfil actualizada correctamente", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Foto de perfil actualizada correctamente")
         }
     }
 
@@ -63,14 +63,10 @@ class PerfilVetActivity : BaseActivity() {
         findViewById<View>(R.id.optNotificaciones)?.setOnClickListener { configurarNotificaciones() }
         findViewById<View>(R.id.optEliminarCuenta)?.setOnClickListener { BajaDeCuenta.confirmar(this) }
         findViewById<View>(R.id.optCerrarSesion)?.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Cerrar sesión")
-                .setMessage("¿Querés cerrar tu sesión?")
-                .setPositiveButton("Cerrar sesión") { _, _ ->
-                    Sesion.cerrarYVolver(this)
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
+            Avisos.confirmar(
+                this, "¿Cerrar sesión?", "Vas a tener que ingresar de nuevo con tu correo y tu contraseña.",
+                textoAceptar = "Cerrar sesión", textoCancelar = "Cancelar", peligro = false, icono = R.drawable.ic_logout
+            ) { Sesion.cerrarYVolver(this) }
         }
         mostrarPerfil()
     }
@@ -174,16 +170,16 @@ class PerfilVetActivity : BaseActivity() {
             }
             .setPositiveButton("Guardar") { _, _ ->
                 if (marcadas.none { it }) {
-                    Toast.makeText(this, "Elegí al menos un día de atención", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "Elegí al menos un día de atención")
                 } else if (tempFin <= tempInicio) {
-                    Toast.makeText(this, "El horario de cierre tiene que ser posterior al de apertura", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "El horario de cierre tiene que ser posterior al de apertura")
                 } else {
                     System.arraycopy(marcadas, 0, PerfilVetRepo.diasSeleccionados, 0, marcadas.size)
                     PerfilVetRepo.horaApertura = tempInicio
                     PerfilVetRepo.horaCierre = tempFin
                     PerfilVetRepo.guardarHorarios()
                     mostrarPerfil()
-                    Toast.makeText(this, "Días y horarios actualizados", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "Días y horarios actualizados")
                 }
             }
             .setNegativeButton("Cancelar", null)
@@ -201,7 +197,7 @@ class PerfilVetActivity : BaseActivity() {
                 System.arraycopy(marcadas, 0, PerfilVetRepo.especialidadesSeleccionadas, 0, marcadas.size)
                 PerfilVetRepo.guardarEspecialidades()
                 mostrarPerfil()
-                Toast.makeText(this, "Especialidades actualizadas", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Especialidades actualizadas")
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -229,7 +225,7 @@ class PerfilVetActivity : BaseActivity() {
                 PerfilVetRepo.telefono = telefono.text.toString().trim()
                 PerfilVetRepo.guardarDatos()
                 mostrarPerfil()
-                Toast.makeText(this, "Perfil profesional actualizado", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Perfil profesional actualizado")
             }
             ok
         }
@@ -249,23 +245,19 @@ class PerfilVetActivity : BaseActivity() {
                 else -> null
             }
             if (error != null) {
-                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, error)
             } else {
                 val boton = dialogo.getButton(AlertDialog.BUTTON_POSITIVE)
                 boton.isEnabled = false
                 lifecycleScope.launch {
                     try {
                         Servicios.fuente.cambiarPassword(PerfilVetRepo.email, actual.text.toString(), nueva.text.toString())
-                        Toast.makeText(this@PerfilVetActivity, "Contraseña actualizada", Toast.LENGTH_SHORT).show()
+                        Avisos.mostrar(this@PerfilVetActivity, "Contraseña actualizada")
                         dialogo.dismiss()
                     } catch (e: Exception) {
                         boton.isEnabled = true
                         val mensaje = Errores.mensaje(e)
-                        Toast.makeText(
-                            this@PerfilVetActivity,
-                            if (mensaje.startsWith("Correo o contraseña")) "La contraseña actual es incorrecta" else mensaje,
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Avisos.mostrar(this@PerfilVetActivity, if (mensaje.startsWith("Correo o contraseña")) "La contraseña actual es incorrecta" else mensaje)
                     }
                 }
             }
@@ -282,7 +274,7 @@ class PerfilVetActivity : BaseActivity() {
             .setPositiveButton("Guardar") { _, _ ->
                 claves.forEachIndexed { i, clave -> PerfilVetRepo.preferencias[clave] = marcadas[i] }
                 PerfilVetRepo.guardarPreferencias()
-                Toast.makeText(this, "Preferencias guardadas", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Preferencias guardadas")
             }
             .setNegativeButton("Cancelar", null)
             .show()

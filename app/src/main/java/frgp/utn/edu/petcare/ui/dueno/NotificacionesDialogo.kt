@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.Typeface
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -9,7 +10,6 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
@@ -53,7 +53,7 @@ class NotificacionesDialogo(private val host: DuenoActivity) {
             constructor.setNeutralButton("Limpiar notificaciones") { _, _ ->
                 DuenoRepo.limpiarNotificaciones()
                 host.actualizarBadgeNotificaciones()
-                Toast.makeText(host, "Notificaciones borradas", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(host, "Notificaciones borradas")
             }
         }
         val dialogo = constructor.create()

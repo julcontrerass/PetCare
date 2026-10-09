@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import frgp.utn.edu.petcare.ui.common.Avisos
 import kotlinx.coroutines.launch
 import frgp.utn.edu.petcare.data.Servicios
 import androidx.lifecycle.lifecycleScope
@@ -14,7 +15,6 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import frgp.utn.edu.petcare.data.Sesion
@@ -171,11 +171,7 @@ class HomeAdminActivity : BaseActivity() {
         findViewById<View>(R.id.tileAdminMascotas).setOnClickListener { bottomNav.selectedItemId = R.id.nav_admin_duenos }
         findViewById<View>(R.id.tileAdminTurnos).setOnClickListener {
             val hoy = AdminRepo.turnosHoy()
-            Toast.makeText(
-                this,
-                if (hoy == 1) "Hay 1 turno pendiente para hoy" else "Hay $hoy turnos pendientes para hoy",
-                Toast.LENGTH_SHORT
-            ).show()
+            Avisos.mostrar(this, if (hoy == 1) "Hay 1 turno pendiente para hoy" else "Hay $hoy turnos pendientes para hoy")
         }
         findViewById<View>(R.id.btnVerTodasPendientes).setOnClickListener { verVeterinarios(AdminRepo.PENDIENTE) }
         findViewById<View>(R.id.btnVerActividad).setOnClickListener { bottomNav.selectedItemId = R.id.nav_admin_actividad }
@@ -346,7 +342,7 @@ class HomeAdminActivity : BaseActivity() {
 
     private fun aprobar(vet: VetAdminItem) {
         AdminRepo.aprobarVet(vet.id)
-        Toast.makeText(this, "${vet.nombre} ya está dado de alta", Toast.LENGTH_SHORT).show()
+        Avisos.mostrar(this, "${vet.nombre} ya está dado de alta")
         refrescarTodo()
     }
 
@@ -357,7 +353,7 @@ class HomeAdminActivity : BaseActivity() {
             "Rechazar"
         ) { motivo ->
             AdminRepo.rechazarVet(vet.id, motivo)
-            Toast.makeText(this, "Solicitud de ${vet.nombre} rechazada", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Solicitud de ${vet.nombre} rechazada")
             refrescarTodo()
             alTerminar()
         }
@@ -370,7 +366,7 @@ class HomeAdminActivity : BaseActivity() {
             "Suspender"
         ) { motivo ->
             AdminRepo.suspenderVet(vet.id, motivo)
-            Toast.makeText(this, "${vet.nombre} quedó suspendido", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "${vet.nombre} quedó suspendido")
             refrescarTodo()
             alTerminar()
         }
@@ -383,7 +379,7 @@ class HomeAdminActivity : BaseActivity() {
             "Suspender"
         ) { motivo ->
             AdminRepo.suspenderDueno(dueno.id, motivo)
-            Toast.makeText(this, "La cuenta de ${dueno.nombre} quedó suspendida", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "La cuenta de ${dueno.nombre} quedó suspendida")
             refrescarTodo()
             alTerminar()
         }
@@ -429,7 +425,7 @@ class HomeAdminActivity : BaseActivity() {
         try {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "No hay una aplicación disponible para esta acción", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "No hay una aplicación disponible para esta acción")
         }
     }
 
@@ -541,7 +537,7 @@ class HomeAdminActivity : BaseActivity() {
 
     private fun terminarAccion(sheet: BottomSheetDialog, mensaje: String) {
         sheet.dismiss()
-        Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show()
+        Avisos.mostrar(this, mensaje)
         refrescarTodo()
     }
 

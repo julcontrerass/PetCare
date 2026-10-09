@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.app.Activity
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
@@ -14,7 +15,6 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -226,7 +226,7 @@ class RegistroDuenoActivity : BaseActivity() {
     private fun validarCuenta(): Boolean {
         var ok = true
         if (!findViewById<CheckBox>(R.id.cbDuenoTerminos).isChecked) {
-            Toast.makeText(this, "Tenés que aceptar los términos y condiciones", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Tenés que aceptar los términos y condiciones")
             ok = false
         }
         val pass = findViewById<EditText>(R.id.etDuenoPassword).text.toString()
@@ -250,7 +250,7 @@ class RegistroDuenoActivity : BaseActivity() {
         } ?: throw IllegalStateException("No se pudo leer la imagen")
         destino.absolutePath
     } catch (e: Exception) {
-        Toast.makeText(this, "No pudimos cargar la imagen", Toast.LENGTH_SHORT).show()
+        Avisos.mostrar(this, "No pudimos cargar la imagen")
         null
     }
 
@@ -380,7 +380,7 @@ class RegistroDuenoActivity : BaseActivity() {
             DatePickerDialog(this, { _, y, m, d ->
                 val elegida = LocalDate.of(y, m + 1, d)
                 if (elegida.isAfter(LocalDate.now())) {
-                    Toast.makeText(this, "No podés elegir una fecha futura", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "No podés elegir una fecha futura")
                 } else {
                     nacimiento = Fechas.corta(elegida)
                     etNacimiento.setText(nacimiento)
@@ -399,11 +399,11 @@ class RegistroDuenoActivity : BaseActivity() {
                 return@setOnClickListener
             }
             if (tipo == null) {
-                Toast.makeText(this, "Elegí qué tipo de mascota es", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Elegí qué tipo de mascota es")
                 return@setOnClickListener
             }
             if (sexo == null) {
-                Toast.makeText(this, "Elegí el sexo de la mascota", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Elegí el sexo de la mascota")
                 return@setOnClickListener
             }
             val micro = etMicrochip.text.toString().trim()
@@ -486,7 +486,7 @@ class RegistroDuenoActivity : BaseActivity() {
             } catch (e: Exception) {
                 btnSiguiente.isEnabled = true
                 btnSiguiente.text = "Crear cuenta"
-                Toast.makeText(this@RegistroDuenoActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(this@RegistroDuenoActivity, Errores.mensaje(e))
             }
         }
     }

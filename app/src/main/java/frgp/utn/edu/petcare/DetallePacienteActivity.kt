@@ -1,12 +1,12 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.data.Imagenes
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.PopupMenu
-import android.widget.Toast
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -31,7 +31,7 @@ class DetallePacienteActivity : BaseActivity() {
         try {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "No hay una aplicación disponible para esta acción", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "No hay una aplicación disponible para esta acción")
         }
     }
 
@@ -44,7 +44,7 @@ class DetallePacienteActivity : BaseActivity() {
 
         val paciente = PacientesRepo.porId(intent.getStringExtra(EXTRA_PACIENTE_ID))
         if (paciente == null) {
-            Toast.makeText(this, "No se encontró la mascota", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "No se encontró la mascota")
             finish()
             return
         }

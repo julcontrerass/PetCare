@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.app.DatePickerDialog
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -16,7 +17,6 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -161,15 +161,13 @@ class CarnetSaludActivity : BaseActivity() {
     }
 
     private fun confirmarEliminar(r: RegistroSalud) {
-        AlertDialog.Builder(this)
-            .setTitle("Eliminar registro")
-            .setMessage("¿Eliminar \"${r.titulo}\"?")
-            .setPositiveButton("Eliminar") { _, _ ->
-                SaludRepo.eliminar(r)
-                refrescar()
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        Avisos.confirmar(
+            this, "¿Eliminar el registro?", "Se borra \"${r.titulo}\" del carnet. No se puede deshacer.",
+            textoAceptar = "Eliminar", textoCancelar = "Cancelar"
+        ) {
+            SaludRepo.eliminar(r)
+            refrescar()
+        }
     }
 
     /** Sube el documento al bucket `archivos` y recién entonces lo suma al carnet. */
@@ -177,7 +175,7 @@ class CarnetSaludActivity : BaseActivity() {
         val extension = nombre.substringAfterLast('.', "").lowercase()
         val mime = EXTENSIONES[extension.uppercase()]
         if (mime == null) {
-            Toast.makeText(this, "Formato no admitido. Subí un PDF, una imagen o un documento de Word.", Toast.LENGTH_LONG).show()
+            Avisos.mostrar(this, "Formato no admitido. Subí un PDF, una imagen o un documento de Word.")
             return
         }
         lifecycleScope.launch {
@@ -185,7 +183,7 @@ class CarnetSaludActivity : BaseActivity() {
                 val bytes = withContext(Dispatchers.IO) { contentResolver.openInputStream(uri)?.use { it.readBytes() } }
                     ?: throw IllegalStateException("No se pudo leer el archivo")
                 if (bytes.size > TAMANO_MAXIMO) {
-                    Toast.makeText(this@CarnetSaludActivity, "El archivo supera los 15 MB", Toast.LENGTH_LONG).show()
+                    Avisos.mostrar(this@CarnetSaludActivity, "El archivo supera los 15 MB")
                     return@launch
                 }
                 val ruta = "$mascotaId/${UUID.randomUUID()}.$extension"
@@ -193,7 +191,7 @@ class CarnetSaludActivity : BaseActivity() {
                 SaludRepo.agregar(TipoRegistro.DOCUMENTO, mascotaId, titulo, nombre, fecha, archivoPath = ruta)
                 refrescar()
             } catch (e: Exception) {
-                Toast.makeText(this@CarnetSaludActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(this@CarnetSaludActivity, Errores.mensaje(e))
             }
         }
     }
@@ -289,13 +287,13 @@ class CarnetSaludActivity : BaseActivity() {
                 if (titulo.isEmpty()) { etTitulo.error = "Requerido"; return@setOnClickListener }
                 if (tipo != TipoRegistro.DOCUMENTO && fecha.isEmpty()) { etFecha.error = "Requerido"; return@setOnClickListener }
                 if (tipo == TipoRegistro.DOCUMENTO && archivo == null) {
-                    Toast.makeText(this, "Seleccioná un archivo", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "Seleccioná un archivo")
                     return@setOnClickListener
                 }
                 val extra = etExtra?.text?.toString()?.trim().orEmpty()
                 val paciente = PacientesRepo.pacientes.getOrNull(spinner.selectedItemPosition)
                 if (paciente == null) {
-                    Toast.makeText(this, "Elegí una mascota", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(this, "Elegí una mascota")
                     return@setOnClickListener
                 }
                 val fechaElegida = Fechas.parsear(fecha) ?: LocalDate.now()

@@ -1,11 +1,11 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
@@ -55,7 +55,7 @@ object Componentes {
         DatePickerDialog(host, { _, anio, mes, dia ->
             val elegida = java.time.LocalDate.of(anio, mes + 1, dia)
             if (elegida.isAfter(java.time.LocalDate.now())) {
-                Toast.makeText(host, "No podés seleccionar una fecha de nacimiento futura", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(host, "No podés seleccionar una fecha de nacimiento futura")
             } else {
                 alElegir(elegida)
             }

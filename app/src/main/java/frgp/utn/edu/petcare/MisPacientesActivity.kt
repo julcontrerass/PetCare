@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,7 +11,6 @@ import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -146,7 +146,7 @@ class MisPacientesActivity : BaseActivity() {
                 )
                 actualizarContadores()
                 aplicarFiltros()
-                Toast.makeText(this, "Paciente agregado", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Paciente agregado")
                 dialog.dismiss()
             }
         }

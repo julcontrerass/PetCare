@@ -1,12 +1,12 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import frgp.utn.edu.petcare.data.Imagenes
@@ -37,9 +37,7 @@ class SolicitudesVetActivity : BaseActivity() {
                     if (restantes == 1) "1 pendiente" else "$restantes pendientes"
                 val aceptada = estado == SolicitudItem.Estado.ACEPTADA
                 SolicitudesRepo.resolver(item, aceptada)
-                Toast.makeText(
-                    this, if (aceptada) "La mascota se sumó a tus pacientes" else "Solicitud rechazada", Toast.LENGTH_SHORT
-                ).show()
+                Avisos.mostrar(this, if (aceptada) "La mascota se sumó a tus pacientes" else "Solicitud rechazada")
             }
     }
 }

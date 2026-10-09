@@ -47,6 +47,11 @@ class PantallasTest : PruebaBase() {
         rv.layout(0, 0, 1080, 2000)
     }
 
+    /** Pulsa el botón principal del último cartel que se mostró (confirmar, entendido...). */
+    private fun aceptarCartel() {
+        (ShadowDialog.getLatestDialog() as AlertDialog).findViewById<View>(R.id.btnCartelAceptar)!!.performClick()
+    }
+
     private fun texto(a: Activity, id: Int) = a.findViewById<TextView>(id).text.toString()
 
     @Before
@@ -244,8 +249,7 @@ class PantallasTest : PruebaBase() {
         a.irAPerfil()
         a.findViewById<View>(R.id.llEliminarCuenta).performClick()
 
-        val dialogo = ShadowDialog.getLatestDialog() as AlertDialog
-        dialogo.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        aceptarCartel()
         ShadowLooper.idleMainLooper()
 
         assertTrue(fuente.llamadas.contains("eliminarCuenta"))
@@ -329,7 +333,7 @@ class PantallasTest : PruebaBase() {
         abrirVet()
         val a = abrirDetalleTurno("t1")
         a.findViewById<View>(R.id.btnCancelarTurno).performClick()
-        (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        aceptarCartel()
         ShadowLooper.idleMainLooper()
 
         assertEquals("cancelado", fuente.turnos.first { it.id == "t1" }.estado)
@@ -399,7 +403,7 @@ class PantallasTest : PruebaBase() {
         abrirVet()
         val a = abrir(PerfilVetActivity::class.java)
         a.findViewById<View>(R.id.optCerrarSesion).performClick()
-        (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        aceptarCartel()
         ShadowLooper.idleMainLooper()
 
         assertEquals(AuthActivity::class.java.name, shadowOf(a).nextStartedActivity.component!!.className)

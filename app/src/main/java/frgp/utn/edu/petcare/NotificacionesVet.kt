@@ -1,6 +1,6 @@
 package frgp.utn.edu.petcare
 
-import android.widget.Toast
+import frgp.utn.edu.petcare.ui.common.Avisos
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -30,7 +30,7 @@ object NotificacionesVet {
                 }
                 dialogo.show()
             } catch (e: Exception) {
-                Toast.makeText(actividad, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(actividad, Errores.mensaje(e))
             }
         }
     }

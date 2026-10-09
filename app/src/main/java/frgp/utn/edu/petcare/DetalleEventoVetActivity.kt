@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.data.Imagenes
 import android.os.Bundle
 import android.view.View
@@ -10,7 +11,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import java.time.LocalDate
@@ -62,7 +62,7 @@ class DetalleEventoVetActivity : BaseActivity() {
                     val hora = etHora.text.toString()
                     if (hora.isNotBlank() && DisponibilidadVet.validar(nuevaFecha, hora, evento.id) != null) {
                         etHora.setText("")
-                        Toast.makeText(ctx, "Elegí otro horario para ese día", Toast.LENGTH_SHORT).show()
+                        Avisos.mostrar(ctx, "Elegí otro horario para ese día")
                     }
                 }
             }
@@ -97,7 +97,7 @@ class DetalleEventoVetActivity : BaseActivity() {
                     else if (cambioHorario) DisponibilidadVet.validar(fecha, hora, evento.id) else null
                     if (problema != null) {
                         etHora.error = problema
-                        Toast.makeText(ctx, problema, Toast.LENGTH_LONG).show()
+                        Avisos.mostrar(ctx, problema)
                         return@setOnClickListener
                     }
                     evento.tipo = spTipo.selectedItem as String
@@ -124,7 +124,7 @@ class DetalleEventoVetActivity : BaseActivity() {
         val id = intent.getStringExtra(EXTRA_EVENTO_ID)
         val encontrado = AgendaRepo.porId(id)
         if (encontrado == null) {
-            Toast.makeText(this, "No se encontró el turno", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "No se encontró el turno")
             finish()
             return
         }
@@ -147,26 +147,26 @@ class DetalleEventoVetActivity : BaseActivity() {
         }
         findViewById<View>(R.id.btnEditar).setOnClickListener {
             mostrarFormulario(this, evento) {
-                Toast.makeText(this, "Turno actualizado", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(this, "Turno actualizado")
                 mostrar()
             }
         }
         findViewById<View>(R.id.btnCompletar).setOnClickListener {
             AgendaRepo.cambiarEstado(evento, EstadoEvento.COMPLETADO)
-            Toast.makeText(this, "Turno marcado como completado", Toast.LENGTH_SHORT).show()
+            Avisos.mostrar(this, "Turno marcado como completado")
             mostrar()
         }
         findViewById<View>(R.id.btnCancelarTurno).setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Cancelar turno")
-                .setMessage("¿Cancelar el turno de ${PacientesRepo.nombreDe(evento.pacienteId)}?")
-                .setPositiveButton("Cancelar turno") { _, _ ->
-                    AgendaRepo.cambiarEstado(evento, EstadoEvento.CANCELADO)
-                    Toast.makeText(this, "Turno cancelado", Toast.LENGTH_SHORT).show()
-                    mostrar()
-                }
-                .setNegativeButton("Volver", null)
-                .show()
+            Avisos.confirmar(
+                this, "¿Cancelar este turno?",
+                "Vas a cancelar el turno de ${PacientesRepo.nombreDe(evento.pacienteId)} del " +
+                    "${Fechas.corta(evento.fecha)} a las ${evento.hora} hs. El dueño va a recibir un aviso.",
+                textoAceptar = "Cancelar turno"
+            ) {
+                AgendaRepo.cambiarEstado(evento, EstadoEvento.CANCELADO)
+                Avisos.mostrar(this, "Turno cancelado")
+                mostrar()
+            }
         }
         mostrar()
     }

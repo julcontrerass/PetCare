@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,7 +11,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -65,7 +65,7 @@ class ArchivosFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             runCatching { ArchivosRepo.cargar(paciente.id) }
                 .onSuccess { refrescar() }
-                .onFailure { Toast.makeText(requireContext(), Errores.mensaje(it), Toast.LENGTH_SHORT).show() }
+                .onFailure { Avisos.error(requireContext(), Errores.mensaje(it)) }
         }
         return view
     }
@@ -76,7 +76,7 @@ class ArchivosFragment : Fragment() {
         val nombre = nombreDe(uri) ?: "Documento"
         val extension = extensionDe(nombre)
         if (extension.uppercase() !in EXTENSIONES) {
-            Toast.makeText(contexto, "Formato no admitido. Subí un PDF, una imagen o un documento de Word.", Toast.LENGTH_LONG).show()
+            Avisos.mostrar(contexto, "Formato no admitido. Subí un PDF, una imagen o un documento de Word.")
             return
         }
         viewLifecycleOwner.lifecycleScope.launch {
@@ -85,14 +85,14 @@ class ArchivosFragment : Fragment() {
                     contexto.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 } ?: throw IllegalStateException("No se pudo leer el archivo")
                 if (bytes.size > TAMANO_MAXIMO) {
-                    Toast.makeText(contexto, "El archivo supera los 15 MB", Toast.LENGTH_LONG).show()
+                    Avisos.mostrar(contexto, "El archivo supera los 15 MB")
                     return@launch
                 }
                 ArchivosRepo.agregar(paciente.id, nombre, extension, bytes, mimeDe(extension))
                 refrescar()
-                Toast.makeText(contexto, "Archivo '$nombre' subido correctamente", Toast.LENGTH_SHORT).show()
+                Avisos.mostrar(contexto, "Archivo '$nombre' subido correctamente")
             } catch (e: Exception) {
-                Toast.makeText(contexto, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(contexto, Errores.mensaje(e))
             }
         }
     }
@@ -150,9 +150,9 @@ class ArchivosFragment : Fragment() {
                 }
                 startActivity(intent)
             } catch (e: ActivityNotFoundException) {
-                Toast.makeText(context, "No hay una aplicación para abrir este tipo de archivo", Toast.LENGTH_LONG).show()
+                Avisos.mostrar(context, "No hay una aplicación para abrir este tipo de archivo")
             } catch (e: Exception) {
-                Toast.makeText(context, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(context, Errores.mensaje(e))
             }
         }
     }
@@ -176,9 +176,9 @@ class ArchivosFragment : Fragment() {
                 if (nuevoNombre.isNotBlank()) {
                     ArchivosRepo.renombrar(item, nuevoNombre)
                     refrescar()
-                    Toast.makeText(requireContext(), "Nombre actualizado", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(requireContext(), "Nombre actualizado")
                 } else {
-                    Toast.makeText(requireContext(), "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                    Avisos.mostrar(requireContext(), "El nombre no puede estar vacío")
                 }
             }
             .setNegativeButton("Cancelar", null)
@@ -186,16 +186,14 @@ class ArchivosFragment : Fragment() {
     }
 
     private fun eliminarArchivo(item: ArchivoItem) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Eliminar archivo")
-            .setMessage("¿Querés eliminar '${item.nombre}'?")
-            .setPositiveButton("Eliminar") { _, _ ->
-                ArchivosRepo.eliminar(item)
-                refrescar()
-                Toast.makeText(requireContext(), "Archivo eliminado", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        Avisos.confirmar(
+            requireContext(), "¿Eliminar el archivo?", "Se borra '${item.nombre}' de la ficha. No se puede deshacer.",
+            textoAceptar = "Eliminar", textoCancelar = "Cancelar"
+        ) {
+            ArchivosRepo.eliminar(item)
+            refrescar()
+            Avisos.mostrar(requireContext(), "Archivo eliminado")
+        }
     }
 
     private fun nombreDe(uri: Uri): String? {

@@ -1,12 +1,12 @@
 package frgp.utn.edu.petcare.ui.auth
 
 import android.content.Intent
+import frgp.utn.edu.petcare.ui.common.Avisos
 import android.os.Bundle
 import android.util.Patterns
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -84,11 +84,7 @@ class AuthActivity : BaseActivity() {
                 startActivity(Intent(this, destino))
                 finish()
             }
-            is Sesion.Resultado.Bloqueada -> AlertDialog.Builder(this)
-                .setTitle("No podés ingresar")
-                .setMessage(resultado.mensaje)
-                .setPositiveButton("Entendido", null)
-                .show()
+            is Sesion.Resultado.Bloqueada -> Avisos.error(this, resultado.mensaje, "No podés ingresar")
         }
     }
 
@@ -96,11 +92,10 @@ class AuthActivity : BaseActivity() {
         if (confirmarCorreo) {
             mostrarLogin()
             findViewById<EditText>(R.id.etEmail)?.setText(email)
-            AlertDialog.Builder(this)
-                .setTitle("Confirmá tu correo")
-                .setMessage("Te mandamos un mensaje a $email. Abrilo para activar la cuenta y después iniciá sesión.")
-                .setPositiveButton("Entendido", null)
-                .show()
+            Avisos.informar(
+                this, "Confirmá tu correo",
+                "Te mandamos un mensaje a $email. Abrilo para activar la cuenta y después iniciá sesión."
+            )
             return
         }
         lifecycleScope.launch {
@@ -181,7 +176,7 @@ class AuthActivity : BaseActivity() {
             try {
                 atender(Sesion.ingresar(email, password))
             } catch (e: Exception) {
-                Toast.makeText(this@AuthActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                Avisos.error(this@AuthActivity, Errores.mensaje(e))
             } finally {
                 boton.isEnabled = true
             }
@@ -239,7 +234,7 @@ class AuthActivity : BaseActivity() {
                     avisoEnviado.visibility = View.VISIBLE
                 } catch (e: Exception) {
                     avisoEnviado.visibility = View.GONE
-                    Toast.makeText(this@AuthActivity, Errores.mensaje(e), Toast.LENGTH_LONG).show()
+                    Avisos.error(this@AuthActivity, Errores.mensaje(e))
                 } finally {
                     boton.isEnabled = true
                 }
