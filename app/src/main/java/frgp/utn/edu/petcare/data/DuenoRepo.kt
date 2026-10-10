@@ -382,6 +382,16 @@ object DuenoRepo {
             .minWithOrNull(compareBy<EventoMascota>({ it.fecha }, { it.hora }))
     }
 
+    /** Un turno se puede editar o cancelar solo si es próximo: no está completado y todavía no llegó su hora. */
+    fun esEditable(evento: EventoMascota): Boolean =
+        evento.estado != EstadoTurno.COMPLETADO && evento.estado != EstadoTurno.CANCELADO &&
+            !evento.fecha.isBefore(LocalDate.now()) && !horaPasada(evento.fecha, evento.hora)
+
+    /** Los turnos próximos que se pueden editar, del más cercano al más lejano; opcionalmente de una sola mascota. */
+    fun eventosEditables(mascota: String? = null): List<EventoMascota> =
+        eventos.filter { esEditable(it) && (mascota == null || it.mascota.equals(mascota, ignoreCase = true)) }
+            .sortedWith(compareBy<EventoMascota>({ it.fecha }, { it.hora }))
+
     fun eventosDeMascota(nombre: String?): List<EventoMascota> =
         eventos.filter { nombre == null || it.mascota == nombre }
 
@@ -419,8 +429,12 @@ object DuenoRepo {
     suspend fun horasOcupadas(vet: VeterinarioAcceso, fecha: LocalDate): Set<String> =
         Servicios.fuente.horariosOcupados(vet.id, fecha.toString()).toSet()
 
-    fun hayConflictoDeTurno(fecha: LocalDate, hora: String, mascota: String?): Boolean =
-        mascota != null && eventos.any { it.fecha == fecha && it.hora == hora && it.mascota.equals(mascota, ignoreCase = true) }
+    /** [ignorar] es el turno que se está editando: no choca consigo mismo. */
+    fun hayConflictoDeTurno(fecha: LocalDate, hora: String, mascota: String?, ignorar: EventoMascota? = null): Boolean =
+        mascota != null && eventos.any {
+            it !== ignorar && it.id != ignorar?.id && it.fecha == fecha && it.hora == hora &&
+                it.mascota.equals(mascota, ignoreCase = true)
+        }
 
     /** Un estudio anterior (ya guardado en la ficha) que el dueño adjunta a un turno. */
     class EstudioAdjunto(val nombre: String, val extension: String, val ruta: String, val tipo: String = TIPO_GENERICO)

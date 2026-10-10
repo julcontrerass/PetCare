@@ -205,6 +205,12 @@ class DuenoActivity : BaseActivity() {
         pantallaNuevoEvento.mostrar(fecha, mascota)
     }
 
+    /** Edita un turno con el mismo asistente de horarios que al sacarlo. */
+    fun irAEditarEvento(evento: frgp.utn.edu.petcare.model.EventoMascota) {
+        refrescable = null
+        pantallaNuevoEvento.mostrarEdicion(evento)
+    }
+
     fun irAPerfil() = mostrarSeccion { pantallaPerfil.mostrar() }
 
     fun irAEditarPerfil() {

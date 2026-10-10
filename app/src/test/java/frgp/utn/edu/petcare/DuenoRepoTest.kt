@@ -437,6 +437,22 @@ class DuenoRepoTest : PruebaBase() {
     }
 
     @Test
+    fun soloSePuedenEditarLosTurnosProximos() {
+        val hoy = LocalDate.now()
+        fuente.turnos.add(Escenario.turno("t1", "m1", hoy.plusDays(2).toString(), "10:00:00"))
+        fuente.turnos.add(Escenario.turno("t2", "m1", hoy.plusDays(1).toString(), "10:00:00", estado = "completado"))
+        fuente.turnos.add(Escenario.turno("t3", "m2", hoy.minusDays(3).toString(), "10:00:00"))
+        fuente.turnos.add(Escenario.turno("t4", "m2", hoy.plusDays(5).toString(), "11:00:00"))
+        ingresarComoDueno()
+
+        assertEquals(listOf("t1", "t4"), DuenoRepo.eventosEditables().map { it.id })
+        assertEquals(listOf("t1"), DuenoRepo.eventosEditables("Rex").map { it.id })
+        assertTrue(DuenoRepo.esEditable(DuenoRepo.eventos.first { it.id == "t1" }))
+        assertFalse(DuenoRepo.esEditable(DuenoRepo.eventos.first { it.id == "t2" }))
+        assertFalse(DuenoRepo.esEditable(DuenoRepo.eventos.first { it.id == "t3" }))
+    }
+
+    @Test
     fun pesoValido_aceptaKilosConComaOUnidad() {
         assertTrue(DuenoRepo.pesoValido("12"))
         assertTrue(DuenoRepo.pesoValido("3,5 kg"))

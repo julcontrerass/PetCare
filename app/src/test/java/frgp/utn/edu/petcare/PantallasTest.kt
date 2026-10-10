@@ -213,6 +213,53 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun dueno_editarUnTurnoUsaElAsistenteConLosHorariosDelVeterinario() {
+        val lunes = LocalDate.now().with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY))
+        fuente.turnos.clear()
+        fuente.turnos.add(Escenario.turno("t5", "m1", lunes.toString(), "10:00:00"))
+        val a = abrirDueno()
+
+        a.dialogosEventos.editar(DuenoRepo.eventos.single())
+        ShadowLooper.idleMainLooper()
+
+        assertEquals("Editar turno", texto(a, R.id.tvTitle))
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.step2Content).visibility)
+        assertEquals(View.GONE, a.findViewById<View>(R.id.step1Content).visibility)
+        assertTrue(texto(a, R.id.tvTurnoActual).contains("10:00"))
+        // Las horas que se ofrecen son las del veterinario (09:00 a 12:00 cada 30 minutos)
+        assertEquals(6, a.findViewById<android.widget.GridLayout>(R.id.gridHoras).childCount)
+
+        // Sin cambios no se guarda nada
+        a.findViewById<View>(R.id.btnSiguienteGuardar).performClick()
+        assertTrue(fuente.llamadas.none { it.startsWith("turno:t5") })
+
+        // Con un cambio sí
+        a.findViewById<EditText>(R.id.etObservaciones).setText("Llegamos 10 minutos antes")
+        a.findViewById<View>(R.id.btnSiguienteGuardar).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(fuente.llamadas.any { it.startsWith("turno:t5:") && it.contains("notas=Llegamos 10 minutos antes") })
+    }
+
+    @Test
+    fun dueno_elegirQueTurnoEditarMuestraSoloLosProximos() {
+        val lunes = LocalDate.now().with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY))
+        fuente.turnos.clear()
+        fuente.turnos.add(Escenario.turno("t5", "m1", lunes.toString(), "10:00:00"))
+        fuente.turnos.add(Escenario.turno("t6", "m1", lunes.plusDays(1).toString(), "11:00:00", estado = "completado"))
+        val a = abrirDueno()
+
+        a.dialogosEventos.elegirParaEditar("Rex")
+
+        val hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        val lista = hoja.findViewById<LinearLayout>(R.id.llTurnosEditables)!!
+        assertEquals(1, lista.childCount)
+        lista.getChildAt(0).performClick()
+        ShadowLooper.idleMainLooper()
+        assertEquals("Editar turno", texto(a, R.id.tvTitle))
+    }
+
+    @Test
     fun dueno_elBotonAgregarMascotaAbreElFormulario() {
         val a = abrirDueno()
         a.findViewById<View>(R.id.nav_mascotas).performClick()

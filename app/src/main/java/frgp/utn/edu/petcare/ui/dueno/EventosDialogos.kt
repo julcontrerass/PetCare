@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
+import android.content.res.ColorStateList
 import frgp.utn.edu.petcare.ui.common.ArchivosUi
 import frgp.utn.edu.petcare.model.EstadoTurno
 import kotlinx.coroutines.launch
@@ -44,7 +45,7 @@ class EventosDialogos(private val host: DuenoActivity) {
         vista.findViewById<TextView>(R.id.tvTurnoTitulo).text = evento.categoria
         vista.findViewById<TextView>(R.id.tvTurnoMascota).text = evento.mascota
 
-        val proximo = evento.estado != EstadoTurno.COMPLETADO && !evento.fecha.isBefore(LocalDate.now())
+        val proximo = DuenoRepo.esEditable(evento)
         vista.findViewById<TextView>(R.id.tvTurnoEstado).apply {
             text = if (proximo) "Próximo" else "Realizado"
             setBackgroundResource(if (proximo) R.drawable.bg_badge_orange else R.drawable.bg_badge_green)
@@ -129,87 +130,46 @@ class EventosDialogos(private val host: DuenoActivity) {
         }
     }
 
-    private fun campoSoloLectura(pista: String) = EditText(host).apply {
-        hint = pista
-        isFocusable = false
-        isClickable = true
+    /** Edita el turno con el asistente de horarios (días y horas del veterinario, sin los ya reservados). */
+    fun editar(evento: EventoMascota, @Suppress("UNUSED_PARAMETER") alCambiar: () -> Unit = {}) {
+        host.irAEditarEvento(evento)
     }
 
-    /** Formulario para cambiar fecha, hora, veterinario y observaciones de un turno. */
-    fun editar(evento: EventoMascota, alCambiar: () -> Unit = {}) {
-        val formulario = LinearLayout(host).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), dp(4))
-        }
-
-        var fecha = evento.fecha
-        val etFecha = campoSoloLectura("Fecha").apply { setText(Fechas.larga(fecha)) }
-        etFecha.setOnClickListener {
-            DatePickerDialog(host, { _, anio, mes, dia ->
-                val nueva = LocalDate.of(anio, mes + 1, dia)
-                if (nueva.isBefore(LocalDate.now())) {
-                    Avisos.mostrar(host, "No podés seleccionar una fecha que ya pasó")
-                } else {
-                    fecha = nueva
-                    etFecha.setText(Fechas.larga(nueva))
-                }
-            }, fecha.year, fecha.monthValue - 1, fecha.dayOfMonth).apply {
-                datePicker.minDate = System.currentTimeMillis() - 1000
-            }.show()
-        }
-
-        val etHora = campoSoloLectura("Hora").apply { setText(evento.hora) }
-        etHora.setOnClickListener {
-            val partes = etHora.text.toString().split(":")
-            val hora = partes.getOrNull(0)?.toIntOrNull() ?: 9
-            val minutos = partes.getOrNull(1)?.toIntOrNull() ?: 0
-            TimePickerDialog(host, { _, h, m -> etHora.setText(String.format(Locale.getDefault(), "%02d:%02d", h, m)) },
-                hora, minutos, true).show()
-        }
-
-        val nombres = listOf("Sin asignar") + DuenoRepo.todosLosVeterinarios().map { it.nombre }
-        val selectorVeterinario = Spinner(host).apply {
-            adapter = ArrayAdapter(host, android.R.layout.simple_spinner_dropdown_item, nombres)
-            setSelection(nombres.indexOf(evento.veterinario).coerceAtLeast(0))
-        }
-        val etObservaciones = EditText(host).apply {
-            hint = "Observaciones"
-            setText(evento.observaciones)
-            minLines = 2
-        }
-        listOf(etFecha, etHora, selectorVeterinario, etObservaciones).forEach { formulario.addView(it) }
-
-        AlertDialog.Builder(host)
-            .setTitle("Editar turno de ${evento.mascota}")
-            .setView(formulario)
-            .setPositiveButton("Guardar") { _, _ ->
-                if (fecha.isBefore(LocalDate.now())) {
-                    Avisos.mostrar(host, "No podés seleccionar una fecha que ya pasó")
-                    return@setPositiveButton
-                }
-                val veterinario = if (selectorVeterinario.selectedItemPosition == 0) "" else selectorVeterinario.selectedItem as String
-                DuenoRepo.modificarEvento(evento, fecha, etHora.text.toString(), veterinario, etObservaciones.text.toString().trim())
-                Avisos.mostrar(host, "Turno actualizado")
-                alCambiar()
-            }
-            .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
-    }
-
-    /** Botón "Editar evento" de las pestañas de la mascota: elige uno de sus eventos para editarlo. */
+    /** Botón "Editar evento": muestra los turnos próximos en tarjetas y deja elegir cuál editar. */
     fun elegirParaEditar(mascota: String?) {
-        val propios = DuenoRepo.eventosDeMascota(mascota).sortedByDescending { it.fecha }
-        if (propios.isEmpty()) {
-            Avisos.mostrar(host, "No hay eventos para editar")
+        val editables = DuenoRepo.eventosEditables(mascota)
+        if (editables.isEmpty()) {
+            Avisos.aviso(host, "No tenés turnos próximos para editar. Los turnos completados no se pueden modificar.")
             return
         }
-        val etiquetas = propios.map {
-            "${it.fecha.dayOfMonth} ${Fechas.mesCorto(it.fecha.monthValue)} ${it.fecha.year} · ${it.categoria} · ${it.mascota}"
-        }.toTypedArray()
-        AlertDialog.Builder(host)
-            .setTitle("Elegí el evento a editar")
-            .setItems(etiquetas) { _, indice -> editar(propios[indice]) }
-            .setNegativeButton(R.string.btn_cancelar, null)
-            .show()
+        val hoja = BottomSheetDialog(host)
+        val vista = host.layoutInflater.inflate(R.layout.sheet_elegir_turno, null)
+        hoja.setContentView(vista)
+        vista.findViewById<TextView>(R.id.tvElegirSubtitulo).text =
+            if (editables.size == 1) "Tenés 1 turno próximo. Solo se pueden editar los turnos próximos."
+            else "Tenés ${editables.size} turnos próximos. Solo se pueden editar los próximos."
+        val lista = vista.findViewById<LinearLayout>(R.id.llTurnosEditables)
+        editables.forEach { evento ->
+            val tarjeta = host.layoutInflater.inflate(R.layout.item_turno_editable, lista, false)
+            tarjeta.findViewById<View>(R.id.flTurnoIconoEditable).backgroundTintList =
+                ColorStateList.valueOf(ContextCompat.getColor(host, EstiloCategoria.fondo(evento.categoria)))
+            tarjeta.findViewById<ImageView>(R.id.ivTurnoIconoEditable).apply {
+                setImageResource(EstiloCategoria.icono(evento.categoria))
+                setColorFilter(ContextCompat.getColor(host, EstiloCategoria.colorIcono(evento.categoria)))
+            }
+            tarjeta.findViewById<TextView>(R.id.tvTurnoEditableTitulo).text = evento.categoria
+            val conVet = evento.veterinario.takeIf { it.isNotBlank() } ?: "Sin veterinario asignado"
+            tarjeta.findViewById<TextView>(R.id.tvTurnoEditableDetalle).text = "${evento.mascota} · $conVet"
+            tarjeta.findViewById<TextView>(R.id.tvTurnoEditableDia).text =
+                "${evento.fecha.dayOfMonth} ${Fechas.mesCorto(evento.fecha.monthValue).uppercase()}"
+            tarjeta.findViewById<TextView>(R.id.tvTurnoEditableHora).text = "${evento.hora} hs"
+            tarjeta.setOnClickListener {
+                hoja.dismiss()
+                editar(evento)
+            }
+            lista.addView(tarjeta)
+        }
+        vista.findViewById<View>(R.id.btnCerrarElegirTurno).setOnClickListener { hoja.dismiss() }
+        hoja.show()
     }
 }
