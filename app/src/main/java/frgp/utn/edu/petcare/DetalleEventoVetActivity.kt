@@ -142,7 +142,7 @@ class DetalleEventoVetActivity : BaseActivity() {
         estudios.forEach { estudio ->
             val fila = layoutInflater.inflate(R.layout.item_turno_detalle, contenedor, false)
             fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(R.drawable.ic_document)
-            fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = estudio.extension.uppercase()
+            fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = "${estudio.tipo} · ${estudio.extension.uppercase()}"
             fila.findViewById<TextView>(R.id.tvDetalleValor).text = estudio.nombre
             fila.findViewById<View>(R.id.tvDetalleAccion).visibility = View.VISIBLE
             fila.setOnClickListener {

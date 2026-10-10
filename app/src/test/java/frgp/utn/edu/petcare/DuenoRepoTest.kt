@@ -406,7 +406,7 @@ class DuenoRepoTest : PruebaBase() {
         val disponibles = runBlocking { DuenoRepo.estudiosDisponibles(rex) }
         assertEquals(setOf("Análisis de sangre", "Ecografía"), disponibles.map { it.nombre }.toSet())
 
-        val nuevo = runBlocking { DuenoRepo.subirEstudio(rex, "Radiografía", "pdf", ByteArray(8), "application/pdf") }
+        val nuevo = runBlocking { DuenoRepo.subirEstudio(rex, "Radiografía", "torax.pdf", "pdf", ByteArray(8), "application/pdf") }
         assertTrue(fuente.subidas.any { it.startsWith("archivos/m1/") })
 
         DuenoRepo.agendarEvento(
@@ -420,6 +420,8 @@ class DuenoRepoTest : PruebaBase() {
         // El dueño los ve en el detalle del turno
         val detalle = runBlocking { DuenoRepo.detalleDelTurno(DuenoRepo.eventos.single()) }
         assertEquals(2, detalle.estudios.size)
+        assertEquals("Radiografía", detalle.estudios.first { it.nombre.startsWith("Radiografía") }.tipo)
+        assertEquals("Radiografía - torax", nuevo.nombre)
     }
 
     @Test

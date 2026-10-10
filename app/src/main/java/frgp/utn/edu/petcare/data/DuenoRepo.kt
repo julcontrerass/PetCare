@@ -431,7 +431,14 @@ object DuenoRepo {
         mascota != null && eventos.any { it.fecha == fecha && it.hora == hora && it.mascota.equals(mascota, ignoreCase = true) }
 
     /** Un estudio anterior (ya guardado en la ficha) que el dueño adjunta a un turno. */
-    class EstudioAdjunto(val nombre: String, val extension: String, val ruta: String)
+    class EstudioAdjunto(val nombre: String, val extension: String, val ruta: String, val tipo: String = TIPO_GENERICO)
+
+    /** Clases de estudio que se pueden indicar al adjuntar un documento médico a un turno. */
+    val TIPOS_ESTUDIO = listOf(
+        "Radiografía", "Análisis de sangre", "Ecografía", "Análisis de orina", "Electrocardiograma",
+        "Receta o indicaciones", "Informe médico", "Otro estudio"
+    )
+    private const val TIPO_GENERICO = "Estudio"
 
     /** Documentos y archivos que ya tiene cargados la mascota, para elegir uno al sacar un turno. */
     suspend fun estudiosDisponibles(mascota: Mascota): List<EstudioAdjunto> = coroutineScope {
@@ -447,10 +454,12 @@ object DuenoRepo {
 
     /** Sube un estudio nuevo a la ficha de la mascota y devuelve el adjunto listo para el turno. */
     suspend fun subirEstudio(
-        mascota: Mascota, nombre: String, extension: String, bytes: ByteArray, tipoMime: String
+        mascota: Mascota, tipo: String, nombre: String, extension: String, bytes: ByteArray, tipoMime: String
     ): EstudioAdjunto {
-        val item = frgp.utn.edu.petcare.ArchivosRepo.agregar(mascota.id, nombre, extension, bytes, tipoMime)
-        return EstudioAdjunto(item.nombre, item.tipoExtension.lowercase(), item.storagePath)
+        // En la ficha queda con el tipo adelante ("Radiografía - tórax") para encontrarlo fácil en Documentos
+        val nombreVisible = "$tipo - ${nombre.substringBeforeLast('.')}"
+        val item = frgp.utn.edu.petcare.ArchivosRepo.agregar(mascota.id, nombreVisible, extension, bytes, tipoMime)
+        return EstudioAdjunto(item.nombre, item.tipoExtension.lowercase(), item.storagePath, tipo)
     }
 
     /** Agenda el turno. El servidor valida el horario del veterinario y le da acceso a la mascota. */
@@ -480,7 +489,7 @@ object DuenoRepo {
                     estudios.map {
                         NuevoEstudioTurnoDto(
                             turnoId = evento.id, storagePath = it.ruta, nombre = it.nombre,
-                            extension = it.extension, adjuntadoPor = usuario
+                            extension = it.extension, tipo = it.tipo, adjuntadoPor = usuario
                         )
                     }
                 )
@@ -603,7 +612,7 @@ object DuenoRepo {
     }
 
     /** Un archivo que el veterinario subió a la ficha durante el turno. */
-    class ArchivoDeTurno(val nombre: String, val extension: String, val ruta: String)
+    class ArchivoDeTurno(val nombre: String, val extension: String, val ruta: String, val tipo: String = "")
 
     /** Lo que dejó el veterinario en un turno: informe, vacunas o tratamientos cargados y archivos adjuntos. */
     class DetalleTurno(
@@ -651,7 +660,7 @@ object DuenoRepo {
         DetalleTurno(
             motivo = informe?.motivo.orEmpty(), diagnostico = informe?.diagnostico.orEmpty(),
             tratamiento = informe?.tratamiento.orEmpty(), registros = delTurno, archivos = adjuntos,
-            estudios = estudios.await().map { ArchivoDeTurno(it.nombre, it.extension, it.storagePath) }
+            estudios = estudios.await().map { ArchivoDeTurno(it.nombre, it.extension, it.storagePath, it.tipo) }
         )
     }
 

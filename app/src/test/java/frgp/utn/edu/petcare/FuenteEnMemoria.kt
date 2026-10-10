@@ -200,7 +200,7 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     override suspend fun adjuntarEstudios(estudios: List<NuevoEstudioTurnoDto>) {
         llamadas.add("adjuntarEstudios:${estudios.size}")
         estudios.forEach {
-            this.estudios.add(EstudioTurnoDto("est-${this.estudios.size}", it.turnoId, it.storagePath, it.nombre, it.extension))
+            this.estudios.add(EstudioTurnoDto("est-${this.estudios.size}", it.turnoId, it.storagePath, it.nombre, it.extension, it.tipo))
         }
     }
 

@@ -536,7 +536,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         estudios.toList().forEach { estudio ->
             val fila = host.layoutInflater.inflate(R.layout.item_turno_detalle, contenedor, false)
             fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(R.drawable.ic_document)
-            fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = estudio.extension.uppercase()
+            fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = "${estudio.tipo} · ${estudio.extension.uppercase()}"
             fila.findViewById<TextView>(R.id.tvDetalleValor).text = estudio.nombre
             fila.findViewById<TextView>(R.id.tvDetalleAccion).apply {
                 text = "Quitar"
@@ -592,14 +592,26 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         host.pedirArchivo { uri ->
             host.lifecycleScope.launch {
                 val elegido = ArchivosUi.leer(host, uri) ?: return@launch
-                try {
-                    val estudio = DuenoRepo.subirEstudio(m, elegido.nombre, elegido.extension, elegido.bytes, elegido.mime)
-                    estudios.add(estudio)
-                    dibujarEstudios()
-                    toast("Estudio subido y adjunto al turno")
-                } catch (e: Exception) {
-                    Avisos.error(host, Errores.mensaje(e))
-                }
+                // Antes de subirlo se pregunta qué clase de estudio es, para que el veterinario lo identifique
+                val tipos = DuenoRepo.TIPOS_ESTUDIO.toTypedArray()
+                AlertDialog.Builder(host)
+                    .setTitle("¿Qué tipo de estudio es?")
+                    .setItems(tipos) { _, i ->
+                        host.lifecycleScope.launch {
+                            try {
+                                val estudio = DuenoRepo.subirEstudio(
+                                    m, tipos[i], elegido.nombre, elegido.extension, elegido.bytes, elegido.mime
+                                )
+                                estudios.add(estudio)
+                                dibujarEstudios()
+                                toast("${tipos[i]} subido y adjunto al turno")
+                            } catch (e: Exception) {
+                                Avisos.error(host, Errores.mensaje(e))
+                            }
+                        }
+                    }
+                    .setNegativeButton(R.string.btn_cancelar, null)
+                    .show()
             }
         }
     }

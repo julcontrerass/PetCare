@@ -170,7 +170,9 @@ data class EstudioTurnoDto(
     @SerialName("turno_id") val turnoId: String,
     @SerialName("storage_path") val storagePath: String,
     val nombre: String,
-    val extension: String = "pdf"
+    val extension: String = "pdf",
+    /** Qué clase de estudio es: radiografía, análisis de sangre, etc. */
+    val tipo: String = "Estudio"
 )
 
 @Serializable
@@ -179,6 +181,7 @@ data class NuevoEstudioTurnoDto(
     @SerialName("storage_path") val storagePath: String,
     val nombre: String,
     val extension: String,
+    val tipo: String,
     @SerialName("adjuntado_por") val adjuntadoPor: String
 )
 
