@@ -1,6 +1,10 @@
 package frgp.utn.edu.petcare.data
 
 import android.app.Activity
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import frgp.utn.edu.petcare.NotificacionesVet
 import android.content.Intent
 import frgp.utn.edu.petcare.AdminRepo
@@ -90,6 +94,7 @@ object Sesion {
             }
         }
         rol = rolCuenta
+        escucharCambios(rolCuenta)
         return Resultado.Listo(rolCuenta)
     }
 
@@ -101,6 +106,33 @@ object Sesion {
             "rechazado" -> "El administrador rechazó tu solicitud de alta.$detalle"
             "suspendido" -> "El administrador suspendió tu cuenta.$detalle"
             else -> null
+        }
+    }
+
+    private var escucha: Job? = null
+
+    /**
+     * Mientras hay sesión se escuchan los cambios del servidor y se vuelven a pedir los datos al instante, así
+     * un turno nuevo, una cancelación o un informe aparecen sin esperar ni tocar nada.
+     */
+    private fun escucharCambios(rolCuenta: Rol) {
+        escucha?.cancel()
+        escucha = Servicios.scope.launch {
+            Servicios.fuente.cambios()
+                .catch { }
+                .conflate()
+                .collect {
+                    // Si llegan varios cambios seguidos (un turno y su aviso) se piden los datos una sola vez
+                    delay(300)
+                    runCatching {
+                        when (rolCuenta) {
+                            Rol.DUENO -> DuenoRepo.recargarDerivados()
+                            Rol.VETERINARIO -> recargarVeterinario()
+                            Rol.ADMIN -> AdminRepo.cargar()
+                        }
+                    }
+                    Servicios.avisarCambio()
+                }
         }
     }
 
@@ -164,6 +196,8 @@ object Sesion {
 
     /** Descarta los datos de la cuenta anterior sin tocar el servidor (la sesión ya se cerró o venció). */
     fun olvidar() {
+        escucha?.cancel()
+        escucha = null
         usuarioId = null
         rol = null
         perfil = null

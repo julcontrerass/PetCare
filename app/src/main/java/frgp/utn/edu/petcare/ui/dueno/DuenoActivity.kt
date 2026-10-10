@@ -60,6 +60,9 @@ class DuenoActivity : BaseActivity() {
     /** Cómo volver a dibujar la sección visible cuando llegan datos nuevos (null en los formularios). */
     private var refrescable: (() -> Unit)? = null
 
+    /** Falso mientras se redibuja la sección por datos nuevos: ahí no tiene que haber ninguna animación. */
+    private var animarCambio = true
+
     private val selectorDeImagen = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) alElegirImagen?.invoke(uri)
     }
@@ -88,7 +91,12 @@ class DuenoActivity : BaseActivity() {
 
         Servicios.alCambiarDatos = {
             actualizarBadgeNotificaciones()
-            refrescable?.invoke()
+            animarCambio = false
+            try {
+                refrescable?.invoke()
+            } finally {
+                animarCambio = true
+            }
         }
         // Mientras la pantalla está a la vista se piden cada tanto los cambios que hacen los veterinarios
         lifecycleScope.launch {
@@ -135,8 +143,15 @@ class DuenoActivity : BaseActivity() {
         enInicio = inicio
         val contenedor = findViewById<ViewGroup>(R.id.content_container)
         contenedor.removeAllViews()
-        layoutInflater.inflate(layout, contenedor, true)
+        val nuevo = layoutInflater.inflate(layout, contenedor, false)
+        contenedor.addView(nuevo)
         barra.resaltar(navId)
+        if (animarCambio) {
+            // La barra inferior no se mueve: solo el contenido aparece con un fundido corto
+            nuevo.alpha = 0f
+            nuevo.translationY = dp(10).toFloat()
+            nuevo.animate().alpha(1f).translationY(0f).setDuration(170).start()
+        }
         return contenedor
     }
 

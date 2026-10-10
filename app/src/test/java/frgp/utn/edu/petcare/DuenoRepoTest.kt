@@ -350,6 +350,46 @@ class DuenoRepoTest : PruebaBase() {
     }
 
     @Test
+    fun cambiosEnVivo_unTurnoNuevoDelServidorApareceSinTocarNada() {
+        ingresarComoDueno()
+        assertTrue(DuenoRepo.eventos.isEmpty())
+
+        // Otro dispositivo (o el veterinario) agenda un turno y el servidor avisa
+        fuente.turnos.add(Escenario.turno("t9", "m1", LocalDate.now().plusDays(2).toString(), "10:00:00"))
+        fuente.avisosDelServidor.tryEmit(Unit)
+        org.robolectric.shadows.ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.SECONDS)
+
+        assertEquals(1, DuenoRepo.eventos.size)
+        assertEquals("t9", DuenoRepo.eventos[0].id)
+    }
+
+    @Test
+    fun carnetDelDueno_cargaSusRegistrosYLosArchivosDeLasConsultas() {
+        val hoy = LocalDate.now()
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto(
+                "r1", "m1", "vacuna", "Rabia", null, hoy.toString(), proximaDosis = hoy.plusDays(300).toString()
+            )
+        )
+        fuente.archivos.add(
+            frgp.utn.edu.petcare.data.remoto.ArchivoDto(
+                "a1", "m1", "Radiografía", "pdf", "m1/a1.pdf", subidoPor = Escenario.VET_ID, turnoId = "t1",
+                createdAt = java.time.OffsetDateTime.now().toString()
+            )
+        )
+        ingresarComoDueno()
+
+        runBlocking { frgp.utn.edu.petcare.SaludRepo.cargarComoDueno() }
+
+        val vacunas = frgp.utn.edu.petcare.SaludRepo.filtrar(frgp.utn.edu.petcare.TipoRegistro.VACUNA, "", null)
+        val documentos = frgp.utn.edu.petcare.SaludRepo.filtrar(frgp.utn.edu.petcare.TipoRegistro.DOCUMENTO, "", null)
+        assertEquals(listOf("Rabia"), vacunas.map { it.titulo })
+        assertEquals("Rex", vacunas[0].mascota)
+        assertEquals(listOf("Radiografía"), documentos.map { it.titulo })
+        assertEquals("m1/a1.pdf", documentos[0].archivoPath)
+    }
+
+    @Test
     fun pesoValido_aceptaKilosConComaOUnidad() {
         assertTrue(DuenoRepo.pesoValido("12"))
         assertTrue(DuenoRepo.pesoValido("3,5 kg"))

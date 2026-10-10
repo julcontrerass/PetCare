@@ -52,6 +52,11 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     val llamadas = mutableListOf<String>()
     val subidas = mutableListOf<String>()
 
+    /** Las pruebas emiten acá para simular que el servidor avisó de un cambio. */
+    val avisosDelServidor = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 8)
+
+    override fun cambios() = avisosDelServidor
+
     // ---------- Sesión ----------
 
     override suspend fun restaurarSesion(): String? = if (haySesionGuardada) yo.id else null

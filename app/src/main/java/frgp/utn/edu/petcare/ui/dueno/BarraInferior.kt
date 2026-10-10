@@ -28,9 +28,15 @@ class BarraInferior(private val host: DuenoActivity) {
     private val textoIds = intArrayOf(R.id.tv_nav_home, R.id.tv_nav_mascotas, R.id.tv_nav_lista, R.id.tv_nav_mas)
 
     fun configurar() {
-        host.findViewById<View>(R.id.nav_home)?.setOnClickListener { host.irAHome() }
-        host.findViewById<View>(R.id.nav_mascotas)?.setOnClickListener { host.irAMascotas() }
-        host.findViewById<View>(R.id.nav_lista)?.setOnClickListener { host.irARecordatorios() }
+        // La pestaña responde al instante y la sección se arma en el cuadro siguiente, así el toque nunca se traba
+        fun ir(navId: Int, accion: () -> Unit) = View.OnClickListener {
+            if (navId == ultimoResaltado && menuAbierto == null) return@OnClickListener
+            resaltar(navId)
+            it.post(accion)
+        }
+        host.findViewById<View>(R.id.nav_home)?.setOnClickListener(ir(R.id.nav_home) { host.irAHome() })
+        host.findViewById<View>(R.id.nav_mascotas)?.setOnClickListener(ir(R.id.nav_mascotas) { host.irAMascotas() })
+        host.findViewById<View>(R.id.nav_lista)?.setOnClickListener(ir(R.id.nav_lista) { host.irARecordatorios() })
         host.findViewById<View>(R.id.nav_mas)?.setOnClickListener { alternarMenu() }
         host.findViewById<View>(R.id.fab_add)?.setOnClickListener { fab ->
             fab.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction {
@@ -47,6 +53,7 @@ class BarraInferior(private val host: DuenoActivity) {
     }
 
     private fun pintar(navId: Int) {
+        val cambio = navId != ultimoResaltado
         ultimoResaltado = navId
         val activo = ContextCompat.getColor(host, R.color.primary_teal)
         val inactivo = ContextCompat.getColor(host, R.color.text_gray)
@@ -57,7 +64,10 @@ class BarraInferior(private val host: DuenoActivity) {
             val elegido = navIds[i] == navId
             icono.setColorFilter(if (elegido) activo else inactivo)
             texto.setTextColor(if (elegido) activo else inactivo)
-            contenedor.animate().scaleX(if (elegido) 1.1f else 1f).scaleY(if (elegido) 1.1f else 1f).setDuration(200).start()
+            // El ícono elegido crece un poco solo cuando cambia de pestaña, no cada vez que se redibuja la sección
+            if (cambio || contenedor.scaleX != (if (elegido) 1.1f else 1f)) {
+                contenedor.animate().scaleX(if (elegido) 1.1f else 1f).scaleY(if (elegido) 1.1f else 1f).setDuration(120).start()
+            }
         }
     }
 

@@ -1,6 +1,18 @@
 package frgp.utn.edu.petcare.data.remoto
 
 import android.content.Context
+import java.util.UUID
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.PostgresAction
 import frgp.utn.edu.petcare.BuildConfig
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -37,12 +49,37 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         }
         install(Postgrest)
         install(Storage)
+        install(Realtime)
     }
 
     private companion object {
         const val PERFIL_COMPLETO = "*,veterinarios(*),perfiles_privados(dni)"
         const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios(*)"
         const val MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,telefono,direccion)"
+    }
+
+    // ---------- Cambios en vivo ----------
+
+    private val tablasEscuchadas = listOf(
+        "turnos", "accesos_mascota", "notificaciones", "mascotas", "informes_clinicos", "archivos_mascota", "registros_salud"
+    )
+
+    /** Escucha los cambios de las tablas; el servidor solo manda los que el usuario puede ver (RLS). */
+    override fun cambios(): Flow<Unit> = callbackFlow {
+        val canal = cliente.channel("cambios-" + UUID.randomUUID())
+        val flujos = tablasEscuchadas.map { nombre ->
+            canal.postgresChangeFlow<PostgresAction>(schema = "public") { table = nombre }
+        }
+        flujos.forEach { flujo -> launch { flujo.collect { trySend(Unit) } } }
+        canal.subscribe(blockUntilSubscribed = true)
+        awaitClose {
+            CoroutineScope(Dispatchers.IO).launch {
+                runCatching {
+                    canal.unsubscribe()
+                    cliente.realtime.removeChannel(canal)
+                }
+            }
+        }
     }
 
     // ---------- Sesión ----------

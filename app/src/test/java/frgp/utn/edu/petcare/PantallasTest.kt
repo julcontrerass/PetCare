@@ -175,10 +175,13 @@ class PantallasTest : PruebaBase() {
         val a = abrirDueno()
 
         a.findViewById<View>(R.id.nav_mascotas).performClick()
+        ShadowLooper.idleMainLooper()
         assertNotNull(a.findViewById<View>(R.id.listaMascotasContainer))
         a.findViewById<View>(R.id.nav_lista).performClick()
+        ShadowLooper.idleMainLooper()
         assertNotNull(a.findViewById<View>(R.id.btn_proximos))
         a.findViewById<View>(R.id.nav_home).performClick()
+        ShadowLooper.idleMainLooper()
         assertNotNull(a.findViewById<View>(R.id.tv_welcome))
     }
 
@@ -186,6 +189,7 @@ class PantallasTest : PruebaBase() {
     fun dueno_laListaMuestraTodasLasMascotasDeLaCuenta() {
         val a = abrirDueno()
         a.findViewById<View>(R.id.nav_mascotas).performClick()
+        ShadowLooper.idleMainLooper()
 
         val lista = a.findViewById<LinearLayout>(R.id.listaMascotasContainer)
         assertTrue(lista.childCount >= DuenoRepo.mascotas.size)
@@ -196,6 +200,7 @@ class PantallasTest : PruebaBase() {
     fun dueno_tocarUnItemDelHistorialAbreElDetalleDelTurno() {
         val a = abrirDueno()
         a.findViewById<View>(R.id.nav_mascotas).performClick()
+        ShadowLooper.idleMainLooper()
         a.findViewById<LinearLayout>(R.id.listaMascotasContainer).getChildAt(0).performClick()
         a.findViewById<TabLayout>(R.id.tabLayout).getTabAt(1)!!.select()
         ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
@@ -211,6 +216,7 @@ class PantallasTest : PruebaBase() {
     fun dueno_elBotonAgregarMascotaAbreElFormulario() {
         val a = abrirDueno()
         a.findViewById<View>(R.id.nav_mascotas).performClick()
+        ShadowLooper.idleMainLooper()
         a.findViewById<View>(R.id.btnAddPet).performClick()
 
         assertNotNull(a.findViewById<View>(R.id.etNombreMascota))
@@ -221,6 +227,7 @@ class PantallasTest : PruebaBase() {
     fun dueno_guardarUnaMascotaNuevaLaMandaAlServidor() {
         val a = abrirDueno()
         a.findViewById<View>(R.id.nav_mascotas).performClick()
+        ShadowLooper.idleMainLooper()
         a.findViewById<View>(R.id.btnAddPet).performClick()
         a.findViewById<EditText>(R.id.etNombreMascota).setText("Toto")
         a.findViewById<View>(R.id.optTipoPerro).performClick()

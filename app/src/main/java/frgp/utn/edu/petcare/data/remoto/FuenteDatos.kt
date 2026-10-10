@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare.data.remoto
 
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.Flow
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
 data class ResultadoRegistro(
@@ -16,6 +18,12 @@ data class ResultadoRegistro(
  * Los valores por defecto sirven para que las fuentes de prueba solo implementen lo que necesitan.
  */
 interface FuenteDatos {
+
+    /**
+     * Emite un valor cada vez que algo cambia en el servidor y puede afectar a lo que ve el usuario (turnos,
+     * accesos, avisos, fichas). Las fuentes de prueba no emiten nada.
+     */
+    fun cambios(): Flow<Unit> = emptyFlow()
 
     // ---------- Sesión ----------
     suspend fun restaurarSesion(): String? = null

@@ -2,6 +2,8 @@ package frgp.utn.edu.petcare.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.LruCache
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.widget.ImageView
@@ -34,9 +36,18 @@ object Imagenes {
     private fun archivoDeCache(bucket: String, ruta: String) =
         File(carpeta(), "${bucket}_${ruta.replace('/', '_')}")
 
+    /** Fotos ya decodificadas, para que al volver a una pantalla aparezcan sin volver a leer el archivo. */
+    private val memoria = object : LruCache<String, Bitmap>((Runtime.getRuntime().maxMemory() / 1024 / 8).toInt()) {
+        override fun sizeOf(clave: String, valor: Bitmap) = valor.byteCount / 1024
+    }
+
+    /** Lado máximo al que se achican las fotos para mostrarlas en listas y fichas. */
+    private const val LADO_PANTALLA = 720
+
     /**
      * Muestra una foto en [vista]: primero la elegida en este teléfono ([local]); si no hay, la del servidor
-     * ([ruta]). [alResolver] avisa si había una imagen para mostrar (para elegir entre foto e inicial).
+     * ([ruta]). La imagen se decodifica fuera del hilo principal para no trabar la pantalla. [alResolver] avisa
+     * si había una imagen para mostrar (para elegir entre foto e inicial).
      */
     fun mostrar(
         vista: ImageView,
@@ -45,9 +56,10 @@ object Imagenes {
         bucket: String = BUCKET_FOTOS,
         alResolver: ((Boolean) -> Unit)? = null
     ) {
-        vista.setTag(R.id.tag_imagen, ruta ?: local?.toString())
+        val etiqueta = ruta ?: local?.toString()
+        vista.setTag(R.id.tag_imagen, etiqueta)
         if (local != null) {
-            vista.setImageURI(local)
+            ponerImagen(vista, etiqueta, "uri:$local") { decodificarUri(local) }
             alResolver?.invoke(true)
             return
         }
@@ -56,18 +68,51 @@ object Imagenes {
             return
         }
         val enCache = archivoDeCache(bucket, ruta)
-        if (enCache.exists()) {
-            vista.setImageURI(Uri.fromFile(enCache))
+        if (enCache.exists() && enCache.length() > 0) {
+            ponerImagen(vista, etiqueta, enCache.absolutePath) { decodificarArchivo(enCache) }
             alResolver?.invoke(true)
             return
         }
         alResolver?.invoke(false)
         Servicios.scope.launch {
             val archivo = runCatching { archivoLocal(bucket, ruta) }.getOrNull() ?: return@launch
-            if (vista.getTag(R.id.tag_imagen) == ruta) {
-                vista.setImageURI(Uri.fromFile(archivo))
+            if (vista.getTag(R.id.tag_imagen) == etiqueta) {
+                ponerImagen(vista, etiqueta, archivo.absolutePath) { decodificarArchivo(archivo) }
                 alResolver?.invoke(true)
             }
+        }
+    }
+
+    private fun ponerImagen(vista: ImageView, etiqueta: String?, clave: String, decodificar: () -> Bitmap?) {
+        memoria.get(clave)?.let {
+            vista.setImageBitmap(it)
+            return
+        }
+        Servicios.scope.launch {
+            val bitmap = withContext(Dispatchers.IO) { runCatching(decodificar).getOrNull() } ?: return@launch
+            memoria.put(clave, bitmap)
+            if (vista.getTag(R.id.tag_imagen) == etiqueta) vista.setImageBitmap(bitmap)
+        }
+    }
+
+    private fun opcionesDeMuestreo(ancho: Int, alto: Int): BitmapFactory.Options {
+        var muestreo = 1
+        while (maxOf(ancho, alto) / (muestreo * 2) >= LADO_PANTALLA) muestreo *= 2
+        return BitmapFactory.Options().apply { inSampleSize = muestreo }
+    }
+
+    private fun decodificarArchivo(archivo: File): Bitmap? {
+        val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(archivo.absolutePath, medidas)
+        return BitmapFactory.decodeFile(archivo.absolutePath, opcionesDeMuestreo(medidas.outWidth, medidas.outHeight))
+    }
+
+    private fun decodificarUri(uri: Uri): Bitmap? {
+        val ctx = contexto ?: return null
+        val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        ctx.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, medidas) }
+        return ctx.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, opcionesDeMuestreo(medidas.outWidth, medidas.outHeight))
         }
     }
 
@@ -113,9 +158,11 @@ object Imagenes {
         if (ruta.isNullOrBlank()) return
         runCatching { Servicios.fuente.borrar(BUCKET_FOTOS, listOf(ruta)) }
         runCatching { archivoDeCache(BUCKET_FOTOS, ruta).delete() }
+        memoria.evictAll()
     }
 
     fun limpiarCache() {
+        memoria.evictAll()
         runCatching { carpeta().deleteRecursively() }
     }
 }

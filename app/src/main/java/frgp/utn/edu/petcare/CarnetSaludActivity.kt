@@ -1,6 +1,9 @@
 package frgp.utn.edu.petcare
 
 import android.app.DatePickerDialog
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.ui.common.Avisos
 import android.net.Uri
 import android.os.Bundle
@@ -76,9 +79,16 @@ class CarnetSaludActivity : BaseActivity() {
         vacio = findViewById(R.id.emptyRegistros)
 
         construirFiltroMascotas()
+        // El carnet del dueño no se carga al ingresar: se pide al abrir la pantalla
+        if (Sesion.rol == Sesion.Rol.DUENO) {
+            lifecycleScope.launch {
+                runCatching { SaludRepo.cargarComoDueno() }.onFailure { Avisos.error(this@CarnetSaludActivity, Errores.mensaje(it)) }
+                refrescar()
+            }
+        }
         tipos.forEach { tabLayout.addTab(tabLayout.newTab().setText(it.etiqueta)) }
 
-        adapter = RegistrosAdapter(emptyList()) { confirmarEliminar(it) }
+        adapter = RegistrosAdapter(emptyList(), { abrirDocumento(it) }) { confirmarEliminar(it) }
         findViewById<RecyclerView>(R.id.rvRegistros).adapter = adapter
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -96,6 +106,20 @@ class CarnetSaludActivity : BaseActivity() {
         refrescar()
     }
 
+    private class MascotaCarnet(val id: String, val nombre: String)
+
+    /** Las mascotas del carnet: las del dueño en sesión o los pacientes del veterinario. */
+    private fun mascotasDelCarnet(): List<MascotaCarnet> =
+        if (Sesion.rol == Sesion.Rol.DUENO) DuenoRepo.mascotas.map { MascotaCarnet(it.id, it.nombre) }
+        else PacientesRepo.pacientes.map { MascotaCarnet(it.id, it.nombre) }
+
+    private fun abrirDocumento(r: RegistroSalud) {
+        val ruta = r.archivoPath ?: return
+        lifecycleScope.launch {
+            ArchivosUi.abrir(this@CarnetSaludActivity, "archivos", ruta, r.detalle.substringAfterLast('.', r.detalle.substringBefore(' ')))
+        }
+    }
+
     private fun tipoActual(): TipoRegistro = tipos[tabLayout.selectedTabPosition.coerceAtLeast(0)]
 
     private fun dp(valor: Int) = (valor * resources.displayMetrics.density).toInt()
@@ -103,7 +127,7 @@ class CarnetSaludActivity : BaseActivity() {
     private fun construirFiltroMascotas() {
         val fila = findViewById<LinearLayout>(R.id.llFiltroMascotas)
         fila.removeAllViews()
-        (listOf<Paciente?>(null) + PacientesRepo.pacientes).forEach { paciente ->
+        (listOf<MascotaCarnet?>(null) + mascotasDelCarnet()).forEach { paciente ->
             val chip = TextView(this).apply {
                 text = paciente?.nombre ?: "Todas"
                 tag = paciente?.id
@@ -231,9 +255,9 @@ class CarnetSaludActivity : BaseActivity() {
         val spinner = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@CarnetSaludActivity, android.R.layout.simple_spinner_dropdown_item,
-                PacientesRepo.pacientes.map { it.nombre }
+                mascotasDelCarnet().map { it.nombre }
             )
-            mascotaFiltro?.let { id -> setSelection(PacientesRepo.pacientes.indexOfFirst { it.id == id }.coerceAtLeast(0)) }
+            mascotaFiltro?.let { id -> setSelection(mascotasDelCarnet().indexOfFirst { it.id == id }.coerceAtLeast(0)) }
         }
         layout.addView(spinner)
 
@@ -291,7 +315,7 @@ class CarnetSaludActivity : BaseActivity() {
                     return@setOnClickListener
                 }
                 val extra = etExtra?.text?.toString()?.trim().orEmpty()
-                val paciente = PacientesRepo.pacientes.getOrNull(spinner.selectedItemPosition)
+                val paciente = mascotasDelCarnet().getOrNull(spinner.selectedItemPosition)
                 if (paciente == null) {
                     Avisos.mostrar(this, "Elegí una mascota")
                     return@setOnClickListener
@@ -318,6 +342,7 @@ class CarnetSaludActivity : BaseActivity() {
 
 class RegistrosAdapter(
     private var items: List<RegistroSalud>,
+    private val onClick: (RegistroSalud) -> Unit,
     private val onLongClick: (RegistroSalud) -> Unit
 ) : RecyclerView.Adapter<RegistrosAdapter.ViewHolder>() {
 
@@ -367,6 +392,7 @@ class RegistrosAdapter(
         holder.ivIcono.setImageResource(icono)
         holder.ivIcono.setColorFilter(ContextCompat.getColor(ctx, colorIcono))
         holder.flIcono.backgroundTintList = ContextCompat.getColorStateList(ctx, fondoIcono)
+        holder.itemView.setOnClickListener { if (r.archivoPath != null) onClick(r) }
         holder.itemView.setOnLongClickListener { onLongClick(r); true }
     }
 
