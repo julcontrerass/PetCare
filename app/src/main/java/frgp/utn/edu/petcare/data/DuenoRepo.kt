@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.data
 
 import android.net.Uri
+import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
 import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.SolicitudItem
@@ -55,20 +56,9 @@ private class EstadoDueno(
 object DuenoRepo {
 
     const val CATEGORIA_VACUNA = "Vacuna"
-    val CATEGORIAS_EVENTO = listOf("Vacuna", "Control", "Cirugía", "Estudio / Tratamiento")
 
     /** Duración de cada turno; coincide con la franja que controla la base de datos. */
     const val DURACION_TURNO_MIN = 30
-
-    /** Especialidades del veterinario que atienden cada tipo de evento. */
-    private val ESPECIALIDADES_POR_EVENTO = mapOf(
-        "Vacuna" to listOf("Vacunación y prevención", "Desparasitación"),
-        "Control" to listOf("Consulta general", "Control de peso y Nutrición"),
-        "Cirugía" to listOf("Cirugía Veterinaria"),
-        "Estudio / Tratamiento" to listOf(
-            "Análisis de laboratorio", "Ecografía y Radiografía", "Dermatología", "Odontología", "Desparasitación"
-        )
-    )
 
     private var estado = EstadoDueno()
 
@@ -179,7 +169,7 @@ object DuenoRepo {
         return VeterinarioAcceso(
             nombre = p.nombre, usuario = "@" + p.email.substringBefore('@'), email = p.email,
             matricula = datos?.matricula.orEmpty(),
-            especialidad = datos?.especialidades?.firstOrNull() ?: "Consulta general",
+            especialidad = datos?.especialidades.orEmpty().take(2).joinToString(", ").ifBlank { "Chequeo médico integral" },
             estado = estadoAcceso, mascotas = mascotas, id = p.id, fotoPath = p.fotoPath,
             especialidades = datos?.especialidades.orEmpty(),
             diasAtencion = datos?.diasAtencion.orEmpty().toSet(),
@@ -400,11 +390,13 @@ object DuenoRepo {
         return runCatching { LocalTime.parse(hora).isBefore(LocalTime.now()) }.getOrDefault(false)
     }
 
-    /** Veterinarios que atienden este tipo de evento; si ninguno cargó esa especialidad se ofrecen todos. */
-    fun veterinariosPara(categoria: String?): List<VeterinarioAcceso> {
+    /**
+     * Veterinarios que ofrecen el servicio o la especialidad elegida. Sin elección (null) se ofrecen todos.
+     */
+    fun veterinariosPara(servicio: String?): List<VeterinarioAcceso> {
         val todos = todosLosVeterinarios()
-        val buscadas = ESPECIALIDADES_POR_EVENTO[categoria] ?: return todos
-        return todos.filter { vet -> vet.especialidades.any { it in buscadas } }.ifEmpty { todos }
+        if (servicio == null) return todos
+        return todos.filter { vet -> vet.especialidades.any { it.equals(servicio, ignoreCase = true) } }
     }
 
     fun trabajaEl(vet: VeterinarioAcceso, fecha: LocalDate): Boolean = fecha.dayOfWeek.value in vet.diasAtencion

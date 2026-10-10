@@ -260,16 +260,19 @@ class DuenoRepoTest : PruebaBase() {
             Escenario.perfil(
                 "vet-9", "veterinario", "Dr. Cirujano",
                 veterinario = frgp.utn.edu.petcare.data.remoto.VeterinarioDto(
-                    matricula = "MP-9", especialidades = listOf("Cirugía Veterinaria")
+                    matricula = "MP-9", especialidades = listOf("Cirugía 24hs")
                 )
             )
         )
         ingresarComoDueno()
 
-        assertEquals(listOf("Dr. Cirujano"), DuenoRepo.veterinariosPara("Cirugía").map { it.nombre })
-        assertEquals(listOf("Dr. Vera"), DuenoRepo.veterinariosPara("Vacuna").map { it.nombre })
-        // Sin nadie con esa especialidad se ofrecen todos
-        assertEquals(2, DuenoRepo.veterinariosPara("Estudio / Tratamiento").size)
+        assertEquals(listOf("Dr. Cirujano"), DuenoRepo.veterinariosPara("Cirugía 24hs").map { it.nombre })
+        assertEquals(listOf("Dr. Vera"), DuenoRepo.veterinariosPara("Cardiología").map { it.nombre })
+        assertEquals(listOf("Dr. Vera"), DuenoRepo.veterinariosPara("chequeo médico integral").map { it.nombre })
+        // Si nadie ofrece lo que se eligió no se muestra a cualquiera
+        assertTrue(DuenoRepo.veterinariosPara("Oncología").isEmpty())
+        // Sin elegir nada se ofrecen todos
+        assertEquals(2, DuenoRepo.veterinariosPara(null).size)
     }
 
     @Test
@@ -422,6 +425,15 @@ class DuenoRepoTest : PruebaBase() {
         assertEquals(2, detalle.estudios.size)
         assertEquals("Radiografía", detalle.estudios.first { it.nombre.startsWith("Radiografía") }.tipo)
         assertEquals("Radiografía - torax", nuevo.nombre)
+    }
+
+    @Test
+    fun agendarConUnServicio_loGuardaComoCategoriaDelTurno() {
+        ingresarComoDueno()
+
+        DuenoRepo.agendarEvento(LocalDate.now().plusDays(2), "Cardiología", "Rex", "Dr. Vera", "10:00", "")
+
+        assertEquals("Cardiología", fuente.turnos.single().categoria)
     }
 
     @Test

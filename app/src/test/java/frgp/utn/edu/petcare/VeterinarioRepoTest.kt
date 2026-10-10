@@ -289,7 +289,7 @@ class VeterinarioRepoTest : PruebaBase() {
         PerfilVetRepo.diasSeleccionados[5] = true
         PerfilVetRepo.horaCierre = "14:00"
         PerfilVetRepo.guardarHorarios()
-        PerfilVetRepo.especialidadesSeleccionadas[3] = true
+        PerfilVetRepo.especialidadesSeleccionadas[PerfilVetRepo.todasLasEspecialidades.indexOf("Dermatología")] = true
         PerfilVetRepo.guardarEspecialidades()
         PerfilVetRepo.preferencias["notif_turnos"] = false
         PerfilVetRepo.guardarPreferencias()

@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.net.Uri
+import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
@@ -42,18 +43,7 @@ object PerfilVetRepo {
     }
 
     // Especialidades y prácticas
-    val todasLasEspecialidades = arrayOf(
-        "Consulta general",
-        "Vacunación y prevención",
-        "Cirugía Veterinaria",
-        "Dermatología",
-        "Odontología",
-        "Análisis de laboratorio",
-        "Ecografía y Radiografía",
-        "Desparasitación",
-        "Control de peso y Nutrición",
-        "Atención de urgencias"
-    )
+    val todasLasEspecialidades: Array<String> = CatalogoMedico.TODAS.toTypedArray()
     val especialidadesSeleccionadas = BooleanArray(todasLasEspecialidades.size)
 
     fun textoEspecialidades(): String {

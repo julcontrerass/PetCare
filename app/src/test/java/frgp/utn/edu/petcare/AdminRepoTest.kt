@@ -46,7 +46,7 @@ class AdminRepoTest : PruebaBase() {
     fun veterinario_muestraHorariosYEspecialidades() {
         val vet = AdminRepo.vetPorId("vet-1")!!
         assertEquals("Lun a Vie · 09:00 a 12:00 hs", vet.diasYHorarios)
-        assertEquals("Consulta general, Vacunación y prevención", vet.especialidades)
+        assertEquals("Chequeo médico integral, Cardiología", vet.especialidades)
         assertEquals("MP-100", vet.matricula)
         assertEquals(AdminRepo.ACTIVO, vet.estado)
     }

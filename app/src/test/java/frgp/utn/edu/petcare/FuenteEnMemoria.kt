@@ -315,7 +315,7 @@ object Escenario {
         veterinario = VeterinarioDto(
             profileId = id, matricula = "MP-100", clinica = "Clínica Sur", direccionClinica = "Av. Siempreviva 742",
             diasAtencion = listOf(1, 2, 3, 4, 5), horaApertura = "09:00:00", horaCierre = "12:00:00",
-            especialidades = listOf("Consulta general", "Vacunación y prevención")
+            especialidades = listOf("Chequeo médico integral", "Cardiología")
         )
     )
 

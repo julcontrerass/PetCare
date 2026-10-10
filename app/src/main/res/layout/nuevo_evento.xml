@@ -163,143 +163,32 @@
 
                 <TextView
                     style="@style/EventoSeccion"
-                    android:text="¿Qué tipo de evento querés agregar?" />
+                    android:text="¿Qué servicio o especialidad necesitás?" />
+
+                <EditText
+                    android:id="@+id/etBuscarServicio"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_field_card"
+                    android:drawableStart="@drawable/ic_search"
+                    android:drawablePadding="10dp"
+                    android:drawableTint="@color/text_gray"
+                    android:hint="Buscar servicio o especialidad"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:paddingHorizontal="14dp"
+                    android:textColor="@color/brand_navy"
+                    android:textColorHint="@color/text_gray"
+                    android:textSize="14.5sp" />
 
                 <LinearLayout
+                    android:id="@+id/llServiciosEvento"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal">
-
-                    <FrameLayout
-                        android:id="@+id/optVacuna"
-                        style="@style/TipoEventoCard">
-
-                        <LinearLayout style="@style/TipoEventoContenido">
-
-                            <FrameLayout
-                                style="@style/TipoEventoIconBox"
-                                android:backgroundTint="@color/light_green">
-
-                                <ImageView
-                                    style="@style/PetStatIcon"
-                                    android:src="@drawable/ic_syringe"
-                                    android:tint="@color/success_green" />
-                            </FrameLayout>
-
-                            <TextView
-                                style="@style/TipoEventoTitulo"
-                                android:text="Vacunación" />
-
-                            <TextView
-                                style="@style/TipoEventoDesc"
-                                android:text="Dosis y refuerzos" />
-                        </LinearLayout>
-
-                        <ImageView
-                            style="@style/TipoEventoCheck"
-                            android:tag="check" />
-                    </FrameLayout>
-
-                    <FrameLayout
-                        android:id="@+id/optControl"
-                        style="@style/TipoEventoCard">
-
-                        <LinearLayout style="@style/TipoEventoContenido">
-
-                            <FrameLayout
-                                style="@style/TipoEventoIconBox"
-                                android:backgroundTint="@color/icon_blue_bg">
-
-                                <ImageView
-                                    style="@style/PetStatIcon"
-                                    android:src="@drawable/ic_medical_kit"
-                                    android:tint="#1E88E5" />
-                            </FrameLayout>
-
-                            <TextView
-                                style="@style/TipoEventoTitulo"
-                                android:text="Control" />
-
-                            <TextView
-                                style="@style/TipoEventoDesc"
-                                android:text="Consulta general" />
-                        </LinearLayout>
-
-                        <ImageView
-                            style="@style/TipoEventoCheck"
-                            android:tag="check" />
-                    </FrameLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal">
-
-                    <FrameLayout
-                        android:id="@+id/optCirugia"
-                        style="@style/TipoEventoCard">
-
-                        <LinearLayout style="@style/TipoEventoContenido">
-
-                            <FrameLayout
-                                style="@style/TipoEventoIconBox"
-                                android:backgroundTint="@color/light_red">
-
-                                <ImageView
-                                    style="@style/PetStatIcon"
-                                    android:src="@drawable/ic_cirugia"
-                                    android:tint="@color/danger_red" />
-                            </FrameLayout>
-
-                            <TextView
-                                style="@style/TipoEventoTitulo"
-                                android:text="Cirugía" />
-
-                            <TextView
-                                style="@style/TipoEventoDesc"
-                                android:text="Procedimientos" />
-                        </LinearLayout>
-
-                        <ImageView
-                            style="@style/TipoEventoCheck"
-                            android:tag="check" />
-                    </FrameLayout>
-
-                    <FrameLayout
-                        android:id="@+id/optEstudio"
-                        style="@style/TipoEventoCard">
-
-                        <LinearLayout style="@style/TipoEventoContenido">
-
-                            <FrameLayout
-                                style="@style/TipoEventoIconBox"
-                                android:backgroundTint="@color/light_purple">
-
-                                <ImageView
-                                    style="@style/PetStatIcon"
-                                    android:src="@drawable/ic_pulse"
-                                    android:tint="@color/accent_purple" />
-                            </FrameLayout>
-
-                            <TextView
-                                style="@style/TipoEventoTitulo"
-                                android:text="Estudio" />
-
-                            <TextView
-                                style="@style/TipoEventoDesc"
-                                android:text="Tratamientos" />
-                        </LinearLayout>
-
-                        <ImageView
-                            style="@style/TipoEventoCheck"
-                            android:tag="check" />
-                    </FrameLayout>
-                </LinearLayout>
+                    android:layout_marginTop="6dp"
+                    android:orientation="vertical" />
 
                 <TextView
                     style="@style/EventoSeccion"

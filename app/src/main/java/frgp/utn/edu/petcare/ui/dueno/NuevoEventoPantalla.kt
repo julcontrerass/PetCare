@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.Color
+import android.content.res.ColorStateList
+import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.ui.common.ArchivosUi
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.data.Errores
@@ -37,7 +39,6 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         "Paso 2 de 3 · Veterinario, fecha y hora",
         "Paso 3 de 3 · Revisá y confirmá"
     )
-    private val categoriaIds = intArrayOf(R.id.optVacuna, R.id.optControl, R.id.optCirugia, R.id.optEstudio)
 
     private var paso = 1
     private var categoria: String? = null
@@ -68,14 +69,16 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
         alTocar(R.id.btnBack) { host.irACalendario() }
 
-        categoriaIds.forEachIndexed { i, id ->
-            alTocar(id) {
-                Efectos.rebote(it)
-                categoria = DuenoRepo.CATEGORIAS_EVENTO[i]
-                veterinario = null
+        filtroServicio = ""
+        vista<EditText>(R.id.etBuscarServicio)?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
+                filtroServicio = s?.toString().orEmpty()
                 pintarCategorias()
             }
-        }
+
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
 
         alTocar(R.id.btnMesAnteriorMini) {
             if (mes.isAfter(YearMonth.now())) {
@@ -175,12 +178,140 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
     // ---------- Paso 1 ----------
 
+    /** Texto del buscador de servicios; vacío muestra todos. */
+    private var filtroServicio = ""
+
+    private fun sinAcentos(texto: String) =
+        java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").lowercase()
+
+    /** Presenta los servicios y las especialidades como tarjetas con ícono; la elegida queda resaltada. */
     private fun pintarCategorias() {
-        categoriaIds.forEachIndexed { i, id ->
-            val opcion = vista<View>(id) ?: return@forEachIndexed
-            val activa = DuenoRepo.CATEGORIAS_EVENTO[i] == categoria
-            opcion.setBackgroundResource(if (activa) R.drawable.bg_card_selected else R.drawable.bg_card_white)
-            opcion.findViewWithTag<View>("check")?.visibility = if (activa) View.VISIBLE else View.GONE
+        val contenedor = vista<LinearLayout>(R.id.llServiciosEvento) ?: return
+        contenedor.removeAllViews()
+        val buscado = sinAcentos(filtroServicio.trim())
+
+        fun encabezado(titulo: String, detalle: String, cantidad: Int) {
+            val fila = LinearLayout(host).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(18); bottomMargin = dp(8) }
+            }
+            val textos = LinearLayout(host).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            textos.addView(TextView(host).apply {
+                text = titulo
+                setTextColor(ContextCompat.getColor(host, R.color.brand_navy))
+                textSize = 16f
+                setTypeface(typeface, Typeface.BOLD)
+            })
+            textos.addView(TextView(host).apply {
+                text = detalle
+                setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+                textSize = 12.5f
+            })
+            fila.addView(textos)
+            fila.addView(TextView(host).apply {
+                text = cantidad.toString()
+                gravity = Gravity.CENTER
+                textSize = 12.5f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(ContextCompat.getColor(host, R.color.primary_teal))
+                setBackgroundResource(R.drawable.bg_icon_teal)
+                layoutParams = LinearLayout.LayoutParams(dp(30), dp(30))
+            })
+            contenedor.addView(fila)
+        }
+
+        fun tarjeta(nombre: String): View {
+            val estilo = EstiloCategoria.servicio(nombre)
+            val activa = nombre == categoria
+            val tarjeta = FrameLayout(host).apply {
+                setBackgroundResource(if (activa) R.drawable.bg_card_selected else R.drawable.bg_card_white)
+                elevation = dp(if (activa) 0 else 2).toFloat()
+                isClickable = true
+                isFocusable = true
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = 0
+                    height = GridLayout.LayoutParams.WRAP_CONTENT
+                    // Las dos tarjetas de una fila tienen la misma altura aunque el nombre ocupe más líneas
+                    rowSpec = GridLayout.spec(GridLayout.UNDEFINED, GridLayout.FILL)
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, GridLayout.FILL, 1f)
+                    setMargins(dp(5), dp(5), dp(5), dp(5))
+                }
+                setOnClickListener {
+                    Efectos.rebote(it)
+                    categoria = nombre
+                    veterinario = null
+                    pintarCategorias()
+                }
+            }
+            val contenido = LinearLayout(host).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(dp(10), dp(14), dp(10), dp(14))
+            }
+            val circulo = FrameLayout(host).apply {
+                setBackgroundResource(R.drawable.bg_icon_teal)
+                backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(host, estilo.fondo))
+                layoutParams = LinearLayout.LayoutParams(dp(46), dp(46))
+            }
+            circulo.addView(ImageView(host).apply {
+                setImageResource(estilo.icono)
+                setColorFilter(ContextCompat.getColor(host, estilo.color))
+                layoutParams = FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER)
+            })
+            contenido.addView(circulo)
+            contenido.addView(TextView(host).apply {
+                text = nombre
+                gravity = Gravity.CENTER
+                maxLines = 3
+                textSize = 13.5f
+                setTypeface(typeface, if (activa) Typeface.BOLD else Typeface.NORMAL)
+                setTextColor(ContextCompat.getColor(host, if (activa) R.color.primary_teal else R.color.brand_navy))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(10) }
+            })
+            tarjeta.addView(contenido)
+            if (activa) {
+                tarjeta.addView(ImageView(host).apply {
+                    setImageResource(R.drawable.ic_check_circle)
+                    setColorFilter(ContextCompat.getColor(host, R.color.primary_teal))
+                    layoutParams = FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END)
+                        .apply { setMargins(0, dp(8), dp(8), 0) }
+                })
+            }
+            return tarjeta
+        }
+
+        fun seccion(titulo: String, detalle: String, nombres: List<String>) {
+            val visibles = nombres.filter { buscado.isEmpty() || sinAcentos(it).contains(buscado) }
+            if (visibles.isEmpty()) return
+            encabezado(titulo, detalle, visibles.size)
+            val grilla = GridLayout(host).apply {
+                columnCount = 2
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            visibles.forEach { grilla.addView(tarjeta(it)) }
+            contenedor.addView(grilla)
+        }
+
+        seccion("Servicios", "Atención y procedimientos de la clínica", CatalogoMedico.SERVICIOS)
+        seccion("Especialidades médicas", "Consultas con profesionales especializados", CatalogoMedico.ESPECIALIDADES)
+
+        if (contenedor.childCount == 0) {
+            contenedor.addView(TextView(host).apply {
+                text = "No encontramos ningún servicio con ese nombre."
+                gravity = Gravity.CENTER
+                setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+                setPadding(0, dp(24), 0, dp(24))
+            })
         }
     }
 
@@ -268,6 +399,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
         val filtrados = DuenoRepo.veterinariosPara(categoria)
         if (filtrados.isEmpty()) {
+            sinVeterinarios?.text = "Ningún veterinario atiende ${categoria ?: "este servicio"} por ahora. Probá con otro servicio o especialidad."
             sinVeterinarios?.visibility = View.VISIBLE
             return
         }
@@ -617,7 +749,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     }
 
     private fun mostrarResumen() {
-        texto(R.id.tvResumenCategoria, if (categoria == DuenoRepo.CATEGORIA_VACUNA) "Vacunación" else categoria.orEmpty())
+        texto(R.id.tvResumenCategoria, categoria.orEmpty())
         texto(R.id.tvResumenMascota, mascota.orEmpty())
         texto(R.id.tvResumenVeterinario, veterinario.orEmpty())
         texto(R.id.tvResumenFecha, "${fecha.dayOfMonth} de ${Fechas.nombreMes(fecha.monthValue)}, ${fecha.year}")
