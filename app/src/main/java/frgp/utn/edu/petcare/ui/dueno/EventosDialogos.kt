@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
 import frgp.utn.edu.petcare.model.EstadoTurno
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
@@ -56,11 +57,10 @@ class EventosDialogos(private val host: DuenoActivity) {
         vista.findViewById<View>(R.id.rowTurnoObs).visibility = if (hayObservaciones) View.VISIBLE else View.GONE
         if (hayObservaciones) vista.findViewById<TextView>(R.id.tvTurnoObs).text = evento.observaciones
 
-        // Si el veterinario dejó un informe de la consulta, el dueño lo ve acá
+        // Lo que el veterinario dejó en la consulta (informe, vacunas y archivos) se pide al abrir la hoja
         host.lifecycleScope.launch {
-            val informe = runCatching { DuenoRepo.informeDelTurno(evento) }.getOrNull() ?: return@launch
-            vista.findViewById<TextView>(R.id.tvTurnoInforme).text = informe
-            vista.findViewById<View>(R.id.rowTurnoInforme).visibility = View.VISIBLE
+            val detalle = runCatching { DuenoRepo.detalleDelTurno(evento) }.getOrNull() ?: return@launch
+            mostrarDetalleClinico(vista.findViewById(R.id.llTurnoDetalle), detalle)
         }
 
         // Un turno que ya pasó queda como registro: no se edita ni se cancela
@@ -86,6 +86,40 @@ class EventosDialogos(private val host: DuenoActivity) {
             }
         }
         hoja.show()
+    }
+
+    private fun fila(
+        contenedor: LinearLayout, icono: Int, titulo: String, valor: String, accion: (() -> Unit)? = null
+    ) {
+        val fila = host.layoutInflater.inflate(R.layout.item_turno_detalle, contenedor, false)
+        fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(icono)
+        fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = titulo
+        fila.findViewById<TextView>(R.id.tvDetalleValor).text = valor
+        if (accion != null) {
+            fila.findViewById<View>(R.id.tvDetalleAccion).visibility = View.VISIBLE
+            fila.setOnClickListener { accion() }
+        } else {
+            fila.isClickable = false
+        }
+        contenedor.addView(fila)
+    }
+
+    /** Agrega a la hoja del turno lo que cargó el veterinario: informe, registros de salud y archivos. */
+    private fun mostrarDetalleClinico(contenedor: LinearLayout, d: DuenoRepo.DetalleTurno) {
+        contenedor.removeAllViews()
+        if (d.motivo.isNotBlank()) fila(contenedor, R.drawable.ic_list, "Motivo de la consulta", d.motivo)
+        if (d.diagnostico.isNotBlank()) fila(contenedor, R.drawable.ic_medical, "Diagnóstico", d.diagnostico)
+        if (d.tratamiento.isNotBlank()) fila(contenedor, R.drawable.ic_syringe, "Tratamiento indicado", d.tratamiento)
+        if (d.registros.isNotEmpty()) {
+            fila(contenedor, R.drawable.ic_pulse, "Cargado en el carnet de salud", d.registros.joinToString("\n"))
+        }
+        d.archivos.forEach { archivo ->
+            fila(contenedor, R.drawable.ic_document, "Archivo adjunto", archivo.nombre) {
+                host.lifecycleScope.launch {
+                    ArchivosUi.abrir(host, "archivos", archivo.ruta, archivo.extension)
+                }
+            }
+        }
     }
 
     private fun campoSoloLectura(pista: String) = EditText(host).apply {

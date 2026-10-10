@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
 import frgp.utn.edu.petcare.ui.common.Avisos
 import android.content.Intent
 import android.net.Uri
@@ -141,19 +142,7 @@ class ArchivosFragment : Fragment() {
     private fun verArchivo(item: ArchivoItem) {
         val context = requireContext()
         viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val archivo = ArchivosRepo.archivoLocal(item)
-                val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", archivo)
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(contentUri, mimeDe(item.tipoExtension))
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                startActivity(intent)
-            } catch (e: ActivityNotFoundException) {
-                Avisos.mostrar(context, "No hay una aplicación para abrir este tipo de archivo")
-            } catch (e: Exception) {
-                Avisos.error(context, Errores.mensaje(e))
-            }
+            ArchivosUi.abrir(context, ArchivosRepo.BUCKET, item.storagePath, item.tipoExtension)
         }
     }
 

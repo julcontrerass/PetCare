@@ -139,6 +139,7 @@ data class ArchivoDto(
     val extension: String,
     @SerialName("storage_path") val storagePath: String,
     @SerialName("tamano_bytes") val tamanoBytes: Long? = null,
+    @SerialName("subido_por") val subidoPor: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )
 

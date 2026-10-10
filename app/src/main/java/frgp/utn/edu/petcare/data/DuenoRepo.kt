@@ -355,7 +355,7 @@ object DuenoRepo {
         val hoy = LocalDate.now()
         val limite = hoy.plusDays(30)
         return eventos.any {
-            !it.fecha.isBefore(hoy) && !it.fecha.isAfter(limite) &&
+            it.vigente(hoy) && !it.fecha.isAfter(limite) &&
                 it.mascota.equals(mascota, ignoreCase = true) && it.categoria.contains("vacuna", ignoreCase = true)
         }
     }
@@ -368,11 +368,14 @@ object DuenoRepo {
     fun cantidadDelMes(mes: java.time.YearMonth): Int =
         eventos.count { java.time.YearMonth.from(it.fecha) == mes }
 
-    /** Eventos futuros (de hoy en adelante) o pasados, del más cercano al más lejano; opcionalmente de una sola mascota. */
+    /** Un turno sigue "próximo" mientras no pasó su fecha y el veterinario no lo marcó como completado. */
+    private fun EventoMascota.vigente(hoy: LocalDate) = estado != EstadoTurno.COMPLETADO && !fecha.isBefore(hoy)
+
+    /** Eventos próximos o ya realizados, del más cercano al más lejano; opcionalmente de una sola mascota. */
     fun eventosOrdenados(proximos: Boolean, mascota: String? = null): List<EventoMascota> {
         val hoy = LocalDate.now()
         val lista = eventos
-            .filter { (!it.fecha.isBefore(hoy)) == proximos }
+            .filter { it.vigente(hoy) == proximos }
             .filter { mascota == null || it.mascota.equals(mascota, ignoreCase = true) }
             .sortedWith(compareBy<EventoMascota>({ it.fecha }, { it.hora }))
         return if (proximos) lista else lista.reversed()
@@ -382,7 +385,7 @@ object DuenoRepo {
         val hoy = LocalDate.now()
         val desde = hoy.minusDays(30)
         return eventos
-            .filter { !it.fecha.isAfter(hoy) && !it.fecha.isBefore(desde) }
+            .filter { (it.estado == EstadoTurno.COMPLETADO || !it.fecha.isAfter(hoy)) && !it.fecha.isBefore(desde) }
             .sortedWith(compareBy<EventoMascota>({ it.fecha }, { it.hora }))
             .reversed()
     }
@@ -390,7 +393,7 @@ object DuenoRepo {
     fun proximoEvento(mascota: String): EventoMascota? {
         val hoy = LocalDate.now()
         return eventos
-            .filter { !it.fecha.isBefore(hoy) && it.mascota.equals(mascota, ignoreCase = true) }
+            .filter { it.vigente(hoy) && it.mascota.equals(mascota, ignoreCase = true) }
             .minWithOrNull(compareBy<EventoMascota>({ it.fecha }, { it.hora }))
     }
 
@@ -515,7 +518,7 @@ object DuenoRepo {
     fun proximoTurnoDeVeterinario(vet: VeterinarioAcceso): EventoMascota? {
         val hoy = LocalDate.now()
         return eventos
-            .filter { !it.fecha.isBefore(hoy) && it.veterinario.equals(vet.nombre, ignoreCase = true) }
+            .filter { it.vigente(hoy) && it.veterinario.equals(vet.nombre, ignoreCase = true) }
             .minByOrNull { it.fecha }
     }
 
@@ -569,17 +572,59 @@ object DuenoRepo {
         }
     }
 
-    /**
-     * Resumen (diagnóstico y tratamiento) del informe que el veterinario escribió en este turno, o null si
-     * todavía no hay ninguno. El dueño puede leerlo pero no editarlo.
-     */
-    suspend fun informeDelTurno(evento: EventoMascota): String? {
-        val informe = Servicios.fuente.informesDe(evento.mascotaId).firstOrNull { it.turnoId == evento.id } ?: return null
-        val partes = listOf("Diagnóstico" to informe.diagnostico, "Tratamiento" to informe.tratamiento)
-            .filter { !it.second.isNullOrBlank() }
-        if (partes.isEmpty()) return null
-        return partes.joinToString("\n") { (titulo, valor) -> "$titulo: $valor" }
+    /** Un archivo que el veterinario subió a la ficha durante el turno. */
+    class ArchivoDeTurno(val nombre: String, val extension: String, val ruta: String)
+
+    /** Lo que dejó el veterinario en un turno: informe, vacunas o tratamientos cargados y archivos adjuntos. */
+    class DetalleTurno(
+        val motivo: String,
+        val diagnostico: String,
+        val tratamiento: String,
+        val registros: List<String>,
+        val archivos: List<ArchivoDeTurno>
+    ) {
+        val vacio: Boolean
+            get() = motivo.isBlank() && diagnostico.isBlank() && tratamiento.isBlank() && registros.isEmpty() && archivos.isEmpty()
     }
+
+    /**
+     * Arma el detalle de un turno para el dueño, que puede leerlo pero no editarlo. Los registros de salud y
+     * los archivos se asocian al turno por el veterinario que los cargó y el día de la consulta.
+     */
+    suspend fun detalleDelTurno(evento: EventoMascota): DetalleTurno = coroutineScope {
+        val f = Servicios.fuente
+        val informes = async { f.informesDe(evento.mascotaId) }
+        val registros = async { f.registrosSalud() }
+        val archivos = async { f.archivosDe(evento.mascotaId) }
+
+        val informe = informes.await().firstOrNull { it.turnoId == evento.id }
+        val vet = evento.veterinarioId
+        val dia = evento.fecha.toString()
+        val delTurno = registros.await()
+            .filter { it.mascotaId == evento.mascotaId && it.fecha == dia && (vet == null || it.creadoPor == vet) }
+            .map {
+                val tipo = when (it.tipo) {
+                    "vacuna" -> "Vacuna"
+                    "tratamiento" -> "Tratamiento"
+                    else -> "Documento"
+                }
+                "$tipo: ${it.titulo}"
+            }
+        val limite = evento.fecha.plusDays(1)
+        val adjuntos = archivos.await()
+            .filter { a ->
+                val subido = Fechas.instante(a.createdAt).toLocalDate()
+                vet != null && a.subidoPor == vet && !subido.isBefore(evento.fecha) && !subido.isAfter(limite)
+            }
+            .map { ArchivoDeTurno(nombreConExtension(it.nombre, it.extension), it.extension, it.storagePath) }
+        DetalleTurno(
+            motivo = informe?.motivo.orEmpty(), diagnostico = informe?.diagnostico.orEmpty(),
+            tratamiento = informe?.tratamiento.orEmpty(), registros = delTurno, archivos = adjuntos
+        )
+    }
+
+    private fun nombreConExtension(nombre: String, extension: String) =
+        if (nombre.endsWith(".$extension", ignoreCase = true)) nombre else "$nombre.$extension"
 
     // ---------- Notificaciones ----------
 

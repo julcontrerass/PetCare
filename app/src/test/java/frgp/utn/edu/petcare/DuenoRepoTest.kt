@@ -266,9 +266,11 @@ class DuenoRepoTest : PruebaBase() {
         )
         ingresarComoDueno()
 
-        val texto = runBlocking { DuenoRepo.informeDelTurno(DuenoRepo.eventos[0]) }
+        val detalle = runBlocking { DuenoRepo.detalleDelTurno(DuenoRepo.eventos[0]) }
 
-        assertEquals("Diagnóstico: Otitis\nTratamiento: Gotas", texto)
+        assertEquals("Otitis", detalle.diagnostico)
+        assertEquals("Gotas", detalle.tratamiento)
+        assertEquals("Control", detalle.motivo)
         assertEquals(frgp.utn.edu.petcare.model.EstadoTurno.COMPLETADO, DuenoRepo.eventos[0].estado)
     }
 
@@ -277,7 +279,53 @@ class DuenoRepoTest : PruebaBase() {
         fuente.turnos.add(Escenario.turno("t1", "m1", LocalDate.now().toString(), "10:00:00"))
         ingresarComoDueno()
 
-        assertNull(runBlocking { DuenoRepo.informeDelTurno(DuenoRepo.eventos[0]) })
+        assertTrue(runBlocking { DuenoRepo.detalleDelTurno(DuenoRepo.eventos[0]) }.vacio)
+    }
+
+    @Test
+    fun detalleDelTurno_incluyeLosRegistrosYArchivosQueCargoElVeterinarioEseDia() {
+        val hoy = LocalDate.now()
+        fuente.turnos.add(Escenario.turno("t1", "m1", hoy.toString(), "10:00:00", estado = "completado"))
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto(
+                "r1", "m1", "vacuna", "Rabia", null, hoy.toString(), creadoPor = Escenario.VET_ID
+            )
+        )
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto(
+                "r2", "m1", "vacuna", "De otro día", null, hoy.minusDays(40).toString(), creadoPor = Escenario.VET_ID
+            )
+        )
+        val ahora = java.time.OffsetDateTime.now().toString()
+        fuente.archivos.add(
+            frgp.utn.edu.petcare.data.remoto.ArchivoDto(
+                "a1", "m1", "Radiografía", "pdf", "m1/a1.pdf", subidoPor = Escenario.VET_ID, createdAt = ahora
+            )
+        )
+        fuente.archivos.add(
+            frgp.utn.edu.petcare.data.remoto.ArchivoDto(
+                "a2", "m1", "Ajeno", "pdf", "m1/a2.pdf", subidoPor = "otro", createdAt = ahora
+            )
+        )
+        ingresarComoDueno()
+
+        val detalle = runBlocking { DuenoRepo.detalleDelTurno(DuenoRepo.eventos[0]) }
+
+        assertEquals(listOf("Vacuna: Rabia"), detalle.registros)
+        assertEquals(listOf("Radiografía.pdf"), detalle.archivos.map { it.nombre })
+        assertFalse(detalle.vacio)
+    }
+
+    @Test
+    fun turnoCompletado_dejaDeSerProximoAunqueSeaDeHoy() {
+        val hoy = LocalDate.now()
+        fuente.turnos.add(Escenario.turno("t1", "m1", hoy.toString(), "23:00:00", estado = "completado"))
+        fuente.turnos.add(Escenario.turno("t2", "m1", hoy.toString(), "23:30:00"))
+        ingresarComoDueno()
+
+        assertEquals(listOf("t2"), DuenoRepo.eventosOrdenados(proximos = true).map { it.id })
+        assertEquals(listOf("t1"), DuenoRepo.eventosOrdenados(proximos = false).map { it.id })
+        assertEquals("23:30", DuenoRepo.proximoEvento("Rex")!!.hora)
     }
 
     @Test
