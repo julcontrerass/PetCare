@@ -72,18 +72,34 @@
                         android:textSize="13sp" />
                 </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/ivNotifications"
+                <FrameLayout
                     android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:background="@drawable/circular_white"
-                    android:clickable="true"
-                    android:contentDescription="@string/notificaciones_desc"
-                    android:elevation="2dp"
-                    android:focusable="true"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_notifications"
-                    app:tint="@color/brand_navy" />
+                    android:layout_height="42dp">
+
+                    <ImageView
+                        android:id="@+id/ivNotifications"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:background="@drawable/circular_white"
+                        android:clickable="true"
+                        android:contentDescription="@string/notificaciones_desc"
+                        android:elevation="2dp"
+                        android:focusable="true"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_notifications"
+                        app:tint="@color/brand_navy" />
+
+                    <View
+                        android:id="@+id/vetNotifBadge"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_dot_red"
+                        android:elevation="4dp"
+                        android:visibility="gone" />
+                </FrameLayout>
             </LinearLayout>
 
             <!-- Próxima consulta -->

@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.data
 
 import android.app.Activity
+import frgp.utn.edu.petcare.NotificacionesVet
 import android.content.Intent
 import frgp.utn.edu.petcare.AdminRepo
 import frgp.utn.edu.petcare.AgendaRepo
@@ -110,6 +111,8 @@ object Sesion {
         val agenda = async { AgendaRepo.cargar() }
         val salud = async { SaludRepo.cargar() }
         val solicitudes = async { SolicitudesRepo.cargar() }
+        val avisos = async { runCatching { NotificacionesVet.cargar() } }
+        avisos.await()
         agenda.await()
         salud.await()
         solicitudes.await()
@@ -172,6 +175,7 @@ object Sesion {
         ArchivosRepo.limpiar()
         InformesRepo.limpiar()
         SolicitudesRepo.limpiar()
+        NotificacionesVet.limpiar()
         AdminRepo.limpiar()
         Imagenes.limpiarCache()
     }

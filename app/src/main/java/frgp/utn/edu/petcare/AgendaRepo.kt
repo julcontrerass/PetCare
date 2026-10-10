@@ -203,5 +203,8 @@ object AgendaRepo {
     fun proximoEvento(pacienteId: String): EventoVet? =
         proximos().firstOrNull { it.pacienteId == pacienteId }
 
-    fun pacientesHoy(): Int = deHoy().map { it.pacienteId }.distinct().size
+    /** Pacientes distintos con turno hoy, estén pendientes o ya atendidos (los cancelados no cuentan). */
+    fun pacientesHoy(): Int = eventos
+        .filter { it.fecha == LocalDate.now() && it.estado != EstadoEvento.CANCELADO }
+        .map { it.pacienteId }.distinct().size
 }

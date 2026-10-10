@@ -56,9 +56,11 @@ class ArchivosFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_archivos, container, false)
         rvArchivos = view.findViewById(R.id.rvArchivos)
 
-        view.findViewById<ExtendedFloatingActionButton>(R.id.fabSubirArchivo)?.setOnClickListener {
-            pickFileLauncher.launch("*/*")
-        }
+        val fab = view.findViewById<ExtendedFloatingActionButton>(R.id.fabSubirArchivo)
+        // Durante un turno los archivos se adjuntan desde el informe, para que queden ligados a esa consulta
+        val enTurno = requireActivity().intent.getStringExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID) != null
+        if (enTurno) fab?.visibility = View.GONE
+        fab?.setOnClickListener { pickFileLauncher.launch("*/*") }
 
         refrescar()
         // La lista de archivos se pide al servidor al abrir la pestaña
@@ -119,7 +121,10 @@ class ArchivosFragment : Fragment() {
             vacio.visibility = if (archivosActuales.isEmpty()) View.VISIBLE else View.GONE
             vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_document)
             vacio.findViewById<android.widget.TextView>(R.id.tvEmptyTitle).text = "Sin archivos"
-            vacio.findViewById<android.widget.TextView>(R.id.tvEmptyMessage).text = "Subí estudios, recetas o documentos del paciente"
+            vacio.findViewById<android.widget.TextView>(R.id.tvEmptyMessage).text =
+                if (requireActivity().intent.getStringExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID) != null)
+                    "Adjuntá archivos desde la pestaña Informe para que queden en esta consulta"
+                else "Subí estudios, recetas o documentos del paciente"
         }
     }
 

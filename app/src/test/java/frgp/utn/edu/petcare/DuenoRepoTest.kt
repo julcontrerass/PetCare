@@ -195,6 +195,20 @@ class DuenoRepoTest : PruebaBase() {
     }
 
     @Test
+    fun notificaciones_elTurnoFinalizadoTieneSuPropioTipo() {
+        fuente.notificaciones.add(
+            NotificacionDto("n1", "completado", "Turno finalizado", "Rex: el turno fue completado", false, "2026-01-01T10:00:00+00:00")
+        )
+        fuente.notificaciones.add(NotificacionDto("n2", "turno", "Nuevo turno", "Rex", false, "2026-01-01T09:00:00+00:00"))
+        ingresarComoDueno()
+
+        assertEquals(
+            listOf(frgp.utn.edu.petcare.model.TipoNotificacion.COMPLETADO, frgp.utn.edu.petcare.model.TipoNotificacion.TURNO),
+            DuenoRepo.notificaciones.map { it.tipo }
+        )
+    }
+
+    @Test
     fun guardarPerfil_actualizaLaCopiaYElServidor() {
         ingresarComoDueno()
 
@@ -299,12 +313,19 @@ class DuenoRepoTest : PruebaBase() {
         val ahora = java.time.OffsetDateTime.now().toString()
         fuente.archivos.add(
             frgp.utn.edu.petcare.data.remoto.ArchivoDto(
-                "a1", "m1", "Radiografía", "pdf", "m1/a1.pdf", subidoPor = Escenario.VET_ID, createdAt = ahora
+                "a1", "m1", "Radiografía", "pdf", "m1/a1.pdf", subidoPor = Escenario.VET_ID, turnoId = "t1", createdAt = ahora
             )
         )
+        // Subido el mismo día por el mismo veterinario, pero suelto en la ficha: no es de este turno
         fuente.archivos.add(
             frgp.utn.edu.petcare.data.remoto.ArchivoDto(
-                "a2", "m1", "Ajeno", "pdf", "m1/a2.pdf", subidoPor = "otro", createdAt = ahora
+                "a2", "m1", "Suelto", "pdf", "m1/a2.pdf", subidoPor = Escenario.VET_ID, createdAt = ahora
+            )
+        )
+        // Adjunto a otro turno
+        fuente.archivos.add(
+            frgp.utn.edu.petcare.data.remoto.ArchivoDto(
+                "a3", "m1", "De otro turno", "pdf", "m1/a3.pdf", subidoPor = Escenario.VET_ID, turnoId = "t9", createdAt = ahora
             )
         )
         ingresarComoDueno()

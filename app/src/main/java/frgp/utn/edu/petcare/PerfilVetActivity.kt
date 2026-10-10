@@ -27,7 +27,7 @@ import com.google.android.material.button.MaterialButton
 class PerfilVetActivity : BaseActivity() {
 
     companion object {
-        private val claves = listOf("notif_solicitudes", "notif_turnos", "notif_cancelaciones")
+        private val claves = listOf("solicitudes", "turnos", "cancelaciones")
         private val etiquetas = arrayOf(
             "Nuevas solicitudes de acceso", "Recordatorios de turnos", "Cancelaciones de turnos"
         )

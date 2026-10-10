@@ -15,7 +15,9 @@ data class ArchivoItem(
     val fecha: String,
     val tipoExtension: String,
     val iconRes: Int,
-    val storagePath: String
+    val storagePath: String,
+    /** Turno al que se adjuntó el archivo (null si se subió suelto a la ficha). */
+    val turnoId: String? = null
 )
 
 /** Estudios, recetas y documentos de una mascota, guardados en el bucket privado `archivos`. */
@@ -28,6 +30,10 @@ object ArchivosRepo {
     fun limpiar() = porPaciente.clear()
 
     fun dePaciente(pacienteId: String): List<ArchivoItem> = porPaciente[pacienteId].orEmpty()
+
+    /** Los archivos que se adjuntaron al informe de un turno. */
+    fun deTurno(pacienteId: String, turnoId: String): List<ArchivoItem> =
+        dePaciente(pacienteId).filter { it.turnoId == turnoId }
 
     suspend fun cargar(pacienteId: String) {
         val lista = Servicios.fuente.archivosDe(pacienteId).map(::aItem)
@@ -45,12 +51,15 @@ object ArchivosRepo {
         val cuando = Fechas.instante(a.createdAt).toLocalDate()
         return ArchivoItem(
             id = a.id, pacienteId = a.mascotaId, nombre = a.nombre, fecha = "Subido el ${Fechas.corta(cuando)} · $ext",
-            tipoExtension = ext, iconRes = iconoDe(ext), storagePath = a.storagePath
+            tipoExtension = ext, iconRes = iconoDe(ext), storagePath = a.storagePath, turnoId = a.turnoId
         )
     }
 
     /** Sube el archivo a Storage y lo registra en la ficha. Falla con excepción si el servidor lo rechaza. */
-    suspend fun agregar(pacienteId: String, nombre: String, extension: String, bytes: ByteArray, tipoMime: String): ArchivoItem {
+    suspend fun agregar(
+        pacienteId: String, nombre: String, extension: String, bytes: ByteArray, tipoMime: String,
+        turnoId: String? = null
+    ): ArchivoItem {
         val usuario = Sesion.usuarioId ?: error("No hay una sesión iniciada")
         val id = UUID.randomUUID().toString()
         val ruta = "$pacienteId/$id.${extension.lowercase()}"
@@ -59,7 +68,7 @@ object ArchivosRepo {
             Servicios.fuente.crearArchivo(
                 NuevoArchivoDto(
                     id = id, mascotaId = pacienteId, nombre = nombre, extension = extension.lowercase(),
-                    storagePath = ruta, tamanoBytes = bytes.size.toLong(), subidoPor = usuario
+                    storagePath = ruta, tamanoBytes = bytes.size.toLong(), subidoPor = usuario, turnoId = turnoId
                 )
             )
         } catch (e: Exception) {
@@ -67,7 +76,7 @@ object ArchivosRepo {
             throw e
         }
         val ext = extension.uppercase()
-        val item = ArchivoItem(id, pacienteId, nombre, "Subido hoy · $ext", ext, iconoDe(ext), ruta)
+        val item = ArchivoItem(id, pacienteId, nombre, "Subido hoy · $ext", ext, iconoDe(ext), ruta, turnoId)
         porPaciente.getOrPut(pacienteId) { mutableListOf() }.add(0, item)
         return item
     }

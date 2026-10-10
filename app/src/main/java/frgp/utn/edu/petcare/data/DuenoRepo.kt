@@ -167,13 +167,7 @@ object DuenoRepo {
     }
 
     private fun aNotificacion(n: NotificacionDto) = NotificacionDueno(
-        tipo = when (n.tipo) {
-            "mascota" -> TipoNotificacion.MASCOTA
-            "cancelacion" -> TipoNotificacion.CANCELACION
-            "acceso" -> TipoNotificacion.ACCESO
-            "cuenta" -> TipoNotificacion.CUENTA
-            else -> TipoNotificacion.TURNO
-        },
+        tipo = TipoNotificacion.deClave(n.tipo),
         titulo = n.titulo, mensaje = n.mensaje, creada = Fechas.instante(n.createdAt), leida = n.leida
     )
 
@@ -588,8 +582,8 @@ object DuenoRepo {
     }
 
     /**
-     * Arma el detalle de un turno para el dueño, que puede leerlo pero no editarlo. Los registros de salud y
-     * los archivos se asocian al turno por el veterinario que los cargó y el día de la consulta.
+     * Arma el detalle de un turno para el dueño, que puede leerlo pero no editarlo. Los archivos son los que el
+     * veterinario adjuntó al informe de ese turno; los registros de salud se asocian por veterinario y día.
      */
     suspend fun detalleDelTurno(evento: EventoMascota): DetalleTurno = coroutineScope {
         val f = Servicios.fuente
@@ -610,12 +604,8 @@ object DuenoRepo {
                 }
                 "$tipo: ${it.titulo}"
             }
-        val limite = evento.fecha.plusDays(1)
         val adjuntos = archivos.await()
-            .filter { a ->
-                val subido = Fechas.instante(a.createdAt).toLocalDate()
-                vet != null && a.subidoPor == vet && !subido.isBefore(evento.fecha) && !subido.isAfter(limite)
-            }
+            .filter { it.turnoId == evento.id }
             .map { ArchivoDeTurno(nombreConExtension(it.nombre, it.extension), it.extension, it.storagePath) }
         DetalleTurno(
             motivo = informe?.motivo.orEmpty(), diagnostico = informe?.diagnostico.orEmpty(),

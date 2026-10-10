@@ -140,6 +140,8 @@ data class ArchivoDto(
     @SerialName("storage_path") val storagePath: String,
     @SerialName("tamano_bytes") val tamanoBytes: Long? = null,
     @SerialName("subido_por") val subidoPor: String? = null,
+    /** Turno al que pertenece el archivo cuando se adjuntó al informe de una consulta. */
+    @SerialName("turno_id") val turnoId: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )
 
@@ -257,5 +259,6 @@ data class NuevoArchivoDto(
     val extension: String,
     @SerialName("storage_path") val storagePath: String,
     @SerialName("tamano_bytes") val tamanoBytes: Long? = null,
-    @SerialName("subido_por") val subidoPor: String
+    @SerialName("subido_por") val subidoPor: String,
+    @SerialName("turno_id") val turnoId: String? = null
 )

@@ -21,7 +21,9 @@ class HomeVeterinarioActivity : BaseActivity() {
 
         VetBottomNav.setup(this, R.id.nav_inicio)
 
-        findViewById<View>(R.id.ivNotifications)?.setOnClickListener { NotificacionesVet.mostrar(this) }
+        findViewById<View>(R.id.ivNotifications)?.setOnClickListener {
+            NotificacionesVet.mostrar(this) { actualizarPuntoDeAvisos() }
+        }
         findViewById<View>(R.id.tvVerAgenda)?.setOnClickListener {
             startActivity(Intent(this, AgendaVetActivity::class.java))
         }
@@ -50,7 +52,13 @@ class HomeVeterinarioActivity : BaseActivity() {
         actualizarDatosVeterinario { cargar() }
     }
 
+    private fun actualizarPuntoDeAvisos() {
+        findViewById<View>(R.id.vetNotifBadge)?.visibility =
+            if (NotificacionesVet.hayNuevas) View.VISIBLE else View.GONE
+    }
+
     private fun cargar() {
+        actualizarPuntoDeAvisos()
         findViewById<TextView>(R.id.tvGreeting).text = "Hola, ${PerfilVetRepo.nombre}"
         VetUi.cargarFotoVet(findViewById(R.id.ivVetHomeFoto))
         val hoyFecha = java.time.LocalDate.now()

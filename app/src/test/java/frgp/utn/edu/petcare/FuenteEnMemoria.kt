@@ -210,6 +210,12 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
 
     override suspend fun crearArchivo(archivo: NuevoArchivoDto) {
         llamadas.add("crearArchivo:${archivo.nombre}")
+        archivos.add(
+            ArchivoDto(
+                archivo.id, archivo.mascotaId, archivo.nombre, archivo.extension, archivo.storagePath,
+                archivo.tamanoBytes, archivo.subidoPor, archivo.turnoId
+            )
+        )
     }
 
     override suspend fun renombrarArchivo(id: String, nombre: String) {

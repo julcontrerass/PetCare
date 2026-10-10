@@ -102,7 +102,21 @@ class VeterinarioAcceso(
     val tieneAcceso: Boolean get() = estado == EstadoAcceso.ACTIVO
 }
 
-enum class TipoNotificacion { MASCOTA, TURNO, CANCELACION, ACCESO, CUENTA }
+enum class TipoNotificacion {
+    MASCOTA, TURNO, COMPLETADO, CANCELACION, ACCESO, CUENTA;
+
+    companion object {
+        /** Convierte el tipo que guarda la base ("turno", "completado"...) en el de la app. */
+        fun deClave(clave: String): TipoNotificacion = when (clave) {
+            "mascota" -> MASCOTA
+            "completado" -> COMPLETADO
+            "cancelacion" -> CANCELACION
+            "acceso" -> ACCESO
+            "cuenta" -> CUENTA
+            else -> TURNO
+        }
+    }
+}
 
 class NotificacionDueno(
     val tipo: TipoNotificacion,

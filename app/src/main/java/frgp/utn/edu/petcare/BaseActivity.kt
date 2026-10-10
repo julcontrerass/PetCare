@@ -1,6 +1,9 @@
 package frgp.utn.edu.petcare
 
 import android.content.Context
+import kotlinx.coroutines.delay
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
 import frgp.utn.edu.petcare.data.Servicios
 import androidx.lifecycle.lifecycleScope
@@ -48,6 +51,13 @@ open class BaseActivity : AppCompatActivity() {
         Servicios.alCambiarDatos = redibujar
         lifecycleScope.launch {
             runCatching { Sesion.recargarVeterinario() }.onSuccess { redibujar() }
+            // Mientras la pantalla está a la vista se piden cada tanto los turnos y avisos nuevos
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(15_000)
+                    runCatching { Sesion.recargarVeterinario() }.onSuccess { redibujar() }
+                }
+            }
         }
     }
 

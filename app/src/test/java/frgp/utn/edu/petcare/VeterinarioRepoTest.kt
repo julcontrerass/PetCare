@@ -117,6 +117,17 @@ class VeterinarioRepoTest : PruebaBase() {
         assertEquals(1, AgendaRepo.pacientesHoy())
     }
 
+    @Test
+    fun agenda_pacientesHoyCuentaLosYaAtendidosPeroNoLosCancelados() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", hoy.toString(), "10:00:00", estado = "completado"))
+        fuente.turnos.add(Escenario.turno("t2", "m2", hoy.toString(), "11:00:00"))
+        fuente.turnos.add(Escenario.turno("t3", "m4", hoy.toString(), "12:00:00", estado = "cancelado"))
+        ingresarComoVeterinario()
+
+        assertEquals(2, AgendaRepo.pacientesHoy())
+        assertEquals(1, AgendaRepo.deHoy().size)
+    }
+
     // ---------- Disponibilidad ----------
 
     private fun proximoLunes() = hoy.with(TemporalAdjusters.next(DayOfWeek.MONDAY))
@@ -251,6 +262,22 @@ class VeterinarioRepoTest : PruebaBase() {
         assertEquals("Rx de tórax", ArchivosRepo.dePaciente("m1")[0].nombre)
         ArchivosRepo.eliminar(ArchivosRepo.dePaciente("m1")[0])
         assertTrue(ArchivosRepo.dePaciente("m1").isEmpty())
+    }
+
+    @Test
+    fun archivos_adjuntadosAlInformeQuedanLigadosAlTurno() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", hoy.toString(), "10:00:00"))
+        ingresarComoVeterinario()
+
+        runBlocking {
+            ArchivosRepo.agregar("m1", "Estudio", "pdf", ByteArray(5), "application/pdf", turnoId = "t1")
+            ArchivosRepo.agregar("m1", "Suelto", "pdf", ByteArray(5), "application/pdf")
+            ArchivosRepo.cargar("m1")
+        }
+
+        assertEquals(listOf("Estudio"), ArchivosRepo.deTurno("m1", "t1").map { it.nombre })
+        assertEquals(2, ArchivosRepo.dePaciente("m1").size)
+        assertEquals("t1", fuente.archivos.first { it.nombre == "Estudio" }.turnoId)
     }
 
     // ---------- Perfil ----------
