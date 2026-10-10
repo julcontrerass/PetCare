@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.Servicios
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
 import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
 import java.time.LocalDate
@@ -115,7 +116,7 @@ object PacientesRepo {
         return pacientes.filter { p ->
             val coincideEspecie = when (especie) {
                 null -> true
-                ESPECIE_OTRO -> p.especie != ESPECIE_PERRO && p.especie != ESPECIE_GATO
+                ESPECIE_OTRO -> !TiposMascota.esConocido(p.especie)
                 else -> p.especie == especie
             }
             coincideEspecie && (q.isEmpty() ||

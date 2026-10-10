@@ -277,7 +277,7 @@ class PantallasTest : PruebaBase() {
         ShadowLooper.idleMainLooper()
         a.findViewById<View>(R.id.btnAddPet).performClick()
         a.findViewById<EditText>(R.id.etNombreMascota).setText("Toto")
-        a.findViewById<View>(R.id.optTipoPerro).performClick()
+        a.findViewById<android.widget.GridLayout>(R.id.gridTiposMascota).getChildAt(0).performClick()
         a.findViewById<View>(R.id.btnGuardarMascota).performClick()
 
         assertTrue(fuente.llamadas.contains("crearMascota:Toto"))

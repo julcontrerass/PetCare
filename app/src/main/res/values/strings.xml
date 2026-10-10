@@ -88,9 +88,6 @@
     <!-- Nueva mascota -->
     <string name="label_nombre_mascota">Nombre</string>
     <string name="hint_nombre_mascota">Ingresá el nombre de tu mascota</string>
-    <string name="tipo_perro">Perro</string>
-    <string name="tipo_gato">Gato</string>
-    <string name="tipo_otro">Otro</string>
     <string name="label_raza">Raza</string>
     <string name="hint_raza">Ej: Golden retriever</string>
     <string name="label_fecha_nacimiento">Fecha de nacimiento</string>

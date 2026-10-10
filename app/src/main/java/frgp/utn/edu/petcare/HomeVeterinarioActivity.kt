@@ -43,6 +43,7 @@ class HomeVeterinarioActivity : BaseActivity() {
             }
         }
         findViewById<RecyclerView>(R.id.rvConsultas).adapter = adapter
+        pedirPermisoDeNotificaciones()
     }
 
     override fun onResume() {

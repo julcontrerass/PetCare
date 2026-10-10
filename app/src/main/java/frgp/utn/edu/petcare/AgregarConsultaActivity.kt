@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.os.Bundle
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.View
 import android.widget.ArrayAdapter
@@ -67,7 +68,7 @@ class AgregarConsultaActivity : BaseActivity() {
         val spNuevoSexo = findViewById<Spinner>(R.id.spNuevoSexo)
         val etNuevaRazaMascota = findViewById<EditText>(R.id.etNuevaRazaMascota)
 
-        spNuevoEspecie.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Perro", "Gato", "Otro"))
+        spNuevoEspecie.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, TiposMascota.TODOS)
         spNuevoSexo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Macho", "Hembra"))
 
         // Búsqueda de un dueño por DNI o correo: primero entre mis pacientes y después en toda la plataforma

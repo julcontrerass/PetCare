@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.serialization.json)
     implementation(libs.coroutines.android)
     implementation(libs.lifecycle.runtime)
+    implementation(libs.work.runtime)
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)

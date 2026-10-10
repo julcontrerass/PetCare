@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare.data
 
 import android.app.Activity
+import frgp.utn.edu.petcare.data.avisos.Recordatorios
+import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.delay
@@ -88,13 +90,14 @@ object Sesion {
                 Rol.DUENO -> DuenoRepo.cargar(datos)
                 Rol.VETERINARIO -> {
                     PerfilVetRepo.cargar(datos)
-                    recargarVeterinario()
+                    recargarVeterinario(silencioso = true)
                 }
                 Rol.ADMIN -> AdminRepo.cargar()
             }
         }
         rol = rolCuenta
         escucharCambios(rolCuenta)
+        Servicios.contextoApp?.let { Recordatorios.vigilarAvisos(it) }
         return Resultado.Listo(rolCuenta)
     }
 
@@ -137,17 +140,18 @@ object Sesion {
     }
 
     /** Pide al servidor los pacientes, la agenda, el carnet y las solicitudes del veterinario. */
-    suspend fun recargarVeterinario() = coroutineScope {
+    suspend fun recargarVeterinario(silencioso: Boolean = false) = coroutineScope {
         // Los registros de salud se muestran con el nombre del paciente: primero hay que tener los pacientes
         PacientesRepo.cargar()
         val agenda = async { AgendaRepo.cargar() }
         val salud = async { SaludRepo.cargar() }
         val solicitudes = async { SolicitudesRepo.cargar() }
-        val avisos = async { runCatching { NotificacionesVet.cargar() } }
+        val avisos = async { runCatching { NotificacionesVet.cargar(silencioso) } }
         avisos.await()
         agenda.await()
         salud.await()
         solicitudes.await()
+        Servicios.contextoApp?.let { Recordatorios.programar(it, Recordatorios.paraVeterinario(AgendaRepo.eventos)) }
     }
 
     /** Vuelve a pedir el perfil propio después de un cambio que el servidor rechazó. */
@@ -196,6 +200,10 @@ object Sesion {
 
     /** Descarta los datos de la cuenta anterior sin tocar el servidor (la sesión ya se cerró o venció). */
     fun olvidar() {
+        Servicios.contextoApp?.let {
+            Recordatorios.cancelarTodo(it)
+            AvisosDelSistema.olvidar(it)
+        }
         escucha?.cancel()
         escucha = null
         usuarioId = null

@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.data.Imagenes
 import android.view.LayoutInflater
 import android.view.View
@@ -37,7 +38,7 @@ class PacientesAdapter(private var items: List<Paciente>) : RecyclerView.Adapter
         val proximo = AgendaRepo.proximoEvento(item.id)
         holder.tvProximoTurno.text =
             if (proximo != null) "Próximo turno · ${Fechas.relativa(proximo.fecha)} ${proximo.hora}" else "Sin turnos próximos"
-        holder.ivPetPhoto.setImageResource(R.drawable.ic_dog)
+        holder.ivPetPhoto.setImageResource(TiposMascota.icono(item.especie))
         Imagenes.mostrar(holder.ivPetPhoto, null, item.fotoPath)
 
         holder.itemView.setOnClickListener {

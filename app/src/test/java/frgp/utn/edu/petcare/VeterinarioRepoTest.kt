@@ -48,10 +48,28 @@ class VeterinarioRepoTest : PruebaBase() {
         ingresarComoVeterinario()
 
         assertEquals(listOf("Mia"), PacientesRepo.filtrar("", PacientesRepo.ESPECIE_GATO).map { it.nombre })
-        assertEquals(listOf("Loro"), PacientesRepo.filtrar("", PacientesRepo.ESPECIE_OTRO).map { it.nombre })
+        assertEquals(listOf("Loro"), PacientesRepo.filtrar("", "Ave").map { it.nombre })
+        // "Otro" reúne a los animales que no tienen un tipo propio
+        assertTrue(PacientesRepo.filtrar("", PacientesRepo.ESPECIE_OTRO).isEmpty())
         assertEquals(1, PacientesRepo.filtrar("rex", null).size)
         assertEquals(3, PacientesRepo.filtrar("mestizo", null).size)
         assertTrue(PacientesRepo.filtrar("zzz", null).isEmpty())
+    }
+
+    @Test
+    fun pacientes_unAnimalSinTipoPropioCuentaComoOtro() {
+        fuente.mascotas.add(Escenario.mascota("m5", "Bola", tipo = "Conejo"))
+        fuente.accesos.add(AccesoDto("a5", "m5", Escenario.VET_ID, "activo", "dueno"))
+        ingresarComoVeterinario()
+
+        assertEquals(listOf("Bola"), PacientesRepo.filtrar("", PacientesRepo.ESPECIE_OTRO).map { it.nombre })
+    }
+
+    @Test
+    fun tiposDeMascota_incluyenAvesReptilesPecesYRoedores() {
+        assertEquals(listOf("Perro", "Gato", "Ave", "Reptil", "Pez", "Roedor", "Otro"), frgp.utn.edu.petcare.model.TiposMascota.TODOS)
+        assertEquals("Peces", frgp.utn.edu.petcare.model.TiposMascota.plural("Pez"))
+        assertEquals("Otros", frgp.utn.edu.petcare.model.TiposMascota.plural("Conejo"))
     }
 
     @Test

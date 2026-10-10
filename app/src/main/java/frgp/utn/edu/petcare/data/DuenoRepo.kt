@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare.data
 
 import android.net.Uri
+import frgp.utn.edu.petcare.data.avisos.Recordatorios
+import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
 import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
 import frgp.utn.edu.petcare.Fechas
@@ -91,9 +93,15 @@ object DuenoRepo {
         nuevo.veterinarios = catalogo.await().associateBy { it.id }
         nuevo.accesos = accesosDto.await()
         nuevo.eventos.addAll(turnosDto.await().filter { t -> t.estado != "cancelado" && nuevo.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, nuevo) })
-        nuevo.notificaciones.addAll(avisos.await().map(::aNotificacion))
+        val avisosDelServidor = avisos.await()
+        nuevo.notificaciones.addAll(avisosDelServidor.map(::aNotificacion))
         reconstruirVeterinarios(nuevo)
         estado = nuevo
+        // Al iniciar sesión lo que ya estaba no suena; solo se programan los recordatorios de los próximos turnos
+        Servicios.contextoApp?.let {
+            runCatching { AvisosDelSistema.mostrarNuevas(it, avisosDelServidor, silencioso = true) }
+            Recordatorios.programar(it, Recordatorios.paraDueno(nuevo.eventos))
+        }
     }
 
     /** Vuelve a pedir lo que el servidor modifica por su cuenta (accesos, avisos) y avisa a la pantalla. */
@@ -111,6 +119,10 @@ object DuenoRepo {
         actual.eventos.addAll(turnos.filter { t -> t.estado != "cancelado" && actual.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, actual) })
         actual.notificaciones.clear()
         actual.notificaciones.addAll(avisos.map(::aNotificacion))
+        Servicios.contextoApp?.let {
+            runCatching { AvisosDelSistema.mostrarNuevas(it, avisos) }
+            Recordatorios.programar(it, Recordatorios.paraDueno(actual.eventos))
+        }
         Servicios.avisarCambio()
     }
 

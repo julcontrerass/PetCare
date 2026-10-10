@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.app.Activity
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.ui.common.Avisos
 import android.app.DatePickerDialog
 import android.content.Intent
@@ -49,7 +50,7 @@ class RegistroDuenoActivity : BaseActivity() {
         private const val ESTADO_MASCOTAS = "mascotas"
 
         private val TITULOS = listOf("Datos personales", "Domicilio", "Tus mascotas", "Tu cuenta")
-        private val TIPOS = listOf("Perro", "Gato", "Otro")
+        private val TIPOS = TiposMascota.TODOS
         private val SEXOS = listOf("Macho", "Hembra")
     }
 

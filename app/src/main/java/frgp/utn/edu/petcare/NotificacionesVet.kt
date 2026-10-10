@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.view.Gravity
+import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -28,8 +29,9 @@ object NotificacionesVet {
         ultimas = emptyList()
     }
 
-    suspend fun cargar() {
+    suspend fun cargar(silencioso: Boolean = false) {
         ultimas = Servicios.fuente.notificaciones()
+        Servicios.contextoApp?.let { runCatching { AvisosDelSistema.mostrarNuevas(it, ultimas, silencioso) } }
     }
 
     fun mostrar(actividad: AppCompatActivity, alCambiar: () -> Unit = {}) {

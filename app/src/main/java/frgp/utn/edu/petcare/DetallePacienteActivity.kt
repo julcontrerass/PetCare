@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.data.Imagenes
 import android.content.Intent
@@ -54,7 +55,7 @@ class DetallePacienteActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvPetOwner).text = "Propietario: ${paciente.propietario}"
         findViewById<TextView>(R.id.tvPetOwnerContact).text = "Contacto: ${paciente.telefono}"
         findViewById<android.widget.ImageView>(R.id.ivPetPhoto).let {
-            it.setImageResource(R.drawable.ic_dog)
+            it.setImageResource(TiposMascota.icono(paciente.especie))
             Imagenes.mostrar(it, null, paciente.fotoPath)
         }
 

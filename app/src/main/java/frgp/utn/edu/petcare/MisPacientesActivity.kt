@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.ui.common.Avisos
 import android.os.Bundle
 import android.text.Editable
@@ -23,12 +24,8 @@ class MisPacientesActivity : BaseActivity() {
     private lateinit var etBuscar: EditText
     private lateinit var tabLayout: TabLayout
 
-    private val especiesPorTab = listOf(
-        null,
-        PacientesRepo.ESPECIE_PERRO,
-        PacientesRepo.ESPECIE_GATO,
-        PacientesRepo.ESPECIE_OTRO
-    )
+    /** Una solapa por tipo de animal, además de "Todos". */
+    private val especiesPorTab = listOf<String?>(null) + TiposMascota.TODOS
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +45,7 @@ class MisPacientesActivity : BaseActivity() {
 
         etBuscar = findViewById(R.id.etBuscarPaciente)
         tabLayout = findViewById(R.id.tabLayoutFilters)
+        especiesPorTab.forEach { _ -> tabLayout.addTab(tabLayout.newTab()) }
 
         adapter = PacientesAdapter(PacientesRepo.pacientes)
         findViewById<RecyclerView>(R.id.rvPacientes).adapter = adapter
@@ -96,7 +94,7 @@ class MisPacientesActivity : BaseActivity() {
         val total = PacientesRepo.pacientes.size
         findViewById<android.widget.TextView>(R.id.tvPacientesCount).text =
             if (total == 1) "1 paciente" else "$total pacientes"
-        val nombres = listOf("Todos", "Perros", "Gatos", "Otros")
+        val nombres = listOf("Todos") + TiposMascota.TODOS.map { TiposMascota.plural(it) }
         for (i in nombres.indices) {
             tabLayout.getTabAt(i)?.text = "${nombres[i]} (${PacientesRepo.filtrar("", especiesPorTab[i]).size})"
         }
@@ -116,7 +114,7 @@ class MisPacientesActivity : BaseActivity() {
         val spEspecie = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MisPacientesActivity, android.R.layout.simple_spinner_dropdown_item,
-                listOf(PacientesRepo.ESPECIE_PERRO, PacientesRepo.ESPECIE_GATO, PacientesRepo.ESPECIE_OTRO)
+                TiposMascota.TODOS
             )
         }
         val spSexo = Spinner(this).apply {

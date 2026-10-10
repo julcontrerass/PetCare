@@ -114,6 +114,7 @@ class DuenoActivity : BaseActivity() {
         }
 
         irAHome()
+        pedirPermisoDeNotificaciones()
     }
 
     override fun onDestroy() {

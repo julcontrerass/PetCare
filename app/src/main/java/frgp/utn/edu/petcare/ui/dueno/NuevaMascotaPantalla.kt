@@ -1,6 +1,10 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.net.Uri
+import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.model.TiposMascota
+import android.widget.GridLayout
+import android.view.Gravity
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -39,17 +43,7 @@ class NuevaMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
             }
         }
 
-        val tipos = listOf(
-            R.id.optTipoPerro to host.getString(R.string.tipo_perro),
-            R.id.optTipoGato to host.getString(R.string.tipo_gato),
-            R.id.optTipoOtro to host.getString(R.string.tipo_otro)
-        )
-        tipos.forEach { (id, nombre) ->
-            alTocarConRebote(id) {
-                tipo = nombre
-                pintarTipos(tipos)
-            }
-        }
+        pintarTipos()
 
         val elegirFoto = { _: android.view.View ->
             host.pedirImagen { uri ->
@@ -86,12 +80,41 @@ class NuevaMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
         }
     }
 
-    private fun pintarTipos(tipos: List<Pair<Int, String>>) {
-        tipos.forEach { (id, nombre) ->
-            val opcion = vista<TextView>(id) ?: return@forEach
+    /** Arma las opciones de tipo de animal (perro, gato, ave, reptil, pez, roedor y otro). */
+    private fun pintarTipos() {
+        val grilla = vista<GridLayout>(R.id.gridTiposMascota) ?: return
+        grilla.removeAllViews()
+        TiposMascota.TODOS.forEach { nombre ->
             val elegido = nombre == tipo
-            opcion.setBackgroundResource(if (elegido) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected)
-            opcion.setTextColor(ContextCompat.getColor(host, if (elegido) R.color.white else R.color.black))
+            val color = ContextCompat.getColor(host, if (elegido) R.color.white else R.color.primary_teal)
+            val icono = ContextCompat.getDrawable(host, TiposMascota.icono(nombre))?.mutate()?.apply {
+                setTint(color)
+                setBounds(0, 0, dp(26), dp(26))
+            }
+            grilla.addView(TextView(host).apply {
+                text = nombre
+                gravity = Gravity.CENTER
+                textSize = 13.5f
+                compoundDrawablePadding = dp(6)
+                setCompoundDrawables(null, icono, null, null)
+                setPadding(dp(4), dp(12), dp(4), dp(12))
+                setBackgroundResource(if (elegido) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected)
+                setTextColor(ContextCompat.getColor(host, if (elegido) R.color.white else R.color.black))
+                isClickable = true
+                isFocusable = true
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = 0
+                    height = GridLayout.LayoutParams.WRAP_CONTENT
+                    rowSpec = GridLayout.spec(GridLayout.UNDEFINED, GridLayout.FILL)
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, GridLayout.FILL, 1f)
+                    setMargins(dp(4), dp(4), dp(4), dp(4))
+                }
+                setOnClickListener {
+                    Efectos.rebote(it)
+                    tipo = nombre
+                    pintarTipos()
+                }
+            })
         }
     }
 }

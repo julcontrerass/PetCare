@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.Typeface
+import frgp.utn.edu.petcare.model.TiposMascota
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.ArrayAdapter
@@ -145,7 +146,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
         texto(R.id.editTextText2, m.color)
         texto(R.id.editTextText3, m.observaciones)
         vista<ImageView>(R.id.imageView3)?.let {
-            it.setImageResource(R.drawable.ic_dog)
+            it.setImageResource(TiposMascota.icono(m.tipo))
             Imagenes.mostrar(it, m.fotoUri, m.fotoPath)
         }
         llenarResumen(m)
@@ -172,7 +173,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
             layoutParams = parametros
         }
 
-        val tipos = listOf(host.getString(R.string.tipo_perro), host.getString(R.string.tipo_gato), host.getString(R.string.tipo_otro))
+        val tipos = TiposMascota.TODOS
         val selectorTipo = Spinner(host).apply {
             adapter = ArrayAdapter(host, android.R.layout.simple_spinner_dropdown_item, tipos)
             setSelection(tipos.indexOfFirst { it.equals(m.tipo, ignoreCase = true) }.coerceAtLeast(0))

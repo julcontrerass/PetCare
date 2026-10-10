@@ -43,6 +43,9 @@ object Avisos {
     private val principal = Handler(Looper.getMainLooper())
     private var actividadActual: WeakReference<Activity>? = null
     private var bannerActual: WeakReference<View>? = null
+
+    /** True mientras hay una pantalla de la app a la vista. */
+    val enPrimerPlano: Boolean get() = actividadActual?.get() != null
     private var cierreDelBanner: Runnable? = null
 
     private val palabrasDeExito = Regex(

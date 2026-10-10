@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare
 
 import android.content.Context
+import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
 import kotlinx.coroutines.delay
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
@@ -38,6 +40,27 @@ open class BaseActivity : AppCompatActivity() {
         )
         finish()
         return true
+    }
+
+    private val permisoDeNotificaciones =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+
+    /**
+     * Explica para qué sirven las notificaciones y pide el permiso (Android 13 o más). Se pregunta una sola vez:
+     * si el usuario dice "Ahora no" no se vuelve a insistir.
+     */
+    protected fun pedirPermisoDeNotificaciones() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) return
+        if (AvisosDelSistema.permitido(this)) return
+        val preferencias = getSharedPreferences("petcare_permisos", MODE_PRIVATE)
+        if (preferencias.getBoolean("notificaciones_preguntado", false)) return
+        preferencias.edit().putBoolean("notificaciones_preguntado", true).apply()
+        Avisos.confirmar(
+            this, "Activar notificaciones",
+            "Te avisamos cuando se acerque la fecha de un turno, cuando se agende, cambie o cancele, y cuando " +
+                "tu veterinario termine la consulta.",
+            textoAceptar = "Activar", textoCancelar = "Ahora no", peligro = false, icono = R.drawable.ic_notifications
+        ) { permisoDeNotificaciones.launch(android.Manifest.permission.POST_NOTIFICATIONS) }
     }
 
     private var avisoDeCambios: (() -> Unit)? = null

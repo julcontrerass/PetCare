@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.drawable.GradientDrawable
+import frgp.utn.edu.petcare.model.TiposMascota
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -131,7 +132,7 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
                 foto.clearColorFilter()
                 foto.setPadding(0, 0, 0, 0)
             } else {
-                foto.setImageResource(R.drawable.ic_dog)
+                foto.setImageResource(TiposMascota.icono(mascota.tipo))
                 foto.setBackgroundResource(R.drawable.bg_icon_teal)
                 foto.setColorFilter(ContextCompat.getColor(host, R.color.primary_teal))
                 val margen = dp(24)
