@@ -1,6 +1,9 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
+import frgp.utn.edu.petcare.model.EstadoTurno
+import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.ui.common.Avisos
 import android.app.TimePickerDialog
 import android.view.View
@@ -40,7 +43,7 @@ class EventosDialogos(private val host: DuenoActivity) {
         vista.findViewById<TextView>(R.id.tvTurnoTitulo).text = evento.categoria
         vista.findViewById<TextView>(R.id.tvTurnoMascota).text = evento.mascota
 
-        val proximo = !evento.fecha.isBefore(LocalDate.now())
+        val proximo = evento.estado != EstadoTurno.COMPLETADO && !evento.fecha.isBefore(LocalDate.now())
         vista.findViewById<TextView>(R.id.tvTurnoEstado).apply {
             text = if (proximo) "Próximo" else "Realizado"
             setBackgroundResource(if (proximo) R.drawable.bg_badge_orange else R.drawable.bg_badge_green)
@@ -52,6 +55,13 @@ class EventosDialogos(private val host: DuenoActivity) {
         val hayObservaciones = evento.observaciones.isNotEmpty()
         vista.findViewById<View>(R.id.rowTurnoObs).visibility = if (hayObservaciones) View.VISIBLE else View.GONE
         if (hayObservaciones) vista.findViewById<TextView>(R.id.tvTurnoObs).text = evento.observaciones
+
+        // Si el veterinario dejó un informe de la consulta, el dueño lo ve acá
+        host.lifecycleScope.launch {
+            val informe = runCatching { DuenoRepo.informeDelTurno(evento) }.getOrNull() ?: return@launch
+            vista.findViewById<TextView>(R.id.tvTurnoInforme).text = informe
+            vista.findViewById<View>(R.id.rowTurnoInforme).visibility = View.VISIBLE
+        }
 
         // Un turno que ya pasó queda como registro: no se edita ni se cancela
         vista.findViewById<View>(R.id.btnTurnoCancelar).visibility = if (proximo) View.VISIBLE else View.GONE

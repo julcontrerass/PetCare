@@ -569,6 +569,18 @@ object DuenoRepo {
         }
     }
 
+    /**
+     * Resumen (diagnóstico y tratamiento) del informe que el veterinario escribió en este turno, o null si
+     * todavía no hay ninguno. El dueño puede leerlo pero no editarlo.
+     */
+    suspend fun informeDelTurno(evento: EventoMascota): String? {
+        val informe = Servicios.fuente.informesDe(evento.mascotaId).firstOrNull { it.turnoId == evento.id } ?: return null
+        val partes = listOf("Diagnóstico" to informe.diagnostico, "Tratamiento" to informe.tratamiento)
+            .filter { !it.second.isNullOrBlank() }
+        if (partes.isEmpty()) return null
+        return partes.joinToString("\n") { (titulo, valor) -> "$titulo: $valor" }
+    }
+
     // ---------- Notificaciones ----------
 
     fun marcarNotificacionesLeidas() {

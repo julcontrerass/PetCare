@@ -334,6 +334,32 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Informe de la consulta -->
+            <LinearLayout
+                android:id="@+id/seccionInforme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/EventoSeccion"
+                    android:layout_marginTop="22dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="Informe de la consulta" />
+
+                <TextView
+                    android:id="@+id/tvInforme"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card_white"
+                    android:elevation="2dp"
+                    android:lineSpacingExtra="4dp"
+                    android:padding="16dp"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="14.5sp" />
+            </LinearLayout>
+
             <!-- Notas -->
             <TextView
                 style="@style/EventoSeccion"

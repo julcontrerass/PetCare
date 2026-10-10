@@ -9,37 +9,50 @@ import java.util.UUID
 
 data class InformeData(
     val pacienteId: String,
+    val turnoId: String? = null,
     val id: String? = null,
     var motivo: String = "",
     var diagnostico: String = "",
     var tratamiento: String = ""
-)
+) {
+    /** True si el veterinario todavía no escribió nada. */
+    val vacio: Boolean get() = motivo.isBlank() && diagnostico.isBlank() && tratamiento.isBlank()
+}
 
-/** Informe clínico que el veterinario en sesión escribe sobre cada paciente. */
+/**
+ * Informe clínico que el veterinario en sesión escribe sobre un paciente. Cada turno tiene el suyo; los que se
+ * escriben desde la ficha del paciente, sin turno, quedan como informe general.
+ */
 object InformesRepo {
 
     private val informes = mutableMapOf<String, InformeData>()
 
     fun limpiar() = informes.clear()
 
-    /** Trae del servidor el último informe propio del paciente (si ya escribió alguno). */
-    suspend fun cargar(pacienteId: String): InformeData {
+    private fun clave(pacienteId: String, turnoId: String?) = turnoId ?: "paciente:$pacienteId"
+
+    /** Trae del servidor el informe propio de ese turno (o el general del paciente si no hay turno). */
+    suspend fun cargar(pacienteId: String, turnoId: String? = null): InformeData {
         val miId = Sesion.usuarioId
-        val propio = Servicios.fuente.informesDe(pacienteId).firstOrNull { it.veterinarioId == miId }
-        val informe = if (propio == null) InformeData(pacienteId) else InformeData(
-            pacienteId, propio.id, propio.motivo.orEmpty(), propio.diagnostico.orEmpty(), propio.tratamiento.orEmpty()
+        val propio = Servicios.fuente.informesDe(pacienteId)
+            .filter { it.veterinarioId == miId && it.turnoId == turnoId }
+            .firstOrNull()
+        val informe = if (propio == null) InformeData(pacienteId, turnoId) else InformeData(
+            pacienteId, turnoId, propio.id, propio.motivo.orEmpty(), propio.diagnostico.orEmpty(), propio.tratamiento.orEmpty()
         )
-        informes[pacienteId] = informe
+        informes[clave(pacienteId, turnoId)] = informe
         return informe
     }
 
-    fun obtener(pacienteId: String): InformeData = informes[pacienteId] ?: InformeData(pacienteId)
+    /** Lo último que se sabe del informe, sin pedirlo al servidor. */
+    fun obtener(pacienteId: String, turnoId: String? = null): InformeData =
+        informes[clave(pacienteId, turnoId)] ?: InformeData(pacienteId, turnoId)
 
     fun guardar(pacienteId: String, motivo: String, diagnostico: String, tratamiento: String, turnoId: String? = null) {
-        val existente = informes[pacienteId]?.id
+        val existente = informes[clave(pacienteId, turnoId)]?.id
         val id = existente ?: UUID.randomUUID().toString()
-        informes[pacienteId] = InformeData(pacienteId, id, motivo, diagnostico, tratamiento)
-        Servicios.escribir(alFallar = { cargar(pacienteId) }) {
+        informes[clave(pacienteId, turnoId)] = InformeData(pacienteId, turnoId, id, motivo, diagnostico, tratamiento)
+        Servicios.escribir(alFallar = { cargar(pacienteId, turnoId); Servicios.avisarCambio() }) {
             if (existente != null) {
                 Servicios.fuente.actualizarInforme(existente, buildJsonObject {
                     put("motivo", motivo.ifBlank { null })

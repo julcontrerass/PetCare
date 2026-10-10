@@ -340,6 +340,55 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun vet_guardarElInformeDelTurnoOfreceCompletarloYLoMuestraAlVolver() {
+        abrirVet()
+        val detalle = Robolectric.buildActivity(
+            DetalleEventoVetActivity::class.java,
+            intent(DetalleEventoVetActivity::class.java).putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, "t1")
+        ).setup()
+        assertEquals("Iniciar turno", detalle.get().findViewById<android.widget.Button>(R.id.btnIniciarTurno).text.toString())
+
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java)
+                .putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+                .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, "t1")
+        )
+        ficha.findViewById<EditText>(R.id.etDiagnostico).setText("Otitis")
+        ficha.findViewById<EditText>(R.id.etTratamiento).setText("Gotas por 7 días")
+        ficha.findViewById<View>(R.id.btnGuardarInforme).performClick()
+
+        // El informe se guarda atado al turno y se ofrece cerrar el turno
+        assertTrue(fuente.llamadas.contains("crearInforme:m1"))
+        assertEquals("pendiente", fuente.turnos.first { it.id == "t1" }.estado)
+        aceptarCartel()
+        assertEquals("completado", fuente.turnos.first { it.id == "t1" }.estado)
+        assertTrue(ficha.isFinishing)
+
+        // Al volver al turno se ve el informe y ya no se puede iniciar
+        fuente.informes.add(
+            frgp.utn.edu.petcare.data.remoto.InformeDto("i1", "m1", "t1", Escenario.VET_ID, "Control", "Otitis", "Gotas por 7 días")
+        )
+        val a = detalle.resume().get()
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.seccionInforme).visibility)
+        assertTrue(texto(a, R.id.tvInforme).contains("Otitis"))
+        assertEquals(View.GONE, a.findViewById<View>(R.id.btnIniciarTurno).visibility)
+    }
+
+    @Test
+    fun vet_elInformeSinDiagnosticoNiTratamientoNoSeGuarda() {
+        abrirVet()
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java).putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+                .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, "t1")
+        )
+        ficha.findViewById<View>(R.id.btnGuardarInforme).performClick()
+
+        assertTrue(fuente.llamadas.none { it.startsWith("crearInforme") })
+    }
+
+    @Test
     fun vet_editarElTurnoAbreElFormulario() {
         abrirVet()
         abrirDetalleTurno("t1").findViewById<View>(R.id.btnEditar).performClick()

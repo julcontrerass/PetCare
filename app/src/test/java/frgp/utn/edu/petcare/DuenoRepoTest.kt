@@ -259,6 +259,28 @@ class DuenoRepoTest : PruebaBase() {
     }
 
     @Test
+    fun informeDelTurno_elDuenoLeeDiagnosticoYTratamiento() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", LocalDate.now().toString(), "10:00:00", estado = "completado"))
+        fuente.informes.add(
+            frgp.utn.edu.petcare.data.remoto.InformeDto("i1", "m1", "t1", Escenario.VET_ID, "Control", "Otitis", "Gotas")
+        )
+        ingresarComoDueno()
+
+        val texto = runBlocking { DuenoRepo.informeDelTurno(DuenoRepo.eventos[0]) }
+
+        assertEquals("Diagnóstico: Otitis\nTratamiento: Gotas", texto)
+        assertEquals(frgp.utn.edu.petcare.model.EstadoTurno.COMPLETADO, DuenoRepo.eventos[0].estado)
+    }
+
+    @Test
+    fun informeDelTurno_sinInformeDevuelveNull() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", LocalDate.now().toString(), "10:00:00"))
+        ingresarComoDueno()
+
+        assertNull(runBlocking { DuenoRepo.informeDelTurno(DuenoRepo.eventos[0]) })
+    }
+
+    @Test
     fun pesoValido_aceptaKilosConComaOUnidad() {
         assertTrue(DuenoRepo.pesoValido("12"))
         assertTrue(DuenoRepo.pesoValido("3,5 kg"))

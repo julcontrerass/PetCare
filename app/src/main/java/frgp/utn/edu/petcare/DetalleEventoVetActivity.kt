@@ -13,6 +13,8 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class DetalleEventoVetActivity : BaseActivity() {
@@ -115,6 +117,29 @@ class DetalleEventoVetActivity : BaseActivity() {
     }
 
     private lateinit var evento: EventoVet
+
+    override fun onResume() {
+        super.onResume()
+        if (isFinishing || !::evento.isInitialized) return
+        mostrar()
+        // El informe se escribe en otra pantalla: al volver se pide de nuevo para mostrar lo último
+        mostrarInforme(InformesRepo.obtener(evento.pacienteId, evento.id))
+        lifecycleScope.launch {
+            runCatching { InformesRepo.cargar(evento.pacienteId, evento.id) }.onSuccess { mostrarInforme(it) }
+        }
+    }
+
+    /** Muestra lo que el veterinario escribió en el informe de este turno. */
+    private fun mostrarInforme(informe: InformeData) {
+        val texto = listOf(
+            "Motivo" to informe.motivo, "Diagnóstico" to informe.diagnostico, "Tratamiento" to informe.tratamiento
+        ).filter { it.second.isNotBlank() }.joinToString("\n\n") { (titulo, valor) -> "$titulo\n$valor" }
+        findViewById<View>(R.id.seccionInforme).visibility = if (informe.vacio) View.GONE else View.VISIBLE
+        findViewById<TextView>(R.id.tvInforme).text = texto
+        val pendiente = evento.estado == EstadoEvento.PENDIENTE
+        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnIniciarTurno).text =
+            if (pendiente && !informe.vacio) "Continuar informe" else "Iniciar turno"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
