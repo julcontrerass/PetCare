@@ -390,6 +390,39 @@ class DuenoRepoTest : PruebaBase() {
     }
 
     @Test
+    fun estudiosPrevios_seEligenOSeSubenYSeAdjuntanAlTurno() {
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto(
+                "r1", "m1", "documento", "Análisis de sangre", null, LocalDate.now().minusDays(30).toString(),
+                archivoPath = "m1/analisis.pdf"
+            )
+        )
+        fuente.archivos.add(
+            frgp.utn.edu.petcare.data.remoto.ArchivoDto("a1", "m1", "Ecografía", "jpg", "m1/eco.jpg", subidoPor = Escenario.VET_ID)
+        )
+        ingresarComoDueno()
+        val rex = DuenoRepo.buscarMascota("Rex")!!
+
+        val disponibles = runBlocking { DuenoRepo.estudiosDisponibles(rex) }
+        assertEquals(setOf("Análisis de sangre", "Ecografía"), disponibles.map { it.nombre }.toSet())
+
+        val nuevo = runBlocking { DuenoRepo.subirEstudio(rex, "Radiografía", "pdf", ByteArray(8), "application/pdf") }
+        assertTrue(fuente.subidas.any { it.startsWith("archivos/m1/") })
+
+        DuenoRepo.agendarEvento(
+            LocalDate.now().plusDays(3), "Control", "Rex", "Dr. Vera", "10:00", "", listOf(disponibles[0], nuevo)
+        )
+
+        val turnoId = fuente.turnos.single().id
+        assertEquals(2, fuente.estudios.count { it.turnoId == turnoId })
+        assertTrue(fuente.llamadas.contains("adjuntarEstudios:2"))
+
+        // El dueño los ve en el detalle del turno
+        val detalle = runBlocking { DuenoRepo.detalleDelTurno(DuenoRepo.eventos.single()) }
+        assertEquals(2, detalle.estudios.size)
+    }
+
+    @Test
     fun pesoValido_aceptaKilosConComaOUnidad() {
         assertTrue(DuenoRepo.pesoValido("12"))
         assertTrue(DuenoRepo.pesoValido("3,5 kg"))

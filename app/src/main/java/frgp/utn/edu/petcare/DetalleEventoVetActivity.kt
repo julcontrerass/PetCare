@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare
 
 import android.content.Intent
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.data.Imagenes
 import android.os.Bundle
@@ -126,6 +128,29 @@ class DetalleEventoVetActivity : BaseActivity() {
         mostrarInforme(InformesRepo.obtener(evento.pacienteId, evento.id))
         lifecycleScope.launch {
             runCatching { InformesRepo.cargar(evento.pacienteId, evento.id) }.onSuccess { mostrarInforme(it) }
+        }
+        lifecycleScope.launch {
+            runCatching { Servicios.fuente.estudiosDeTurno(evento.id) }.onSuccess { mostrarEstudios(it) }
+        }
+    }
+
+    /** Estudios anteriores que el dueño adjuntó al sacar el turno. */
+    private fun mostrarEstudios(estudios: List<frgp.utn.edu.petcare.data.remoto.EstudioTurnoDto>) {
+        val contenedor = findViewById<android.widget.LinearLayout>(R.id.llEstudios)
+        contenedor.removeAllViews()
+        findViewById<View>(R.id.seccionEstudios).visibility = if (estudios.isEmpty()) View.GONE else View.VISIBLE
+        estudios.forEach { estudio ->
+            val fila = layoutInflater.inflate(R.layout.item_turno_detalle, contenedor, false)
+            fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(R.drawable.ic_document)
+            fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = estudio.extension.uppercase()
+            fila.findViewById<TextView>(R.id.tvDetalleValor).text = estudio.nombre
+            fila.findViewById<View>(R.id.tvDetalleAccion).visibility = View.VISIBLE
+            fila.setOnClickListener {
+                lifecycleScope.launch {
+                    ArchivosUi.abrir(this@DetalleEventoVetActivity, "archivos", estudio.storagePath, estudio.extension)
+                }
+            }
+            contenedor.addView(fila)
         }
     }
 

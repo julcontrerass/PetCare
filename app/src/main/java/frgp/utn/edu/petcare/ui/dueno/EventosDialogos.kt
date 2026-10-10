@@ -113,6 +113,13 @@ class EventosDialogos(private val host: DuenoActivity) {
         if (d.registros.isNotEmpty()) {
             fila(contenedor, R.drawable.ic_pulse, "Cargado en el carnet de salud", d.registros.joinToString("\n"))
         }
+        d.estudios.forEach { estudio ->
+            fila(contenedor, R.drawable.ic_document, "Estudio previo que adjuntaste", estudio.nombre) {
+                host.lifecycleScope.launch {
+                    ArchivosUi.abrir(host, "archivos", estudio.ruta, estudio.extension)
+                }
+            }
+        }
         d.archivos.forEach { archivo ->
             fila(contenedor, R.drawable.ic_document, "Archivo adjunto", archivo.nombre) {
                 host.lifecycleScope.launch {

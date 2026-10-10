@@ -1,6 +1,7 @@
 package frgp.utn.edu.petcare.data
 
 import android.net.Uri
+import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
 import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.SolicitudItem
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
@@ -429,9 +430,33 @@ object DuenoRepo {
     fun hayConflictoDeTurno(fecha: LocalDate, hora: String, mascota: String?): Boolean =
         mascota != null && eventos.any { it.fecha == fecha && it.hora == hora && it.mascota.equals(mascota, ignoreCase = true) }
 
+    /** Un estudio anterior (ya guardado en la ficha) que el dueño adjunta a un turno. */
+    class EstudioAdjunto(val nombre: String, val extension: String, val ruta: String)
+
+    /** Documentos y archivos que ya tiene cargados la mascota, para elegir uno al sacar un turno. */
+    suspend fun estudiosDisponibles(mascota: Mascota): List<EstudioAdjunto> = coroutineScope {
+        val f = Servicios.fuente
+        val registros = async { runCatching { f.registrosSalud() }.getOrDefault(emptyList()) }
+        val archivos = async { runCatching { f.archivosDe(mascota.id) }.getOrDefault(emptyList()) }
+        val deCarnet = registros.await()
+            .filter { it.mascotaId == mascota.id && it.tipo == "documento" && !it.archivoPath.isNullOrBlank() }
+            .map { EstudioAdjunto(it.titulo, it.archivoPath!!.substringAfterLast('.', "pdf"), it.archivoPath) }
+        val sueltos = archivos.await().map { EstudioAdjunto(it.nombre, it.extension, it.storagePath) }
+        (deCarnet + sueltos).distinctBy { it.ruta }
+    }
+
+    /** Sube un estudio nuevo a la ficha de la mascota y devuelve el adjunto listo para el turno. */
+    suspend fun subirEstudio(
+        mascota: Mascota, nombre: String, extension: String, bytes: ByteArray, tipoMime: String
+    ): EstudioAdjunto {
+        val item = frgp.utn.edu.petcare.ArchivosRepo.agregar(mascota.id, nombre, extension, bytes, tipoMime)
+        return EstudioAdjunto(item.nombre, item.tipoExtension.lowercase(), item.storagePath)
+    }
+
     /** Agenda el turno. El servidor valida el horario del veterinario y le da acceso a la mascota. */
     fun agendarEvento(
-        fecha: LocalDate, categoria: String, mascota: String, veterinario: String, hora: String, observaciones: String
+        fecha: LocalDate, categoria: String, mascota: String, veterinario: String, hora: String, observaciones: String,
+        estudios: List<EstudioAdjunto> = emptyList()
     ) {
         val m = buscarMascota(mascota) ?: return
         val vet = buscarVeterinario(veterinario)
@@ -449,6 +474,17 @@ object DuenoRepo {
                     fecha = fecha.toString(), hora = "$hora:00", notas = observaciones.ifBlank { null }, creadoPor = usuario
                 )
             )
+            // Los estudios se enlazan después de crear el turno, que es de lo que dependen
+            if (estudios.isNotEmpty()) {
+                Servicios.fuente.adjuntarEstudios(
+                    estudios.map {
+                        NuevoEstudioTurnoDto(
+                            turnoId = evento.id, storagePath = it.ruta, nombre = it.nombre,
+                            extension = it.extension, adjuntadoPor = usuario
+                        )
+                    }
+                )
+            }
         }
     }
 
@@ -575,10 +611,13 @@ object DuenoRepo {
         val diagnostico: String,
         val tratamiento: String,
         val registros: List<String>,
-        val archivos: List<ArchivoDeTurno>
+        val archivos: List<ArchivoDeTurno>,
+        /** Estudios anteriores que el propio dueño adjuntó al sacar el turno. */
+        val estudios: List<ArchivoDeTurno> = emptyList()
     ) {
         val vacio: Boolean
-            get() = motivo.isBlank() && diagnostico.isBlank() && tratamiento.isBlank() && registros.isEmpty() && archivos.isEmpty()
+            get() = motivo.isBlank() && diagnostico.isBlank() && tratamiento.isBlank() && registros.isEmpty() &&
+                archivos.isEmpty() && estudios.isEmpty()
     }
 
     /**
@@ -590,6 +629,7 @@ object DuenoRepo {
         val informes = async { f.informesDe(evento.mascotaId) }
         val registros = async { f.registrosSalud() }
         val archivos = async { f.archivosDe(evento.mascotaId) }
+        val estudios = async { runCatching { f.estudiosDeTurno(evento.id) }.getOrDefault(emptyList()) }
 
         val informe = informes.await().firstOrNull { it.turnoId == evento.id }
         val vet = evento.veterinarioId
@@ -604,12 +644,14 @@ object DuenoRepo {
                 }
                 "$tipo: ${it.titulo}"
             }
+        // Los archivos de la consulta son los que adjuntó el veterinario al informe, no los que subió el dueño
         val adjuntos = archivos.await()
-            .filter { it.turnoId == evento.id }
+            .filter { it.turnoId == evento.id && (vet == null || it.subidoPor == vet) }
             .map { ArchivoDeTurno(nombreConExtension(it.nombre, it.extension), it.extension, it.storagePath) }
         DetalleTurno(
             motivo = informe?.motivo.orEmpty(), diagnostico = informe?.diagnostico.orEmpty(),
-            tratamiento = informe?.tratamiento.orEmpty(), registros = delTurno, archivos = adjuntos
+            tratamiento = informe?.tratamiento.orEmpty(), registros = delTurno, archivos = adjuntos,
+            estudios = estudios.await().map { ArchivoDeTurno(it.nombre, it.extension, it.storagePath) }
         )
     }
 

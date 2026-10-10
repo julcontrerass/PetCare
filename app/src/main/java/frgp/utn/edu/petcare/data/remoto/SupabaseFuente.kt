@@ -260,6 +260,18 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             put("p_fecha", fecha)
         }).decodeList<HoraOcupadaDto>().map { it.hora.take(5) }
 
+    // ---------- Estudios previos de un turno ----------
+
+    override suspend fun estudiosDeTurno(turnoId: String): List<EstudioTurnoDto> =
+        cliente.from("turnos_estudios").select {
+            filter { eq("turno_id", turnoId) }
+            order("created_at", Order.ASCENDING)
+        }.decodeList()
+
+    override suspend fun adjuntarEstudios(estudios: List<NuevoEstudioTurnoDto>) {
+        if (estudios.isNotEmpty()) cliente.from("turnos_estudios").insert(estudios)
+    }
+
     // ---------- Historia clínica ----------
 
     override suspend fun registrosSalud(): List<RegistroSaludDto> =

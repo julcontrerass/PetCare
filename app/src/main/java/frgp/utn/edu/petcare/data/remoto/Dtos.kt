@@ -163,6 +163,25 @@ data class ActividadDto(
     @SerialName("created_at") val createdAt: String
 )
 
+/** Estudio anterior que el dueño adjuntó a un turno para que el veterinario lo vea. */
+@Serializable
+data class EstudioTurnoDto(
+    val id: String,
+    @SerialName("turno_id") val turnoId: String,
+    @SerialName("storage_path") val storagePath: String,
+    val nombre: String,
+    val extension: String = "pdf"
+)
+
+@Serializable
+data class NuevoEstudioTurnoDto(
+    @SerialName("turno_id") val turnoId: String,
+    @SerialName("storage_path") val storagePath: String,
+    val nombre: String,
+    val extension: String,
+    @SerialName("adjuntado_por") val adjuntadoPor: String
+)
+
 /** Resultado de buscar un dueño por correo o DNI (función `buscar_dueno`). */
 @Serializable
 data class DuenoBuscadoDto(

@@ -69,6 +69,10 @@ interface FuenteDatos {
     /** Horas ("HH:mm") en las que el veterinario ya tiene un turno pendiente ese día. */
     suspend fun horariosOcupados(veterinarioId: String, fecha: String): List<String> = emptyList()
 
+    // ---------- Estudios previos de un turno ----------
+    suspend fun estudiosDeTurno(turnoId: String): List<EstudioTurnoDto> = emptyList()
+    suspend fun adjuntarEstudios(estudios: List<NuevoEstudioTurnoDto>) {}
+
     // ---------- Historia clínica ----------
     suspend fun registrosSalud(): List<RegistroSaludDto> = emptyList()
     suspend fun crearRegistroSalud(registro: NuevoRegistroSaludDto) {}

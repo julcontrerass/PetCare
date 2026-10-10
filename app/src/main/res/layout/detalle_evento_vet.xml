@@ -334,6 +334,31 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Estudios previos que adjuntó el dueño -->
+            <LinearLayout
+                android:id="@+id/seccionEstudios"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/EventoSeccion"
+                    android:layout_marginTop="22dp"
+                    android:layout_marginBottom="4dp"
+                    android:text="Estudios previos del dueño" />
+
+                <LinearLayout
+                    android:id="@+id/llEstudios"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card_white"
+                    android:elevation="2dp"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="14dp" />
+            </LinearLayout>
+
             <!-- Informe de la consulta -->
             <LinearLayout
                 android:id="@+id/seccionInforme"

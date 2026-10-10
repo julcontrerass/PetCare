@@ -68,6 +68,11 @@ class DuenoActivity : BaseActivity() {
     }
     private var alElegirImagen: ((Uri) -> Unit)? = null
 
+    private val selectorDeArchivo = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) alElegirArchivo?.invoke(uri)
+    }
+    private var alElegirArchivo: ((Uri) -> Unit)? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (volverSiNoHaySesion()) return
@@ -153,6 +158,12 @@ class DuenoActivity : BaseActivity() {
             nuevo.animate().alpha(1f).translationY(0f).setDuration(170).start()
         }
         return contenedor
+    }
+
+    /** Abre el selector de documentos del teléfono y devuelve el archivo elegido. */
+    fun pedirArchivo(alElegir: (Uri) -> Unit) {
+        alElegirArchivo = alElegir
+        selectorDeArchivo.launch("*/*")
     }
 
     /** Abre la galería y devuelve la imagen elegida. */

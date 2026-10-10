@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
+import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
+import frgp.utn.edu.petcare.data.remoto.EstudioTurnoDto
 import frgp.utn.edu.petcare.data.remoto.ActividadDto
 import frgp.utn.edu.petcare.data.remoto.ArchivoDto
 import frgp.utn.edu.petcare.data.remoto.DuenoBuscadoDto
@@ -188,6 +190,19 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     override suspend fun buscarDueno(dato: String) = duenosBuscables.toList()
 
     override suspend fun horariosOcupados(veterinarioId: String, fecha: String) = ocupados
+
+    // ---------- Estudios previos de un turno ----------
+
+    val estudios = mutableListOf<EstudioTurnoDto>()
+
+    override suspend fun estudiosDeTurno(turnoId: String) = estudios.filter { it.turnoId == turnoId }
+
+    override suspend fun adjuntarEstudios(estudios: List<NuevoEstudioTurnoDto>) {
+        llamadas.add("adjuntarEstudios:${estudios.size}")
+        estudios.forEach {
+            this.estudios.add(EstudioTurnoDto("est-${this.estudios.size}", it.turnoId, it.storagePath, it.nombre, it.extension))
+        }
+    }
 
     // ---------- Historia clínica ----------
 

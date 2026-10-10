@@ -1,6 +1,10 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.Color
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.data.Errores
+import androidx.appcompat.app.AlertDialog
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
@@ -41,6 +45,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private var veterinario: String? = null
     private var hora: String? = null
     private var ocupadas: Set<String> = emptySet()
+    private val estudios = mutableListOf<DuenoRepo.EstudioAdjunto>()
     private var observaciones = ""
     private var fecha: LocalDate = LocalDate.now()
     private var mes: YearMonth = YearMonth.now()
@@ -58,6 +63,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         veterinario = null
         hora = null
         ocupadas = emptySet()
+        estudios.clear()
         observaciones = ""
 
         alTocar(R.id.btnBack) { host.irACalendario() }
@@ -140,7 +146,9 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             toast("No podés seleccionar una fecha que ya pasó")
             return
         }
-        DuenoRepo.agendarEvento(fecha, categoria!!, mascota!!, veterinario.orEmpty(), hora!!, observaciones)
+        DuenoRepo.agendarEvento(
+            fecha, categoria!!, mascota!!, veterinario.orEmpty(), hora!!, observaciones, estudios.toList()
+        )
         host.diaSeleccionado = fecha
         host.mesCalendario = YearMonth.from(fecha)
         toast("Evento guardado")
@@ -506,7 +514,93 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
                 dibujarCalendarioMini()
                 dibujarHoras()
             }
-            else -> mostrarResumen()
+            else -> {
+                mostrarResumen()
+                configurarEstudios()
+            }
+        }
+    }
+
+    // ---------- Estudios previos ----------
+
+    private fun mascotaElegida() = DuenoRepo.buscarMascota(mascota)
+
+    private fun dibujarEstudios() {
+        val contenedor = vista<LinearLayout>(R.id.llEstudiosTurno) ?: return
+        val vacio = vista<View>(R.id.tvSinEstudios) ?: return
+        contenedor.removeAllViews()
+        if (estudios.isEmpty()) {
+            contenedor.addView(vacio)
+            return
+        }
+        estudios.toList().forEach { estudio ->
+            val fila = host.layoutInflater.inflate(R.layout.item_turno_detalle, contenedor, false)
+            fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(R.drawable.ic_document)
+            fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = estudio.extension.uppercase()
+            fila.findViewById<TextView>(R.id.tvDetalleValor).text = estudio.nombre
+            fila.findViewById<TextView>(R.id.tvDetalleAccion).apply {
+                text = "Quitar"
+                setTextColor(ContextCompat.getColor(host, R.color.danger_red))
+                visibility = View.VISIBLE
+            }
+            fila.setOnClickListener {
+                estudios.remove(estudio)
+                dibujarEstudios()
+            }
+            contenedor.addView(fila)
+        }
+    }
+
+    private fun configurarEstudios() {
+        dibujarEstudios()
+        alTocar(R.id.btnElegirEstudio) { elegirEstudioCargado() }
+        alTocar(R.id.btnSubirEstudio) { subirEstudioNuevo() }
+    }
+
+    /** Lista los estudios que la mascota ya tiene en la ficha para marcar los que hagan falta. */
+    private fun elegirEstudioCargado() {
+        val m = mascotaElegida() ?: return
+        host.lifecycleScope.launch {
+            val disponibles = runCatching { DuenoRepo.estudiosDisponibles(m) }.getOrNull()
+            if (disponibles == null) {
+                Avisos.error(host, "No pudimos traer los estudios cargados. Revisá tu conexión.")
+                return@launch
+            }
+            val faltan = disponibles.filter { d -> estudios.none { it.ruta == d.ruta } }
+            if (faltan.isEmpty()) {
+                toast("${m.nombre} no tiene estudios cargados todavía. Podés subir uno nuevo.")
+                return@launch
+            }
+            val marcados = BooleanArray(faltan.size)
+            AlertDialog.Builder(host)
+                .setTitle("Estudios de ${m.nombre}")
+                .setMultiChoiceItems(faltan.map { "${it.nombre} (${it.extension.uppercase()})" }.toTypedArray(), marcados) { _, i, marcado ->
+                    marcados[i] = marcado
+                }
+                .setPositiveButton("Adjuntar") { _, _ ->
+                    faltan.filterIndexed { i, _ -> marcados[i] }.forEach { estudios.add(it) }
+                    dibujarEstudios()
+                }
+                .setNegativeButton(R.string.btn_cancelar, null)
+                .show()
+        }
+    }
+
+    /** Sube un estudio nuevo a la ficha de la mascota y lo deja adjunto a este turno. */
+    private fun subirEstudioNuevo() {
+        val m = mascotaElegida() ?: return
+        host.pedirArchivo { uri ->
+            host.lifecycleScope.launch {
+                val elegido = ArchivosUi.leer(host, uri) ?: return@launch
+                try {
+                    val estudio = DuenoRepo.subirEstudio(m, elegido.nombre, elegido.extension, elegido.bytes, elegido.mime)
+                    estudios.add(estudio)
+                    dibujarEstudios()
+                    toast("Estudio subido y adjunto al turno")
+                } catch (e: Exception) {
+                    Avisos.error(host, Errores.mensaje(e))
+                }
+            }
         }
     }
 
