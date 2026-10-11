@@ -17,6 +17,7 @@ import android.widget.ArrayAdapter
 import android.widget.AdapterView
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.Servicios
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,6 +69,10 @@ class CarnetSaludActivity : BaseActivity() {
         pendienteDocumento = null
     }
 
+    private val pickCarnetFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) subirFotoCarnetVacunas(uri)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (volverSiNoHaySesion()) return
@@ -74,6 +80,9 @@ class CarnetSaludActivity : BaseActivity() {
         androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<View>(R.id.btnSubirCarnetFoto)?.setOnClickListener {
+            pedirFotoCarnetVacunas()
+        }
         etBuscar = findViewById(R.id.etBuscarRegistro)
         tabLayout = findViewById(R.id.tabLayoutSalud)
         vacio = findViewById(R.id.emptyRegistros)
@@ -166,11 +175,83 @@ class CarnetSaludActivity : BaseActivity() {
             SaludRepo.registros.count { it.tipo == TipoRegistro.DOCUMENTO }.toString()
     }
 
+    private var mascotaDestinoCarnetId: String? = null
+
+    private fun pedirFotoCarnetVacunas() {
+        val listaMascotas = mascotasDelCarnet()
+        if (listaMascotas.isEmpty()) {
+            Avisos.mostrar(this, "No hay mascotas registradas para subir el carnet")
+            return
+        }
+
+        if (!mascotaFiltro.isNullOrBlank()) {
+            mascotaDestinoCarnetId = mascotaFiltro
+            pickCarnetFoto.launch("image/*")
+            return
+        }
+
+        val nombres = listaMascotas.map { it.nombre }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("¿A qué mascota pertenece el carnet?")
+            .setItems(nombres) { _, index ->
+                mascotaDestinoCarnetId = listaMascotas[index].id
+                pickCarnetFoto.launch("image/*")
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
     private fun refrescar() {
         val lista = SaludRepo.filtrar(tipoActual(), etBuscar.text.toString(), mascotaFiltro)
         adapter.update(lista)
         actualizarResumen()
         estiloFiltroMascotas()
+
+        val esVacuna = tipoActual() == TipoRegistro.VACUNA
+        val cardCarnet = findViewById<View>(R.id.cardCarnetVacunasFoto)
+        cardCarnet?.visibility = if (esVacuna) View.VISIBLE else View.GONE
+
+        if (esVacuna) {
+            val pacienteId = mascotaFiltro
+            val registroCarnet = SaludRepo.registros.firstOrNull {
+                it.tipo == TipoRegistro.DOCUMENTO &&
+                it.titulo.contains("Carnet de vacunas", ignoreCase = true) &&
+                (pacienteId == null || it.mascotaId == pacienteId)
+            }
+
+            val tvTitulo = findViewById<TextView>(R.id.tvTituloCarnetFoto)
+            val tvSub = findViewById<TextView>(R.id.tvSubtituloCarnetFoto)
+            val btnVer = findViewById<View>(R.id.btnVerCarnetFoto)
+            val btnSubir = findViewById<TextView>(R.id.btnSubirCarnetFoto)
+
+            val nombreMascota = mascotasDelCarnet().firstOrNull { it.id == pacienteId }?.nombre
+
+            if (pacienteId == null) {
+                tvTitulo?.text = "Carnet / Calendario de Vacunas Físico"
+                if (registroCarnet != null && !registroCarnet.archivoPath.isNullOrBlank()) {
+                    tvSub?.text = "Carnet registrado para ${registroCarnet.mascota}"
+                    btnVer?.visibility = View.VISIBLE
+                    btnVer?.setOnClickListener { ampliarFotoCarnet(registroCarnet) }
+                    btnSubir?.text = "Cargar otro"
+                } else {
+                    tvSub?.text = "Seleccioná una mascota o tocá para subir su carnet físico"
+                    btnVer?.visibility = View.GONE
+                    btnSubir?.text = "+ Cargar carnet"
+                }
+            } else {
+                tvTitulo?.text = "Carnet de Vacunas de $nombreMascota"
+                if (registroCarnet != null && !registroCarnet.archivoPath.isNullOrBlank()) {
+                    tvSub?.text = "Libreta/Calendario de vacunas cargado (${registroCarnet.fecha})"
+                    btnVer?.visibility = View.VISIBLE
+                    btnVer?.setOnClickListener { ampliarFotoCarnet(registroCarnet) }
+                    btnSubir?.text = "Cambiar"
+                } else {
+                    tvSub?.text = "Sin foto de libreta física cargada para $nombreMascota"
+                    btnVer?.visibility = View.GONE
+                    btnSubir?.text = "+ Cargar foto"
+                }
+            }
+        }
 
         vacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
         findViewById<RecyclerView>(R.id.rvRegistros).visibility = if (lista.isEmpty()) View.GONE else View.VISIBLE
@@ -182,6 +263,54 @@ class CarnetSaludActivity : BaseActivity() {
         vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(icono)
         vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "No hay ${tipoActual().etiqueta.lowercase()} para mostrar"
         vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "Tocá + para agregar uno"
+    }
+
+    private fun subirFotoCarnetVacunas(uri: Uri) {
+        val pacienteId = mascotaDestinoCarnetId ?: mascotaFiltro ?: mascotasDelCarnet().firstOrNull()?.id
+        if (pacienteId == null) {
+            Avisos.mostrar(this, "Elegí una mascota para subir la foto de su carnet")
+            return
+        }
+        val nombreMascota = mascotasDelCarnet().firstOrNull { it.id == pacienteId }?.nombre.orEmpty()
+        val tituloRegistro = if (nombreMascota.isNotBlank()) "Carnet de vacunas - $nombreMascota" else "Carnet de vacunas (foto)"
+
+        lifecycleScope.launch {
+            try {
+                val bytes = withContext(Dispatchers.IO) { contentResolver.openInputStream(uri)?.use { it.readBytes() } }
+                    ?: throw IllegalStateException("No se pudo leer la imagen")
+                if (bytes.size > TAMANO_MAXIMO) {
+                    Avisos.mostrar(this@CarnetSaludActivity, "La imagen supera los 15 MB")
+                    return@launch
+                }
+                val ruta = "$pacienteId/carnet_vacunas_foto.jpg"
+                Servicios.fuente.subir(ArchivosRepo.BUCKET, ruta, bytes, "image/jpeg")
+
+                val existente = SaludRepo.registros.firstOrNull {
+                    it.tipo == TipoRegistro.DOCUMENTO &&
+                    it.titulo.contains("Carnet de vacunas", ignoreCase = true) &&
+                    it.mascotaId == pacienteId
+                }
+                if (existente != null) {
+                    SaludRepo.eliminar(existente)
+                }
+
+                SaludRepo.agregar(
+                    TipoRegistro.DOCUMENTO, pacienteId, tituloRegistro,
+                    "Libreta / Calendario de vacunas físico", LocalDate.now(), archivoPath = ruta
+                )
+                refrescar()
+                Avisos.mostrar(this@CarnetSaludActivity, "Foto del carnet de vacunas guardada")
+            } catch (e: Exception) {
+                Avisos.error(this@CarnetSaludActivity, Errores.mensaje(e))
+            }
+        }
+    }
+
+    private fun ampliarFotoCarnet(r: RegistroSalud) {
+        val ruta = r.archivoPath ?: return
+        lifecycleScope.launch {
+            ArchivosUi.abrir(this@CarnetSaludActivity, ArchivosRepo.BUCKET, ruta, r.titulo)
+        }
     }
 
     private fun confirmarEliminar(r: RegistroSalud) {
