@@ -8,8 +8,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.R
@@ -21,7 +19,10 @@ import frgp.utn.edu.petcare.data.Servicios
 import kotlinx.coroutines.launch
 import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
+import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
+import frgp.utn.edu.petcare.ui.common.HojaLista
 import frgp.utn.edu.petcare.ui.common.Efectos
 
 private fun AjusteFoto.escala() = when (this) {
@@ -199,85 +200,54 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
     private fun mostrarListaMascotas() {
         val lista = DuenoRepo.mascotas
         if (lista.isEmpty()) {
-            AlertDialog.Builder(host)
-                .setTitle("Mis Mascotas")
-                .setMessage("No tenés mascotas registradas. Podés agregar una en la sección Mascotas.")
-                .setPositiveButton("Ir a Mascotas") { _, _ -> host.irAMascotas() }
-                .setNegativeButton("Cerrar", null)
-                .show()
+            Avisos.confirmar(
+                host, "Todavía no tenés mascotas",
+                "Podés agregar la primera desde la sección Mascotas.",
+                textoAceptar = "Ir a Mascotas", textoCancelar = "Cerrar",
+                peligro = false, icono = R.drawable.ic_dog
+            ) { host.irAMascotas() }
             return
         }
-
-        val contenedor = LinearLayout(host).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), dp(10))
-        }
-
-        val dialogo = AlertDialog.Builder(host)
-            .setTitle("Mis Mascotas (${lista.size})")
-            .setView(ScrollView(host).apply { addView(contenedor) })
-            .setPositiveButton("Cerrar", null)
-            .create()
-
-        lista.forEach { m ->
-            val fila = host.layoutInflater.inflate(R.layout.item_detalle_paciente_resumen, contenedor, false)
-            fila.findViewById<TextView>(R.id.tvTitle)?.text = m.nombre
-            fila.findViewById<TextView>(R.id.tvSubtitle)?.text = "${m.tipoRazaTexto} · ${m.edadTexto() ?: "Edad sin especificar"}"
-            fila.findViewById<ImageView>(R.id.ivIcon)?.apply {
-                setImageResource(R.drawable.ic_dog)
-                Imagenes.mostrar(this, m.fotoUri, m.fotoPath)
+        HojaLista.mostrar(
+            host, "Mis mascotas",
+            if (lista.size == 1) "Tenés 1 mascota registrada." else "Tenés ${lista.size} mascotas registradas.",
+            lista.map { m ->
+                HojaLista.Fila(
+                    titulo = m.nombre,
+                    subtitulo = "${m.tipoRazaTexto} · ${m.edadTexto() ?: "Edad sin especificar"}",
+                    icono = TiposMascota.icono(m.tipo),
+                    fotoUri = m.fotoUri, fotoPath = m.fotoPath
+                ) { host.irADetalleMascota(m) }
             }
-            fila.setOnClickListener {
-                dialogo.dismiss()
-                host.irADetalleMascota(m)
-            }
-            contenedor.addView(fila)
-        }
-
-        dialogo.show()
+        )
     }
 
     private fun mostrarListaVeterinarios() {
         val lista = DuenoRepo.autorizados.filter { it.estado == EstadoAcceso.ACTIVO }
         if (lista.isEmpty()) {
-            AlertDialog.Builder(host)
-                .setTitle("Veterinarios con acceso")
-                .setMessage("Aún no tenés veterinarios con acceso activo a tus mascotas. Podés autorizar profesionales en la sección Veterinarios.")
-                .setPositiveButton("Ir a Veterinarios") { _, _ -> host.irAVeterinarios() }
-                .setNegativeButton("Cerrar", null)
-                .show()
+            Avisos.confirmar(
+                host, "Sin veterinarios con acceso",
+                "Todavía ningún veterinario tiene acceso a tus mascotas. Podés autorizar profesionales desde la sección Veterinarios.",
+                textoAceptar = "Ir a Veterinarios", textoCancelar = "Cerrar",
+                peligro = false, icono = R.drawable.ic_medical
+            ) { host.irAVeterinarios() }
             return
         }
-
-        val contenedor = LinearLayout(host).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), dp(10))
-        }
-
-        val dialogo = AlertDialog.Builder(host)
-            .setTitle("Veterinarios con acceso (${lista.size})")
-            .setView(ScrollView(host).apply { addView(contenedor) })
-            .setPositiveButton("Ir a Veterinarios") { _, _ -> host.irAVeterinarios() }
-            .setNegativeButton("Cerrar", null)
-            .create()
-
-        lista.forEach { v ->
-            val fila = host.layoutInflater.inflate(R.layout.item_detalle_paciente_resumen, contenedor, false)
-            fila.findViewById<TextView>(R.id.tvTitle)?.text = v.nombre
-            val mascotasTexto = if (v.mascotas.isNotEmpty()) "Acceso a: ${v.mascotas.joinToString(", ")}" else "Acceso activo"
-            fila.findViewById<TextView>(R.id.tvSubtitle)?.text = "${v.especialidad}\n$mascotasTexto"
-            fila.findViewById<ImageView>(R.id.ivIcon)?.apply {
-                setImageResource(R.drawable.ic_medical)
-                if (v.fotoPath != null) Imagenes.mostrar(this, null, v.fotoPath)
-            }
-            fila.setOnClickListener {
-                dialogo.dismiss()
-                host.irAVeterinarios()
-            }
-            contenedor.addView(fila)
-        }
-
-        dialogo.show()
+        HojaLista.mostrar(
+            host, "Veterinarios con acceso",
+            if (lista.size == 1) "1 veterinario puede ver la ficha de tus mascotas."
+            else "${lista.size} veterinarios pueden ver la ficha de tus mascotas.",
+            lista.map { v ->
+                val mascotas = if (v.mascotas.isNotEmpty()) "Acceso a: ${v.mascotas.joinToString(", ")}" else "Acceso activo"
+                HojaLista.Fila(
+                    titulo = v.nombre,
+                    subtitulo = "${v.especialidad}\n$mascotas",
+                    icono = R.drawable.ic_medical,
+                    fotoPath = v.fotoPath
+                ) { host.irAVeterinarios() }
+            },
+            textoPrincipal = "Ir a Veterinarios"
+        ) { host.irAVeterinarios() }
     }
 }
 

@@ -524,6 +524,63 @@ class PantallasTest : PruebaBase() {
         assertEquals(1, a.findViewById<RecyclerView>(R.id.rvRegistros).adapter!!.itemCount)
     }
 
+    @Test
+    fun dueno_elPerfilListaMascotasYVeterinariosEnHojas() {
+        val a = abrirDueno()
+        a.irAPerfil()
+
+        a.findViewById<View>(R.id.llPerfilMascotasCard).performClick()
+        var hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        assertEquals("Mis mascotas", hoja.findViewById<TextView>(R.id.tvListaTitulo)!!.text.toString())
+        assertEquals(2, hoja.findViewById<LinearLayout>(R.id.llListaItems)!!.childCount)
+        hoja.dismiss()
+
+        a.findViewById<View>(R.id.llPerfilVetsCard).performClick()
+        hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        val fila = hoja.findViewById<LinearLayout>(R.id.llListaItems)!!.getChildAt(0)
+        val subtitulo = fila.findViewById<TextView>(R.id.tvSubtitle)
+        assertTrue(subtitulo.text.contains("Acceso a:"))
+        assertEquals(2, subtitulo.maxLines)
+    }
+
+    @Test
+    fun dueno_elPerfilSinVeterinariosMuestraUnCartel() {
+        fuente.accesos.clear()
+        val a = abrirDueno()
+        a.irAPerfil()
+
+        a.findViewById<View>(R.id.llPerfilVetsCard).performClick()
+        val cartel = ShadowDialog.getLatestDialog() as AlertDialog
+        assertNotNull(cartel.findViewById<View>(R.id.btnCartelAceptar))
+    }
+
+    @Test
+    fun dueno_cambiarLaFotoDelCarnetNoBorraLaImagenNueva() {
+        ingresarComoDueno()
+        val a = abrir(CarnetSaludActivity::class.java)
+        val subir = CarnetSaludActivity::class.java
+            .getDeclaredMethod("subirFotoCarnetVacunas", android.net.Uri::class.java)
+            .apply { isAccessible = true }
+
+        repeat(2) { n ->
+            val uri = android.net.Uri.parse("content://prueba/carnet$n.png")
+            shadowOf(a.contentResolver).registerInputStream(uri, java.io.ByteArrayInputStream(ByteArray(10)))
+            subir.invoke(a, uri)
+            val limite = System.currentTimeMillis() + 5000
+            while (fuente.subidas.size < n + 1 && System.currentTimeMillis() < limite) {
+                ShadowLooper.idleMainLooper()
+                Thread.sleep(20)
+            }
+            ShadowLooper.idleMainLooper()
+        }
+
+        assertEquals(2, fuente.subidas.size)
+        assertTrue(fuente.subidas.all { it.startsWith("archivos/") && it.endsWith(".png") })
+        assertTrue(fuente.subidas[0] != fuente.subidas[1])
+        // Solo se borra el carnet anterior; el que se acaba de subir queda en el almacenamiento
+        assertEquals(listOf(fuente.subidas[0]), fuente.borradas)
+    }
+
     // ---------- Administrador ----------
 
     @Test

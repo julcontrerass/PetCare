@@ -5,6 +5,8 @@ import frgp.utn.edu.petcare.ui.common.ArchivosUi
 import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.HojaLista
+import frgp.utn.edu.petcare.model.TiposMascota
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -115,12 +117,12 @@ class CarnetSaludActivity : BaseActivity() {
         refrescar()
     }
 
-    private class MascotaCarnet(val id: String, val nombre: String)
+    private class MascotaCarnet(val id: String, val nombre: String, val tipo: String)
 
     /** Las mascotas del carnet: las del dueño en sesión o los pacientes del veterinario. */
     private fun mascotasDelCarnet(): List<MascotaCarnet> =
-        if (Sesion.rol == Sesion.Rol.DUENO) DuenoRepo.mascotas.map { MascotaCarnet(it.id, it.nombre) }
-        else PacientesRepo.pacientes.map { MascotaCarnet(it.id, it.nombre) }
+        if (Sesion.rol == Sesion.Rol.DUENO) DuenoRepo.mascotas.map { MascotaCarnet(it.id, it.nombre, it.tipo) }
+        else PacientesRepo.pacientes.map { MascotaCarnet(it.id, it.nombre, it.especie) }
 
     private fun abrirDocumento(r: RegistroSalud) {
         val ruta = r.archivoPath ?: return
@@ -190,15 +192,15 @@ class CarnetSaludActivity : BaseActivity() {
             return
         }
 
-        val nombres = listaMascotas.map { it.nombre }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("¿A qué mascota pertenece el carnet?")
-            .setItems(nombres) { _, index ->
-                mascotaDestinoCarnetId = listaMascotas[index].id
-                pickCarnetFoto.launch("image/*")
+        HojaLista.mostrar(
+            this, "¿De qué mascota es el carnet?", "Elegí la mascota y después la foto de su libreta de vacunas.",
+            listaMascotas.map { m ->
+                HojaLista.Fila(m.nombre, m.tipo, TiposMascota.icono(m.tipo)) {
+                    mascotaDestinoCarnetId = m.id
+                    pickCarnetFoto.launch("image/*")
+                }
             }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        )
     }
 
     private fun refrescar() {
@@ -274,6 +276,20 @@ class CarnetSaludActivity : BaseActivity() {
         val nombreMascota = mascotasDelCarnet().firstOrNull { it.id == pacienteId }?.nombre.orEmpty()
         val tituloRegistro = if (nombreMascota.isNotBlank()) "Carnet de vacunas - $nombreMascota" else "Carnet de vacunas (foto)"
 
+        // El tipo real de la imagen (el bucket solo acepta JPG, PNG y WebP) define la extensión de la ruta
+        val mime = (contentResolver.getType(uri)
+            ?: EXTENSIONES[nombreArchivo(uri).substringAfterLast('.', "").uppercase()])?.lowercase()
+        val extension = when (mime) {
+            "image/jpeg", "image/jpg" -> "jpg"
+            "image/png" -> "png"
+            "image/webp" -> "webp"
+            else -> null
+        }
+        if (mime == null || extension == null) {
+            Avisos.mostrar(this, "La foto del carnet tiene que ser JPG, PNG o WebP")
+            return
+        }
+
         lifecycleScope.launch {
             try {
                 val bytes = withContext(Dispatchers.IO) { contentResolver.openInputStream(uri)?.use { it.readBytes() } }
@@ -282,8 +298,9 @@ class CarnetSaludActivity : BaseActivity() {
                     Avisos.mostrar(this@CarnetSaludActivity, "La imagen supera los 15 MB")
                     return@launch
                 }
-                val ruta = "$pacienteId/carnet_vacunas_foto.jpg"
-                Servicios.fuente.subir(ArchivosRepo.BUCKET, ruta, bytes, "image/jpeg")
+                // Cada carga va a una ruta propia: así borrar el carnet anterior nunca se lleva el nuevo
+                val ruta = "$pacienteId/${UUID.randomUUID()}.$extension"
+                Servicios.fuente.subir(ArchivosRepo.BUCKET, ruta, bytes, mime)
 
                 val existente = SaludRepo.registros.firstOrNull {
                     it.tipo == TipoRegistro.DOCUMENTO &&

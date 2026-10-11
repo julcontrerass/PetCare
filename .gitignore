@@ -14,3 +14,6 @@
 .cxx
 local.properties
 .artifacts/
+
+# Configuración del IDE (cada uno tiene la suya)
+.idea/

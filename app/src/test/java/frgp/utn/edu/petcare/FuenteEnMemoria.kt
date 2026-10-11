@@ -53,6 +53,7 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     /** Una línea por escritura, por ejemplo `crearMascota:Rex` o `estadoCuenta:<id>=activo`. */
     val llamadas = mutableListOf<String>()
     val subidas = mutableListOf<String>()
+    val borradas = mutableListOf<String>()
 
     /** Las pruebas emiten acá para simular que el servidor avisó de un cambio. */
     val avisosDelServidor = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 8)
@@ -254,6 +255,7 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
 
     override suspend fun borrar(bucket: String, rutas: List<String>) {
         llamadas.add("borrar:$bucket:${rutas.size}")
+        rutas.forEach { borradas.add("$bucket/$it") }
     }
 
     // ---------- Notificaciones ----------
