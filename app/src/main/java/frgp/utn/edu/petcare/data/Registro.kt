@@ -50,6 +50,7 @@ object Registro {
             put("direccion_clinica", d.direccionClinica)
             put("terminos_version", VERSION_TERMINOS)
             put("especialidades", buildJsonArray { d.especialidades.forEach { add(it) } })
+            put("tipos_animales", buildJsonArray { d.tiposAnimales.forEach { add(it) } })
             put("dias_atencion", buildJsonArray { d.dias.forEach { add(it) } })
             put("hora_apertura", d.apertura)
             put("hora_cierre", d.cierre)

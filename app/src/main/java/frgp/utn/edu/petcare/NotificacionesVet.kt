@@ -15,6 +15,7 @@ import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.model.TipoNotificacion
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.TarjetaAviso
+import frgp.utn.edu.petcare.ui.common.TarjetaPermiso
 import kotlinx.coroutines.launch
 
 /** Avisos del veterinario: turnos nuevos, cambios y cancelaciones, y solicitudes de acceso. */
@@ -45,6 +46,7 @@ object NotificacionesVet {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(20), dp(16), dp(20), dp(16))
                 }
+                TarjetaPermiso.crear(actividad)?.let { contenido.addView(it) }
                 if (avisos.isEmpty()) {
                     contenido.addView(TextView(actividad).apply {
                         text = "No tenés notificaciones."

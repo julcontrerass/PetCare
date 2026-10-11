@@ -2,6 +2,7 @@ package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
+import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.Mascota
@@ -247,11 +248,111 @@ class DuenoRepoTest : PruebaBase() {
     @Test
     fun horasOcupadas_vienenDelServidor() {
         ingresarComoDueno()
-        fuente.ocupados = listOf("09:30", "10:00")
+        fuente.ocupados = listOf(HoraOcupadaDto("09:30"), HoraOcupadaDto("10:00"))
 
         val ocupadas = runBlocking { DuenoRepo.horasOcupadas(DuenoRepo.todosLosVeterinarios().first(), manana) }
 
-        assertEquals(setOf("09:30", "10:00"), ocupadas)
+        assertEquals(listOf("09:30", "10:00"), ocupadas.map { it.hora })
+    }
+
+    @Test
+    fun horasDe_noOfreceLosHorariosEnLosQueElTurnoNoTerminaAntesDelCierre() {
+        ingresarComoDueno()
+        val vet = DuenoRepo.todosLosVeterinarios().first()
+        val lunes = manana.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.MONDAY))
+
+        // El veterinario atiende de 09:00 a 12:00: una cirugía de 2 horas solo puede arrancar hasta las 10:00
+        assertEquals(listOf("09:00", "09:30", "10:00"), DuenoRepo.horasDe(vet, lunes, 120))
+        assertTrue(DuenoRepo.horasDe(vet, lunes, 240).isEmpty())
+    }
+
+    @Test
+    fun estaOcupado_cuentaLaDuracionDeCadaTurno() {
+        val ocupados = listOf(HoraOcupadaDto("10:00", 120))
+
+        assertTrue(DuenoRepo.estaOcupado("11:30", 30, ocupados))
+        assertFalse(DuenoRepo.estaOcupado("12:00", 30, ocupados))
+        assertFalse(DuenoRepo.estaOcupado("09:00", 60, ocupados))
+        assertTrue(DuenoRepo.estaOcupado("09:00", 90, ocupados))
+    }
+
+    @Test
+    fun horaFin_sumaLaDuracion() {
+        assertEquals("11:30", DuenoRepo.horaFin("10:00", 90))
+        assertEquals("12:00", DuenoRepo.horaFin("10:00", 120))
+    }
+
+    @Test
+    fun duracionDe_usaLoQueConfiguroElVeterinarioYSinoLaHabitual() {
+        fuente.perfiles.add(
+            Escenario.perfil(
+                "vet-9", "veterinario", "Dr. Cirujano",
+                veterinario = frgp.utn.edu.petcare.data.remoto.VeterinarioDto(
+                    matricula = "MP-9", especialidades = listOf("Cirugía 24hs", "Cardiología"),
+                    duraciones = mapOf("Cirugía 24hs" to 180)
+                )
+            )
+        )
+        ingresarComoDueno()
+
+        val vet = DuenoRepo.buscarVeterinario("Dr. Cirujano")!!
+
+        assertEquals(180, vet.duracionDe("Cirugía 24hs"))
+        assertEquals(45, vet.duracionDe("Cardiología"))
+        assertEquals(30, vet.duracionDe("Algo que no está en el catálogo"))
+    }
+
+    @Test
+    fun veterinariosPara_noOfreceAlQueNoAtiendeEseTipoDeAnimal() {
+        fuente.perfiles.add(
+            Escenario.perfil(
+                "vet-9", "veterinario", "Dra. Solo Perros",
+                veterinario = frgp.utn.edu.petcare.data.remoto.VeterinarioDto(
+                    matricula = "MP-9", especialidades = listOf("Chequeo médico integral"), tiposAnimales = listOf("Perro")
+                )
+            )
+        )
+        ingresarComoDueno()
+
+        val perro = DuenoRepo.veterinariosPara("Chequeo médico integral", "Perro").map { it.nombre }.sorted()
+        val gato = DuenoRepo.veterinariosPara("Chequeo médico integral", "Gato").map { it.nombre }
+        val conejo = DuenoRepo.veterinariosPara("Chequeo médico integral", "Conejo").map { it.nombre }
+
+        assertEquals(listOf("Dr. Vera", "Dra. Solo Perros"), perro)
+        assertEquals(listOf("Dr. Vera"), gato)
+        // Lo que no tiene nombre propio cuenta como "Otro": Dr. Vera atiende todos, la otra solo perros
+        assertEquals(listOf("Dr. Vera"), conejo)
+    }
+
+    @Test
+    fun turno_traeLaDuracionQueFijoElServidorYSeSuperponeConLoQueCubre() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", manana.toString(), "10:00:00").copy(duracionMin = 120))
+        ingresarComoDueno()
+
+        assertEquals(120, DuenoRepo.eventos[0].duracionMin)
+        assertTrue(DuenoRepo.hayConflictoDeTurno(manana, "11:30", "Rex", duracionMin = 30))
+        assertFalse(DuenoRepo.hayConflictoDeTurno(manana, "12:00", "Rex", duracionMin = 30))
+        assertFalse(DuenoRepo.hayConflictoDeTurno(manana, "11:30", "Mia", duracionMin = 30))
+    }
+
+    @Test
+    fun carnetDelDueno_losTratamientosDeLosInformesSeVenEnTratamientos() {
+        fuente.informes.add(
+            frgp.utn.edu.petcare.data.remoto.InformeDto(
+                "i1", "m1", "t1", Escenario.VET_ID, "Control", "Otitis", "Gotas cada 8 hs",
+                createdAt = java.time.OffsetDateTime.now().toString()
+            )
+        )
+        fuente.informes.add(frgp.utn.edu.petcare.data.remoto.InformeDto("i2", "m1", "t2", Escenario.VET_ID, "Control", "Sano", null))
+        ingresarComoDueno()
+
+        runBlocking { frgp.utn.edu.petcare.SaludRepo.cargarComoDueno() }
+
+        val tratamientos = frgp.utn.edu.petcare.SaludRepo.filtrar(frgp.utn.edu.petcare.TipoRegistro.TRATAMIENTO, "", null)
+        assertEquals(listOf("Otitis"), tratamientos.map { it.titulo })
+        assertEquals("Gotas cada 8 hs", tratamientos[0].detalle)
+        assertEquals("Rex", tratamientos[0].mascota)
+        assertTrue(tratamientos[0].deConsulta)
     }
 
     @Test

@@ -7,6 +7,7 @@ import frgp.utn.edu.petcare.data.remoto.ActividadDto
 import frgp.utn.edu.petcare.data.remoto.ArchivoDto
 import frgp.utn.edu.petcare.data.remoto.DuenoBuscadoDto
 import frgp.utn.edu.petcare.data.remoto.FuenteDatos
+import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.data.remoto.InformeDto
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
@@ -21,6 +22,7 @@ import frgp.utn.edu.petcare.data.remoto.PrivadoDto
 import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
 import frgp.utn.edu.petcare.data.remoto.ResultadoRegistro
 import frgp.utn.edu.petcare.data.remoto.RutaDto
+import frgp.utn.edu.petcare.data.remoto.SolicitudAccesoDto
 import frgp.utn.edu.petcare.data.remoto.TurnoDto
 import frgp.utn.edu.petcare.data.remoto.VeterinarioDto
 import kotlinx.serialization.json.JsonObject
@@ -45,7 +47,7 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     val archivos = mutableListOf<ArchivoDto>()
     val actividad = mutableListOf<ActividadDto>()
     val duenosBuscables = mutableListOf<DuenoBuscadoDto>()
-    var ocupados: List<String> = emptyList()
+    var ocupados: List<HoraOcupadaDto> = emptyList()
     var resumen: JsonObject = JsonObject(emptyMap())
     var haySesionGuardada = false
     var sesionCerrada = false
@@ -161,6 +163,17 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     override suspend fun catalogoVeterinarios() = perfiles.filter { it.rol == "veterinario" }
 
     override suspend fun accesos() = accesos.toList()
+
+    override suspend fun misSolicitudes() = accesos
+        .filter { it.veterinarioId == yo.id && (it.iniciadoPor == "veterinario" || it.estado == "pendiente") }
+        .map { a ->
+            val m = mascotas.firstOrNull { it.id == a.mascotaId }
+            SolicitudAccesoDto(
+                id = a.id, mascotaNombre = m?.nombre ?: "Mascota", mascotaTipo = m?.tipo,
+                duenoNombre = m?.dueno?.nombre ?: m?.propietarioNombre, estado = a.estado,
+                iniciadoPor = a.iniciadoPor, createdAt = a.createdAt
+            )
+        }
 
     override suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String) {
         llamadas.add("compartir:${mascotaIds.size}:$veterinarioId")

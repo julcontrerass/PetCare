@@ -125,15 +125,16 @@ object SelectorHoraVet {
 
     fun mostrar(
         activity: AppCompatActivity, fecha: LocalDate, horaActual: String?, ignorarId: String?,
-        alElegir: (String) -> Unit
+        duracionMin: Int = DisponibilidadVet.DURACION_MIN, alElegir: (String) -> Unit
     ) {
         val vista = LayoutInflater.from(activity).inflate(R.layout.dialog_hora_vet, null)
         val dialog = crearDialogo(activity, vista)
-        val horarios = DisponibilidadVet.horarios(fecha, ignorarId)
+        val horarios = DisponibilidadVet.horarios(fecha, duracionMin, ignorarId)
 
         vista.findViewById<TextView>(R.id.tvResumenHorario).text =
             "${Fechas.relativa(fecha)} · ${Fechas.corta(fecha)} · atendés de " +
-                "${PerfilVetRepo.horaApertura} a ${PerfilVetRepo.horaCierre} hs"
+                "${PerfilVetRepo.horaApertura} a ${PerfilVetRepo.horaCierre} hs · el turno dura " +
+                frgp.utn.edu.petcare.data.CatalogoMedico.textoDuracion(duracionMin)
 
         val grid = vista.findViewById<GridLayout>(R.id.gridHoras)
         horarios.forEachIndexed { i, h ->

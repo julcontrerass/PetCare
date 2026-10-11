@@ -21,6 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Registro
+import frgp.utn.edu.petcare.model.TiposMascota
 import kotlinx.coroutines.launch
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -42,6 +43,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
 
         private const val ESTADO_PASO = "paso"
         private const val ESTADO_ESPECIALIDADES = "especialidades"
+        private const val ESTADO_TIPOS = "tipos_animales"
         private const val ESTADO_DIAS = "dias"
         private const val ESTADO_APERTURA = "apertura"
         private const val ESTADO_CIERRE = "cierre"
@@ -56,6 +58,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
 
     private var paso = 0
     private var especialidades = BooleanArray(PerfilVetRepo.todasLasEspecialidades.size)
+    private var tiposAnimales = BooleanArray(TiposMascota.TODOS.size)
     private var dias = booleanArrayOf(true, true, true, true, true, false, false)
     private var apertura = "09:00"
     private var cierre = "18:00"
@@ -80,6 +83,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
         savedInstanceState?.let {
             paso = it.getInt(ESTADO_PASO)
             especialidades = it.getBooleanArray(ESTADO_ESPECIALIDADES) ?: especialidades
+            tiposAnimales = it.getBooleanArray(ESTADO_TIPOS) ?: tiposAnimales
             dias = it.getBooleanArray(ESTADO_DIAS) ?: dias
             apertura = it.getString(ESTADO_APERTURA) ?: apertura
             cierre = it.getString(ESTADO_CIERRE) ?: cierre
@@ -93,6 +97,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
 
         crearSegmentos()
         crearChipsEspecialidades()
+        crearChipsTiposAnimales()
         crearChipsDias()
         configurarFoto()
         crearChipsTitulo()
@@ -112,6 +117,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
         super.onSaveInstanceState(outState)
         outState.putInt(ESTADO_PASO, paso)
         outState.putBooleanArray(ESTADO_ESPECIALIDADES, especialidades)
+        outState.putBooleanArray(ESTADO_TIPOS, tiposAnimales)
         outState.putBooleanArray(ESTADO_DIAS, dias)
         outState.putString(ESTADO_APERTURA, apertura)
         outState.putString(ESTADO_CIERRE, cierre)
@@ -241,7 +247,9 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private fun validarEspecialidades(): Boolean {
         val ok = especialidades.any { it }
         findViewById<View>(R.id.tvEspError).visibility = if (ok) View.GONE else View.VISIBLE
-        return ok
+        val okTipos = tiposAnimales.any { it }
+        findViewById<View>(R.id.tvTiposError).visibility = if (okTipos) View.GONE else View.VISIBLE
+        return ok && okTipos
     }
 
     private fun minutos(hora: String): Int {
@@ -344,6 +352,18 @@ class RegistroVeterinarioActivity : BaseActivity() {
         actualizarContadorEspecialidades()
     }
 
+    private fun crearChipsTiposAnimales() {
+        val grupo = findViewById<ChipGroup>(R.id.cgTiposAnimales)
+        TiposMascota.TODOS.forEachIndexed { i, tipo ->
+            crearChip(TiposMascota.plural(tipo), tiposAnimales[i], { checked ->
+                tiposAnimales[i] = checked
+                if (checked) findViewById<View>(R.id.tvTiposError).visibility = View.GONE
+            }, grupo)
+        }
+    }
+
+    private fun tiposElegidos() = TiposMascota.TODOS.filterIndexed { i, _ -> tiposAnimales[i] }
+
     private fun actualizarContadorEspecialidades() {
         val total = especialidades.count { it }
         findViewById<TextView>(R.id.tvEspCount).text = when (total) {
@@ -404,8 +424,8 @@ class RegistroVeterinarioActivity : BaseActivity() {
         } else if (minutosDia < DisponibilidadVet.DURACION_MIN) {
             "El horario de cierre tiene que ser posterior al de apertura."
         } else {
-            "Atendés ${textoDias()} de $apertura a $cierre hs, con hasta " +
-                "${minutosDia / DisponibilidadVet.DURACION_MIN} turnos de ${DisponibilidadVet.DURACION_MIN} min por día."
+            "Atendés ${textoDias()} de $apertura a $cierre hs. La duración de cada práctica la podés ajustar " +
+                "después desde tu perfil."
         }
         findViewById<TextView>(R.id.tvResumenHorarioReg).text = texto
     }
@@ -419,6 +439,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             appendLine("Matrícula " + texto(R.id.etVetMatricula))
             appendLine(texto(R.id.etVetClinica) + " · " + texto(R.id.etVetDireccion))
             appendLine(elegidas.joinToString(", "))
+            appendLine("Animales: " + tiposElegidos().joinToString(", ") { TiposMascota.plural(it) })
             append("Atención: ${textoDias()} · $apertura a $cierre hs")
         }
     }
@@ -435,6 +456,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             clinica = texto(R.id.etVetClinica),
             direccionClinica = texto(R.id.etVetDireccion),
             especialidades = PerfilVetRepo.todasLasEspecialidades.filterIndexed { i, _ -> especialidades[i] },
+            tiposAnimales = tiposElegidos(),
             dias = dias.indices.filter { dias[it] }.map { it + 1 },
             apertura = apertura,
             cierre = cierre,

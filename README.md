@@ -37,6 +37,12 @@ Para agregar una sección: crear la `Pantalla`, un método `irA...()` en `DuenoA
 - **Contraseñas filtradas:** activar *Leaked password protection* en *Authentication → Policies*.
 - **Cuenta de administrador:** se crea una sola vez desde el panel de Supabase (usuario con rol `admin` en `profiles`); la app no permite registrarse como administrador.
 
+### Turnos: duración y tipos de animal
+
+- Cada servicio o especialidad tiene una duración habitual (`CatalogoMedico.duracionPorDefecto`, que tiene que coincidir con `private.duracion_por_defecto` en la base). El veterinario puede cambiarla desde su perfil (*Duración de los turnos*); queda en `veterinarios.duraciones`.
+- La duración real de un turno la fija el servidor al crearlo (`turnos.duracion_min`, trigger `turnos_duracion`) y de ahí sale el rango que impide superposiciones. La app calcula lo mismo para mostrar solo los horarios en los que el turno entra completo.
+- El veterinario elige qué animales atiende al registrarse o desde su perfil (`veterinarios.tipos_animales`). El dueño solo ve veterinarios que atienden el tipo de su mascota y la base rechaza el turno si no es así.
+
 ## Pruebas
 
 ```bash

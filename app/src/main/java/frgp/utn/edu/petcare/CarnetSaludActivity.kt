@@ -99,7 +99,16 @@ class CarnetSaludActivity : BaseActivity() {
         }
         tipos.forEach { tabLayout.addTab(tabLayout.newTab().setText(it.etiqueta)) }
 
-        adapter = RegistrosAdapter(emptyList(), { abrirDocumento(it) }) { confirmarEliminar(it) }
+        adapter = RegistrosAdapter(emptyList(), { abrirDocumento(it) }) {
+            if (it.deConsulta) {
+                Avisos.informar(
+                    this, "Indicado en la consulta",
+                    "Este tratamiento lo indicó el veterinario en su informe, así que no se puede borrar desde el carnet."
+                )
+            } else {
+                confirmarEliminar(it)
+            }
+        }
         findViewById<RecyclerView>(R.id.rvRegistros).adapter = adapter
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {

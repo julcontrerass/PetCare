@@ -39,6 +39,8 @@ data class DatosRegistroVeterinario(
     val clinica: String,
     val direccionClinica: String,
     val especialidades: List<String>,
+    /** Tipos de animal que atiende, con los nombres de TiposMascota. */
+    val tiposAnimales: List<String> = emptyList(),
     /** Días de atención como en la base: 1 = lunes ... 7 = domingo. */
     val dias: List<Int>,
     val apertura: String,

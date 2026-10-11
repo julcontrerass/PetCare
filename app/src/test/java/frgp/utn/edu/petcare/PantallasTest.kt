@@ -502,6 +502,70 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun vet_elPerfilPermiteElegirAnimalesYLaDuracionDeLosTurnos() {
+        abrirVet()
+        val a = abrir(PerfilVetActivity::class.java)
+        assertTrue(texto(a, R.id.tvVetTiposAnimalesValue).contains("Perros"))
+
+        a.findViewById<View>(R.id.llVetTiposAnimales).performClick()
+        var hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        val chips = hoja.findViewById<com.google.android.material.chip.ChipGroup>(R.id.cgTiposAnimales)!!
+        assertEquals(frgp.utn.edu.petcare.model.TiposMascota.TODOS.size, chips.childCount)
+        hoja.dismiss()
+
+        a.findViewById<View>(R.id.llVetDuraciones).performClick()
+        hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        val lista = hoja.findViewById<LinearLayout>(R.id.llDuraciones)!!
+        val servicios = PerfilVetRepo.serviciosOfrecidos()
+        assertEquals(servicios.size, lista.childCount)
+        val antes = PerfilVetRepo.duracionDe(servicios[0])
+        lista.getChildAt(0).findViewById<View>(R.id.btnDuracionMas).performClick()
+        hoja.findViewById<View>(R.id.btnGuardarDuraciones)!!.performClick()
+
+        assertEquals(antes + 15, PerfilVetRepo.duracionDe(servicios[0]))
+        assertTrue(fuente.llamadas.contains("veterinario:duraciones"))
+    }
+
+    private fun contieneTexto(vista: View, texto: String): Boolean = when (vista) {
+        is TextView -> vista.text.toString().contains(texto)
+        is android.view.ViewGroup -> (0 until vista.childCount).any { contieneTexto(vista.getChildAt(it), texto) }
+        else -> false
+    }
+
+    @Test
+    fun dueno_lasNotificacionesApagadasMuestranElAvisoParaActivarlas() {
+        val a = abrirDueno()
+        a.mostrarNotificaciones()
+        var dialogo = ShadowDialog.getLatestDialog()
+        assertTrue(contieneTexto(dialogo.window!!.decorView, "notificaciones del teléfono están desactivadas"))
+        dialogo.dismiss()
+
+        // Con el permiso concedido el aviso no aparece
+        shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>())
+            .grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        a.mostrarNotificaciones()
+        dialogo = ShadowDialog.getLatestDialog()
+        assertFalse(contieneTexto(dialogo.window!!.decorView, "notificaciones del teléfono están desactivadas"))
+    }
+
+    @Test
+    fun registroVet_pideLosAnimalesQueAtiende() {
+        val a = abrir(RegistroVeterinarioActivity::class.java)
+
+        val chips = a.findViewById<com.google.android.material.chip.ChipGroup>(R.id.cgTiposAnimales)
+        assertEquals(frgp.utn.edu.petcare.model.TiposMascota.TODOS.size, chips.childCount)
+    }
+
+    @Test
+    fun dueno_sacarUnTurnoMuestraLaDuracionDelServicio() {
+        val a = abrirDueno()
+        a.irANuevoEvento(hoy)
+
+        assertNotNull(a.findViewById<View>(R.id.tvDuracionTurno))
+        assertEquals(View.GONE, a.findViewById<View>(R.id.tvDuracionTurno).visibility)
+    }
+
+    @Test
     fun vet_cerrarSesionVuelveAlIngreso() {
         abrirVet()
         val a = abrir(PerfilVetActivity::class.java)

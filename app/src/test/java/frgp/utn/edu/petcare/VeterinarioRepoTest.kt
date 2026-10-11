@@ -162,7 +162,7 @@ class VeterinarioRepoTest : PruebaBase() {
         assertTrue(DisponibilidadVet.validar(lunes, "13:00")!!.contains("fuera de tu atención"))
         assertEquals("Ya tenés un turno en ese horario", DisponibilidadVet.validar(lunes, "10:00"))
         assertEquals("Ya tenés un turno en ese horario", DisponibilidadVet.validar(lunes, "10:15"))
-        assertNull(DisponibilidadVet.validar(lunes, "10:00", "t1"))
+        assertNull(DisponibilidadVet.validar(lunes, "10:00", 30, "t1"))
     }
 
     @Test
@@ -177,6 +177,59 @@ class VeterinarioRepoTest : PruebaBase() {
         assertFalse(horarios.first { it.hora == "09:30" }.libre)
         assertTrue(horarios.first { it.hora == "10:00" }.libre)
         assertTrue(DisponibilidadVet.horarios(proximoLunes().plusDays(5)).isEmpty())
+    }
+
+    @Test
+    fun disponibilidad_unTurnoLargoBloqueaLosHorariosQueCubre() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", proximoLunes().toString(), "09:00:00").copy(duracionMin = 90))
+        ingresarComoVeterinario()
+        val lunes = proximoLunes()
+
+        assertEquals("Ya tenés un turno en ese horario", DisponibilidadVet.validar(lunes, "10:00", 30))
+        assertNull(DisponibilidadVet.validar(lunes, "10:30", 30))
+        val horarios = DisponibilidadVet.horarios(lunes, 30)
+        assertFalse(horarios.first { it.hora == "10:00" }.libre)
+        assertTrue(horarios.first { it.hora == "10:30" }.libre)
+    }
+
+    @Test
+    fun disponibilidad_unTurnoQueNoTerminaAntesDelCierreSeRechaza() {
+        ingresarComoVeterinario()
+        val lunes = proximoLunes()
+
+        // Atiende de 09:00 a 12:00: una práctica de 2 horas no puede arrancar a las 11:00
+        assertTrue(DisponibilidadVet.validar(lunes, "11:00", 120)!!.contains("no llega a terminar"))
+        assertEquals(listOf("09:00", "09:30", "10:00"), DisponibilidadVet.horarios(lunes, 120).map { it.hora })
+    }
+
+    @Test
+    fun perfil_cargaYGuardaLosTiposDeAnimalYLasDuraciones() {
+        ingresarComoVeterinario()
+        PerfilVetRepo.cargar(
+            Escenario.perfil(
+                Escenario.VET_ID, "veterinario", "Dr. Vera",
+                veterinario = frgp.utn.edu.petcare.data.remoto.VeterinarioDto(
+                    matricula = "MP-100", tiposAnimales = listOf("Gato"), duraciones = mapOf("Tomografía" to 90)
+                )
+            )
+        )
+        assertEquals(setOf("Gato"), PerfilVetRepo.tiposAnimales)
+        assertEquals(90, PerfilVetRepo.duracionDe("Tomografía"))
+        assertEquals(30, PerfilVetRepo.duracionDe("Chequeo médico integral"))
+        assertTrue(PerfilVetRepo.atiende("Gato"))
+        assertFalse(PerfilVetRepo.atiende("Perro"))
+        // Un animal sin nombre propio cuenta como "Otro"
+        assertFalse(PerfilVetRepo.atiende("Conejo"))
+
+        PerfilVetRepo.tiposAnimales.add("Otro")
+        PerfilVetRepo.guardarTiposAnimales()
+        PerfilVetRepo.duraciones["Cirugía 24hs"] = 150
+        PerfilVetRepo.guardarDuraciones()
+
+        assertTrue(PerfilVetRepo.atiende("Conejo"))
+        assertTrue(fuente.llamadas.contains("veterinario:tipos_animales"))
+        assertTrue(fuente.llamadas.contains("veterinario:duraciones"))
+        assertEquals(150, PerfilVetRepo.duracionDe("Cirugía 24hs"))
     }
 
     // ---------- Carnet de salud ----------
@@ -219,12 +272,28 @@ class VeterinarioRepoTest : PruebaBase() {
     // ---------- Solicitudes ----------
 
     @Test
-    fun solicitudes_listaLasQueEnviaronLosDuenos() {
+    fun solicitudes_listaLasQueEnviaronLosDuenosYLasQuePidioElVeterinario() {
         fuente.accesos.add(AccesoDto("a9", "m3", Escenario.VET_ID, "pendiente", "dueno", createdAt = "2026-01-01T10:00:00+00:00"))
         ingresarComoVeterinario()
 
-        assertEquals(1, SolicitudesRepo.pendientesVeterinario())
-        assertEquals("Quiere compartir a Sin acceso", SolicitudesRepo.paraVeterinario[0].mascota)
+        assertEquals(2, SolicitudesRepo.pendientesVeterinario())
+        val recibida = SolicitudesRepo.paraVeterinario.first { !it.enviada }
+        assertEquals("Quiere compartir a Sin acceso", recibida.mascota)
+        val enviada = SolicitudesRepo.paraVeterinario.first { it.enviada }
+        assertEquals("Pediste acceso a Sin acceso", enviada.mascota)
+        assertEquals(SolicitudItem.Estado.PENDIENTE, enviada.estado)
+    }
+
+    @Test
+    fun solicitudes_laQuePidioElVeterinarioMuestraLaRespuestaDelDueno() {
+        val i = fuente.accesos.indexOfFirst { it.id == "a3" }
+        fuente.accesos[i] = fuente.accesos[i].copy(estado = "rechazado")
+        ingresarComoVeterinario()
+
+        val enviada = SolicitudesRepo.paraVeterinario.single()
+        assertTrue(enviada.enviada)
+        assertEquals(SolicitudItem.Estado.RECHAZADA, enviada.estado)
+        assertEquals(0, SolicitudesRepo.pendientesVeterinario())
     }
 
     @Test
@@ -233,7 +302,7 @@ class VeterinarioRepoTest : PruebaBase() {
         ingresarComoVeterinario()
         assertNull(PacientesRepo.porId("m3"))
 
-        SolicitudesRepo.resolver(SolicitudesRepo.paraVeterinario[0], aceptar = true)
+        SolicitudesRepo.resolver(SolicitudesRepo.paraVeterinario.first { it.id == "a9" }, aceptar = true)
 
         assertEquals("activo", fuente.accesos.first { it.id == "a9" }.estado)
         assertNotNull(PacientesRepo.porId("m3"))

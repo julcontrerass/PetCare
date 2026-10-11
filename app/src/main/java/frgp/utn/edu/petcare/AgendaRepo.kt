@@ -28,7 +28,9 @@ data class EventoVet(
     var estado: EstadoEvento,
     var notas: String,
     var veterinario: String,
-    var veterinarioId: String? = null
+    var veterinarioId: String? = null,
+    /** Minutos que dura el turno; lo fija el servidor según el servicio. */
+    var duracionMin: Int = 30
 )
 
 object Fechas {
@@ -104,7 +106,14 @@ object Fechas {
 /** Turnos y consultas del veterinario en sesión. */
 object AgendaRepo {
 
-    val tipos = listOf("Consulta", "Vacuna", "Tratamiento", "Cirugía", "Control", "Otro")
+    private val TIPOS_GENERALES = listOf("Consulta", "Control", "Vacuna", "Tratamiento", "Otro")
+
+    /**
+     * Tipos que se pueden elegir al cargar un turno propio: los servicios que ofrece el veterinario (cada uno con
+     * su duración) y los generales. [actual] es el tipo que ya tiene un turno que se está editando.
+     */
+    fun tipos(actual: String? = null): List<String> =
+        (PerfilVetRepo.serviciosOfrecidos() + TIPOS_GENERALES + listOfNotNull(actual?.takeIf { it.isNotBlank() })).distinct()
 
     val eventos: MutableList<EventoVet> = mutableListOf()
 
@@ -125,7 +134,8 @@ object AgendaRepo {
             "cancelado" -> EstadoEvento.CANCELADO
             else -> EstadoEvento.PENDIENTE
         },
-        notas = t.notas.orEmpty(), veterinario = PerfilVetRepo.nombre, veterinarioId = t.veterinarioId
+        notas = t.notas.orEmpty(), veterinario = PerfilVetRepo.nombre, veterinarioId = t.veterinarioId,
+        duracionMin = t.duracionMin
     )
 
     private val alFallar: suspend () -> Unit = {
@@ -140,7 +150,10 @@ object AgendaRepo {
     ): EventoVet {
         val id = UUID.randomUUID().toString()
         val vetId = Sesion.usuarioId
-        val e = EventoVet(id, pacienteId, tipo, motivo, fecha, hora, estado, notas, PerfilVetRepo.nombre, vetId)
+        val e = EventoVet(
+            id, pacienteId, tipo, motivo, fecha, hora, estado, notas, PerfilVetRepo.nombre, vetId,
+            PerfilVetRepo.duracionDe(tipo)
+        )
         eventos.add(e)
         Servicios.escribir(alFallar = alFallar) {
             Servicios.fuente.crearTurno(

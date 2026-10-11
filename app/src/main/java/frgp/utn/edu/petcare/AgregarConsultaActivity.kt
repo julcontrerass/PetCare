@@ -41,7 +41,8 @@ class AgregarConsultaActivity : BaseActivity() {
         spPaciente.adapter = ArrayAdapter(
             this, android.R.layout.simple_spinner_dropdown_item, pacientes.map { "${it.nombre} (${it.propietario})" }
         )
-        spTipo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AgendaRepo.tipos)
+        spTipo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AgendaRepo.tipos())
+        fun duracion() = PerfilVetRepo.duracionDe(spTipo.selectedItem as? String)
 
         // Preselección por intent si viene de DetallePaciente
         val preseleccionado = intent.getStringExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID)
@@ -127,7 +128,7 @@ class AgregarConsultaActivity : BaseActivity() {
                 etFecha.error = null
                 // Si el horario ya cargado no sirve para el nuevo día, hay que elegirlo de nuevo
                 val hora = etHora.text.toString()
-                if (hora.isNotBlank() && DisponibilidadVet.validar(elegida, hora) != null) {
+                if (hora.isNotBlank() && DisponibilidadVet.validar(elegida, hora, duracion()) != null) {
                     etHora.setText("")
                     Avisos.mostrar(this, "Elegí otro horario para ese día")
                 }
@@ -140,7 +141,7 @@ class AgregarConsultaActivity : BaseActivity() {
                 etFecha.error = "Elegí primero la fecha"
                 Avisos.mostrar(this, "Elegí primero la fecha")
             } else {
-                SelectorHoraVet.mostrar(this, f, etHora.text.toString().ifBlank { null }, null) { hora ->
+                SelectorHoraVet.mostrar(this, f, etHora.text.toString().ifBlank { null }, null, duracion()) { hora ->
                     etHora.setText(hora)
                     etHora.error = null
                 }
@@ -157,7 +158,7 @@ class AgregarConsultaActivity : BaseActivity() {
             if (etMotivo.text.isBlank()) { etMotivo.error = "Requerido"; ok = false }
             if (!ok) return@setOnClickListener
 
-            val problema = DisponibilidadVet.validar(fecha!!, etHora.text.toString())
+            val problema = DisponibilidadVet.validar(fecha!!, etHora.text.toString(), duracion())
             if (problema != null) {
                 etHora.error = problema
                 Avisos.mostrar(this, problema)
@@ -172,6 +173,10 @@ class AgregarConsultaActivity : BaseActivity() {
                 val nomMascota = etNuevoNombreMascota.text.toString().trim()
                 if (nomDueno.isBlank()) { etNuevoNombreDueno.error = "Requerido"; return@setOnClickListener }
                 if (nomMascota.isBlank()) { etNuevoNombreMascota.error = "Requerido"; return@setOnClickListener }
+                if (!PerfilVetRepo.atiende(spNuevoEspecie.selectedItem.toString())) {
+                    avisarQueNoAtiende(spNuevoEspecie.selectedItem.toString())
+                    return@setOnClickListener
+                }
 
                 pacienteElegido = PacientesRepo.agregarManual(
                     nombre = nomMascota,
@@ -202,6 +207,10 @@ class AgregarConsultaActivity : BaseActivity() {
                 Avisos.mostrar(this, "Seleccioná o registrá una mascota")
                 return@setOnClickListener
             }
+            if (!PerfilVetRepo.atiende(pacienteElegido.especie)) {
+                avisarQueNoAtiende(pacienteElegido.especie)
+                return@setOnClickListener
+            }
 
             val tipo = spTipo.selectedItem as String
             val motivo = etMotivo.text.toString().trim()
@@ -215,6 +224,16 @@ class AgregarConsultaActivity : BaseActivity() {
             Avisos.mostrar(this, R.string.consulta_guardada)
             finish()
         }
+    }
+
+    private fun avisarQueNoAtiende(tipo: String) {
+        val animales = TiposMascota.plural(TiposMascota.normalizar(tipo)).lowercase()
+        Avisos.informar(
+            this, "No atendés $animales",
+            "No tenés ese tipo de animal entre los que atendés, así que no podés agendar este turno. " +
+                "Podés agregarlo desde tu perfil, en \"Animales que atiendo\".",
+            icono = R.drawable.ic_warning
+        )
     }
 
     private class Encontrada(val candidata: Candidata, val etiquetaDueno: String)

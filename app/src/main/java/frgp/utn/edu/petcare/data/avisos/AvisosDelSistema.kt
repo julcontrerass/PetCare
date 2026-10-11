@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -112,6 +113,14 @@ object AvisosDelSistema {
                     mostrar(contexto, aviso.id.hashCode(), aviso.titulo, aviso.mensaje, CANAL_AVISOS)
                 }
             }
+    }
+
+    /** Abre los ajustes de notificaciones de la app en el teléfono, para activarlas a mano. */
+    fun abrirAjustes(contexto: Context) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, contexto.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { contexto.startActivity(intent) }
     }
 
     /** Olvida lo que se había mostrado (al cerrar sesión). */

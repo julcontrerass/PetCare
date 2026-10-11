@@ -66,8 +66,10 @@ interface FuenteDatos {
     suspend fun actualizarAccesosDeVeterinario(veterinarioId: String, estado: String) {}
     suspend fun solicitarAcceso(mascotaId: String): String = "pendiente"
     suspend fun buscarDueno(dato: String): List<DuenoBuscadoDto> = emptyList()
-    /** Horas ("HH:mm") en las que el veterinario ya tiene un turno pendiente ese día. */
-    suspend fun horariosOcupados(veterinarioId: String, fecha: String): List<String> = emptyList()
+    /** Las solicitudes de acceso del veterinario: las que pidió y las que un dueño le compartió sin responder. */
+    suspend fun misSolicitudes(): List<SolicitudAccesoDto> = emptyList()
+    /** Turnos pendientes del veterinario ese día: hora de inicio y duración en minutos. */
+    suspend fun horariosOcupados(veterinarioId: String, fecha: String): List<HoraOcupadaDto> = emptyList()
 
     // ---------- Estudios previos de un turno ----------
     suspend fun estudiosDeTurno(turnoId: String): List<EstudioTurnoDto> = emptyList()

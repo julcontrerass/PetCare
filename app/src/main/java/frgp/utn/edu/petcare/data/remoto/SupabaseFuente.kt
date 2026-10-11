@@ -251,14 +251,17 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     override suspend fun solicitarAcceso(mascotaId: String): String =
         cliente.postgrest.rpc("solicitar_acceso", buildJsonObject { put("p_mascota", mascotaId) }).decodeAs<String>()
 
+    override suspend fun misSolicitudes(): List<SolicitudAccesoDto> =
+        cliente.postgrest.rpc("mis_solicitudes").decodeList()
+
     override suspend fun buscarDueno(dato: String): List<DuenoBuscadoDto> =
         cliente.postgrest.rpc("buscar_dueno", buildJsonObject { put("p_dato", dato) }).decodeList()
 
-    override suspend fun horariosOcupados(veterinarioId: String, fecha: String): List<String> =
+    override suspend fun horariosOcupados(veterinarioId: String, fecha: String): List<HoraOcupadaDto> =
         cliente.postgrest.rpc("horarios_ocupados", buildJsonObject {
             put("p_veterinario", veterinarioId)
             put("p_fecha", fecha)
-        }).decodeList<HoraOcupadaDto>().map { it.hora.take(5) }
+        }).decodeList<HoraOcupadaDto>().map { it.copy(hora = it.hora.take(5)) }
 
     // ---------- Estudios previos de un turno ----------
 

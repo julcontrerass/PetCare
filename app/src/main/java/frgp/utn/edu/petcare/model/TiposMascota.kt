@@ -31,6 +31,10 @@ object TiposMascota {
         else -> "Otros"
     }
 
+    /** El tipo tal como se compara con lo que atiende un veterinario: lo que no tiene nombre propio es "Otro". */
+    fun normalizar(tipo: String?): String =
+        PRINCIPALES.firstOrNull { it.equals(tipo?.trim(), ignoreCase = true) } ?: OTRO
+
     /** True si el tipo tiene nombre propio; si no, se cuenta como "Otro". */
     fun esConocido(tipo: String) = PRINCIPALES.any { it.equals(tipo, ignoreCase = true) }
 

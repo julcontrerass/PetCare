@@ -5,6 +5,7 @@ import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -55,6 +56,40 @@ object PerfilVetRepo {
         }
     }
 
+    // Tipos de animal que atiende
+    val tiposAnimales: MutableSet<String> = linkedSetOf()
+
+    /** True si atiende mascotas de ese tipo (lo que no tiene nombre propio cuenta como "Otro"). */
+    fun atiende(tipoMascota: String?): Boolean = TiposMascota.normalizar(tipoMascota) in tiposAnimales
+
+    fun textoTiposAnimales(): String {
+        val activos = TiposMascota.TODOS.filter { it in tiposAnimales }
+        return if (activos.isEmpty()) "Sin tipos de animales seleccionados"
+        else activos.joinToString(", ") { TiposMascota.plural(it) }
+    }
+
+    // Minutos que dura cada servicio; lo que no está cargado usa la duración por defecto del catálogo
+    val duraciones: MutableMap<String, Int> = mutableMapOf()
+
+    fun duracionDe(servicio: String?): Int =
+        duraciones.entries.firstOrNull { it.key.equals(servicio?.trim(), ignoreCase = true) }?.value
+            ?.coerceIn(CatalogoMedico.DURACION_MINIMA_MIN, CatalogoMedico.DURACION_MAXIMA_MIN)
+            ?: CatalogoMedico.duracionPorDefecto(servicio)
+
+    /** Servicios y especialidades que el veterinario marcó como propios. */
+    fun serviciosOfrecidos(): List<String> =
+        todasLasEspecialidades.filterIndexed { index, _ -> especialidadesSeleccionadas[index] }
+
+    fun textoDuraciones(): String {
+        val servicios = serviciosOfrecidos()
+        if (servicios.isEmpty()) return "Primero elegí tus especialidades y prácticas"
+        val minutos = servicios.map { duracionDe(it) }
+        val corto = CatalogoMedico.textoDuracion(minutos.min())
+        val largo = CatalogoMedico.textoDuracion(minutos.max())
+        val cantidad = if (servicios.size == 1) "1 servicio" else "${servicios.size} servicios"
+        return if (corto == largo) "$cantidad · $corto cada uno" else "$cantidad · de $corto a $largo"
+    }
+
     /** Avisos que el veterinario quiere recibir; lo que no está cargado se considera activado. */
     val preferencias: MutableMap<String, Boolean> = mutableMapOf()
 
@@ -74,6 +109,8 @@ object PerfilVetRepo {
         fotoPath = null; fotoUri = null
         diasSeleccionados.fill(false)
         especialidadesSeleccionadas.fill(false)
+        tiposAnimales.clear()
+        duraciones.clear()
         horaApertura = "09:00"; horaCierre = "18:00"
     }
 
@@ -101,6 +138,10 @@ object PerfilVetRepo {
             val i = todasLasEspecialidades.indexOf(esp)
             if (i >= 0) especialidadesSeleccionadas[i] = true
         }
+        tiposAnimales.clear()
+        (v?.tiposAnimales ?: TiposMascota.TODOS).forEach { tiposAnimales.add(TiposMascota.normalizar(it)) }
+        duraciones.clear()
+        v?.duraciones?.let { duraciones.putAll(it) }
     }
 
     /** Guarda los datos personales y de la clínica; se muestran ya y se mandan al servidor en segundo plano. */
@@ -136,6 +177,22 @@ object PerfilVetRepo {
                 put("especialidades", buildJsonArray {
                     todasLasEspecialidades.forEachIndexed { i, nombre -> if (especialidadesSeleccionadas[i]) add(nombre) }
                 })
+            })
+        }
+    }
+
+    fun guardarTiposAnimales() {
+        Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {
+            Servicios.fuente.actualizarVeterinario(buildJsonObject {
+                put("tipos_animales", buildJsonArray { TiposMascota.TODOS.filter { it in tiposAnimales }.forEach { add(it) } })
+            })
+        }
+    }
+
+    fun guardarDuraciones() {
+        Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {
+            Servicios.fuente.actualizarVeterinario(buildJsonObject {
+                put("duraciones", buildJsonObject { duraciones.forEach { (servicio, minutos) -> put(servicio, minutos) } })
             })
         }
     }

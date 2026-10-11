@@ -28,7 +28,8 @@ class SolicitudesVetActivity : BaseActivity() {
         vacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
         vacio.findViewById<ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_person)
         vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "Sin solicitudes"
-        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "Cuando un dueño pida acceso aparece acá"
+        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text =
+            "Cuando le pidas acceso a un dueño, o un dueño te comparta una mascota, aparece acá"
 
         findViewById<RecyclerView>(R.id.rvSolicitudes).adapter =
             SolicitudesAdapter(lista) { item, estado ->
@@ -71,15 +72,30 @@ class SolicitudesAdapter(
         holder.tvHace.text = item.hace
 
         val pendiente = item.estado == SolicitudItem.Estado.PENDIENTE
-        holder.llAcciones.visibility = if (pendiente) View.VISIBLE else View.GONE
-        holder.tvEstado.visibility = if (pendiente) View.GONE else View.VISIBLE
-        if (!pendiente) {
+        // Las que pidió el propio veterinario no tienen botones: solo muestran en qué estado están
+        val conBotones = pendiente && !item.enviada
+        holder.llAcciones.visibility = if (conBotones) View.VISIBLE else View.GONE
+        holder.tvEstado.visibility = if (conBotones) View.GONE else View.VISIBLE
+        if (!conBotones) {
             val aceptada = item.estado == SolicitudItem.Estado.ACEPTADA
-            holder.tvEstado.text = if (aceptada) "Solicitud aceptada" else "Solicitud rechazada"
-            holder.tvEstado.setBackgroundResource(if (aceptada) R.drawable.bg_chip_ok else R.drawable.bg_chip_danger)
-            holder.tvEstado.setTextColor(
-                holder.itemView.context.getColor(if (aceptada) R.color.success_green else R.color.danger_red)
-            )
+            val contexto = holder.itemView.context
+            when {
+                pendiente -> {
+                    holder.tvEstado.text = "Esperando la respuesta del dueño"
+                    holder.tvEstado.setBackgroundResource(R.drawable.bg_chip_neutral)
+                    holder.tvEstado.setTextColor(contexto.getColor(R.color.text_gray))
+                }
+                else -> {
+                    holder.tvEstado.text = when {
+                        aceptada && item.enviada -> "Te dieron acceso"
+                        aceptada -> "Solicitud aceptada"
+                        item.enviada -> "El dueño no te dio acceso"
+                        else -> "Solicitud rechazada"
+                    }
+                    holder.tvEstado.setBackgroundResource(if (aceptada) R.drawable.bg_chip_ok else R.drawable.bg_chip_danger)
+                    holder.tvEstado.setTextColor(contexto.getColor(if (aceptada) R.color.success_green else R.color.danger_red))
+                }
+            }
         }
 
         holder.btnAceptar.setOnClickListener { resolver(holder, SolicitudItem.Estado.ACEPTADA) }

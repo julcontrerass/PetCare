@@ -357,6 +357,86 @@
 
         </LinearLayout>
 
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
+            android:id="@+id/llVetTiposAnimales"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout style="@style/PetInfoIconBox">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_dog"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Animales que atiendo" />
+
+                <TextView
+                    android:id="@+id/tvVetTiposAnimalesValue"
+                    style="@style/PetInfoValue"
+                    tools:text="Perros, Gatos, Aves" />
+            </LinearLayout>
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+
+        </LinearLayout>
+
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
+            android:id="@+id/llVetDuraciones"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout style="@style/PetInfoIconBox">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_clock"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout style="@style/PetInfoTexts">
+
+                <TextView
+                    style="@style/PetInfoLabel"
+                    android:text="Duración de los turnos" />
+
+                <TextView
+                    android:id="@+id/tvVetDuracionesValue"
+                    style="@style/PetInfoValue"
+                    tools:text="5 servicios · de 30 min a 2 h" />
+            </LinearLayout>
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+
+        </LinearLayout>
+
         </LinearLayout>
 
             <TextView

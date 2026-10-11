@@ -52,9 +52,11 @@ class DetalleEventoVetActivity : BaseActivity() {
             }
 
             val spTipo = Spinner(ctx).apply {
-                adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, AgendaRepo.tipos)
-                setSelection(AgendaRepo.tipos.indexOf(evento.tipo).coerceAtLeast(0))
+                val opciones = AgendaRepo.tipos(evento.tipo)
+                adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, opciones)
+                setSelection(opciones.indexOf(evento.tipo).coerceAtLeast(0))
             }
+            fun duracion() = PerfilVetRepo.duracionDe(spTipo.selectedItem as? String)
             val etMotivo = campo("Motivo", evento.motivo)
             var fecha = evento.fecha
             val etFecha = campo("Fecha", Fechas.corta(fecha)).apply { isFocusable = false }
@@ -64,14 +66,14 @@ class DetalleEventoVetActivity : BaseActivity() {
                     fecha = nuevaFecha
                     etFecha.setText(Fechas.corta(fecha))
                     val hora = etHora.text.toString()
-                    if (hora.isNotBlank() && DisponibilidadVet.validar(nuevaFecha, hora, evento.id) != null) {
+                    if (hora.isNotBlank() && DisponibilidadVet.validar(nuevaFecha, hora, duracion(), evento.id) != null) {
                         etHora.setText("")
                         Avisos.mostrar(ctx, "Elegí otro horario para ese día")
                     }
                 }
             }
             etHora.setOnClickListener {
-                SelectorHoraVet.mostrar(ctx, fecha, etHora.text.toString().ifBlank { null }, evento.id) { hora ->
+                SelectorHoraVet.mostrar(ctx, fecha, etHora.text.toString().ifBlank { null }, evento.id, duracion()) { hora ->
                     etHora.setText(hora)
                     etHora.error = null
                 }
@@ -96,15 +98,17 @@ class DetalleEventoVetActivity : BaseActivity() {
                     }
                     val hora = etHora.text.toString()
                     // Si no se movió el turno no se revalida (puede ser de hoy y ya estar en curso)
-                    val cambioHorario = fecha != evento.fecha || hora != evento.hora
+                    val cambioHorario = fecha != evento.fecha || hora != evento.hora ||
+                        spTipo.selectedItem as String != evento.tipo
                     val problema = if (hora.isBlank()) "Elegí un horario"
-                    else if (cambioHorario) DisponibilidadVet.validar(fecha, hora, evento.id) else null
+                    else if (cambioHorario) DisponibilidadVet.validar(fecha, hora, duracion(), evento.id) else null
                     if (problema != null) {
                         etHora.error = problema
                         Avisos.mostrar(ctx, problema)
                         return@setOnClickListener
                     }
                     evento.tipo = spTipo.selectedItem as String
+                    evento.duracionMin = PerfilVetRepo.duracionDe(evento.tipo)
                     evento.motivo = etMotivo.text.toString().trim()
                     evento.fecha = fecha
                     evento.hora = etHora.text.toString()

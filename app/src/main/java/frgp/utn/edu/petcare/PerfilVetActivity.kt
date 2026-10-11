@@ -22,7 +22,12 @@ import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
 import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import frgp.utn.edu.petcare.data.CatalogoMedico
+import frgp.utn.edu.petcare.model.TiposMascota
 
 class PerfilVetActivity : BaseActivity() {
 
@@ -57,6 +62,8 @@ class PerfilVetActivity : BaseActivity() {
 
         findViewById<View>(R.id.llVetHorarios)?.setOnClickListener { configurarHorarios() }
         findViewById<View>(R.id.llVetEspecialidades)?.setOnClickListener { configurarEspecialidades() }
+        findViewById<View>(R.id.llVetTiposAnimales)?.setOnClickListener { configurarTiposAnimales() }
+        findViewById<View>(R.id.llVetDuraciones)?.setOnClickListener { configurarDuraciones() }
 
         findViewById<View>(R.id.optEditarPerfil)?.setOnClickListener { editarPerfil() }
         findViewById<View>(R.id.optCambiarPassword)?.setOnClickListener { cambiarPassword() }
@@ -81,6 +88,8 @@ class PerfilVetActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvVetEmailValue)?.text = PerfilVetRepo.email
         findViewById<TextView>(R.id.tvVetHorariosValue)?.text = PerfilVetRepo.textoHorarios()
         findViewById<TextView>(R.id.tvVetEspecialidadesValue)?.text = PerfilVetRepo.textoEspecialidades()
+        findViewById<TextView>(R.id.tvVetTiposAnimalesValue)?.text = PerfilVetRepo.textoTiposAnimales()
+        findViewById<TextView>(R.id.tvVetDuracionesValue)?.text = PerfilVetRepo.textoDuraciones()
 
         VetUi.cargarFotoVet(findViewById<ImageView>(R.id.ivVetProfilePic))
     }
@@ -201,6 +210,95 @@ class PerfilVetActivity : BaseActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+
+    /** Qué tipos de mascota atiende: los dueños solo pueden sacar turno para esos. */
+    private fun configurarTiposAnimales() {
+        val hoja = BottomSheetDialog(this)
+        val vista = layoutInflater.inflate(R.layout.sheet_tipos_animales, null)
+        hoja.setContentView(vista)
+        val elegidos = PerfilVetRepo.tiposAnimales.toMutableSet()
+        val grupo = vista.findViewById<ChipGroup>(R.id.cgTiposAnimales)
+        TiposMascota.TODOS.forEach { tipo ->
+            val chip = layoutInflater.inflate(R.layout.chip_registro, grupo, false) as Chip
+            chip.text = TiposMascota.plural(tipo)
+            chip.isChecked = tipo in elegidos
+            chip.setOnCheckedChangeListener { _, marcado ->
+                if (marcado) elegidos.add(tipo) else elegidos.remove(tipo)
+                if (marcado) vista.findViewById<View>(R.id.tvTiposError).visibility = View.GONE
+            }
+            grupo.addView(chip)
+        }
+        vista.findViewById<View>(R.id.btnGuardarTipos).setOnClickListener {
+            if (elegidos.isEmpty()) {
+                vista.findViewById<View>(R.id.tvTiposError).visibility = View.VISIBLE
+                return@setOnClickListener
+            }
+            PerfilVetRepo.tiposAnimales.clear()
+            PerfilVetRepo.tiposAnimales.addAll(TiposMascota.TODOS.filter { it in elegidos })
+            PerfilVetRepo.guardarTiposAnimales()
+            mostrarPerfil()
+            hoja.dismiss()
+            Avisos.mostrar(this, "Animales que atendés actualizados")
+        }
+        vista.findViewById<View>(R.id.btnCancelarTipos).setOnClickListener { hoja.dismiss() }
+        hoja.show()
+    }
+
+    /** La duración de cada práctica: define cuánto tiempo bloquea en la agenda cada turno. */
+    private fun configurarDuraciones() {
+        val servicios = PerfilVetRepo.serviciosOfrecidos()
+        if (servicios.isEmpty()) {
+            Avisos.mostrar(this, "Primero elegí tus especialidades y prácticas")
+            return
+        }
+        val hoja = BottomSheetDialog(this)
+        val vista = layoutInflater.inflate(R.layout.sheet_duraciones, null)
+        hoja.setContentView(vista)
+        val valores = servicios.associateWith { PerfilVetRepo.duracionDe(it) }.toMutableMap()
+
+        val lista = vista.findViewById<LinearLayout>(R.id.llDuraciones)
+        servicios.forEach { servicio ->
+            val fila = layoutInflater.inflate(R.layout.item_duracion, lista, false)
+            val valor = fila.findViewById<TextView>(R.id.tvDuracionValor)
+            val predeterminada = fila.findViewById<TextView>(R.id.tvDuracionPredeterminada)
+            val porDefecto = CatalogoMedico.duracionPorDefecto(servicio)
+            fun pintar() {
+                val minutos = valores.getValue(servicio)
+                valor.text = CatalogoMedico.textoDuracion(minutos)
+                predeterminada.text = if (minutos == porDefecto) {
+                    "Duración habitual"
+                } else {
+                    "Habitual: ${CatalogoMedico.textoDuracion(porDefecto)}"
+                }
+            }
+            fila.findViewById<TextView>(R.id.tvDuracionNombre).text = servicio
+            fila.findViewById<View>(R.id.btnDuracionMenos).setOnClickListener {
+                valores[servicio] = (valores.getValue(servicio) - CatalogoMedico.PASO_DURACION_MIN)
+                    .coerceAtLeast(CatalogoMedico.DURACION_MINIMA_MIN)
+                pintar()
+            }
+            fila.findViewById<View>(R.id.btnDuracionMas).setOnClickListener {
+                valores[servicio] = (valores.getValue(servicio) + CatalogoMedico.PASO_DURACION_MIN)
+                    .coerceAtMost(CatalogoMedico.DURACION_MAXIMA_MIN)
+                pintar()
+            }
+            pintar()
+            lista.addView(fila)
+        }
+
+        vista.findViewById<View>(R.id.btnGuardarDuraciones).setOnClickListener {
+            valores.forEach { (servicio, minutos) ->
+                if (minutos == CatalogoMedico.duracionPorDefecto(servicio)) PerfilVetRepo.duraciones.remove(servicio)
+                else PerfilVetRepo.duraciones[servicio] = minutos
+            }
+            PerfilVetRepo.guardarDuraciones()
+            mostrarPerfil()
+            hoja.dismiss()
+            Avisos.mostrar(this, "Duración de los turnos actualizada")
+        }
+        vista.findViewById<View>(R.id.btnCancelarDuraciones).setOnClickListener { hoja.dismiss() }
+        hoja.show()
     }
 
     private fun editarPerfil() {

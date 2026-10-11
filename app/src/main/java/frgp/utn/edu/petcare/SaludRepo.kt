@@ -24,7 +24,10 @@ data class RegistroSalud(
     val fecha: String,
     val estado: String? = null,
     val archivoPath: String? = null
-)
+) {
+    /** Viene del informe de una consulta: se puede leer pero no borrar desde el carnet. */
+    val deConsulta: Boolean get() = id.startsWith(SaludRepo.PREFIJO_INFORME)
+}
 
 /** Vacunas, tratamientos y documentos de las mascotas que ve el veterinario en sesión. */
 object SaludRepo {
@@ -49,7 +52,8 @@ object SaludRepo {
 
     /**
      * Carga el carnet del dueño: lo que cargó él o el veterinario en vacunas, tratamientos y documentos, más los
-     * archivos que el veterinario adjuntó a las consultas (que se muestran en Documentos).
+     * archivos que el veterinario adjuntó a las consultas (que se muestran en Documentos) y los tratamientos que
+     * indicó en sus informes (que se muestran en Tratamientos).
      */
     suspend fun cargarComoDueno() {
         val f = Servicios.fuente
@@ -64,11 +68,26 @@ object SaludRepo {
                 )
             }
         }
+        val indicados = DuenoRepo.mascotas.flatMap { m ->
+            runCatching { f.informesDe(m.id) }.getOrDefault(emptyList())
+                .filter { !it.tratamiento.isNullOrBlank() }
+                .map { i ->
+                    RegistroSalud(
+                        id = PREFIJO_INFORME + i.id, tipo = TipoRegistro.TRATAMIENTO, mascotaId = m.id,
+                        mascota = m.nombre,
+                        titulo = i.diagnostico?.takeIf { it.isNotBlank() } ?: "Tratamiento indicado",
+                        detalle = i.tratamiento.orEmpty(),
+                        fecha = Fechas.corta(Fechas.instante(i.createdAt).toLocalDate()),
+                        estado = "Indicado"
+                    )
+                }
+        }
         registros.clear()
-        registros.addAll((propios + adjuntos))
+        registros.addAll(propios + adjuntos + indicados)
     }
 
     private const val PREFIJO_ARCHIVO = "archivo:"
+    const val PREFIJO_INFORME = "informe:"
 
     private fun aRegistro(r: RegistroSaludDto): RegistroSalud {
         val tipo = TipoRegistro.entries.firstOrNull { it.clave == r.tipo } ?: TipoRegistro.DOCUMENTO

@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.ui.common.TarjetaAviso
+import frgp.utn.edu.petcare.ui.common.TarjetaPermiso
 
 /** Lista de notificaciones del dueño en un diálogo. */
 class NotificacionesDialogo(private val host: DuenoActivity) {
@@ -26,6 +27,7 @@ class NotificacionesDialogo(private val host: DuenoActivity) {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(16), dp(20), dp(16))
         }
+        TarjetaPermiso.crear(host)?.let { contenido.addView(it) }
         if (lista.isEmpty()) {
             contenido.addView(TextView(host).apply {
                 text = "No tenés notificaciones."

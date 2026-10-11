@@ -2,6 +2,7 @@ package frgp.utn.edu.petcare.model
 
 import android.net.Uri
 import frgp.utn.edu.petcare.Fechas
+import frgp.utn.edu.petcare.data.CatalogoMedico
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Period
@@ -72,7 +73,9 @@ class EventoMascota(
     val id: String = UUID.randomUUID().toString(),
     var mascotaId: String = "",
     var veterinarioId: String? = null,
-    var estado: EstadoTurno = EstadoTurno.PENDIENTE
+    var estado: EstadoTurno = EstadoTurno.PENDIENTE,
+    /** Minutos que dura el turno; lo fija el servidor según el servicio y el veterinario. */
+    var duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN
 )
 
 enum class EstadoTurno { PENDIENTE, COMPLETADO, CANCELADO }
@@ -95,11 +98,24 @@ class VeterinarioAcceso(
     /** Días de atención: 1 = lunes ... 7 = domingo. */
     val diasAtencion: Set<Int> = emptySet(),
     val apertura: String = "09:00",
-    val cierre: String = "18:00"
+    val cierre: String = "18:00",
+    /** Tipos de mascota que atiende, con los nombres de [TiposMascota]. */
+    val tiposAnimales: Set<String> = TiposMascota.TODOS.toSet(),
+    /** Minutos que dura cada servicio para este veterinario; lo que falta usa la duración por defecto. */
+    val duraciones: Map<String, Int> = emptyMap()
 ) {
     val mascotas: MutableSet<String> = LinkedHashSet(mascotas)
 
     val tieneAcceso: Boolean get() = estado == EstadoAcceso.ACTIVO
+
+    /** Cuánto dura un turno de [servicio] con este veterinario. */
+    fun duracionDe(servicio: String?): Int =
+        duraciones.entries.firstOrNull { it.key.equals(servicio?.trim(), ignoreCase = true) }?.value
+            ?.coerceIn(CatalogoMedico.DURACION_MINIMA_MIN, CatalogoMedico.DURACION_MAXIMA_MIN)
+            ?: CatalogoMedico.duracionPorDefecto(servicio)
+
+    /** True si atiende mascotas de ese tipo (lo que no tiene nombre propio cuenta como "Otro"). */
+    fun atiende(tipoMascota: String?): Boolean = TiposMascota.normalizar(tipoMascota) in tiposAnimales
 }
 
 enum class TipoNotificacion {

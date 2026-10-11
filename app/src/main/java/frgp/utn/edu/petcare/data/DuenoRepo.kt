@@ -8,6 +8,7 @@ import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
 import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.SolicitudItem
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
+import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
@@ -24,6 +25,7 @@ import frgp.utn.edu.petcare.model.PerfilDueno
 import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.Sexo
 import frgp.utn.edu.petcare.model.TipoNotificacion
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -59,8 +61,8 @@ object DuenoRepo {
 
     const val CATEGORIA_VACUNA = "Vacuna"
 
-    /** Duración de cada turno; coincide con la franja que controla la base de datos. */
-    const val DURACION_TURNO_MIN = 30
+    /** Cada cuántos minutos arrancan los horarios que se ofrecen (la duración de cada turno es aparte). */
+    const val PASO_HORARIOS_MIN = 30
 
     private var estado = EstadoDueno()
 
@@ -165,7 +167,8 @@ object DuenoRepo {
             categoria = t.categoria, mascota = mascota, veterinario = t.veterinarioId?.let { nombreVeterinario(e, it) }.orEmpty(),
             hora = t.hora.take(5), observaciones = t.notas.orEmpty(), fecha = LocalDate.parse(t.fecha),
             id = t.id, mascotaId = t.mascotaId, veterinarioId = t.veterinarioId,
-            estado = if (t.estado == "completado") EstadoTurno.COMPLETADO else EstadoTurno.PENDIENTE
+            estado = if (t.estado == "completado") EstadoTurno.COMPLETADO else EstadoTurno.PENDIENTE,
+            duracionMin = t.duracionMin
         )
     }
 
@@ -185,7 +188,10 @@ object DuenoRepo {
             estado = estadoAcceso, mascotas = mascotas, id = p.id, fotoPath = p.fotoPath,
             especialidades = datos?.especialidades.orEmpty(),
             diasAtencion = datos?.diasAtencion.orEmpty().toSet(),
-            apertura = (datos?.horaApertura ?: "09:00").take(5), cierre = (datos?.horaCierre ?: "18:00").take(5)
+            apertura = (datos?.horaApertura ?: "09:00").take(5), cierre = (datos?.horaCierre ?: "18:00").take(5),
+            tiposAnimales = datos?.tiposAnimales?.map { TiposMascota.normalizar(it) }?.toSet()
+                ?: TiposMascota.TODOS.toSet(),
+            duraciones = datos?.duraciones.orEmpty()
         )
     }
 
@@ -413,39 +419,73 @@ object DuenoRepo {
     }
 
     /**
-     * Veterinarios que ofrecen el servicio o la especialidad elegida. Sin elección (null) se ofrecen todos.
+     * Veterinarios que ofrecen el servicio o la especialidad elegida y atienden ese tipo de mascota. Sin
+     * servicio (null) se ofrecen todos; sin tipo de mascota (null) no se filtra por animal.
      */
-    fun veterinariosPara(servicio: String?): List<VeterinarioAcceso> {
-        val todos = todosLosVeterinarios()
-        if (servicio == null) return todos
-        return todos.filter { vet -> vet.especialidades.any { it.equals(servicio, ignoreCase = true) } }
+    fun veterinariosPara(servicio: String?, tipoMascota: String? = null): List<VeterinarioAcceso> {
+        var lista = todosLosVeterinarios()
+        if (servicio != null) {
+            lista = lista.filter { vet -> vet.especialidades.any { it.equals(servicio, ignoreCase = true) } }
+        }
+        if (tipoMascota != null) lista = lista.filter { it.atiende(tipoMascota) }
+        return lista
     }
 
     fun trabajaEl(vet: VeterinarioAcceso, fecha: LocalDate): Boolean = fecha.dayOfWeek.value in vet.diasAtencion
 
-    /** Horarios de turno ("HH:mm") que el veterinario ofrece ese día, uno cada [DURACION_TURNO_MIN] minutos. */
-    fun horasDe(vet: VeterinarioAcceso, fecha: LocalDate): List<String> {
+    private fun minutos(hora: String) = hora.substringBefore(':').toInt() * 60 + hora.substringAfter(':').toInt()
+
+    /** "10:00" + 90 min = "11:30". */
+    fun horaFin(hora: String, duracionMin: Int): String {
+        val fin = minutos(hora) + duracionMin
+        return "%02d:%02d".format(fin / 60 % 24, fin % 60)
+    }
+
+    /**
+     * Horarios de inicio ("HH:mm") que el veterinario ofrece ese día, uno cada [PASO_HORARIOS_MIN] minutos, para
+     * un turno que dura [duracionMin]: solo los que terminan antes de que cierre.
+     */
+    fun horasDe(
+        vet: VeterinarioAcceso, fecha: LocalDate, duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN
+    ): List<String> {
         if (!trabajaEl(vet, fecha)) return emptyList()
-        fun minutos(hora: String) = hora.substringBefore(':').toInt() * 60 + hora.substringAfter(':').toInt()
         val horas = mutableListOf<String>()
         var t = minutos(vet.apertura)
         val fin = minutos(vet.cierre)
-        while (t + DURACION_TURNO_MIN <= fin) {
+        while (t + duracionMin <= fin) {
             horas.add("%02d:%02d".format(t / 60, t % 60))
-            t += DURACION_TURNO_MIN
+            t += PASO_HORARIOS_MIN
         }
         return horas
     }
 
-    /** Horarios en los que el veterinario ya tiene otro turno ese día (la lista de turnos ajenos no es visible). */
-    suspend fun horasOcupadas(vet: VeterinarioAcceso, fecha: LocalDate): Set<String> =
-        Servicios.fuente.horariosOcupados(vet.id, fecha.toString()).toSet()
+    /** True si dos turnos que arrancan a [horaA] y [horaB] se pisan, según lo que dura cada uno. */
+    fun seSuperponen(horaA: String, duracionA: Int, horaB: String, duracionB: Int): Boolean {
+        val a = minutos(horaA)
+        val b = minutos(horaB)
+        return a < b + duracionB && b < a + duracionA
+    }
 
-    /** [ignorar] es el turno que se está editando: no choca consigo mismo. */
-    fun hayConflictoDeTurno(fecha: LocalDate, hora: String, mascota: String?, ignorar: EventoMascota? = null): Boolean =
+    /** True si un turno de [duracionMin] que arranca a [hora] pisa alguno de los turnos [ocupados]. */
+    fun estaOcupado(hora: String, duracionMin: Int, ocupados: List<HoraOcupadaDto>): Boolean =
+        ocupados.any { seSuperponen(hora, duracionMin, it.hora, it.duracionMin) }
+
+    /** Turnos que ya tiene el veterinario ese día (hora y duración; la lista de turnos ajenos no es visible). */
+    suspend fun horasOcupadas(vet: VeterinarioAcceso, fecha: LocalDate): List<HoraOcupadaDto> =
+        Servicios.fuente.horariosOcupados(vet.id, fecha.toString())
+
+    /**
+     * True si la mascota ya tiene otro turno que se pisa con este. [ignorar] es el turno que se está editando:
+     * no choca consigo mismo.
+     */
+    fun hayConflictoDeTurno(
+        fecha: LocalDate, hora: String, mascota: String?, ignorar: EventoMascota? = null,
+        duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN
+    ): Boolean =
         mascota != null && eventos.any {
-            it !== ignorar && it.id != ignorar?.id && it.fecha == fecha && it.hora == hora &&
-                it.mascota.equals(mascota, ignoreCase = true)
+            it !== ignorar && it.id != ignorar?.id && it.fecha == fecha &&
+                it.estado == EstadoTurno.PENDIENTE && it.mascota.equals(mascota, ignoreCase = true) &&
+                seSuperponen(hora, duracionMin, it.hora, it.duracionMin)
         }
 
     /** Un estudio anterior (ya guardado en la ficha) que el dueño adjunta a un turno. */

@@ -8,12 +8,17 @@ class SolicitudItem(
     val mascota: String,
     val hace: String,
     val fotoPath: String? = null,
-    var estado: Estado = Estado.PENDIENTE
+    var estado: Estado = Estado.PENDIENTE,
+    /** La pidió el propio veterinario: espera la respuesta del dueño y no tiene botones para resolverla. */
+    val enviada: Boolean = false
 ) {
     enum class Estado { PENDIENTE, ACEPTADA, RECHAZADA }
 }
 
-/** Dueños que quieren compartir una mascota con el veterinario en sesión. */
+/**
+ * Solicitudes de acceso del veterinario en sesión: las que él le hizo a un dueño (con su estado) y las que un
+ * dueño le compartió y todavía no respondió.
+ */
 object SolicitudesRepo {
 
     val paraVeterinario: MutableList<SolicitudItem> = mutableListOf()
@@ -21,16 +26,18 @@ object SolicitudesRepo {
     fun limpiar() = paraVeterinario.clear()
 
     suspend fun cargar() {
-        val f = Servicios.fuente
-        val pendientes = f.accesos().filter { it.estado == "pendiente" && it.iniciadoPor == "dueno" }
-        val mascotas = f.mascotasDelVeterinario().associateBy { it.id }
-        val lista = pendientes.map { a ->
-            val mascota = mascotas[a.mascotaId]
-            val dueno = mascota?.dueno?.nombre ?: mascota?.propietarioNombre ?: "Un dueño"
+        val lista = Servicios.fuente.misSolicitudes().map { s ->
+            val propia = s.iniciadoPor == "veterinario"
             SolicitudItem(
-                id = a.id, solicitante = dueno,
-                mascota = "Quiere compartir a ${mascota?.nombre ?: "una mascota"}",
-                hace = Fechas.haceTexto(a.createdAt)
+                id = s.id, solicitante = s.duenoNombre ?: "Un dueño",
+                mascota = if (propia) "Pediste acceso a ${s.mascotaNombre}" else "Quiere compartir a ${s.mascotaNombre}",
+                hace = Fechas.haceTexto(s.createdAt),
+                estado = when (s.estado) {
+                    "activo" -> SolicitudItem.Estado.ACEPTADA
+                    "rechazado", "inactivo" -> SolicitudItem.Estado.RECHAZADA
+                    else -> SolicitudItem.Estado.PENDIENTE
+                },
+                enviada = propia
             )
         }
         paraVeterinario.clear()

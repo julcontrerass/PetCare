@@ -367,6 +367,18 @@
                     android:layout_marginTop="22dp"
                     android:text="Hora" />
 
+                <TextView
+                    android:id="@+id/tvDuracionTurno"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_icon_teal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:textColor="@color/teal_dark"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
                 <GridLayout
                     android:id="@+id/gridHoras"
                     android:layout_width="match_parent"

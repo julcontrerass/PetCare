@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare.data.remoto
 
+import frgp.utn.edu.petcare.model.TiposMascota
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
@@ -43,6 +44,10 @@ data class VeterinarioDto(
     @SerialName("hora_apertura") val horaApertura: String = "09:00:00",
     @SerialName("hora_cierre") val horaCierre: String = "18:00:00",
     val especialidades: List<String> = emptyList(),
+    /** Tipos de mascota que atiende; si el servidor no lo informa se asume que atiende todos. */
+    @SerialName("tipos_animales") val tiposAnimales: List<String> = TiposMascota.TODOS,
+    /** Minutos que dura cada servicio o especialidad para este veterinario (lo que no está usa el valor por defecto). */
+    val duraciones: Map<String, Int> = emptyMap(),
     @SerialName("credencial_path") val credencialPath: String? = null
 )
 
@@ -91,7 +96,9 @@ data class TurnoDto(
     val estado: String = "pendiente",
     val notas: String? = null,
     @SerialName("creado_por") val creadoPor: String? = null,
-    @SerialName("cancelado_por") val canceladoPor: String? = null
+    @SerialName("cancelado_por") val canceladoPor: String? = null,
+    /** Minutos que dura el turno; lo fija el servidor según el servicio y el veterinario. */
+    @SerialName("duracion_min") val duracionMin: Int = 30
 )
 
 @Serializable
@@ -128,7 +135,8 @@ data class InformeDto(
     @SerialName("veterinario_id") val veterinarioId: String? = null,
     val motivo: String? = null,
     val diagnostico: String? = null,
-    val tratamiento: String? = null
+    val tratamiento: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
 )
 
 @Serializable
@@ -195,8 +203,23 @@ data class DuenoBuscadoDto(
     val mascotas: JsonArray = JsonArray(emptyList())
 )
 
+/** Una solicitud de acceso tal como la ve el veterinario (función `mis_solicitudes`). */
 @Serializable
-data class HoraOcupadaDto(val hora: String)
+data class SolicitudAccesoDto(
+    val id: String,
+    @SerialName("mascota_nombre") val mascotaNombre: String,
+    @SerialName("mascota_tipo") val mascotaTipo: String? = null,
+    @SerialName("dueno_nombre") val duenoNombre: String? = null,
+    val estado: String,
+    @SerialName("iniciado_por") val iniciadoPor: String,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class HoraOcupadaDto(
+    val hora: String,
+    @SerialName("duracion_min") val duracionMin: Int = 30
+)
 
 /** Archivo de Storage que hay que borrar antes de eliminar la cuenta. */
 @Serializable

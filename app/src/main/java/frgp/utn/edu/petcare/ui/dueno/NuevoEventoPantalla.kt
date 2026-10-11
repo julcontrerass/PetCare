@@ -26,7 +26,9 @@ import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.model.EstadoAcceso
+import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
 import frgp.utn.edu.petcare.ui.common.Efectos
 import java.time.LocalDate
@@ -46,7 +48,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private var mascota: String? = null
     private var veterinario: String? = null
     private var hora: String? = null
-    private var ocupadas: Set<String> = emptySet()
+    private var ocupadas: List<HoraOcupadaDto> = emptyList()
     private val estudios = mutableListOf<DuenoRepo.EstudioAdjunto>()
     private var observaciones = ""
     private var fecha: LocalDate = LocalDate.now()
@@ -75,7 +77,9 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         texto(R.id.tvTitle, "Editar turno")
         vista<TextView>(R.id.tvTurnoActual)?.apply {
             val conVet = evento.veterinario.takeIf { it.isNotBlank() }?.let { " con $it" }.orEmpty()
-            text = "Turno actual de ${evento.mascota}\n${evento.categoria} · ${Fechas.larga(evento.fecha)} a las ${evento.hora} hs$conVet"
+            val fin = DuenoRepo.horaFin(evento.hora, evento.duracionMin)
+            text = "Turno actual de ${evento.mascota}\n${evento.categoria} · ${Fechas.larga(evento.fecha)} " +
+                "de ${evento.hora} a $fin hs$conVet"
             visibility = View.VISIBLE
         }
         actualizarPaso()
@@ -94,7 +98,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         mascota = mascotaPreseleccionada
         veterinario = null
         hora = null
-        ocupadas = emptySet()
+        ocupadas = emptyList()
         estudios.clear()
         observaciones = ""
         edicion = null
@@ -157,8 +161,25 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             toast("Seleccioná una categoría y una mascota")
             return
         }
+        // Si cambió la mascota o el servicio, el veterinario que estaba elegido puede ya no corresponder
+        if (veterinario != null && veterinariosElegibles().none { it.nombre == veterinario }) {
+            veterinario = null
+            hora = null
+        }
         paso = 2
         actualizarPaso()
+    }
+
+    private fun tipoDeLaMascota(): String? = mascotaElegida()?.tipo
+
+    /** Veterinarios que ofrecen el servicio elegido y atienden el tipo de animal de la mascota. */
+    private fun veterinariosElegibles(): List<VeterinarioAcceso> =
+        DuenoRepo.veterinariosPara(categoria, tipoDeLaMascota())
+
+    /** Cuánto dura el turno que se está sacando: depende del servicio y de lo que configuró el veterinario. */
+    private fun duracionElegida(): Int {
+        val vet = DuenoRepo.buscarVeterinario(veterinario)
+        return vet?.duracionDe(categoria) ?: CatalogoMedico.duracionPorDefecto(categoria)
     }
 
     /** Comprueba que el veterinario, el día y el horario elegidos se puedan reservar; si no, avisa por qué. */
@@ -166,13 +187,17 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val horaElegida = hora
         val nombre = mascota
         val vet = DuenoRepo.buscarVeterinario(veterinario)
+        val duracion = duracionElegida()
         val mensaje = when {
             vet == null -> "Seleccioná un veterinario"
             fecha.isBefore(LocalDate.now()) -> "No podés seleccionar una fecha que ya pasó"
+            !vet.atiende(tipoDeLaMascota()) ->
+                "${vet.nombre} no atiende ${TiposMascota.plural(TiposMascota.normalizar(tipoDeLaMascota())).lowercase()}"
             !DuenoRepo.trabajaEl(vet, fecha) -> "${vet.nombre} no atiende ese día"
             horaElegida == null || DuenoRepo.horaPasada(fecha, horaElegida) -> "Elegí un horario disponible"
-            horaElegida in ocupadas -> "Ese horario ya fue reservado, elegí otro"
-            DuenoRepo.hayConflictoDeTurno(fecha, horaElegida, nombre, edicion) -> "$nombre ya tiene un turno en ese horario"
+            DuenoRepo.estaOcupado(horaElegida, duracion, ocupadas) -> "Ese horario ya fue reservado, elegí otro"
+            DuenoRepo.hayConflictoDeTurno(fecha, horaElegida, nombre, edicion, duracion) ->
+                "$nombre ya tiene un turno en ese horario"
             else -> null
         }
         mensaje?.let { toast(it) }
@@ -223,13 +248,16 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val vet = DuenoRepo.buscarVeterinario(veterinario) ?: return
         val dia = fecha
         host.lifecycleScope.launch {
-            var reservadas = runCatching { DuenoRepo.horasOcupadas(vet, dia) }.getOrDefault(emptySet())
+            var reservadas = runCatching { DuenoRepo.horasOcupadas(vet, dia) }.getOrDefault(emptyList())
             // El horario que ya tiene este mismo turno no está "ocupado" para quien lo está editando
             val propio = edicion
-            if (propio != null && propio.veterinario == vet.nombre && propio.fecha == dia) reservadas = reservadas - propio.hora
+            if (propio != null && propio.veterinario == vet.nombre && propio.fecha == dia) {
+                reservadas = reservadas.filterNot { it.hora == propio.hora }
+            }
             if (dia == fecha && vet.nombre == veterinario) {
                 ocupadas = reservadas
-                if (hora in ocupadas) hora = null
+                val elegida = hora
+                if (elegida != null && DuenoRepo.estaOcupado(elegida, duracionElegida(), ocupadas)) hora = null
                 if (paso == 2) dibujarHoras()
             }
         }
@@ -460,11 +488,18 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val sinVeterinarios = vista<TextView>(R.id.tvSinVeterinarios)
         contenedor.removeAllViews()
 
-        var filtrados = DuenoRepo.veterinariosPara(categoria)
+        var filtrados = veterinariosElegibles()
         // Un turno viejo puede tener un servicio que nadie ofrece hoy: al editarlo se muestran todos los veterinarios
         if (edicion != null && filtrados.isEmpty()) filtrados = DuenoRepo.todosLosVeterinarios()
         if (filtrados.isEmpty()) {
-            sinVeterinarios?.text = "Ningún veterinario atiende ${categoria ?: "este servicio"} por ahora. Probá con otro servicio o especialidad."
+            val delServicio = DuenoRepo.veterinariosPara(categoria)
+            val animales = TiposMascota.plural(TiposMascota.normalizar(tipoDeLaMascota())).lowercase()
+            sinVeterinarios?.text = if (delServicio.isNotEmpty()) {
+                "Ningún veterinario que ofrezca ${categoria ?: "este servicio"} atiende $animales por ahora. " +
+                    "Probá con otro servicio o especialidad."
+            } else {
+                "Ningún veterinario atiende ${categoria ?: "este servicio"} por ahora. Probá con otro servicio o especialidad."
+            }
             sinVeterinarios?.visibility = View.VISIBLE
             return
         }
@@ -509,7 +544,8 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             setTypeface(typeface, Typeface.BOLD)
         })
         textos.addView(TextView(host).apply {
-            text = "${vet.matricula} · ${textoEstadoVeterinario(vet.estado)}"
+            text = "${vet.matricula} · ${textoEstadoVeterinario(vet.estado)}\n" +
+                "Turno de ${CatalogoMedico.textoDuracion(vet.duracionDe(categoria))}"
             setTextColor(ContextCompat.getColor(host, R.color.text_gray))
             textSize = 12.5f
         })
@@ -608,20 +644,39 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         grilla.removeAllViews()
 
         val vet = DuenoRepo.buscarVeterinario(veterinario)
-        val horas = if (vet == null) emptyList() else DuenoRepo.horasDe(vet, fecha)
+        val duracion = duracionElegida()
+        val horas = if (vet == null) emptyList() else DuenoRepo.horasDe(vet, fecha, duracion)
         texto(
             R.id.tvSinHoras,
             when {
                 vet == null -> "Elegí un veterinario para ver sus horarios"
-                horas.isEmpty() -> "${vet.nombre} no atiende ese día"
+                !DuenoRepo.trabajaEl(vet, fecha) -> "${vet.nombre} no atiende ese día"
+                horas.isEmpty() ->
+                    "${categoria ?: "Este servicio"} dura ${CatalogoMedico.textoDuracion(duracion)} y no entra " +
+                        "en el horario de atención de ${vet.nombre} (${vet.apertura} a ${vet.cierre} hs)"
                 else -> ""
             }
         )
         vista<View>(R.id.tvSinHoras)?.visibility = if (horas.isEmpty()) View.VISIBLE else View.GONE
+        vista<TextView>(R.id.tvDuracionTurno)?.apply {
+            if (vet == null || horas.isEmpty()) {
+                visibility = View.GONE
+            } else {
+                visibility = View.VISIBLE
+                val elegida = hora
+                text = if (elegida == null) {
+                    "Este turno dura ${CatalogoMedico.textoDuracion(duracion)}. Cada horario muestra cuándo arranca."
+                } else {
+                    "Este turno dura ${CatalogoMedico.textoDuracion(duracion)}: de $elegida a " +
+                        "${DuenoRepo.horaFin(elegida, duracion)} hs."
+                }
+            }
+        }
 
         for (opcion in horas) {
             val pasada = DuenoRepo.horaPasada(fecha, opcion)
-            val ocupada = opcion in ocupadas || DuenoRepo.hayConflictoDeTurno(fecha, opcion, mascota)
+            val ocupada = DuenoRepo.estaOcupado(opcion, duracion, ocupadas) ||
+                DuenoRepo.hayConflictoDeTurno(fecha, opcion, mascota, edicion, duracion)
             val deshabilitada = pasada || ocupada
             val activa = opcion == hora && !deshabilitada
 
@@ -824,7 +879,11 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         texto(R.id.tvResumenMascota, mascota.orEmpty())
         texto(R.id.tvResumenVeterinario, veterinario.orEmpty())
         texto(R.id.tvResumenFecha, "${fecha.dayOfMonth} de ${Fechas.nombreMes(fecha.monthValue)}, ${fecha.year}")
-        texto(R.id.tvResumenHora, "$hora hs")
+        val duracion = duracionElegida()
+        texto(
+            R.id.tvResumenHora,
+            "${hora.orEmpty()} a ${DuenoRepo.horaFin(hora ?: "00:00", duracion)} hs · ${CatalogoMedico.textoDuracion(duracion)}"
+        )
         texto(R.id.tvResumenObservaciones, observaciones.ifEmpty { host.getString(R.string.sin_observaciones) })
         texto(
             R.id.tvNotaAcceso,
