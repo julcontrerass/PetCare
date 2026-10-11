@@ -160,11 +160,14 @@
                         android:orientation="horizontal">
 
                         <LinearLayout
+                            android:id="@+id/llPerfilMascotasCard"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_chip_glass"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:gravity="center"
                             android:orientation="vertical"
                             android:paddingVertical="10dp">
@@ -186,11 +189,14 @@
                         </LinearLayout>
 
                         <LinearLayout
+                            android:id="@+id/llPerfilVetsCard"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_chip_glass"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:gravity="center"
                             android:orientation="vertical"
                             android:paddingVertical="10dp">

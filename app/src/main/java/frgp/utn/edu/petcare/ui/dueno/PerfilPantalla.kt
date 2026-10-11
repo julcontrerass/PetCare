@@ -8,6 +8,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.R
@@ -38,6 +40,9 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
         alTocar(R.id.btnBack) { host.irAHome() }
         texto(R.id.tvPerfilMascotas, DuenoRepo.mascotas.size.toString())
         texto(R.id.tvPerfilVets, DuenoRepo.autorizados.count { it.estado == EstadoAcceso.ACTIVO }.toString())
+
+        alTocarConRebote(R.id.llPerfilMascotasCard) { mostrarListaMascotas() }
+        alTocarConRebote(R.id.llPerfilVetsCard) { mostrarListaVeterinarios() }
 
         vista<ShapeableImageView>(R.id.ivProfilePic)?.let { imagen ->
             imagen.setImageResource(R.drawable.avatar_default)
@@ -188,6 +193,90 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
                 }
             }
         }
+        dialogo.show()
+    }
+
+    private fun mostrarListaMascotas() {
+        val lista = DuenoRepo.mascotas
+        if (lista.isEmpty()) {
+            AlertDialog.Builder(host)
+                .setTitle("Mis Mascotas")
+                .setMessage("No tenés mascotas registradas. Podés agregar una en la sección Mascotas.")
+                .setPositiveButton("Ir a Mascotas") { _, _ -> host.irAMascotas() }
+                .setNegativeButton("Cerrar", null)
+                .show()
+            return
+        }
+
+        val contenedor = LinearLayout(host).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(16), dp(20), dp(10))
+        }
+
+        val dialogo = AlertDialog.Builder(host)
+            .setTitle("Mis Mascotas (${lista.size})")
+            .setView(ScrollView(host).apply { addView(contenedor) })
+            .setPositiveButton("Cerrar", null)
+            .create()
+
+        lista.forEach { m ->
+            val fila = host.layoutInflater.inflate(R.layout.item_detalle_paciente_resumen, contenedor, false)
+            fila.findViewById<TextView>(R.id.tvTitle)?.text = m.nombre
+            fila.findViewById<TextView>(R.id.tvSubtitle)?.text = "${m.tipoRazaTexto} · ${m.edadTexto() ?: "Edad sin especificar"}"
+            fila.findViewById<ImageView>(R.id.ivIcon)?.apply {
+                setImageResource(R.drawable.ic_dog)
+                Imagenes.mostrar(this, m.fotoUri, m.fotoPath)
+            }
+            fila.setOnClickListener {
+                dialogo.dismiss()
+                host.irADetalleMascota(m)
+            }
+            contenedor.addView(fila)
+        }
+
+        dialogo.show()
+    }
+
+    private fun mostrarListaVeterinarios() {
+        val lista = DuenoRepo.autorizados.filter { it.estado == EstadoAcceso.ACTIVO }
+        if (lista.isEmpty()) {
+            AlertDialog.Builder(host)
+                .setTitle("Veterinarios con acceso")
+                .setMessage("Aún no tenés veterinarios con acceso activo a tus mascotas. Podés autorizar profesionales en la sección Veterinarios.")
+                .setPositiveButton("Ir a Veterinarios") { _, _ -> host.irAVeterinarios() }
+                .setNegativeButton("Cerrar", null)
+                .show()
+            return
+        }
+
+        val contenedor = LinearLayout(host).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(16), dp(20), dp(10))
+        }
+
+        val dialogo = AlertDialog.Builder(host)
+            .setTitle("Veterinarios con acceso (${lista.size})")
+            .setView(ScrollView(host).apply { addView(contenedor) })
+            .setPositiveButton("Ir a Veterinarios") { _, _ -> host.irAVeterinarios() }
+            .setNegativeButton("Cerrar", null)
+            .create()
+
+        lista.forEach { v ->
+            val fila = host.layoutInflater.inflate(R.layout.item_detalle_paciente_resumen, contenedor, false)
+            fila.findViewById<TextView>(R.id.tvTitle)?.text = v.nombre
+            val mascotasTexto = if (v.mascotas.isNotEmpty()) "Acceso a: ${v.mascotas.joinToString(", ")}" else "Acceso activo"
+            fila.findViewById<TextView>(R.id.tvSubtitle)?.text = "${v.especialidad}\n$mascotasTexto"
+            fila.findViewById<ImageView>(R.id.ivIcon)?.apply {
+                setImageResource(R.drawable.ic_medical)
+                if (v.fotoPath != null) Imagenes.mostrar(this, null, v.fotoPath)
+            }
+            fila.setOnClickListener {
+                dialogo.dismiss()
+                host.irAVeterinarios()
+            }
+            contenedor.addView(fila)
+        }
+
         dialogo.show()
     }
 }
