@@ -111,7 +111,9 @@ data class AccesoDto(
     val estado: String,
     @SerialName("iniciado_por") val iniciadoPor: String,
     @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null
+    @SerialName("updated_at") val updatedAt: String? = null,
+    /** Turno que el veterinario dejó pedido junto con el acceso: se agenda solo cuando el dueño acepta. */
+    @SerialName("turno_propuesto") val turnoPropuesto: JsonObject? = null
 )
 
 @Serializable

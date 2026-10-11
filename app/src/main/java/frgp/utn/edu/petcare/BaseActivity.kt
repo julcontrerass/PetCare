@@ -64,6 +64,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private var avisoDeCambios: (() -> Unit)? = null
+    private var bucleDeDatos: kotlinx.coroutines.Job? = null
 
     /**
      * Para las pantallas del veterinario: vuelve a pedir sus datos al servidor y llama a [redibujar] cuando llegan
@@ -72,7 +73,9 @@ open class BaseActivity : AppCompatActivity() {
     protected fun actualizarDatosVeterinario(redibujar: () -> Unit) {
         avisoDeCambios = redibujar
         Servicios.alCambiarDatos = redibujar
-        lifecycleScope.launch {
+        // Un solo ciclo por pantalla: sin esto, cada vez que se vuelve a ella se sumaría otro y los pedidos se multiplican
+        bucleDeDatos?.cancel()
+        bucleDeDatos = lifecycleScope.launch {
             runCatching { Sesion.recargarVeterinario() }.onSuccess { redibujar() }
             // Mientras la pantalla está a la vista se piden cada tanto los turnos y avisos nuevos
             repeatOnLifecycle(Lifecycle.State.STARTED) {

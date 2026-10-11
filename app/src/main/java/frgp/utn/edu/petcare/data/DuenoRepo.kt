@@ -115,6 +115,18 @@ object DuenoRepo {
         }
     }
 
+    /**
+     * Pone al día lo que el veterinario puede cambiar de una mascota (peso y alertas) sin tocar lo demás, que el
+     * dueño edita y puede tener cambios pendientes de guardar.
+     */
+    private fun actualizarDatosClinicos(e: EstadoDueno, desdeElServidor: List<MascotaDto>) {
+        for (dto in desdeElServidor) {
+            val propia = e.mascotas.firstOrNull { it.id == dto.id } ?: continue
+            if (dto.pesoKg != null) propia.peso = textoDePeso(dto.pesoKg)
+            propia.alertas = dto.alertasClinicas.orEmpty()
+        }
+    }
+
     /** Vacunas y recetas cambian poco: se piden al iniciar y después cada [INTERVALO_SALUD_MS]. */
     private suspend fun cargarSalud(e: EstadoDueno, forzar: Boolean) {
         val ahora = System.currentTimeMillis()
@@ -163,6 +175,8 @@ object DuenoRepo {
         val turnos = f.turnos()
         actual.accesos = accesos
         actual.veterinarios = catalogo.associateBy { it.id }
+        // El veterinario actualiza el peso (y las alertas) de la mascota al guardar un informe
+        runCatching { f.misMascotas() }.getOrNull()?.let { actualizarDatosClinicos(actual, it) }
         reconstruirVeterinarios(actual)
         actual.eventos.clear()
         actual.eventos.addAll(turnos.filter { t -> t.estado != "cancelado" && actual.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, actual) })
@@ -260,10 +274,19 @@ object DuenoRepo {
         for ((vetId, lista) in porVeterinario) {
             val perfilVet = e.veterinarios[vetId]?.takeIf { it.estado == "activo" } ?: continue
             for (a in lista.filter { it.estado == "pendiente" && it.iniciadoPor == "veterinario" }) {
+                val propuesta = a.turnoPropuesto
+                val turno = propuesta?.let {
+                    val fecha = runCatching { LocalDate.parse(it["fecha"]?.jsonPrimitive?.content) }.getOrNull()
+                    val hora = it["hora"]?.jsonPrimitive?.content?.take(5)
+                    val servicio = it["categoria"]?.jsonPrimitive?.content?.takeIf { s -> s.isNotBlank() }
+                    if (fecha == null) null
+                    else " para un turno" + (servicio?.let { s -> " de $s" } ?: "") +
+                        " el ${Fechas.corta(fecha)}" + (hora?.let { h -> " a las $h hs" } ?: "")
+                }
                 e.solicitudes.add(
                     SolicitudItem(
                         id = a.id, solicitante = perfilVet.nombre,
-                        mascota = "Solicita acceso a ${nombrePorMascota[a.mascotaId]}",
+                        mascota = "Solicita acceso a ${nombrePorMascota[a.mascotaId]}" + turno.orEmpty(),
                         hace = Fechas.haceTexto(a.createdAt), fotoPath = perfilVet.fotoPath
                     )
                 )

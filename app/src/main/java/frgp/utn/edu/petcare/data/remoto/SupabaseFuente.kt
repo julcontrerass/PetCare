@@ -260,8 +260,11 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         }
     }
 
-    override suspend fun solicitarAcceso(mascotaId: String): String =
-        cliente.postgrest.rpc("solicitar_acceso", buildJsonObject { put("p_mascota", mascotaId) }).decodeAs<String>()
+    override suspend fun solicitarAcceso(mascotaId: String, turno: JsonObject?): String =
+        cliente.postgrest.rpc("solicitar_acceso", buildJsonObject {
+            put("p_mascota", mascotaId)
+            if (turno != null) put("p_turno", turno)
+        }).decodeAs<String>()
 
     override suspend fun misSolicitudes(): List<SolicitudAccesoDto> =
         cliente.postgrest.rpc("mis_solicitudes").decodeList()

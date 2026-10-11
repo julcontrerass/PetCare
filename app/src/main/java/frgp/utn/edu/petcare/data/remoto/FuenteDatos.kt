@@ -64,7 +64,8 @@ interface FuenteDatos {
     suspend fun actualizarAcceso(id: String, estado: String) {}
     /** El dueño cambia el estado de todos los accesos de un veterinario a sus mascotas. */
     suspend fun actualizarAccesosDeVeterinario(veterinarioId: String, estado: String) {}
-    suspend fun solicitarAcceso(mascotaId: String): String = "pendiente"
+    /** El veterinario pide acceso a una mascota; con [turno] queda pedido el turno que se agenda al aceptar. */
+    suspend fun solicitarAcceso(mascotaId: String, turno: JsonObject? = null): String = "pendiente"
     suspend fun buscarDueno(dato: String): List<DuenoBuscadoDto> = emptyList()
     /** Las solicitudes de acceso del veterinario: las que pidió y las que un dueño le compartió sin responder. */
     suspend fun misSolicitudes(): List<SolicitudAccesoDto> = emptyList()

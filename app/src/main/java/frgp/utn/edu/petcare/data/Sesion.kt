@@ -99,7 +99,28 @@ object Sesion {
         rol = rolCuenta
         escucharCambios(rolCuenta)
         Servicios.contextoApp?.let { Recordatorios.vigilarAvisos(it) }
+        avisarSiHayAvisosSinLeer(rolCuenta)
         return Resultado.Listo(rolCuenta)
+    }
+
+    /**
+     * Lo que llegó mientras la cuenta no estaba abierta no suena (ya pasó), pero se avisa que hay avisos sin leer
+     * para que no queden escondidos en la campana.
+     */
+    private fun avisarSiHayAvisosSinLeer(rolCuenta: Rol) {
+        val cantidad = when (rolCuenta) {
+            Rol.DUENO -> DuenoRepo.notificaciones.count { !it.leida }
+            Rol.VETERINARIO -> NotificacionesVet.sinLeer
+            Rol.ADMIN -> 0
+        }
+        if (cantidad == 0) return
+        Servicios.scope.launch {
+            // Da tiempo a que se abra la pantalla principal, que es donde tiene que verse
+            delay(1500)
+            frgp.utn.edu.petcare.ui.common.Avisos.mostrar(
+                null, if (cantidad == 1) "Tenés 1 notificación sin leer" else "Tenés $cantidad notificaciones sin leer"
+            )
+        }
     }
 
     private fun mensajeDeBloqueo(p: PerfilDto): String? {

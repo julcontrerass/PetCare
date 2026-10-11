@@ -14,7 +14,10 @@ import com.google.android.material.button.MaterialButton
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Servicios
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 
@@ -193,7 +196,15 @@ class AgregarConsultaActivity : BaseActivity() {
             else if (layoutDuenoEncontrado.visibility == View.VISIBLE && candidatas.isNotEmpty()) {
                 val candidata = candidatas.getOrNull(spMascotasDueno.selectedItemPosition)
                 if (candidata != null && candidata.paciente == null) {
-                    pedirAcceso(candidata)
+                    // El turno queda pedido junto con el acceso: se agenda solo cuando el dueño acepta
+                    val propuesta = buildJsonObject {
+                        put("categoria", spTipo.selectedItem as String)
+                        put("motivo", etMotivo.text.toString().trim())
+                        put("fecha", fecha!!.toString())
+                        put("hora", etHora.text.toString() + ":00")
+                        put("notas", etNotas.text.toString().trim())
+                    }
+                    pedirAcceso(candidata, propuesta)
                     return@setOnClickListener
                 }
                 pacienteElegido = candidata?.paciente
@@ -262,16 +273,22 @@ class AgregarConsultaActivity : BaseActivity() {
     }
 
     /** El veterinario todavía no puede ver la mascota: se le pide acceso al dueño y se agenda cuando lo acepte. */
-    private fun pedirAcceso(candidata: Candidata) {
+    private fun pedirAcceso(candidata: Candidata, propuesta: JsonObject) {
         lifecycleScope.launch {
             try {
-                val resultado = Servicios.fuente.solicitarAcceso(candidata.mascotaId)
+                val resultado = Servicios.fuente.solicitarAcceso(candidata.mascotaId, propuesta)
                 if (resultado == "activo") {
                     PacientesRepo.cargar()
                     Avisos.mostrar(this@AgregarConsultaActivity, "Ya tenés acceso. Volvé a buscar para agendar.")
                 } else {
-                    Avisos.mostrar(this@AgregarConsultaActivity, "Le pedimos acceso al dueño. Vas a poder agendar el turno cuando lo acepte.")
-                    finish()
+                    val fecha = runCatching { LocalDate.parse(propuesta["fecha"]?.jsonPrimitive?.content) }.getOrNull()
+                    val cuando = fecha?.let { Fechas.corta(it) + " a las " + propuesta["hora"]?.jsonPrimitive?.content?.take(5) }
+                    Avisos.informar(
+                        this@AgregarConsultaActivity, "Pedido enviado al dueño",
+                        "Le pedimos acceso a la mascota. El turno" + (cuando?.let { " del $it hs" } ?: "") +
+                            " se agenda solo apenas el dueño lo acepte, y te llega el aviso.",
+                        cancelable = false
+                    ) { finish() }
                 }
             } catch (e: Exception) {
                 Avisos.error(this@AgregarConsultaActivity, Errores.mensaje(e))

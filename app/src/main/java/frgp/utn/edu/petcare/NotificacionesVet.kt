@@ -26,6 +26,9 @@ object NotificacionesVet {
     /** Hay avisos que el veterinario todavía no abrió (para el punto rojo de la campana). */
     val hayNuevas: Boolean get() = ultimas.any { !it.leida }
 
+    /** Cuántos avisos todavía no se abrieron. */
+    val sinLeer: Int get() = ultimas.count { !it.leida }
+
     fun limpiar() {
         ultimas = emptyList()
     }

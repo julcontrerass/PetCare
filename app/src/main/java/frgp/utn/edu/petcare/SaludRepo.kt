@@ -28,7 +28,9 @@ data class RegistroSalud(
     val proximaDosis: LocalDate? = null,
     val marca: String? = null,
     val lote: String? = null,
-    val loteVencimiento: LocalDate? = null
+    val loteVencimiento: LocalDate? = null,
+    /** Día en que se aplicó o se cargó el registro (la [fecha] es el texto que se muestra). */
+    val fechaAplicada: LocalDate? = null
 ) {
     /** Viene del informe de una consulta: se puede leer pero no borrar desde el carnet. */
     val deConsulta: Boolean get() = id.startsWith(SaludRepo.PREFIJO_INFORME)
@@ -127,7 +129,7 @@ object SaludRepo {
         return RegistroSalud(
             id = r.id, tipo = tipo, mascotaId = r.mascotaId, mascota = nombreDe(r.mascotaId),
             titulo = r.titulo, detalle = detalle, fecha = textoFecha, estado = estado, archivoPath = r.archivoPath,
-            proximaDosis = proxima, marca = r.marca?.takeIf { it.isNotBlank() },
+            fechaAplicada = fecha, proximaDosis = proxima, marca = r.marca?.takeIf { it.isNotBlank() },
             lote = r.lote?.takeIf { it.isNotBlank() },
             loteVencimiento = r.loteVencimiento?.let { v -> runCatching { LocalDate.parse(v) }.getOrNull() }
         )

@@ -122,6 +122,13 @@ object PacientesRepo {
 
     fun porId(id: String?): Paciente? = lista.firstOrNull { it.id == id }
 
+    /** El peso medido en una consulta pasa a ser el del paciente; el servidor hace lo mismo al guardar el informe. */
+    fun actualizarPeso(id: String, kg: Double) {
+        val i = lista.indexOfFirst { it.id == id }
+        if (i < 0) return
+        lista[i] = lista[i].copy(peso = if (kg % 1.0 == 0.0) "${kg.toInt()} kg" else "$kg kg")
+    }
+
     /** Cambia las alertas clínicas del paciente; se ven ya y se guardan en segundo plano. */
     fun guardarAlertas(id: String, alertas: String) {
         val i = lista.indexOfFirst { it.id == id }

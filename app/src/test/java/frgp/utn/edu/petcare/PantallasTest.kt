@@ -521,6 +521,55 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun vet_elInformeSinTurnoNoListaLosArchivosYaCargadosDeLaMascota() {
+        fuente.archivos.add(
+            frgp.utn.edu.petcare.data.remoto.ArchivoDto(
+                "a1", "m1", "Radiografía", "pdf", "m1/a1.pdf", subidoPor = Escenario.VET_ID,
+                createdAt = java.time.OffsetDateTime.now().toString()
+            )
+        )
+        abrirVet()
+
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java).putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+        )
+
+        // Lo que ya estaba cargado vive en los archivos de la mascota, no en los adjuntos de la consulta
+        val adjuntos = ficha.findViewById<LinearLayout>(R.id.llArchivosInforme)
+        assertEquals(1, adjuntos.childCount)
+        assertEquals(R.id.tvSinArchivosInforme, adjuntos.getChildAt(0).id)
+    }
+
+    @Test
+    fun vet_laVacunaAplicadaEnLaConsultaQuedaEnElCarnet() {
+        abrirVet()
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java).putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+        )
+        val lista = ficha.findViewById<LinearLayout>(R.id.llVacunasInforme)
+        assertEquals(R.id.tvSinVacunas, lista.getChildAt(0).id)
+
+        ficha.findViewById<View>(R.id.btnRegistrarVacuna).performClick()
+        val hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        hoja.findViewById<EditText>(R.id.etVacunaNombre)!!.setText("Antirrábica")
+        hoja.findViewById<EditText>(R.id.etVacunaMarca)!!.setText("Nobivac")
+        hoja.findViewById<EditText>(R.id.etVacunaLote)!!.setText("A123")
+        hoja.findViewById<View>(R.id.btnGuardarVacuna)!!.performClick()
+
+        val creada = fuente.ultimoRegistroCreado!!
+        assertEquals("vacuna", creada.tipo)
+        assertEquals("Antirrábica", creada.titulo)
+        assertEquals("Nobivac", creada.marca)
+        assertEquals("A123", creada.lote)
+        assertEquals(hoy.toString(), creada.fecha)
+        // Se ve en la consulta y también en el carnet de salud del animal
+        assertEquals(1, lista.childCount)
+        assertTrue(SaludRepo.filtrar(TipoRegistro.VACUNA, "", "m1").any { it.titulo == "Antirrábica" })
+    }
+
+    @Test
     fun vet_elInformeNoGuardaUnaTemperaturaImposible() {
         abrirVet()
         val ficha = abrir(
@@ -572,6 +621,17 @@ class PantallasTest : PruebaBase() {
         val lista = abrir(VacunasPendientesActivity::class.java)
         val rv = lista.findViewById<RecyclerView>(R.id.rvVacunas)
         assertEquals(1, rv.adapter!!.itemCount)
+    }
+
+    @Test
+    fun admin_siNoSePuedenCargarLosDatosLoAvisa() {
+        ingresarComo(Escenario.admin())
+        fuente.fallaAlCargarAdmin = true
+
+        abrir(HomeAdminActivity::class.java)
+
+        val cartel = ShadowDialog.getLatestDialog() as AlertDialog
+        assertTrue(contieneTexto(cartel.window!!.decorView, "No se pudieron cargar los datos"))
     }
 
     @Test

@@ -4,7 +4,13 @@ import android.content.ActivityNotFoundException
 import frgp.utn.edu.petcare.ui.common.Avisos
 import kotlinx.coroutines.launch
 import frgp.utn.edu.petcare.data.Servicios
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import frgp.utn.edu.petcare.data.Errores
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -90,9 +96,41 @@ class HomeAdminActivity : BaseActivity() {
         if (isFinishing) return
         refrescarTodo()
         Servicios.alCambiarDatos = { refrescarTodo() }
-        lifecycleScope.launch {
-            runCatching { AdminRepo.cargar() }.onSuccess { refrescarTodo() }
+        // Un solo ciclo de pedidos: si no, cada vez que se vuelve a la pantalla se sumaría otro
+        bucleDeDatos?.cancel()
+        bucleDeDatos = lifecycleScope.launch {
+            cargarDatos(avisarSiFalla = true)
+            // Las cuentas nuevas no llegan en vivo: mientras la pantalla está a la vista se piden cada tanto
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(INTERVALO_ACTUALIZACION_MS)
+                    cargarDatos(avisarSiFalla = false)
+                }
+            }
         }
+    }
+
+    private var bucleDeDatos: Job? = null
+    private var errorMostrado = false
+
+    /** Pide los datos al servidor; si falla avisa qué pasó una sola vez, en vez de dejar la pantalla vacía. */
+    private suspend fun cargarDatos(avisarSiFalla: Boolean) {
+        try {
+            AdminRepo.cargar()
+            errorMostrado = false
+            refrescarTodo()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (avisarSiFalla && !errorMostrado) {
+                errorMostrado = true
+                Avisos.error(this, Errores.mensaje(e), "No se pudieron cargar los datos")
+            }
+        }
+    }
+
+    private companion object {
+        const val INTERVALO_ACTUALIZACION_MS = 15_000L
     }
 
     override fun onPause() {

@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.model.Prescripcion
 import frgp.utn.edu.petcare.model.SignosVitales
 import frgp.utn.edu.petcare.ui.common.Avisos
@@ -58,9 +59,12 @@ class InformeFragment : Fragment() {
         // ---------- Archivos adjuntos ----------
         val contenedorArchivos = view.findViewById<LinearLayout>(R.id.llArchivosInforme)
         val sinArchivos = view.findViewById<View>(R.id.tvSinArchivosInforme)
+        // Con turno se ven los adjuntos de ese turno. Sin turno la lista parte vacía: lo que ya estaba cargado
+        // vive en los archivos de la mascota, y acá solo se muestra lo que se adjunta en esta pantalla.
+        val adjuntadosAhora = mutableSetOf<String>()
         fun archivosDeLaConsulta() =
             if (turnoId != null) ArchivosRepo.deTurno(paciente.id, turnoId)
-            else ArchivosRepo.dePaciente(paciente.id).filter { it.turnoId == null }
+            else ArchivosRepo.dePaciente(paciente.id).filter { it.id in adjuntadosAhora }
 
         fun dibujarArchivos() {
             contenedorArchivos.removeAllViews()
@@ -107,7 +111,10 @@ class InformeFragment : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 val elegido = ArchivosUi.leer(requireContext(), uri) ?: return@launch
                 try {
-                    ArchivosRepo.agregar(paciente.id, elegido.nombre, elegido.extension, elegido.bytes, elegido.mime, turnoId)
+                    val nuevo = ArchivosRepo.agregar(
+                        paciente.id, elegido.nombre, elegido.extension, elegido.bytes, elegido.mime, turnoId
+                    )
+                    adjuntadosAhora.add(nuevo.id)
                     dibujarArchivos()
                     Avisos.exito(requireContext(), "Archivo adjuntado a la consulta")
                 } catch (e: Exception) {
@@ -196,6 +203,87 @@ class InformeFragment : Fragment() {
                 }
                 Documentos.compartir(contexto, archivo, "Receta de ${paciente.nombre}")
             }
+        }
+
+        // ---------- Vacunas aplicadas en la consulta ----------
+        val contenedorVacunas = view.findViewById<LinearLayout>(R.id.llVacunasInforme)
+        val sinVacunas = view.findViewById<View>(R.id.tvSinVacunas)
+        // La vacuna se anota con el día del turno (o con hoy si no hay turno o es a futuro)
+        val diaDeLaConsulta = turno?.fecha?.takeIf { !it.isAfter(LocalDate.now()) } ?: LocalDate.now()
+
+        fun dibujarVacunas() {
+            contenedorVacunas.removeAllViews()
+            val aplicadas = SaludRepo.registros.filter {
+                it.mascotaId == paciente.id && it.tipo == TipoRegistro.VACUNA && it.fechaAplicada == diaDeLaConsulta
+            }
+            if (aplicadas.isEmpty()) {
+                contenedorVacunas.addView(sinVacunas)
+                return
+            }
+            aplicadas.forEach { v ->
+                val fila = layoutInflater.inflate(R.layout.item_turno_detalle, contenedorVacunas, false)
+                fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(R.drawable.ic_syringe)
+                fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = v.titulo
+                fila.findViewById<TextView>(R.id.tvDetalleValor).text = v.detalle
+                fila.findViewById<TextView>(R.id.tvDetalleAccion).apply {
+                    text = "Quitar"
+                    setTextColor(requireContext().getColor(R.color.danger_red))
+                    visibility = View.VISIBLE
+                    setOnClickListener {
+                        SaludRepo.eliminar(v)
+                        dibujarVacunas()
+                    }
+                }
+                contenedorVacunas.addView(fila)
+            }
+        }
+        dibujarVacunas()
+
+        fun elegirFecha(campo: EditText) {
+            val hoy = LocalDate.now()
+            android.app.DatePickerDialog(
+                requireContext(), { _, a, m, d -> campo.setText(Fechas.corta(LocalDate.of(a, m + 1, d))) },
+                hoy.year, hoy.monthValue - 1, hoy.dayOfMonth
+            ).show()
+        }
+
+        view.findViewById<View>(R.id.btnRegistrarVacuna).setOnClickListener {
+            val hoja = BottomSheetDialog(requireContext())
+            val vista = layoutInflater.inflate(R.layout.sheet_vacuna, null)
+            hoja.setContentView(vista)
+            vista.findViewById<TextView>(R.id.tvVacunaPaciente).text =
+                "${paciente.nombre} · ${Fechas.corta(diaDeLaConsulta)}"
+            val nombre = vista.findViewById<android.widget.AutoCompleteTextView>(R.id.etVacunaNombre)
+            nombre.setAdapter(
+                android.widget.ArrayAdapter(
+                    requireContext(), android.R.layout.simple_dropdown_item_1line,
+                    CatalogoMedico.vacunasHabituales(paciente.especie)
+                )
+            )
+            nombre.setOnFocusChangeListener { _, tieneFoco -> if (tieneFoco) nombre.showDropDown() }
+            val venceLote = vista.findViewById<EditText>(R.id.etVacunaVenceLote)
+            val proxima = vista.findViewById<EditText>(R.id.etVacunaProximaDosis)
+            venceLote.setOnClickListener { elegirFecha(venceLote) }
+            proxima.setOnClickListener { elegirFecha(proxima) }
+            vista.findViewById<View>(R.id.btnCancelarVacuna).setOnClickListener { hoja.dismiss() }
+            vista.findViewById<View>(R.id.btnGuardarVacuna).setOnClickListener {
+                val titulo = nombre.text.toString().trim()
+                if (titulo.isEmpty()) {
+                    nombre.error = "Indicá la vacuna"
+                    return@setOnClickListener
+                }
+                SaludRepo.agregar(
+                    TipoRegistro.VACUNA, paciente.id, titulo, null, diaDeLaConsulta,
+                    proximaDosis = Fechas.parsear(proxima.text.toString()),
+                    marca = vista.findViewById<EditText>(R.id.etVacunaMarca).text.toString().trim().ifEmpty { null },
+                    lote = vista.findViewById<EditText>(R.id.etVacunaLote).text.toString().trim().ifEmpty { null },
+                    loteVencimiento = Fechas.parsear(venceLote.text.toString())
+                )
+                dibujarVacunas()
+                hoja.dismiss()
+                Avisos.exito(requireContext(), "Vacuna guardada en el carnet de ${paciente.nombre}")
+            }
+            hoja.show()
         }
 
         // ---------- Informe ----------

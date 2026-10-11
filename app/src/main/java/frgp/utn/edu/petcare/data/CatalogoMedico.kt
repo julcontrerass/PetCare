@@ -40,6 +40,16 @@ object CatalogoMedico {
 
     fun esServicio(nombre: String) = SERVICIOS.any { it.equals(nombre, ignoreCase = true) }
 
+    /** Vacunas que más se aplican, para sugerirlas al cargar una (se puede escribir cualquier otra). */
+    fun vacunasHabituales(tipoMascota: String?): List<String> = when (tipoMascota?.trim()?.lowercase()) {
+        "perro" -> listOf(
+            "Antirrábica", "Quíntuple (DHPPi + L)", "Séxtuple", "Triple canina", "Tos de las perreras", "Giardia", "Leishmaniasis"
+        )
+        "gato" -> listOf("Antirrábica", "Triple felina", "Cuádruple felina", "Leucemia felina")
+        "roedor" -> listOf("Antirrábica")
+        else -> emptyList()
+    }
+
     const val DURACION_GENERAL_MIN = 30
     const val DURACION_MINIMA_MIN = 15
     const val DURACION_MAXIMA_MIN = 480

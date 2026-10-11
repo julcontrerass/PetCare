@@ -26,14 +26,7 @@ class InformacionVetFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_informacion_vet, container, false)
         val p = DetallePacienteActivity.pacienteDe(requireActivity() as androidx.appcompat.app.AppCompatActivity)
-        view.findViewById<TextView>(R.id.tvPeso).text = p.peso
-        view.findViewById<TextView>(R.id.tvMicrochip).text = p.microchip
-        view.findViewById<TextView>(R.id.tvColor).text = p.color
-        view.findViewById<TextView>(R.id.tvObservaciones).text = p.observaciones
-        view.findViewById<TextView>(R.id.tvPropNombre).text = p.propietario
-        view.findViewById<TextView>(R.id.tvPropDireccion).text = p.direccion
-        view.findViewById<TextView>(R.id.tvPropTelefono).text = p.telefono
-        view.findViewById<TextView>(R.id.tvPropEmail).text = p.email
+        mostrarDatos(view, p)
 
         // Alertas y evolución del peso van arriba de los datos clínicos
         contenedor = (view as? ViewGroup)?.getChildAt(0) as? LinearLayout
@@ -46,6 +39,25 @@ class InformacionVetFragment : Fragment() {
             }
         }
         return view
+    }
+
+    private fun mostrarDatos(view: View, p: Paciente) {
+        view.findViewById<TextView>(R.id.tvPeso).text = p.peso
+        view.findViewById<TextView>(R.id.tvMicrochip).text = p.microchip
+        view.findViewById<TextView>(R.id.tvColor).text = p.color
+        view.findViewById<TextView>(R.id.tvObservaciones).text = p.observaciones
+        view.findViewById<TextView>(R.id.tvPropNombre).text = p.propietario
+        view.findViewById<TextView>(R.id.tvPropDireccion).text = p.direccion
+        view.findViewById<TextView>(R.id.tvPropTelefono).text = p.telefono
+        view.findViewById<TextView>(R.id.tvPropEmail).text = p.email
+    }
+
+    /** Al volver a esta pestaña (por ejemplo después de guardar el informe) se muestran los datos al día. */
+    override fun onResume() {
+        super.onResume()
+        val vista = view ?: return
+        val id = DetallePacienteActivity.pacienteDe(requireActivity() as androidx.appcompat.app.AppCompatActivity).id
+        PacientesRepo.porId(id)?.let { mostrarDatos(vista, it) }
     }
 
     private fun dibujarAlertas(p: Paciente) {

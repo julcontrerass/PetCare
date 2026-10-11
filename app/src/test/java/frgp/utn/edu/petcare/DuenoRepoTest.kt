@@ -7,6 +7,7 @@ import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.Mascota
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -253,6 +254,42 @@ class DuenoRepoTest : PruebaBase() {
         val ocupadas = runBlocking { DuenoRepo.horasOcupadas(DuenoRepo.todosLosVeterinarios().first(), manana) }
 
         assertEquals(listOf("09:30", "10:00"), ocupadas.map { it.hora })
+    }
+
+    @Test
+    fun solicitudes_muestranParaQueTurnoPideAccesoElVeterinario() {
+        fuente.perfiles.add(Escenario.veterinario("vet-3", "Dr. Pendiente"))
+        fuente.accesos.add(
+            AccesoDto(
+                "a2", "m1", "vet-3", "pendiente", "veterinario", createdAt = "2026-01-01T10:00:00+00:00",
+                turnoPropuesto = kotlinx.serialization.json.buildJsonObject {
+                    put("categoria", "Control")
+                    put("fecha", "2026-12-15")
+                    put("hora", "10:00:00")
+                }
+            )
+        )
+
+        ingresarComoDueno()
+
+        val texto = DuenoRepo.solicitudes.single().mascota
+        assertTrue(texto.contains("Rex"))
+        assertTrue(texto.contains("para un turno de Control"))
+        assertTrue(texto.contains("a las 10:00 hs"))
+    }
+
+    @Test
+    fun peso_loQueGuardaElVeterinarioLlegaALaMascotaDelDueno() {
+        ingresarComoDueno()
+        assertEquals("12 kg", DuenoRepo.mascotas.first { it.id == "m1" }.peso)
+
+        val i = fuente.mascotas.indexOfFirst { it.id == "m1" }
+        fuente.mascotas[i] = fuente.mascotas[i].copy(pesoKg = 13.5, alertasClinicas = "Alérgico a la penicilina")
+        runBlocking { DuenoRepo.recargarDerivados() }
+
+        val rex = DuenoRepo.mascotas.first { it.id == "m1" }
+        assertEquals("13.5 kg", rex.peso)
+        assertEquals("Alérgico a la penicilina", rex.alertas)
     }
 
     @Test

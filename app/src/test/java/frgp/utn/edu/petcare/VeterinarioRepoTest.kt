@@ -372,6 +372,18 @@ class VeterinarioRepoTest : PruebaBase() {
     }
 
     @Test
+    fun informe_elPesoMedidoPasaAlPacienteEnSeguida() {
+        ingresarComoVeterinario()
+        assertEquals("12 kg", PacientesRepo.porId("m1")!!.peso)
+
+        InformesRepo.guardar(
+            "m1", "Control", "Sano", "", null, signos = frgp.utn.edu.petcare.model.SignosVitales(pesoKg = 13.4)
+        )
+
+        assertEquals("13.4 kg", PacientesRepo.porId("m1")!!.peso)
+    }
+
+    @Test
     fun pacientes_laAlertaClinicaSeGuardaYSeVeEnLaFicha() {
         ingresarComoVeterinario()
 

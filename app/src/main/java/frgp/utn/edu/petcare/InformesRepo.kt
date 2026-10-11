@@ -78,6 +78,8 @@ object InformesRepo {
         val id = existente ?: UUID.randomUUID().toString()
         informes[clave(pacienteId, turnoId)] =
             InformeData(pacienteId, turnoId, id, motivo, diagnostico, tratamiento, anamnesis, examenFisico, signos)
+        // El peso del informe es el actual del animal: se ve en su ficha sin esperar al servidor
+        signos.pesoKg?.let { PacientesRepo.actualizarPeso(pacienteId, it) }
         Servicios.escribir(alFallar = { cargar(pacienteId, turnoId); Servicios.avisarCambio() }) {
             if (existente != null) {
                 Servicios.fuente.actualizarInforme(existente, buildJsonObject {

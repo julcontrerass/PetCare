@@ -201,8 +201,11 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         for (i in accesos.indices) if (accesos[i].veterinarioId == veterinarioId) accesos[i] = accesos[i].copy(estado = estado)
     }
 
-    override suspend fun solicitarAcceso(mascotaId: String): String {
+    var ultimoTurnoPropuesto: JsonObject? = null
+
+    override suspend fun solicitarAcceso(mascotaId: String, turno: JsonObject?): String {
         llamadas.add("solicitarAcceso:$mascotaId")
+        ultimoTurnoPropuesto = turno
         accesos.add(AccesoDto("acc-${accesos.size}", mascotaId, yo.id, "pendiente", "veterinario"))
         return "pendiente"
     }
@@ -324,7 +327,12 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
 
     // ---------- Administrador ----------
 
-    override suspend fun perfilesAdmin() = perfiles.filter { it.rol != "admin" }
+    var fallaAlCargarAdmin = false
+
+    override suspend fun perfilesAdmin(): List<PerfilDto> {
+        if (fallaAlCargarAdmin) throw java.io.IOException("sin conexión")
+        return perfiles.filter { it.rol != "admin" }
+    }
 
     override suspend fun actividadAdmin() = actividad.toList()
 
