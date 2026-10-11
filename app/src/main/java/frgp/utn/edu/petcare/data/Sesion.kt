@@ -15,6 +15,7 @@ import frgp.utn.edu.petcare.ArchivosRepo
 import frgp.utn.edu.petcare.InformesRepo
 import frgp.utn.edu.petcare.PacientesRepo
 import frgp.utn.edu.petcare.PerfilVetRepo
+import frgp.utn.edu.petcare.PrescripcionesRepo
 import frgp.utn.edu.petcare.SaludRepo
 import frgp.utn.edu.petcare.SolicitudesRepo
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
@@ -216,6 +217,7 @@ object Sesion {
         SaludRepo.limpiar()
         ArchivosRepo.limpiar()
         InformesRepo.limpiar()
+        PrescripcionesRepo.limpiar()
         SolicitudesRepo.limpiar()
         NotificacionesVet.limpiar()
         AdminRepo.limpiar()

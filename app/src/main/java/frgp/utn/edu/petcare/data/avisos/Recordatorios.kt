@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import frgp.utn.edu.petcare.EstadoEvento
+import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.EventoVet
 import frgp.utn.edu.petcare.PacientesRepo
 import frgp.utn.edu.petcare.data.Servicios
@@ -47,6 +48,75 @@ object Recordatorios {
             )
         }.filter { it.momento.isAfter(ahora) }
 
+    /** Una vacuna con próxima dosis cargada. */
+    class VacunaProxima(val id: String, val mascota: String, val vacuna: String, val proxima: LocalDate)
+
+    /** Una medicación en curso: toma cada [cadaHoras] desde [inicio] durante [dias]. */
+    class Medicacion(
+        val id: String, val mascota: String, val medicamento: String, val dosis: String,
+        val cadaHoras: Int, val inicio: LocalDateTime, val dias: Int
+    )
+
+    private val HORA_DE_AVISO = LocalTime.of(10, 0)
+
+    /**
+     * Dueño: una semana antes y el día de cada próxima dosis, y un solo aviso (a las 10) por cada vacuna que ya
+     * venció. [yaAvisadas] son los avisos de vencida que ya se mostraron.
+     */
+    fun paraVacunas(
+        vacunas: List<VacunaProxima>, ahora: LocalDateTime = LocalDateTime.now(), yaAvisadas: Set<String> = emptySet()
+    ): List<Aviso> {
+        val hoy = ahora.toLocalDate()
+        return vacunas.flatMap { v ->
+            val fecha = Fechas.corta(v.proxima)
+            val avisos = mutableListOf(
+                Aviso(
+                    "${v.id}-vac-semana", v.proxima.minusDays(7).atTime(HORA_DE_AVISO), "Se acerca una vacuna",
+                    "${v.mascota}: ${v.vacuna} le toca el $fecha (en una semana)"
+                ),
+                Aviso(
+                    "${v.id}-vac-dia", v.proxima.atTime(HORA_DE_AVISO), "Hoy toca una vacuna",
+                    "${v.mascota}: ${v.vacuna}. Sacá un turno para aplicarla"
+                )
+            )
+            if (v.proxima.isBefore(hoy) && v.proxima.isAfter(hoy.minusDays(DIAS_PARA_AVISAR_VENCIDAS))) {
+                val id = "${v.id}-vac-vencida-${v.proxima}"
+                if (id !in yaAvisadas) {
+                    val dia = if (ahora.toLocalTime().isBefore(HORA_DE_AVISO)) hoy else hoy.plusDays(1)
+                    avisos.add(
+                        Aviso(
+                            id, dia.atTime(HORA_DE_AVISO), "Vacuna vencida",
+                            "${v.mascota}: ${v.vacuna} está vencida desde el $fecha. Sacá un turno para ponerla al día"
+                        )
+                    )
+                }
+            }
+            avisos
+        }.filter { it.momento.isAfter(ahora) }
+    }
+
+    private const val DIAS_PARA_AVISAR_VENCIDAS = 90L
+
+    /** Dueño: las tomas de los próximos dos días de cada medicación indicada por el veterinario. */
+    fun paraMedicacion(
+        medicaciones: List<Medicacion>, ahora: LocalDateTime = LocalDateTime.now(), maximo: Int = 48
+    ): List<Aviso> = medicaciones.flatMap { m ->
+        if (m.cadaHoras <= 0) return@flatMap emptyList()
+        val fin = m.inicio.plusDays(m.dias.toLong())
+        val limite = ahora.plusHours(48)
+        val pasadas = Duration.between(m.inicio, ahora).toMinutes().coerceAtLeast(0)
+        val paso = m.cadaHoras * 60L
+        var t = m.inicio.plusMinutes(((pasadas + paso - 1) / paso) * paso)
+        if (!t.isAfter(ahora)) t = t.plusMinutes(paso)
+        val tomas = mutableListOf<Aviso>()
+        while (t.isBefore(fin) && t.isBefore(limite) && tomas.size < maximo) {
+            val detalle = m.medicamento + m.dosis.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty()
+            tomas.add(Aviso("${m.id}-dosis-${t.toLocalDate()}-${t.hour}-${t.minute}", t, "Hora de la medicación", "${m.mascota}: $detalle"))
+            t = t.plusMinutes(paso)
+        }
+        tomas
+    }.sortedBy { it.momento }.take(maximo)
+
     /** Veterinario: el resumen de las 8 de cada día con turnos y una hora antes de cada turno pendiente. */
     fun paraVeterinario(eventos: List<EventoVet>, ahora: LocalDateTime = LocalDateTime.now()): List<Aviso> {
         val pendientes = eventos.filter { it.estado == EstadoEvento.PENDIENTE }
@@ -75,6 +145,7 @@ object Recordatorios {
                 val espera = Duration.between(ahora.atZone(zona), aviso.momento.atZone(zona)).toMillis().coerceAtLeast(0)
                 val datos = Data.Builder()
                     .putInt(RecordatorioWorker.ID, aviso.id.hashCode())
+                    .putString(RecordatorioWorker.CLAVE, aviso.id)
                     .putString(RecordatorioWorker.TITULO, aviso.titulo)
                     .putString(RecordatorioWorker.MENSAJE, aviso.mensaje)
                     .build()
@@ -118,11 +189,15 @@ class RecordatorioWorker(contexto: Context, parametros: WorkerParameters) : Coro
         AvisosDelSistema.mostrar(
             applicationContext, inputData.getInt(ID, 0), titulo, mensaje, AvisosDelSistema.CANAL_RECORDATORIOS
         )
+        // El aviso de vacuna vencida se da una sola vez: se anota cuando ya salió
+        inputData.getString(CLAVE)?.takeIf { "-vac-vencida-" in it }
+            ?.let { AvisosDelSistema.marcarVacunaAvisada(applicationContext, it) }
         return Result.success()
     }
 
     companion object {
         const val ID = "id"
+        const val CLAVE = "clave"
         const val TITULO = "titulo"
         const val MENSAJE = "mensaje"
     }

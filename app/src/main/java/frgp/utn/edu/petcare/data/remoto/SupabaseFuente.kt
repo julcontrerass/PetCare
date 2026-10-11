@@ -61,7 +61,8 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     // ---------- Cambios en vivo ----------
 
     private val tablasEscuchadas = listOf(
-        "turnos", "accesos_mascota", "notificaciones", "mascotas", "informes_clinicos", "archivos_mascota", "registros_salud"
+        "turnos", "accesos_mascota", "notificaciones", "mascotas", "informes_clinicos", "archivos_mascota",
+        "registros_salud", "prescripciones"
     )
 
     /** Escucha los cambios de las tablas; el servidor solo manda los que el usuario puede ver (RLS). */
@@ -98,10 +99,21 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     }
 
     override suspend fun registrar(email: String, password: String, datos: JsonObject): ResultadoRegistro {
-        val usuario = cliente.auth.signUpWith(Email) {
-            this.email = email
-            this.password = password
-            this.data = datos
+        val usuario = try {
+            cliente.auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
+                this.data = datos
+            }
+        } catch (e: io.github.jan.supabase.exceptions.RestException) {
+            // Si la base rechaza el alta (DNI o matrícula ya registrados) el servidor responde 500 sin explicar
+            if (e.statusCode >= 500) {
+                throw IllegalStateException(
+                    "No pudimos crear la cuenta. Lo más probable es que el DNI o la matrícula ya estén registrados " +
+                        "con otra cuenta: revisalos e intentá de nuevo."
+                )
+            }
+            throw e
         }
         val sesion = cliente.auth.currentSessionOrNull()
         val yaExistia = sesion == null && usuario != null && usuario.identities.orEmpty().isEmpty()
@@ -302,6 +314,27 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     override suspend fun actualizarInforme(id: String, cambios: JsonObject) {
         cliente.from("informes_clinicos").update(cambios) { filter { eq("id", id) } }
+    }
+
+    override suspend fun prescripciones(mascotaId: String?): List<PrescripcionDto> =
+        cliente.from("prescripciones").select {
+            if (mascotaId != null) filter { eq("mascota_id", mascotaId) }
+            order("created_at", Order.DESCENDING)
+        }.decodeList()
+
+    override suspend fun crearPrescripcion(prescripcion: NuevaPrescripcionDto) {
+        cliente.from("prescripciones").insert(prescripcion)
+    }
+
+    override suspend fun eliminarPrescripcion(id: String) {
+        cliente.from("prescripciones").delete { filter { eq("id", id) } }
+    }
+
+    override suspend fun guardarAlertas(mascotaId: String, alertas: String) {
+        cliente.postgrest.rpc("guardar_alertas", buildJsonObject {
+            put("p_mascota", mascotaId)
+            put("p_alertas", alertas)
+        })
     }
 
     override suspend fun archivosDe(mascotaId: String): List<ArchivoDto> =

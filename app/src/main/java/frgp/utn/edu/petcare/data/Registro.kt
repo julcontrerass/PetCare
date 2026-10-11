@@ -40,6 +40,9 @@ object Registro {
     }
 
     suspend fun veterinario(d: DatosRegistroVeterinario): Resultado {
+        if (!Servicios.fuente.matriculaDisponible(d.matricula)) {
+            throw IllegalStateException("Esa matrícula ya está registrada con otra cuenta")
+        }
         val datos = buildJsonObject {
             put("rol", "veterinario")
             put("nombre", d.nombre)

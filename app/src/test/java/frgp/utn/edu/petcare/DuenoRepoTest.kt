@@ -393,6 +393,37 @@ class DuenoRepoTest : PruebaBase() {
     }
 
     @Test
+    fun informeDelTurno_traeSignosVitalesYLaRecetaDeLaConsulta() {
+        fuente.turnos.add(Escenario.turno("t1", "m1", LocalDate.now().toString(), "10:00:00", estado = "completado"))
+        fuente.informes.add(
+            frgp.utn.edu.petcare.data.remoto.InformeDto(
+                "i1", "m1", "t1", Escenario.VET_ID, "Control", "Otitis", "Gotas",
+                anamnesis = "Se rasca", examenFisico = "Oído rojo", pesoKg = 12.0, temperaturaC = 38.4
+            )
+        )
+        fuente.recetas.add(
+            frgp.utn.edu.petcare.data.remoto.PrescripcionDto(
+                "p1", "m1", "t1", Escenario.VET_ID, "Gotas óticas", "3 gotas", 12, 5, null, LocalDate.now().toString()
+            )
+        )
+        fuente.recetas.add(
+            frgp.utn.edu.petcare.data.remoto.PrescripcionDto(
+                "p2", "m1", "otro-turno", Escenario.VET_ID, "Otra cosa", null, null, null, null, LocalDate.now().toString()
+            )
+        )
+        ingresarComoDueno()
+
+        val detalle = runBlocking { DuenoRepo.detalleDelTurno(DuenoRepo.eventos[0]) }
+
+        assertEquals("Se rasca", detalle.anamnesis)
+        assertEquals("Oído rojo", detalle.examenFisico)
+        assertEquals("Peso 12 kg · Temp. 38.4 °C", detalle.signos.texto())
+        assertEquals(listOf("Gotas óticas"), detalle.receta.map { it.medicamento })
+        assertEquals("3 gotas, cada 12 hs, durante 5 días", detalle.receta[0].posologia)
+        assertFalse(detalle.vacio)
+    }
+
+    @Test
     fun informeDelTurno_sinInformeDevuelveNull() {
         fuente.turnos.add(Escenario.turno("t1", "m1", LocalDate.now().toString(), "10:00:00"))
         ingresarComoDueno()

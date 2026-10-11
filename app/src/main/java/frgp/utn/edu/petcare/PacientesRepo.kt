@@ -2,6 +2,7 @@ package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.ui.common.Documentos
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
 import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
 import java.time.LocalDate
@@ -23,9 +24,21 @@ data class Paciente(
     val propietario: String,
     val direccion: String,
     val telefono: String,
-    val email: String
+    val email: String,
+    /** Alergias, carácter y condiciones a tener en cuenta en cada consulta. */
+    val alertas: String = ""
 ) {
     val razaYSexo: String get() = "$raza - $sexo"
+
+    /** La ficha tal como se imprime en una receta o un certificado (sin los "Sin datos"). */
+    fun comoDocumento() = Documentos.DatosPaciente(
+        nombre = nombre, especie = especie, raza = raza.takeIf { it != especie }.orEmpty(),
+        sexo = sexo.takeIf { it != "Sin datos" }.orEmpty(),
+        edad = Regex("\\((.+)\\)").find(nacimiento)?.groupValues?.get(1).orEmpty(),
+        peso = peso.takeIf { it != "Sin datos" }.orEmpty(),
+        microchip = microchip.takeIf { it != "Sin datos" }.orEmpty(),
+        propietario = propietario.takeIf { it != "Sin datos" }.orEmpty()
+    )
 }
 
 /** Mascotas que el veterinario en sesión puede ver: las que le compartieron y las que cargó él mismo. */
@@ -67,7 +80,8 @@ object PacientesRepo {
             propietario = dueno?.nombre ?: m.propietarioNombre ?: SIN_DATOS,
             direccion = dueno?.direccion ?: m.propietarioDireccion ?: SIN_DATOS,
             telefono = dueno?.telefono ?: m.propietarioTelefono ?: SIN_DATOS,
-            email = dueno?.email ?: m.propietarioEmail ?: SIN_DATOS
+            email = dueno?.email ?: m.propietarioEmail ?: SIN_DATOS,
+            alertas = m.alertasClinicas.orEmpty()
         )
     }
 
@@ -107,6 +121,16 @@ object PacientesRepo {
     }
 
     fun porId(id: String?): Paciente? = lista.firstOrNull { it.id == id }
+
+    /** Cambia las alertas clínicas del paciente; se ven ya y se guardan en segundo plano. */
+    fun guardarAlertas(id: String, alertas: String) {
+        val i = lista.indexOfFirst { it.id == id }
+        if (i < 0) return
+        lista[i] = lista[i].copy(alertas = alertas.trim())
+        Servicios.escribir(alFallar = { cargar(); Servicios.avisarCambio() }) {
+            Servicios.fuente.guardarAlertas(id, alertas.trim())
+        }
+    }
 
     /** Nombre del paciente para mostrar en listas aunque ya no esté disponible. */
     fun nombreDe(id: String?): String = porId(id)?.nombre ?: "Mascota"

@@ -14,6 +14,8 @@ import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
 import frgp.utn.edu.petcare.data.remoto.NuevoTurnoDto
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
+import frgp.utn.edu.petcare.data.remoto.PrescripcionDto
+import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
 import frgp.utn.edu.petcare.data.remoto.TurnoDto
 import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
@@ -22,6 +24,8 @@ import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.NotificacionDueno
 import frgp.utn.edu.petcare.model.PerfilDueno
+import frgp.utn.edu.petcare.model.Prescripcion
+import frgp.utn.edu.petcare.model.SignosVitales
 import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.Sexo
 import frgp.utn.edu.petcare.model.TipoNotificacion
@@ -49,7 +53,11 @@ private class EstadoDueno(
     val solicitudes: MutableList<SolicitudItem> = mutableListOf(),
     val notificaciones: MutableList<NotificacionDueno> = mutableListOf(),
     var accesos: List<AccesoDto> = emptyList(),
-    var veterinarios: Map<String, PerfilDto> = emptyMap()
+    var veterinarios: Map<String, PerfilDto> = emptyMap(),
+    /** Vacunas y recetas de sus mascotas: de acá salen los recordatorios de próxima dosis y de medicación. */
+    var salud: List<RegistroSaludDto> = emptyList(),
+    var recetas: List<PrescripcionDto> = emptyList(),
+    var ultimaCargaSalud: Long = 0
 )
 
 /**
@@ -99,11 +107,50 @@ object DuenoRepo {
         nuevo.notificaciones.addAll(avisosDelServidor.map(::aNotificacion))
         reconstruirVeterinarios(nuevo)
         estado = nuevo
-        // Al iniciar sesión lo que ya estaba no suena; solo se programan los recordatorios de los próximos turnos
+        cargarSalud(nuevo, forzar = true)
+        // Al iniciar sesión lo que ya estaba no suena; solo se programan los recordatorios de lo que viene
         Servicios.contextoApp?.let {
             runCatching { AvisosDelSistema.mostrarNuevas(it, avisosDelServidor, silencioso = true) }
-            Recordatorios.programar(it, Recordatorios.paraDueno(nuevo.eventos))
+            programarAvisos(it, nuevo)
         }
+    }
+
+    /** Vacunas y recetas cambian poco: se piden al iniciar y después cada [INTERVALO_SALUD_MS]. */
+    private suspend fun cargarSalud(e: EstadoDueno, forzar: Boolean) {
+        val ahora = System.currentTimeMillis()
+        if (!forzar && ahora - e.ultimaCargaSalud < INTERVALO_SALUD_MS) return
+        val f = Servicios.fuente
+        e.salud = runCatching { f.registrosSalud() }.getOrDefault(e.salud)
+        e.recetas = runCatching { f.prescripciones() }.getOrDefault(e.recetas)
+        e.ultimaCargaSalud = ahora
+    }
+
+    private const val INTERVALO_SALUD_MS = 5 * 60 * 1000L
+
+    /** Turnos, próximas dosis de vacunas y tomas de medicación: todo lo que tiene que avisar el teléfono. */
+    private fun programarAvisos(contexto: android.content.Context, e: EstadoDueno) {
+        val ahora = java.time.LocalDateTime.now()
+        val nombres = e.mascotas.associate { it.id to it.nombre }
+        val vacunas = e.salud
+            .filter { it.tipo == "vacuna" && it.mascotaId in nombres }
+            .mapNotNull { r ->
+                val proxima = r.proximaDosis?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
+                Recordatorios.VacunaProxima(r.id, nombres.getValue(r.mascotaId), r.titulo, proxima)
+            }
+        val medicacion = e.recetas
+            .filter { it.mascotaId in nombres }
+            .mapNotNull { p ->
+                val cada = p.frecuenciaHoras ?: return@mapNotNull null
+                val dias = p.duracionDias ?: return@mapNotNull null
+                val inicio = p.createdAt?.let { Fechas.instante(it) }
+                    ?: runCatching { LocalDate.parse(p.inicio).atTime(9, 0) }.getOrNull()
+                    ?: return@mapNotNull null
+                Recordatorios.Medicacion(p.id, nombres.getValue(p.mascotaId), p.medicamento, p.dosis.orEmpty(), cada, inicio, dias)
+            }
+        val avisos = Recordatorios.paraDueno(e.eventos, ahora) +
+            Recordatorios.paraVacunas(vacunas, ahora, AvisosDelSistema.vacunasAvisadas(contexto)) +
+            Recordatorios.paraMedicacion(medicacion, ahora)
+        Recordatorios.programar(contexto, avisos, ahora)
     }
 
     /** Vuelve a pedir lo que el servidor modifica por su cuenta (accesos, avisos) y avisa a la pantalla. */
@@ -121,9 +168,10 @@ object DuenoRepo {
         actual.eventos.addAll(turnos.filter { t -> t.estado != "cancelado" && actual.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, actual) })
         actual.notificaciones.clear()
         actual.notificaciones.addAll(avisos.map(::aNotificacion))
+        cargarSalud(actual, forzar = false)
         Servicios.contextoApp?.let {
             runCatching { AvisosDelSistema.mostrarNuevas(it, avisos) }
-            Recordatorios.programar(it, Recordatorios.paraDueno(actual.eventos))
+            programarAvisos(it, actual)
         }
         Servicios.avisarCambio()
     }
@@ -158,7 +206,8 @@ object DuenoRepo {
         sexo = Sexo.deTexto(m.sexo), fotoPath = m.fotoPath, id = m.id,
         peso = textoDePeso(m.pesoKg), microchip = m.microchip?.takeIf { it.isNotBlank() } ?: SIN_DATOS,
         color = m.color?.takeIf { it.isNotBlank() } ?: SIN_DATOS,
-        observaciones = m.observaciones?.takeIf { it.isNotBlank() } ?: "Sin observaciones"
+        observaciones = m.observaciones?.takeIf { it.isNotBlank() } ?: "Sin observaciones",
+        alertas = m.alertasClinicas.orEmpty()
     )
 
     private fun aEvento(t: TurnoDto, e: EstadoDueno): EventoMascota {
@@ -680,12 +729,21 @@ object DuenoRepo {
         val registros: List<String>,
         val archivos: List<ArchivoDeTurno>,
         /** Estudios anteriores que el propio dueño adjuntó al sacar el turno. */
-        val estudios: List<ArchivoDeTurno> = emptyList()
+        val estudios: List<ArchivoDeTurno> = emptyList(),
+        val anamnesis: String = "",
+        val examenFisico: String = "",
+        val signos: SignosVitales = SignosVitales(),
+        /** Medicamentos que recetó el veterinario en esa consulta. */
+        val receta: List<Prescripcion> = emptyList()
     ) {
         val vacio: Boolean
             get() = motivo.isBlank() && diagnostico.isBlank() && tratamiento.isBlank() && registros.isEmpty() &&
-                archivos.isEmpty() && estudios.isEmpty()
+                archivos.isEmpty() && estudios.isEmpty() && anamnesis.isBlank() && examenFisico.isBlank() &&
+                signos.vacio && receta.isEmpty()
     }
+
+    /** Perfil de un veterinario del catálogo, con matrícula y datos de la clínica (para firmar la receta). */
+    fun perfilDeVeterinario(id: String?): PerfilDto? = id?.let { estado.veterinarios[it] }
 
     /**
      * Arma el detalle de un turno para el dueño, que puede leerlo pero no editarlo. Los archivos son los que el
@@ -697,6 +755,7 @@ object DuenoRepo {
         val registros = async { f.registrosSalud() }
         val archivos = async { f.archivosDe(evento.mascotaId) }
         val estudios = async { runCatching { f.estudiosDeTurno(evento.id) }.getOrDefault(emptyList()) }
+        val recetas = async { runCatching { f.prescripciones(evento.mascotaId) }.getOrDefault(emptyList()) }
 
         val informe = informes.await().firstOrNull { it.turnoId == evento.id }
         val vet = evento.veterinarioId
@@ -718,7 +777,12 @@ object DuenoRepo {
         DetalleTurno(
             motivo = informe?.motivo.orEmpty(), diagnostico = informe?.diagnostico.orEmpty(),
             tratamiento = informe?.tratamiento.orEmpty(), registros = delTurno, archivos = adjuntos,
-            estudios = estudios.await().map { ArchivoDeTurno(it.nombre, it.extension, it.storagePath, it.tipo) }
+            estudios = estudios.await().map { ArchivoDeTurno(it.nombre, it.extension, it.storagePath, it.tipo) },
+            anamnesis = informe?.anamnesis.orEmpty(), examenFisico = informe?.examenFisico.orEmpty(),
+            signos = SignosVitales(
+                informe?.pesoKg, informe?.temperaturaC, informe?.frecuenciaCardiaca, informe?.frecuenciaRespiratoria
+            ),
+            receta = recetas.await().filter { it.turnoId == evento.id }.map(Prescripcion::deDto)
         )
     }
 

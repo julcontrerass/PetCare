@@ -52,6 +52,7 @@
             android:windowSoftInputMode="adjustResize" />
         <activity android:screenOrientation="portrait" android:name=".DetalleEventoVetActivity" android:exported="false" />
         <activity android:screenOrientation="portrait" android:name=".CarnetSaludActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".VacunasPendientesActivity" android:exported="false" />
         <activity android:screenOrientation="portrait" android:name=".HomeAdminActivity" android:exported="false" />
 
         <provider

@@ -437,6 +437,11 @@ class CarnetSaludActivity : BaseActivity() {
 
         layout.addView(etFecha)
         etExtra?.let { layout.addView(it) }
+        // Lo que se aplicó: respalda la vacuna y permite ubicar un lote si hace falta
+        val etMarca = if (tipo == TipoRegistro.VACUNA) campo("Marca / producto (opcional)") else null
+        val etLote = if (tipo == TipoRegistro.VACUNA) campo("Lote (opcional)") else null
+        val etVenceLote = if (tipo == TipoRegistro.VACUNA) campoFecha("Vencimiento del lote (opcional)") else null
+        listOfNotNull(etMarca, etLote, etVenceLote).forEach { layout.addView(it) }
         if (tipo == TipoRegistro.DOCUMENTO) {
             layout.addView(android.widget.Button(this).apply {
                 text = "Seleccionar archivo"
@@ -478,7 +483,10 @@ class CarnetSaludActivity : BaseActivity() {
                 val fechaElegida = Fechas.parsear(fecha) ?: LocalDate.now()
                 when (tipo) {
                     TipoRegistro.VACUNA -> SaludRepo.agregar(
-                        tipo, paciente.id, titulo, null, fechaElegida, proximaDosis = Fechas.parsear(extra)
+                        tipo, paciente.id, titulo, null, fechaElegida, proximaDosis = Fechas.parsear(extra),
+                        marca = etMarca?.text?.toString()?.trim().orEmpty().ifEmpty { null },
+                        lote = etLote?.text?.toString()?.trim().orEmpty().ifEmpty { null },
+                        loteVencimiento = Fechas.parsear(etVenceLote?.text?.toString())
                     )
                     TipoRegistro.TRATAMIENTO -> SaludRepo.agregar(
                         tipo, paciente.id, titulo, extra.ifEmpty { "Sin indicaciones" }, fechaElegida

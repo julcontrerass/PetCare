@@ -502,6 +502,79 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun vet_elInformeGuardaLosSignosVitalesSinDiagnostico() {
+        abrirVet()
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java).putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+                .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, "t1")
+        )
+        ficha.findViewById<EditText>(R.id.etPeso).setText("12,5")
+        ficha.findViewById<EditText>(R.id.etTemperatura).setText("38,5")
+        ficha.findViewById<EditText>(R.id.etAnamnesis).setText("Come menos")
+        ficha.findViewById<View>(R.id.btnGuardarInforme).performClick()
+
+        val creado = fuente.ultimoInformeCreado!!
+        assertEquals(12.5, creado.pesoKg!!, 0.001)
+        assertEquals(38.5, creado.temperaturaC!!, 0.001)
+        assertEquals("Come menos", creado.anamnesis)
+    }
+
+    @Test
+    fun vet_elInformeNoGuardaUnaTemperaturaImposible() {
+        abrirVet()
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java).putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+                .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, "t1")
+        )
+        ficha.findViewById<EditText>(R.id.etTemperatura).setText("60")
+        ficha.findViewById<EditText>(R.id.etDiagnostico).setText("Otitis")
+        ficha.findViewById<View>(R.id.btnGuardarInforme).performClick()
+
+        assertTrue(fuente.llamadas.none { it.startsWith("crearInforme") })
+    }
+
+    @Test
+    fun vet_sePuedeRecetarUnMedicamentoDesdeElInforme() {
+        abrirVet()
+        val ficha = abrir(
+            DetallePacienteActivity::class.java,
+            intent(DetallePacienteActivity::class.java).putExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID, "m1")
+                .putExtra(DetalleEventoVetActivity.EXTRA_EVENTO_ID, "t1")
+        )
+        assertEquals(View.GONE, ficha.findViewById<View>(R.id.btnRecetaPdf).visibility)
+
+        ficha.findViewById<View>(R.id.btnAgregarMedicamento).performClick()
+        val hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        hoja.findViewById<EditText>(R.id.etMedicamento)!!.setText("Amoxicilina")
+        hoja.findViewById<EditText>(R.id.etDosis)!!.setText("250 mg")
+        hoja.findViewById<EditText>(R.id.etCadaHoras)!!.setText("8")
+        hoja.findViewById<EditText>(R.id.etDias)!!.setText("7")
+        hoja.findViewById<View>(R.id.btnGuardarMedicamento)!!.performClick()
+
+        assertTrue(fuente.llamadas.contains("crearPrescripcion:Amoxicilina"))
+        assertEquals(View.VISIBLE, ficha.findViewById<View>(R.id.btnRecetaPdf).visibility)
+    }
+
+    @Test
+    fun vet_elInicioMuestraLasVacunasARecordarYSuLista() {
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto("r1", "m1", "vacuna", "Rabia", null, hoy.minusDays(300).toString(), null, hoy.minusDays(5).toString())
+        )
+        abrirVet()
+        val inicio = abrir(HomeVeterinarioActivity::class.java)
+        assertTrue(texto(inicio, R.id.tvVacunasARecordar).contains("1 paciente"))
+
+        inicio.findViewById<View>(R.id.cardVacunasARecordar).performClick()
+        assertEquals(VacunasPendientesActivity::class.java.name, shadowOf(inicio).nextStartedActivity.component!!.className)
+
+        val lista = abrir(VacunasPendientesActivity::class.java)
+        val rv = lista.findViewById<RecyclerView>(R.id.rvVacunas)
+        assertEquals(1, rv.adapter!!.itemCount)
+    }
+
+    @Test
     fun vet_elPerfilPermiteElegirAnimalesYLaDuracionDeLosTurnos() {
         abrirVet()
         val a = abrir(PerfilVetActivity::class.java)

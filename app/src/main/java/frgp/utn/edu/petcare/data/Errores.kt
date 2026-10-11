@@ -40,7 +40,14 @@ object Errores {
             "duplicate key" in texto && "dni" in texto -> "Ese DNI ya está registrado"
             "duplicate key" in texto && "matricula" in texto -> "Esa matrícula ya está registrada"
             "mascotas_nombre_dueno_key" in texto -> "Ya tenés una mascota con ese nombre"
-            e is RestException -> (e.description ?: e.error).ifBlank { "No se pudo completar la operación" }
+            e is RestException -> {
+                val detalle = (e.description ?: e.error).trim()
+                if (detalle.isBlank() || detalle.equals("unknown error", ignoreCase = true)) {
+                    "El servidor no pudo completar la operación. Intentá de nuevo en un rato."
+                } else {
+                    detalle
+                }
+            }
             else -> e.message?.takeIf { it.isNotBlank() } ?: "Ocurrió un error inesperado"
         }
     }

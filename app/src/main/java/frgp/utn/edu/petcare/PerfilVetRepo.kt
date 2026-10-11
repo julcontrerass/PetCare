@@ -6,6 +6,7 @@ import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.ui.common.Documentos
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -180,6 +181,9 @@ object PerfilVetRepo {
             })
         }
     }
+
+    /** Los datos con los que se firman las recetas y los certificados. */
+    fun comoProfesional() = Documentos.Profesional(nombre, matricula, clinica, direccionClinica, telefono)
 
     fun guardarTiposAnimales() {
         Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {

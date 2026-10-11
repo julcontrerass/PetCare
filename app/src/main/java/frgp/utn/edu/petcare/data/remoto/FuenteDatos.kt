@@ -82,6 +82,12 @@ interface FuenteDatos {
     suspend fun informesDe(mascotaId: String): List<InformeDto> = emptyList()
     suspend fun crearInforme(informe: NuevoInformeDto) {}
     suspend fun actualizarInforme(id: String, cambios: JsonObject) {}
+    /** Recetas de las mascotas que el usuario puede ver; con [mascotaId] solo las de esa mascota. */
+    suspend fun prescripciones(mascotaId: String? = null): List<PrescripcionDto> = emptyList()
+    suspend fun crearPrescripcion(prescripcion: NuevaPrescripcionDto) {}
+    suspend fun eliminarPrescripcion(id: String) {}
+    /** Guarda las alertas clínicas de la mascota (las pueden cambiar el dueño y los veterinarios con acceso). */
+    suspend fun guardarAlertas(mascotaId: String, alertas: String) {}
     suspend fun archivosDe(mascotaId: String): List<ArchivoDto> = emptyList()
     suspend fun crearArchivo(archivo: NuevoArchivoDto) {}
     suspend fun renombrarArchivo(id: String, nombre: String) {}

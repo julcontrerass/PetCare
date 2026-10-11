@@ -80,6 +80,8 @@ data class MascotaDto(
     @SerialName("propietario_telefono") val propietarioTelefono: String? = null,
     @SerialName("propietario_email") val propietarioEmail: String? = null,
     @SerialName("propietario_direccion") val propietarioDireccion: String? = null,
+    /** Alergias, carácter y condiciones a tener en cuenta en cada consulta. */
+    @SerialName("alertas_clinicas") val alertasClinicas: String? = null,
     /** Perfil del dueño registrado; solo viene en las consultas del veterinario. */
     val dueno: DuenoResumenDto? = null
 )
@@ -124,7 +126,11 @@ data class RegistroSaludDto(
     @SerialName("proxima_dosis") val proximaDosis: String? = null,
     val estado: String? = null,
     @SerialName("archivo_path") val archivoPath: String? = null,
-    @SerialName("creado_por") val creadoPor: String? = null
+    @SerialName("creado_por") val creadoPor: String? = null,
+    /** Solo en vacunas: producto aplicado, lote y vencimiento del lote. */
+    val marca: String? = null,
+    val lote: String? = null,
+    @SerialName("lote_vencimiento") val loteVencimiento: String? = null
 )
 
 @Serializable
@@ -136,7 +142,13 @@ data class InformeDto(
     val motivo: String? = null,
     val diagnostico: String? = null,
     val tratamiento: String? = null,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    val anamnesis: String? = null,
+    @SerialName("examen_fisico") val examenFisico: String? = null,
+    @SerialName("peso_kg") val pesoKg: Double? = null,
+    @SerialName("temperatura_c") val temperaturaC: Double? = null,
+    @SerialName("frecuencia_cardiaca") val frecuenciaCardiaca: Int? = null,
+    @SerialName("frecuencia_respiratoria") val frecuenciaRespiratoria: Int? = null
 )
 
 @Serializable
@@ -282,7 +294,10 @@ data class NuevoRegistroSaludDto(
     @SerialName("proxima_dosis") val proximaDosis: String? = null,
     val estado: String? = null,
     @SerialName("archivo_path") val archivoPath: String? = null,
-    @SerialName("creado_por") val creadoPor: String
+    @SerialName("creado_por") val creadoPor: String,
+    val marca: String? = null,
+    val lote: String? = null,
+    @SerialName("lote_vencimiento") val loteVencimiento: String? = null
 )
 
 @Serializable
@@ -293,7 +308,43 @@ data class NuevoInformeDto(
     @SerialName("veterinario_id") val veterinarioId: String,
     val motivo: String? = null,
     val diagnostico: String? = null,
-    val tratamiento: String? = null
+    val tratamiento: String? = null,
+    val anamnesis: String? = null,
+    @SerialName("examen_fisico") val examenFisico: String? = null,
+    @SerialName("peso_kg") val pesoKg: Double? = null,
+    @SerialName("temperatura_c") val temperaturaC: Double? = null,
+    @SerialName("frecuencia_cardiaca") val frecuenciaCardiaca: Int? = null,
+    @SerialName("frecuencia_respiratoria") val frecuenciaRespiratoria: Int? = null
+)
+
+/** Un medicamento recetado; los de una misma consulta comparten `turnoId`. */
+@Serializable
+data class PrescripcionDto(
+    val id: String,
+    @SerialName("mascota_id") val mascotaId: String,
+    @SerialName("turno_id") val turnoId: String? = null,
+    @SerialName("veterinario_id") val veterinarioId: String? = null,
+    val medicamento: String,
+    val dosis: String? = null,
+    @SerialName("frecuencia_horas") val frecuenciaHoras: Int? = null,
+    @SerialName("duracion_dias") val duracionDias: Int? = null,
+    val indicaciones: String? = null,
+    val inicio: String,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class NuevaPrescripcionDto(
+    val id: String,
+    @SerialName("mascota_id") val mascotaId: String,
+    @SerialName("turno_id") val turnoId: String? = null,
+    @SerialName("veterinario_id") val veterinarioId: String,
+    val medicamento: String,
+    val dosis: String? = null,
+    @SerialName("frecuencia_horas") val frecuenciaHoras: Int? = null,
+    @SerialName("duracion_dias") val duracionDias: Int? = null,
+    val indicaciones: String? = null,
+    val inicio: String
 )
 
 @Serializable

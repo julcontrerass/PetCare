@@ -3,6 +3,9 @@ package frgp.utn.edu.petcare.ui.dueno
 import android.app.DatePickerDialog
 import android.content.res.ColorStateList
 import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.ui.common.Documentos
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import frgp.utn.edu.petcare.model.EstadoTurno
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
@@ -109,8 +112,23 @@ class EventosDialogos(private val host: DuenoActivity) {
     private fun mostrarDetalleClinico(contenedor: LinearLayout, d: DuenoRepo.DetalleTurno) {
         contenedor.removeAllViews()
         if (d.motivo.isNotBlank()) fila(contenedor, R.drawable.ic_list, "Motivo de la consulta", d.motivo)
+        if (d.anamnesis.isNotBlank()) fila(contenedor, R.drawable.ic_list, "Lo que contaste en la consulta", d.anamnesis)
+        if (!d.signos.vacio) fila(contenedor, R.drawable.ic_pulse, "Signos vitales", d.signos.texto())
+        if (d.examenFisico.isNotBlank()) fila(contenedor, R.drawable.ic_medical, "Examen físico", d.examenFisico)
         if (d.diagnostico.isNotBlank()) fila(contenedor, R.drawable.ic_medical, "Diagnóstico", d.diagnostico)
         if (d.tratamiento.isNotBlank()) fila(contenedor, R.drawable.ic_syringe, "Tratamiento indicado", d.tratamiento)
+        d.receta.forEach { m ->
+            fila(
+                contenedor, R.drawable.ic_syringe, "Receta",
+                m.medicamento + m.posologia.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty() +
+                    m.indicaciones.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
+            )
+        }
+        if (d.receta.isNotEmpty()) {
+            fila(contenedor, R.drawable.ic_document, "Receta en PDF", "Compartir o guardar la receta de la consulta") {
+                compartirReceta(d)
+            }
+        }
         if (d.registros.isNotEmpty()) {
             fila(contenedor, R.drawable.ic_pulse, "Cargado en el carnet de salud", d.registros.joinToString("\n"))
         }
@@ -127,6 +145,31 @@ class EventosDialogos(private val host: DuenoActivity) {
                     ArchivosUi.abrir(host, "archivos", archivo.ruta, archivo.extension)
                 }
             }
+        }
+    }
+
+    /** Arma la receta de la consulta con la matrícula del veterinario y abre el selector para compartirla. */
+    private fun compartirReceta(d: DuenoRepo.DetalleTurno) {
+        val primera = d.receta.firstOrNull() ?: return
+        val mascota = DuenoRepo.mascotas.firstOrNull { it.id == primera.mascotaId } ?: return
+        val perfilVet = DuenoRepo.eventos.firstOrNull { it.id == primera.turnoId }
+            ?.let { DuenoRepo.perfilDeVeterinario(it.veterinarioId) }
+        val vet = perfilVet?.veterinarios
+        val profesional = Documentos.Profesional(
+            nombre = perfilVet?.nombre ?: "Veterinario", matricula = vet?.matricula.orEmpty(),
+            clinica = vet?.clinica.orEmpty(), direccion = vet?.direccionClinica.orEmpty(),
+            telefono = perfilVet?.telefono.orEmpty()
+        )
+        val paciente = Documentos.DatosPaciente(
+            nombre = mascota.nombre, especie = mascota.tipo, raza = mascota.raza,
+            sexo = mascota.sexo?.etiqueta.orEmpty(), edad = mascota.edadTexto().orEmpty(),
+            peso = if (mascota.tienePesoValido) mascota.peso else "", propietario = DuenoRepo.perfil.nombre
+        )
+        host.lifecycleScope.launch {
+            val archivo = withContext(Dispatchers.IO) {
+                Documentos.receta(host, profesional, paciente, LocalDate.now(), d.receta)
+            }
+            Documentos.compartir(host, archivo, "Receta de ${mascota.nombre}")
         }
     }
 

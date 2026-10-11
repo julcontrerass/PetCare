@@ -161,7 +161,9 @@ class DetalleEventoVetActivity : BaseActivity() {
     /** Muestra lo que el veterinario escribió en el informe de este turno. */
     private fun mostrarInforme(informe: InformeData) {
         val texto = listOf(
-            "Motivo" to informe.motivo, "Diagnóstico" to informe.diagnostico, "Tratamiento" to informe.tratamiento
+            "Motivo" to informe.motivo, "Anamnesis" to informe.anamnesis,
+            "Signos vitales" to informe.signos.texto(), "Examen físico" to informe.examenFisico,
+            "Diagnóstico" to informe.diagnostico, "Tratamiento" to informe.tratamiento
         ).filter { it.second.isNotBlank() }.joinToString("\n\n") { (titulo, valor) -> "$titulo\n$valor" }
         findViewById<View>(R.id.seccionInforme).visibility = if (informe.vacio) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvInforme).text = texto

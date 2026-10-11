@@ -43,6 +43,15 @@ Para agregar una sección: crear la `Pantalla`, un método `irA...()` en `DuenoA
 - La duración real de un turno la fija el servidor al crearlo (`turnos.duracion_min`, trigger `turnos_duracion`) y de ahí sale el rango que impide superposiciones. La app calcula lo mismo para mostrar solo los horarios en los que el turno entra completo.
 - El veterinario elige qué animales atiende al registrarse o desde su perfil (`veterinarios.tipos_animales`). El dueño solo ve veterinarios que atienden el tipo de su mascota y la base rechaza el turno si no es así.
 
+### Historia clínica, recetas y avisos de salud
+
+- **Informe de consulta (SOAP):** motivo, anamnesis, signos vitales (peso, temperatura, frecuencia cardíaca y respiratoria), examen físico, diagnóstico y plan. El peso medido pasa a ser el peso actual de la mascota (trigger `informes_peso`) y alimenta el gráfico de evolución.
+- **Vacunas:** guardan producto, lote y vencimiento del lote. El veterinario tiene la lista *Vacunas a recordar* (vencidas o por vencer en 30 días) con atajos a WhatsApp y llamada.
+- **Recetas:** un medicamento por fila en `prescripciones`; las de una consulta forman la receta, que se comparte en PDF. Si tienen frecuencia y duración, el dueño recibe un aviso en cada toma.
+- **Certificados:** de vacunación y de salud en PDF con la matrícula del veterinario (`ui/common/Documentos.kt`).
+- **Avisos al dueño:** una semana antes y el día de cada próxima dosis, y una sola vez cuando una vacuna ya venció (`Recordatorios.paraVacunas`).
+- **Alertas clínicas** de la mascota (alergias, carácter), editables por el veterinario con acceso (`guardar_alertas`).
+
 ## Pruebas
 
 ```bash

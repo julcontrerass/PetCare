@@ -2,7 +2,14 @@ package frgp.utn.edu.petcare
 
 import android.content.ActivityNotFoundException
 import frgp.utn.edu.petcare.model.TiposMascota
+import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.Contacto
+import frgp.utn.edu.petcare.ui.common.Documentos
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 import frgp.utn.edu.petcare.data.Imagenes
 import android.content.Intent
 import android.net.Uri
@@ -36,6 +43,36 @@ class DetallePacienteActivity : BaseActivity() {
         }
     }
 
+    /** Arma el certificado con la matrícula del veterinario y abre el selector para compartirlo. */
+    private fun generarCertificado(paciente: Paciente, vacunacion: Boolean) {
+        if (PerfilVetRepo.matricula.isBlank()) {
+            Avisos.mostrar(this, "Cargá tu matrícula en el perfil para emitir certificados")
+            return
+        }
+        lifecycleScope.launch {
+            val archivo = withContext(Dispatchers.IO) {
+                if (vacunacion) {
+                    val vacunas = SaludRepo.registros.filter {
+                        it.mascotaId == paciente.id && it.tipo == TipoRegistro.VACUNA
+                    }
+                    Documentos.certificadoVacunacion(
+                        this@DetallePacienteActivity, PerfilVetRepo.comoProfesional(), paciente.comoDocumento(),
+                        LocalDate.now(), vacunas
+                    )
+                } else {
+                    Documentos.certificadoSalud(
+                        this@DetallePacienteActivity, PerfilVetRepo.comoProfesional(), paciente.comoDocumento(),
+                        LocalDate.now()
+                    )
+                }
+            }
+            Documentos.compartir(
+                this@DetallePacienteActivity, archivo,
+                (if (vacunacion) "Certificado de vacunación de " else "Certificado de salud de ") + paciente.nombre
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (volverSiNoHaySesion()) return
@@ -65,10 +102,24 @@ class DetallePacienteActivity : BaseActivity() {
             PopupMenu(this, v).apply {
                 menu.add(0, 1, 0, "Llamar al propietario")
                 menu.add(0, 2, 1, "Enviar correo al propietario")
+                menu.add(0, 3, 2, "Escribir por WhatsApp")
+                menu.add(0, 4, 3, "Certificado de vacunación (PDF)")
+                menu.add(0, 5, 4, "Certificado de salud (PDF)")
                 setOnMenuItemClickListener {
                     when (it.itemId) {
                         1 -> abrirExterno(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + paciente.telefono.filter { c -> c.isDigit() || c == '+' })))
-                        else -> abrirExterno(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + paciente.email)))
+                        2 -> abrirExterno(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + paciente.email)))
+                        3 -> {
+                            val dueno = paciente.propietario.takeIf { n -> n != "Sin datos" }?.substringBefore(' ')
+                            val mensaje = (if (dueno != null) "Hola $dueno, " else "Hola, ") +
+                                "te escribo por ${paciente.nombre}."
+                            Contacto.abrir(
+                                this@DetallePacienteActivity, Contacto.whatsApp(paciente.telefono, mensaje),
+                                "No hay un teléfono válido para este dueño"
+                            )
+                        }
+                        4 -> generarCertificado(paciente, vacunacion = true)
+                        else -> generarCertificado(paciente, vacunacion = false)
                     }
                     true
                 }

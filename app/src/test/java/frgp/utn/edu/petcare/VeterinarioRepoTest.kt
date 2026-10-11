@@ -269,6 +269,118 @@ class VeterinarioRepoTest : PruebaBase() {
         assertTrue(fuente.llamadas.any { it.startsWith("eliminarRegistro:") })
     }
 
+    @Test
+    fun salud_laVacunaGuardaMarcaLoteYVencimientoDelLote() {
+        ingresarComoVeterinario()
+
+        val registro = SaludRepo.agregar(
+            TipoRegistro.VACUNA, "m1", "Antirrábica", null, hoy, proximaDosis = hoy.plusDays(365),
+            marca = "Nobivac", lote = "A123", loteVencimiento = hoy.plusDays(400)
+        )
+
+        val enviado = fuente.ultimoRegistroCreado!!
+        assertEquals("Nobivac", enviado.marca)
+        assertEquals("A123", enviado.lote)
+        assertEquals(hoy.plusDays(400).toString(), enviado.loteVencimiento)
+        assertTrue(registro.detalle.contains("Nobivac") && registro.detalle.contains("Lote A123"))
+    }
+
+    @Test
+    fun salud_vacunasARecordarSonLasVencidasYLasQueVencenPronto() {
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto("r1", "m1", "vacuna", "Rabia", null, hoy.minusDays(300).toString(), null, hoy.minusDays(10).toString())
+        )
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto("r2", "m2", "vacuna", "Triple", null, hoy.toString(), null, hoy.plusDays(15).toString())
+        )
+        fuente.registros.add(
+            frgp.utn.edu.petcare.data.remoto.RegistroSaludDto("r3", "m1", "vacuna", "Moquillo", null, hoy.toString(), null, hoy.plusDays(200).toString())
+        )
+        ingresarComoVeterinario()
+
+        assertEquals(listOf("Rabia", "Triple"), SaludRepo.vacunasARecordar().map { it.titulo })
+    }
+
+    @Test
+    fun informe_guardaAnamnesisExamenYSignosVitales() {
+        ingresarComoVeterinario()
+
+        InformesRepo.guardar(
+            "m1", "Control", "Otitis", "Gotas", null, "Se rasca la oreja", "Oído rojo",
+            frgp.utn.edu.petcare.model.SignosVitales(12.4, 38.5, 90, 22)
+        )
+
+        val creado = fuente.ultimoInformeCreado!!
+        assertEquals("Se rasca la oreja", creado.anamnesis)
+        assertEquals("Oído rojo", creado.examenFisico)
+        assertEquals(12.4, creado.pesoKg!!, 0.001)
+        assertEquals(38.5, creado.temperaturaC!!, 0.001)
+        assertEquals(90, creado.frecuenciaCardiaca)
+        assertEquals(22, creado.frecuenciaRespiratoria)
+        assertEquals("Peso 12.4 kg · Temp. 38.5 °C · FC 90 lpm · FR 22 rpm", InformesRepo.obtener("m1").signos.texto())
+    }
+
+    @Test
+    fun informe_alVolverAGuardarActualizaLosSignos() {
+        ingresarComoVeterinario()
+        InformesRepo.guardar("m1", "Control", "Otitis", "Gotas", null, signos = frgp.utn.edu.petcare.model.SignosVitales(pesoKg = 12.0))
+
+        InformesRepo.guardar("m1", "Control", "Otitis", "Gotas", null, signos = frgp.utn.edu.petcare.model.SignosVitales(pesoKg = 12.6))
+
+        val cambios = fuente.ultimosCambiosDeInforme!!
+        assertEquals("12.6", cambios["peso_kg"].toString())
+    }
+
+    @Test
+    fun informe_cargaLosSignosYLaEvolucionDelPeso() {
+        val hoyTexto = java.time.OffsetDateTime.now().toString()
+        fuente.informes.add(
+            frgp.utn.edu.petcare.data.remoto.InformeDto(
+                "i1", "m1", null, Escenario.VET_ID, "Control", "Sano", null, createdAt = java.time.OffsetDateTime.now().minusDays(60).toString(),
+                pesoKg = 11.0, temperaturaC = 38.2
+            )
+        )
+        fuente.informes.add(
+            frgp.utn.edu.petcare.data.remoto.InformeDto(
+                "i2", "m1", "t9", Escenario.VET_ID, "Control", "Sano", null, createdAt = hoyTexto, pesoKg = 12.5
+            )
+        )
+        ingresarComoVeterinario()
+
+        val general = kotlinx.coroutines.runBlocking { InformesRepo.cargar("m1", null) }
+        val pesos = kotlinx.coroutines.runBlocking { InformesRepo.pesos("m1") }
+
+        assertEquals(11.0, general.signos.pesoKg!!, 0.001)
+        assertEquals(2, pesos.size)
+        assertEquals(listOf(11.0, 12.5), pesos.map { it.second })
+    }
+
+    @Test
+    fun receta_seAgregaYSeQuitaDeLaConsulta() {
+        ingresarComoVeterinario()
+
+        val p = PrescripcionesRepo.agregar("m1", "t1", "Amoxicilina", "250 mg", 8, 7, "Con comida")
+
+        assertTrue(fuente.llamadas.contains("crearPrescripcion:Amoxicilina"))
+        assertEquals("250 mg, cada 8 hs, durante 7 días", p.posologia)
+        assertEquals(listOf("Amoxicilina"), PrescripcionesRepo.deConsulta("m1", "t1").map { it.medicamento })
+        assertTrue(PrescripcionesRepo.deConsulta("m1", "otro").isEmpty())
+
+        PrescripcionesRepo.eliminar(p)
+        assertTrue(PrescripcionesRepo.deConsulta("m1", "t1").isEmpty())
+        assertTrue(fuente.llamadas.any { it.startsWith("eliminarPrescripcion:") })
+    }
+
+    @Test
+    fun pacientes_laAlertaClinicaSeGuardaYSeVeEnLaFicha() {
+        ingresarComoVeterinario()
+
+        PacientesRepo.guardarAlertas("m1", "  Alérgico a la penicilina ")
+
+        assertEquals("Alérgico a la penicilina", PacientesRepo.porId("m1")!!.alertas)
+        assertTrue(fuente.llamadas.contains("alertas:m1:Alérgico a la penicilina"))
+    }
+
     // ---------- Solicitudes ----------
 
     @Test

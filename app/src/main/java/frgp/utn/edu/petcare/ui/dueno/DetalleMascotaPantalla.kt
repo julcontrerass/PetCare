@@ -31,6 +31,10 @@ import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.Sexo
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.ui.common.FichaClinica
+import frgp.utn.edu.petcare.InformesRepo
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 /** Ficha de una mascota, con las pestañas Información, Historial y Recordatorios. */
@@ -152,7 +156,35 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
         llenarResumen(m)
     }
 
+    /** Alertas clínicas y evolución del peso, debajo del resumen de salud. */
+    private fun agregarAlertasYPeso(m: Mascota) {
+        val resumen = vista<View>(R.id.tvSaludProximo)?.parent as? android.view.ViewGroup ?: return
+        val posicion = resumen.indexOfChild(vista<View>(R.id.tvSaludProximo)) + 1
+        resumen.findViewWithTag<View>(ETIQUETA_ALERTAS)?.let { resumen.removeView(it) }
+        resumen.findViewWithTag<View>(ETIQUETA_PESO)?.let { resumen.removeView(it) }
+        if (m.alertas.isNotBlank()) {
+            FichaClinica.alertas(host, m.alertas).also {
+                it.tag = ETIQUETA_ALERTAS
+                resumen.addView(it, posicion)
+            }
+        }
+        host.lifecycleScope.launch {
+            val pesos = runCatching { InformesRepo.pesos(m.id) }.getOrNull() ?: return@launch
+            resumen.findViewWithTag<View>(ETIQUETA_PESO)?.let { resumen.removeView(it) }
+            FichaClinica.peso(host, pesos)?.let {
+                it.tag = ETIQUETA_PESO
+                resumen.addView(it, resumen.indexOfChild(vista<View>(R.id.tvSaludProximo)) + 1)
+            }
+        }
+    }
+
+    private companion object {
+        const val ETIQUETA_ALERTAS = "alertas_clinicas"
+        const val ETIQUETA_PESO = "evolucion_peso"
+    }
+
     private fun llenarResumen(m: Mascota) {
+        agregarAlertasYPeso(m)
         texto(R.id.tvStatEdad, m.edadTexto() ?: "—")
         texto(R.id.tvStatPeso, if (m.tienePesoValido) m.peso else "—")
         texto(R.id.tvStatSexo, m.sexo?.etiqueta ?: "—")

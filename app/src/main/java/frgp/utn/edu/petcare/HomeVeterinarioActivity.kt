@@ -30,6 +30,9 @@ class HomeVeterinarioActivity : BaseActivity() {
         findViewById<View>(R.id.tileSolicitudes)?.setOnClickListener {
             startActivity(Intent(this, SolicitudesVetActivity::class.java))
         }
+        findViewById<View>(R.id.cardVacunasARecordar)?.setOnClickListener {
+            startActivity(Intent(this, VacunasPendientesActivity::class.java))
+        }
         findViewById<View>(R.id.cvVetProfile)?.setOnClickListener {
             startActivity(Intent(this, PerfilVetActivity::class.java))
         }
@@ -66,6 +69,12 @@ class HomeVeterinarioActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvVetDate).text =
             "${DIAS[hoyFecha.dayOfWeek.value - 1]} ${hoyFecha.dayOfMonth} de ${Fechas.mesAnio(hoyFecha).substringBefore(' ').lowercase()}"
         findViewById<TextView>(R.id.tvSolicitudesPend).text = SolicitudesRepo.pendientesVeterinario().toString()
+        val aRecordar = SaludRepo.vacunasARecordar().size
+        findViewById<TextView>(R.id.tvVacunasARecordar)?.text = when (aRecordar) {
+            0 -> "Todo al día"
+            1 -> "1 paciente con una vacuna vencida o por vencer"
+            else -> "$aRecordar vacunas vencidas o por vencer"
+        }
 
         val hoy = AgendaRepo.deHoy()
         findViewById<TextView>(R.id.tvPacientesHoy).text = AgendaRepo.pacientesHoy().toString()

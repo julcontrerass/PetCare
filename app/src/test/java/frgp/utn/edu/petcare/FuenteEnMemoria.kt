@@ -16,7 +16,9 @@ import frgp.utn.edu.petcare.data.remoto.NuevoAccesoDto
 import frgp.utn.edu.petcare.data.remoto.NuevoArchivoDto
 import frgp.utn.edu.petcare.data.remoto.NuevoInformeDto
 import frgp.utn.edu.petcare.data.remoto.NuevoRegistroSaludDto
+import frgp.utn.edu.petcare.data.remoto.NuevaPrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.NuevoTurnoDto
+import frgp.utn.edu.petcare.data.remoto.PrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
 import frgp.utn.edu.petcare.data.remoto.PrivadoDto
 import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
@@ -71,6 +73,10 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         sesionCerrada = false
         return yo.id
     }
+
+    val matriculasEnUso = mutableSetOf<String>()
+
+    override suspend fun matriculaDisponible(matricula: String) = matricula.lowercase() !in matriculasEnUso
 
     override suspend fun registrar(email: String, password: String, datos: JsonObject): ResultadoRegistro {
         llamadas.add("registrar:$email")
@@ -222,8 +228,11 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
 
     override suspend fun registrosSalud() = registros.toList()
 
+    var ultimoRegistroCreado: NuevoRegistroSaludDto? = null
+
     override suspend fun crearRegistroSalud(registro: NuevoRegistroSaludDto) {
         llamadas.add("crearRegistro:${registro.tipo}:${registro.titulo}")
+        ultimoRegistroCreado = registro
     }
 
     override suspend fun eliminarRegistroSalud(id: String) {
@@ -234,10 +243,39 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
 
     override suspend fun crearInforme(informe: NuevoInformeDto) {
         llamadas.add("crearInforme:${informe.mascotaId}")
+        ultimoInformeCreado = informe
     }
 
     override suspend fun actualizarInforme(id: String, cambios: JsonObject) {
         llamadas.add("actualizarInforme:$id")
+        ultimosCambiosDeInforme = cambios
+    }
+
+    val recetas = mutableListOf<PrescripcionDto>()
+    var ultimosCambiosDeInforme: JsonObject? = null
+    var ultimoInformeCreado: NuevoInformeDto? = null
+
+    override suspend fun prescripciones(mascotaId: String?) =
+        recetas.filter { mascotaId == null || it.mascotaId == mascotaId }
+
+    override suspend fun crearPrescripcion(prescripcion: NuevaPrescripcionDto) {
+        llamadas.add("crearPrescripcion:${prescripcion.medicamento}")
+        recetas.add(
+            PrescripcionDto(
+                prescripcion.id, prescripcion.mascotaId, prescripcion.turnoId, prescripcion.veterinarioId,
+                prescripcion.medicamento, prescripcion.dosis, prescripcion.frecuenciaHoras, prescripcion.duracionDias,
+                prescripcion.indicaciones, prescripcion.inicio
+            )
+        )
+    }
+
+    override suspend fun eliminarPrescripcion(id: String) {
+        llamadas.add("eliminarPrescripcion:$id")
+        recetas.removeAll { it.id == id }
+    }
+
+    override suspend fun guardarAlertas(mascotaId: String, alertas: String) {
+        llamadas.add("alertas:$mascotaId:$alertas")
     }
 
     override suspend fun archivosDe(mascotaId: String) = archivos.filter { it.mascotaId == mascotaId }

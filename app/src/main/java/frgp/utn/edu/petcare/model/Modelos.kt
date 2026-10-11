@@ -33,7 +33,9 @@ class Mascota(
     var peso: String = SIN_DATOS,
     var microchip: String = SIN_DATOS,
     var color: String = SIN_DATOS,
-    var observaciones: String = "Sin observaciones"
+    var observaciones: String = "Sin observaciones",
+    /** Alergias, carácter y condiciones a tener en cuenta; los veterinarios lo ven destacado. */
+    var alertas: String = ""
 ) {
     /** "Perro - Golden Retriever", o solo el tipo si no se cargó la raza. */
     val tipoRazaTexto: String

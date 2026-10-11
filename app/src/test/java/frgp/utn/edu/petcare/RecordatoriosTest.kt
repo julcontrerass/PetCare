@@ -17,6 +17,61 @@ class RecordatoriosTest : PruebaBase() {
         EventoMascota("Control", "Rex", "Dr. Vera", hora, "", fecha, id = id, mascotaId = "m1", estado = estado)
 
     @Test
+    fun vacunas_avisanUnaSemanaAntesYElDiaDeLaDosis() {
+        val vacuna = Recordatorios.VacunaProxima("r1", "Rex", "Antirrábica", LocalDate.of(2026, 10, 30))
+
+        val avisos = Recordatorios.paraVacunas(listOf(vacuna), ahora)
+
+        assertEquals(2, avisos.size)
+        assertEquals(LocalDateTime.of(2026, 10, 23, 10, 0), avisos[0].momento)
+        assertEquals(LocalDateTime.of(2026, 10, 30, 10, 0), avisos[1].momento)
+        assertTrue(avisos[0].mensaje.contains("Rex") && avisos[0].mensaje.contains("Antirrábica"))
+    }
+
+    @Test
+    fun vacunas_unaVencidaAvisaUnaSolaVezALasDiez() {
+        val vacuna = Recordatorios.VacunaProxima("r1", "Rex", "Antirrábica", LocalDate.of(2026, 10, 1))
+
+        val avisos = Recordatorios.paraVacunas(listOf(vacuna), ahora)
+        assertEquals(1, avisos.size)
+        assertEquals(LocalDateTime.of(2026, 10, 12, 10, 0), avisos[0].momento)
+        assertTrue(avisos[0].titulo.contains("vencida", ignoreCase = true))
+
+        // Ya salió: no se vuelve a programar
+        assertTrue(Recordatorios.paraVacunas(listOf(vacuna), ahora, setOf(avisos[0].id)).isEmpty())
+    }
+
+    @Test
+    fun vacunas_lasMuyVencidasNoAvisan() {
+        val vacuna = Recordatorios.VacunaProxima("r1", "Rex", "Antirrábica", LocalDate.of(2026, 5, 1))
+
+        assertTrue(Recordatorios.paraVacunas(listOf(vacuna), ahora).isEmpty())
+    }
+
+    @Test
+    fun medicacion_avisaCadaTomaDeLosProximosDosDias() {
+        val inicio = ahora.minusHours(1)
+        val m = Recordatorios.Medicacion("p1", "Rex", "Amoxicilina", "250 mg", 8, inicio, 3)
+
+        val avisos = Recordatorios.paraMedicacion(listOf(m), ahora)
+
+        assertEquals(6, avisos.size)
+        assertEquals(LocalDateTime.of(2026, 10, 12, 16, 0), avisos[0].momento)
+        assertEquals(LocalDateTime.of(2026, 10, 13, 0, 0), avisos[1].momento)
+        assertTrue(avisos[0].mensaje.contains("Amoxicilina") && avisos[0].mensaje.contains("250 mg"))
+    }
+
+    @Test
+    fun medicacion_noPasaDeLosDiasIndicados() {
+        val m = Recordatorios.Medicacion("p1", "Rex", "Amoxicilina", "", 8, ahora.minusHours(1), 1)
+
+        val avisos = Recordatorios.paraMedicacion(listOf(m), ahora)
+
+        // El tratamiento termina mañana a las 8: quedan las tomas de las 16 y las 00
+        assertEquals(2, avisos.size)
+    }
+
+    @Test
     fun dueno_avisaUnDiaYDosHorasAntes() {
         val avisos = Recordatorios.paraDueno(listOf(turno("t1", LocalDate.of(2026, 10, 14), "16:00")), ahora)
 

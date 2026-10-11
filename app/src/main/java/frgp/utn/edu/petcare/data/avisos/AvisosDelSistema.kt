@@ -115,6 +115,17 @@ object AvisosDelSistema {
             }
     }
 
+    private const val CLAVE_VACUNAS_AVISADAS = "vacunas_avisadas"
+
+    /** Los avisos de "vacuna vencida" que ya salieron, para no repetirlos. */
+    fun vacunasAvisadas(contexto: Context): Set<String> =
+        preferencias(contexto).getStringSet(CLAVE_VACUNAS_AVISADAS, emptySet()).orEmpty().toSet()
+
+    fun marcarVacunaAvisada(contexto: Context, id: String) {
+        val nuevas = (vacunasAvisadas(contexto) + id).toList().takeLast(MAXIMO_VISTOS).toSet()
+        preferencias(contexto).edit().putStringSet(CLAVE_VACUNAS_AVISADAS, nuevas).apply()
+    }
+
     /** Abre los ajustes de notificaciones de la app en el teléfono, para activarlas a mano. */
     fun abrirAjustes(contexto: Context) {
         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)

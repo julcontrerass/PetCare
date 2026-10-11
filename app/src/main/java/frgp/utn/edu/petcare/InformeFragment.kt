@@ -14,12 +14,25 @@ import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import frgp.utn.edu.petcare.model.Prescripcion
+import frgp.utn.edu.petcare.model.SignosVitales
 import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.Documentos
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 /** Pestaña "Informe" de la ficha del paciente: lo que el veterinario escribe durante o después del turno. */
 class InformeFragment : Fragment() {
+
+    private fun decimal(campo: EditText?): Double? =
+        campo?.text?.toString().orEmpty().trim().replace(',', '.').toDoubleOrNull()
+
+    private fun entero(campo: EditText?): Int? = campo?.text?.toString().orEmpty().trim().toIntOrNull()
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -28,6 +41,12 @@ class InformeFragment : Fragment() {
         val paciente = DetallePacienteActivity.pacienteDe(requireActivity() as AppCompatActivity)
 
         val etMotivo = view.findViewById<EditText>(R.id.etMotivoConsulta)
+        val etAnamnesis = view.findViewById<EditText>(R.id.etAnamnesis)
+        val etPeso = view.findViewById<EditText>(R.id.etPeso)
+        val etTemperatura = view.findViewById<EditText>(R.id.etTemperatura)
+        val etFrecuenciaCardiaca = view.findViewById<EditText>(R.id.etFrecuenciaCardiaca)
+        val etFrecuenciaRespiratoria = view.findViewById<EditText>(R.id.etFrecuenciaRespiratoria)
+        val etExamen = view.findViewById<EditText>(R.id.etExamenFisico)
         val etDiagnostico = view.findViewById<EditText>(R.id.etDiagnostico)
         val etTratamiento = view.findViewById<EditText>(R.id.etTratamiento)
         val btnGuardar = view.findViewById<MaterialButton>(R.id.btnGuardarInforme)
@@ -36,6 +55,7 @@ class InformeFragment : Fragment() {
         val turno = AgendaRepo.porId(turnoId)
         val motivoTurno = turno?.motivo.orEmpty()
 
+        // ---------- Archivos adjuntos ----------
         val contenedorArchivos = view.findViewById<LinearLayout>(R.id.llArchivosInforme)
         val sinArchivos = view.findViewById<View>(R.id.tvSinArchivosInforme)
         fun archivosDeLaConsulta() =
@@ -97,10 +117,98 @@ class InformeFragment : Fragment() {
         }
         view.findViewById<View>(R.id.btnAdjuntarArchivo).setOnClickListener { elegirArchivo.launch("*/*") }
 
+        // ---------- Receta ----------
+        val contenedorReceta = view.findViewById<LinearLayout>(R.id.llRecetaInforme)
+        val sinReceta = view.findViewById<View>(R.id.tvSinReceta)
+        val btnRecetaPdf = view.findViewById<View>(R.id.btnRecetaPdf)
+
+        fun dibujarReceta() {
+            contenedorReceta.removeAllViews()
+            val medicamentos = PrescripcionesRepo.deConsulta(paciente.id, turnoId)
+            btnRecetaPdf.visibility = if (medicamentos.isEmpty()) View.GONE else View.VISIBLE
+            if (medicamentos.isEmpty()) {
+                contenedorReceta.addView(sinReceta)
+                return
+            }
+            medicamentos.forEach { m ->
+                val fila = layoutInflater.inflate(R.layout.item_turno_detalle, contenedorReceta, false)
+                fila.findViewById<ImageView>(R.id.ivDetalleIcono).setImageResource(R.drawable.ic_syringe)
+                fila.findViewById<TextView>(R.id.tvDetalleTitulo).text = m.medicamento
+                fila.findViewById<TextView>(R.id.tvDetalleValor).text =
+                    m.posologia.ifBlank { "Sin dosis indicada" } +
+                        m.indicaciones.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
+                fila.findViewById<TextView>(R.id.tvDetalleAccion).apply {
+                    text = "Quitar"
+                    setTextColor(requireContext().getColor(R.color.danger_red))
+                    visibility = View.VISIBLE
+                    setOnClickListener {
+                        PrescripcionesRepo.eliminar(m)
+                        dibujarReceta()
+                    }
+                }
+                contenedorReceta.addView(fila)
+            }
+        }
+        dibujarReceta()
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { PrescripcionesRepo.cargar(paciente.id) }.onSuccess { dibujarReceta() }
+        }
+
+        view.findViewById<View>(R.id.btnAgregarMedicamento).setOnClickListener {
+            val hoja = BottomSheetDialog(requireContext())
+            val vista = layoutInflater.inflate(R.layout.sheet_medicamento, null)
+            hoja.setContentView(vista)
+            vista.findViewById<View>(R.id.btnCancelarMedicamento).setOnClickListener { hoja.dismiss() }
+            vista.findViewById<View>(R.id.btnGuardarMedicamento).setOnClickListener {
+                val nombre = vista.findViewById<EditText>(R.id.etMedicamento)
+                if (nombre.text.isBlank()) {
+                    nombre.error = "Indicá el medicamento"
+                    return@setOnClickListener
+                }
+                val cada = entero(vista.findViewById(R.id.etCadaHoras))
+                val dias = entero(vista.findViewById(R.id.etDias))
+                if ((cada != null && cada !in 1..168) || (dias != null && dias !in 1..365)) {
+                    Avisos.aviso(requireContext(), "Revisá las horas (1 a 168) y los días (1 a 365)")
+                    return@setOnClickListener
+                }
+                PrescripcionesRepo.agregar(
+                    paciente.id, turnoId, nombre.text.toString(),
+                    vista.findViewById<EditText>(R.id.etDosis).text.toString(), cada, dias,
+                    vista.findViewById<EditText>(R.id.etIndicacionesMedicamento).text.toString()
+                )
+                dibujarReceta()
+                hoja.dismiss()
+            }
+            hoja.show()
+        }
+
+        btnRecetaPdf.setOnClickListener {
+            val medicamentos = PrescripcionesRepo.deConsulta(paciente.id, turnoId)
+            if (medicamentos.isEmpty()) return@setOnClickListener
+            val contexto = requireContext()
+            val indicaciones = etTratamiento?.text?.toString().orEmpty().trim()
+            viewLifecycleOwner.lifecycleScope.launch {
+                val archivo = withContext(Dispatchers.IO) {
+                    Documentos.receta(
+                        contexto, PerfilVetRepo.comoProfesional(), paciente.comoDocumento(), LocalDate.now(),
+                        medicamentos, indicaciones
+                    )
+                }
+                Documentos.compartir(contexto, archivo, "Receta de ${paciente.nombre}")
+            }
+        }
+
+        // ---------- Informe ----------
         fun mostrar(informe: InformeData) {
             etMotivo?.setText(informe.motivo.ifBlank { motivoTurno })
+            etAnamnesis?.setText(informe.anamnesis)
+            etExamen?.setText(informe.examenFisico)
             etDiagnostico?.setText(informe.diagnostico)
             etTratamiento?.setText(informe.tratamiento)
+            etPeso?.setText(informe.signos.pesoKg?.let { SignosVitales.numero(it) }.orEmpty())
+            etTemperatura?.setText(informe.signos.temperaturaC?.let { SignosVitales.numero(it) }.orEmpty())
+            etFrecuenciaCardiaca?.setText(informe.signos.frecuenciaCardiaca?.toString().orEmpty())
+            etFrecuenciaRespiratoria?.setText(informe.signos.frecuenciaRespiratoria?.toString().orEmpty())
         }
 
         // Lo que ya había escrito el veterinario se pide al servidor; mientras tanto se ve el motivo del turno
@@ -109,16 +217,43 @@ class InformeFragment : Fragment() {
             runCatching { InformesRepo.cargar(paciente.id, turnoId) }.onSuccess { mostrar(it) }
         }
 
+        /** Lee los signos vitales y comprueba que sean valores posibles; si no, avisa cuál está mal. */
+        fun leerSignos(): SignosVitales? {
+            val peso = decimal(etPeso)
+            val temperatura = decimal(etTemperatura)
+            val fc = entero(etFrecuenciaCardiaca)
+            val fr = entero(etFrecuenciaRespiratoria)
+            val problema = when {
+                etPeso?.text?.isNotBlank() == true && (peso == null || peso <= 0 || peso > SignosVitales.PESO_MAXIMO) ->
+                    "El peso tiene que estar entre 0 y 999 kg"
+                etTemperatura?.text?.isNotBlank() == true && (temperatura == null || temperatura !in SignosVitales.TEMPERATURA) ->
+                    "La temperatura tiene que estar entre 25 y 45 °C"
+                etFrecuenciaCardiaca?.text?.isNotBlank() == true && (fc == null || fc !in SignosVitales.FRECUENCIA_CARDIACA) ->
+                    "La frecuencia cardíaca tiene que estar entre 10 y 400 lpm"
+                etFrecuenciaRespiratoria?.text?.isNotBlank() == true && (fr == null || fr !in SignosVitales.FRECUENCIA_RESPIRATORIA) ->
+                    "La frecuencia respiratoria tiene que estar entre 2 y 200 rpm"
+                else -> null
+            }
+            if (problema != null) {
+                Avisos.aviso(requireContext(), problema)
+                return null
+            }
+            return SignosVitales(peso, temperatura, fc, fr)
+        }
+
         btnGuardar?.setOnClickListener {
+            val signos = leerSignos() ?: return@setOnClickListener
             val m = etMotivo?.text?.toString().orEmpty().trim()
+            val a = etAnamnesis?.text?.toString().orEmpty().trim()
+            val e = etExamen?.text?.toString().orEmpty().trim()
             val d = etDiagnostico?.text?.toString().orEmpty().trim()
             val t = etTratamiento?.text?.toString().orEmpty().trim()
-            if (d.isEmpty() && t.isEmpty()) {
-                Avisos.aviso(requireContext(), "Completá al menos el diagnóstico o el tratamiento")
+            if (d.isEmpty() && t.isEmpty() && a.isEmpty() && e.isEmpty() && signos.vacio) {
+                Avisos.aviso(requireContext(), "Completá al menos la anamnesis, los signos vitales, el diagnóstico o el tratamiento")
                 return@setOnClickListener
             }
 
-            InformesRepo.guardar(paciente.id, m, d, t, turnoId)
+            InformesRepo.guardar(paciente.id, m, d, t, turnoId, a, e, signos)
             if (turno == null || turno.estado != EstadoEvento.PENDIENTE) {
                 Avisos.exito(requireContext(), "Informe guardado")
                 return@setOnClickListener
