@@ -1,6 +1,8 @@
 package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.remoto.ActividadDto
+import frgp.utn.edu.petcare.data.repositorio.AdminRepo
+import frgp.utn.edu.petcare.data.repositorio.TipoActividad
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before

@@ -11,11 +11,32 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayout
-import frgp.utn.edu.petcare.data.DuenoRepo
-import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
+import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
+import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
+import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
+import frgp.utn.edu.petcare.data.repositorio.SaludRepo
+import frgp.utn.edu.petcare.data.repositorio.TipoRegistro
+import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.ui.admin.HomeAdminActivity
 import frgp.utn.edu.petcare.ui.auth.AuthActivity
+import frgp.utn.edu.petcare.ui.auth.RegistroVeterinarioActivity
+import frgp.utn.edu.petcare.ui.dueno.CarnetSaludActivity
 import frgp.utn.edu.petcare.ui.dueno.DuenoActivity
+import frgp.utn.edu.petcare.ui.veterinario.AgendaVetActivity
+import frgp.utn.edu.petcare.ui.veterinario.AgregarConsultaActivity
+import frgp.utn.edu.petcare.ui.veterinario.DetalleEventoVetActivity
+import frgp.utn.edu.petcare.ui.veterinario.DetallePacienteActivity
+import frgp.utn.edu.petcare.ui.veterinario.HomeVeterinarioActivity
+import frgp.utn.edu.petcare.ui.veterinario.MisPacientesActivity
+import frgp.utn.edu.petcare.ui.veterinario.NuevoDuenoActivity
+import frgp.utn.edu.petcare.ui.veterinario.PerfilVetActivity
+import frgp.utn.edu.petcare.ui.veterinario.SolicitudesVetActivity
+import frgp.utn.edu.petcare.ui.veterinario.VacunasPendientesActivity
+import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -24,11 +45,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.robolectric.Robolectric
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
-import java.time.LocalDate
-import java.util.concurrent.TimeUnit
+import org.robolectric.Shadows.shadowOf
 
 /** Abre cada pantalla con datos de prueba para detectar errores de inflado o de cableado. */
 class PantallasTest : PruebaBase() {
@@ -65,6 +84,89 @@ class PantallasTest : PruebaBase() {
         fuente.turnos.add(Escenario.turno("t1", "m1", hoy.toString(), "10:00:00"))
         fuente.turnos.add(Escenario.turno("t2", "m2", hoy.plusDays(2).toString(), "11:00:00"))
         fuente.turnos.add(Escenario.turno("t3", "m1", hoy.minusDays(20).toString(), "09:00:00", estado = "completado"))
+    }
+
+    // ---------- Nuevo dueño (veterinario) ----------
+
+    private fun cargarDuenoNuevo(a: NuevoDuenoActivity) {
+        a.findViewById<EditText>(R.id.etDuenoNombre).setText("Carlos Gómez")
+        a.findViewById<EditText>(R.id.etDuenoDni).setText("30111999")
+        a.findViewById<EditText>(R.id.etDuenoTelefono).setText("11 4444 3333")
+        a.findViewById<EditText>(R.id.etDuenoEmail).setText("carlos@prueba.test")
+        a.findViewById<EditText>(R.id.etMascotaNombre).setText("Toby")
+    }
+
+    @Test
+    fun veterinario_nuevoDuenoCreaLaCuentaYMuestraLosDatosDeAcceso() {
+        ingresarComoVeterinario()
+        val a = abrir(NuevoDuenoActivity::class.java)
+        cargarDuenoNuevo(a)
+
+        a.findViewById<View>(R.id.btnCrear).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals("carlos@prueba.test", fuente.ultimaCuentaPedida?.email)
+        assertEquals("Toby", fuente.ultimaCuentaPedida?.mascotasNuevas?.single()?.nombre)
+        val hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        assertEquals("carlos@prueba.test", hoja.findViewById<TextView>(R.id.tvCuentaCorreo)!!.text.toString())
+        assertEquals("Temp1234ab", hoja.findViewById<TextView>(R.id.tvCuentaPassword)!!.text.toString())
+        assertFalse(a.isFinishing)
+
+        hoja.findViewById<View>(R.id.btnCuentaListo)!!.performClick()
+        assertTrue(a.isFinishing)
+    }
+
+    @Test
+    fun veterinario_nuevoDuenoSinCuentaSoloGuardaElPaciente() {
+        ingresarComoVeterinario()
+        val a = abrir(NuevoDuenoActivity::class.java)
+        a.findViewById<EditText>(R.id.etDuenoNombre).setText("Carlos Gómez")
+        a.findViewById<EditText>(R.id.etMascotaNombre).setText("Toby")
+        a.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.swCrearCuenta).isChecked = false
+
+        a.findViewById<View>(R.id.btnCrear).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(fuente.llamadas.none { it.startsWith("crearCuentaDueno") })
+        assertTrue(fuente.llamadas.contains("crearMascota:Toby"))
+        assertTrue(a.isFinishing)
+    }
+
+    @Test
+    fun veterinario_nuevoDuenoConCuentaPideDniCorreoYTelefono() {
+        ingresarComoVeterinario()
+        val a = abrir(NuevoDuenoActivity::class.java)
+        a.findViewById<EditText>(R.id.etDuenoNombre).setText("Carlos Gómez")
+        a.findViewById<EditText>(R.id.etMascotaNombre).setText("Toby")
+
+        a.findViewById<View>(R.id.btnCrear).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertNotNull(a.findViewById<EditText>(R.id.etDuenoDni).error)
+        assertNotNull(a.findViewById<EditText>(R.id.etDuenoEmail).error)
+        assertTrue(fuente.llamadas.none { it.startsWith("crearCuentaDueno") })
+    }
+
+    @Test
+    fun veterinario_crearCuentaDeUnPacienteYaCargadoNoPideDatosDeLaMascota() {
+        ingresarComoVeterinario()
+        val toby = PacientesRepo.agregarManual("Toby", "Perro", "", "Macho", "Carlos Gómez", "1144443333", dni = "30111999")
+        val a = abrir(
+            NuevoDuenoActivity::class.java,
+            intent(NuevoDuenoActivity::class.java)
+                .putStringArrayListExtra(NuevoDuenoActivity.EXTRA_PACIENTE_IDS, arrayListOf(toby.id))
+        )
+
+        assertEquals(View.GONE, a.findViewById<View>(R.id.bloqueMascota).visibility)
+        assertEquals("Carlos Gómez", a.findViewById<EditText>(R.id.etDuenoNombre).text.toString())
+        assertEquals("30111999", a.findViewById<EditText>(R.id.etDuenoDni).text.toString())
+
+        a.findViewById<EditText>(R.id.etDuenoEmail).setText("carlos@prueba.test")
+        a.findViewById<View>(R.id.btnCrear).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(listOf(toby.id), fuente.ultimaCuentaPedida?.mascotasExistentes)
+        assertTrue(ShadowDialog.getLatestDialog() is BottomSheetDialog)
     }
 
     // ---------- Ingreso ----------
@@ -160,6 +262,41 @@ class PantallasTest : PruebaBase() {
     private fun abrirDueno(): DuenoActivity {
         ingresarComoDueno()
         return abrir(DuenoActivity::class.java)
+    }
+
+    @Test
+    fun dueno_conCuentaCreadaPorUnVeterinarioPideElegirLaContrasena() {
+        ingresarComo(Escenario.dueno().copy(debeCambiarPassword = true))
+        abrir(DuenoActivity::class.java)
+
+        // Puede haber otros carteles (permiso de avisos): se busca el del primer ingreso
+        val dialogo = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>()
+            .first { it.findViewById<View>(R.id.etPrimerPassword) != null }
+        assertTrue(dialogo.isShowing)
+        // Sin aceptar los términos no avanza
+        dialogo.findViewById<EditText>(R.id.etPrimerPassword)!!.setText("MiClave123")
+        dialogo.findViewById<EditText>(R.id.etPrimerPassword2)!!.setText("MiClave123")
+        dialogo.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        ShadowLooper.idleMainLooper()
+        assertTrue(fuente.llamadas.none { it == "definirPassword" })
+
+        dialogo.findViewById<android.widget.CheckBox>(R.id.cbPrimerTerminos)!!.isChecked = true
+        dialogo.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(fuente.llamadas.contains("definirPassword"))
+        assertTrue(fuente.llamadas.contains("primerIngreso:1.0"))
+        assertFalse(DuenoRepo.perfil.debeCambiarPassword)
+        assertFalse(dialogo.isShowing)
+    }
+
+    @Test
+    fun dueno_conCuentaPropiaNoVeElPedidoDeContrasena() {
+        val a = abrirDueno()
+
+        val ultimo = ShadowDialog.getLatestDialog()
+        assertTrue(ultimo == null || ultimo.findViewById<View>(R.id.etPrimerPassword) == null)
+        assertNotNull(a.findViewById<View>(R.id.tv_welcome))
     }
 
     @Test

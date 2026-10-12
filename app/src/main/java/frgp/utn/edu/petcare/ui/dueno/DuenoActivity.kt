@@ -10,20 +10,19 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import frgp.utn.edu.petcare.BaseActivity
-import frgp.utn.edu.petcare.CarnetSaludActivity
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
-import frgp.utn.edu.petcare.model.Mascota
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import frgp.utn.edu.petcare.model.Mascota
+import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.BaseActivity
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Contenedor de la app del dueño: una barra inferior fija y, arriba, la sección que se esté viendo.
@@ -77,7 +76,7 @@ class DuenoActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         if (volverSiNoHaySesion()) return
         enableEdgeToEdge()
-        setContentView(R.layout.app_base)
+        setContentView(R.layout.activity_dueno)
         ajustarInsets()
 
         barra = BarraInferior(this)
@@ -114,6 +113,7 @@ class DuenoActivity : BaseActivity() {
         }
 
         irAHome()
+        if (DuenoRepo.perfil.debeCambiarPassword) PrimerIngresoDialogo(this).mostrar()
         pedirPermisoDeNotificaciones()
     }
 

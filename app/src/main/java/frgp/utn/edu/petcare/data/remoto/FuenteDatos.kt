@@ -1,8 +1,8 @@
 package frgp.utn.edu.petcare.data.remoto
 
-import kotlinx.serialization.json.JsonObject
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.json.JsonObject
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
 data class ResultadoRegistro(
@@ -33,6 +33,10 @@ interface FuenteDatos {
     suspend fun recuperarPassword(email: String) {}
     suspend fun cambiarPassword(email: String, actual: String, nueva: String) {}
     suspend fun cerrarSesion() {}
+    /** Elige una contraseña nueva para la sesión abierta (sirve para reemplazar la temporal del primer ingreso). */
+    suspend fun definirPassword(nueva: String) {}
+    /** El dueño con cuenta creada por un veterinario termina su primer ingreso: acepta los términos y apaga la marca. */
+    suspend fun completarPrimerIngreso(terminosVersion: String) {}
     suspend fun matriculaDisponible(matricula: String): Boolean = true
 
     // ---------- Perfil propio ----------
@@ -67,6 +71,12 @@ interface FuenteDatos {
     /** El veterinario pide acceso a una mascota; con [turno] queda pedido el turno que se agenda al aceptar. */
     suspend fun solicitarAcceso(mascotaId: String, turno: JsonObject? = null): String = "pendiente"
     suspend fun buscarDueno(dato: String): List<DuenoBuscadoDto> = emptyList()
+    /**
+     * El veterinario le crea la cuenta a un dueño que todavía no usa la app y le deja la mascota a su nombre.
+     * Devuelve la contraseña temporal, que se muestra una sola vez para pasársela al dueño.
+     */
+    suspend fun crearCuentaDueno(datos: NuevaCuentaDuenoDto): CuentaDuenoCreadaDto =
+        throw UnsupportedOperationException("crearCuentaDueno")
     /** Las solicitudes de acceso del veterinario: las que pidió y las que un dueño le compartió sin responder. */
     suspend fun misSolicitudes(): List<SolicitudAccesoDto> = emptyList()
     /** Turnos pendientes del veterinario ese día: hora de inicio y duración en minutos. */

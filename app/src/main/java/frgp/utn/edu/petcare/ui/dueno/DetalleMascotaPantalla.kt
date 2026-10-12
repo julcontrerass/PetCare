@@ -1,9 +1,8 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.Typeface
-import frgp.utn.edu.petcare.model.TiposMascota
-import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -19,23 +18,22 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.HistorialAdapter
-import frgp.utn.edu.petcare.HistorialItem
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.InformesRepo
 import frgp.utn.edu.petcare.model.Mascota
-import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.Sexo
+import frgp.utn.edu.petcare.model.SIN_DATOS
+import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Efectos
 import frgp.utn.edu.petcare.ui.common.FichaClinica
-import frgp.utn.edu.petcare.InformesRepo
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 /** Ficha de una mascota, con las pestañas Información, Historial y Recordatorios. */
 class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
@@ -50,7 +48,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
             host.irAMascotas()
             return
         }
-        host.mostrarContenido(R.layout.mascota_shell, R.id.nav_mascotas)
+        host.mostrarContenido(R.layout.pantalla_mascota, R.id.nav_mascotas)
 
         vista<Toolbar>(R.id.toolbar)?.let { barra ->
             barra.setNavigationOnClickListener { host.irAMascotas() }
@@ -76,9 +74,9 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
     private fun mostrarPestaña(posicion: Int, animar: Boolean) {
         val contenido = vista<FrameLayout>(R.id.petTabContent) ?: return
         val layout = when (posicion) {
-            0 -> R.layout.contenido_info
-            1 -> R.layout.contenido_historial
-            else -> R.layout.contenido_recordatorios
+            0 -> R.layout.pantalla_mascota_info
+            1 -> R.layout.pantalla_mascota_historial
+            else -> R.layout.pantalla_mascota_recordatorios
         }
         val direccion = if (posicion >= pestaña) 1 else -1
         pestaña = posicion

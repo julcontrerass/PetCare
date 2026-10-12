@@ -1,19 +1,19 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.net.Uri
-import frgp.utn.edu.petcare.ui.common.Efectos
-import frgp.utn.edu.petcare.model.TiposMascota
-import android.widget.GridLayout
 import android.view.Gravity
 import android.widget.EditText
+import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.imageview.ShapeableImageView
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.Mascota
+import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 
 /** Alta de una mascota nueva. */
@@ -27,7 +27,7 @@ class NuevaMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
         tipo = null
         foto = null
         nacimiento = null
-        host.mostrarContenido(R.layout.nueva_mascota, R.id.nav_mascotas)
+        host.mostrarContenido(R.layout.pantalla_nueva_mascota, R.id.nav_mascotas)
 
         val etNombre = vista<EditText>(R.id.etNombreMascota)
         val etRaza = vista<EditText>(R.id.etRaza)

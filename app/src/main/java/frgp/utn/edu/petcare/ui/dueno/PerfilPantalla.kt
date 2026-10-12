@@ -9,21 +9,21 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
-import com.google.android.material.imageview.ShapeableImageView
-import frgp.utn.edu.petcare.R
 import androidx.lifecycle.lifecycleScope
-import frgp.utn.edu.petcare.data.DuenoRepo
+import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.data.Servicios
-import kotlinx.coroutines.launch
 import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
-import frgp.utn.edu.petcare.ui.common.HojaLista
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.ui.common.HojaLista
+import kotlinx.coroutines.launch
 
 private fun AjusteFoto.escala() = when (this) {
     AjusteFoto.LLENAR -> ImageView.ScaleType.CENTER_CROP
@@ -35,7 +35,7 @@ private fun AjusteFoto.escala() = when (this) {
 class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.mi_perfil, R.id.nav_mas)
+        host.mostrarContenido(R.layout.pantalla_mi_perfil, R.id.nav_mas)
         val perfil = DuenoRepo.perfil
 
         alTocar(R.id.btnBack) { host.irAHome() }
@@ -255,7 +255,7 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
 class EditarPerfilPantalla(host: DuenoActivity) : Pantalla(host) {
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.editar_perfil, R.id.nav_mas)
+        host.mostrarContenido(R.layout.pantalla_editar_perfil, R.id.nav_mas)
         val perfil = DuenoRepo.perfil
 
         val etNombre = vista<EditText>(R.id.etNombreCompleto)

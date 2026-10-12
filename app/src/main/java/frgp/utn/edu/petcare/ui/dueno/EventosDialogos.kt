@@ -1,16 +1,8 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
-import android.content.res.ColorStateList
-import frgp.utn.edu.petcare.ui.common.ArchivosUi
-import frgp.utn.edu.petcare.ui.common.Documentos
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import frgp.utn.edu.petcare.model.EstadoTurno
-import kotlinx.coroutines.launch
-import androidx.lifecycle.lifecycleScope
-import frgp.utn.edu.petcare.ui.common.Avisos
 import android.app.TimePickerDialog
+import android.content.res.ColorStateList
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.EditText
@@ -20,13 +12,21 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
+import frgp.utn.edu.petcare.model.EstadoTurno
 import frgp.utn.edu.petcare.model.EventoMascota
+import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.Documentos
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Ficha, edición y cancelación de un turno. Las usan el calendario y las pestañas de la mascota. */
 class EventosDialogos(private val host: DuenoActivity) {
@@ -36,7 +36,7 @@ class EventosDialogos(private val host: DuenoActivity) {
     /** Ficha del turno en una hoja inferior, con las acciones editar y cancelar. */
     fun mostrarDetalle(evento: EventoMascota, alCambiar: () -> Unit = {}) {
         val hoja = BottomSheetDialog(host)
-        val vista = host.layoutInflater.inflate(R.layout.bottom_sheet_turno, null)
+        val vista = host.layoutInflater.inflate(R.layout.sheet_turno, null)
         hoja.setContentView(vista)
 
         val estilo = EstiloCategoria.turno(evento.categoria)

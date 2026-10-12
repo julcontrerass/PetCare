@@ -1,13 +1,10 @@
 package frgp.utn.edu.petcare.data
 
-import frgp.utn.edu.petcare.DatosRegistroDueno
-import frgp.utn.edu.petcare.DatosRegistroVeterinario
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.MascotaRegistro
-import kotlinx.serialization.json.JsonObject
+import frgp.utn.edu.petcare.util.Fechas
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.put
 
 /**

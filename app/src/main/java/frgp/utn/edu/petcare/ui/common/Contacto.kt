@@ -32,6 +32,40 @@ object Contacto {
         return Intent(Intent.ACTION_VIEW, uri)
     }
 
+    /**
+     * Mensaje con el que el veterinario le pasa al dueño los datos para ingresar a la cuenta que le creó.
+     * [veterinario] y [clinica] son los del que lo envía; [mascotas] son los nombres de lo que va a poder ver.
+     */
+    fun mensajeDeAcceso(
+        dueno: String, mascotas: List<String>, email: String, password: String,
+        veterinario: String, clinica: String
+    ): String {
+        val primerNombre = dueno.trim().substringBefore(' ')
+        val deQuien = veterinario.trim().ifBlank { "tu veterinario" } +
+            clinica.trim().takeIf { it.isNotEmpty() }?.let { " de $it" }.orEmpty()
+        val cuales = when (mascotas.size) {
+            0 -> "tus mascotas"
+            1 -> mascotas.first()
+            else -> mascotas.dropLast(1).joinToString(", ") + " y " + mascotas.last()
+        }
+        return "Hola $primerNombre, soy $deQuien. Te creé tu cuenta en la app PetCare para que veas desde tu casa " +
+            "la ficha de $cuales: historial, vacunas, recetas y turnos.\n\n" +
+            "Para ingresar:\n" +
+            "Correo: $email\n" +
+            "Contraseña temporal: $password\n\n" +
+            "Al entrar, la app te va a pedir que elijas tu propia contraseña."
+    }
+
+    /** Abre el selector de aplicaciones para mandar un texto (cuando no hay un número de WhatsApp usable). */
+    fun compartirTexto(texto: String): Intent =
+        Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, texto)
+            },
+            "Enviar datos de acceso"
+        )
+
     fun llamar(telefono: String): Intent? {
         val numero = telefono.filter { it.isDigit() || it == '+' }
         if (numero.length < 6) return null

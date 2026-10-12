@@ -13,12 +13,12 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.util.Fechas
 
 /** Veterinarios con acceso a las mascotas: se puede revocar, restablecer o autorizar a uno nuevo. */
 class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
@@ -33,7 +33,7 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
     private var consulta = ""
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.veterinarios_autorizados, -1)
+        host.mostrarContenido(R.layout.pantalla_veterinarios, -1)
         filtro = Filtro.TODOS
         consulta = ""
 
@@ -256,12 +256,12 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
 class SolicitudesPantalla(host: DuenoActivity) : Pantalla(host) {
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.solicitudes_dueno, -1)
+        host.mostrarContenido(R.layout.pantalla_solicitudes, -1)
         alTocar(R.id.btnBack) { host.irAHome() }
 
         vista<androidx.recyclerview.widget.RecyclerView>(R.id.rvSolicitudesDueno)?.adapter =
-            frgp.utn.edu.petcare.SolicitudesAdapter(DuenoRepo.solicitudes) { item, estado ->
-                val aceptada = estado == frgp.utn.edu.petcare.SolicitudItem.Estado.ACEPTADA
+            frgp.utn.edu.petcare.ui.veterinario.SolicitudesAdapter(DuenoRepo.solicitudes) { item, estado ->
+                val aceptada = estado == frgp.utn.edu.petcare.data.repositorio.SolicitudItem.Estado.ACEPTADA
                 DuenoRepo.resolverSolicitud(item, aceptada)
                 toast(if (aceptada) "${item.solicitante} fue autorizado/a" else "Solicitud rechazada")
                 actualizarContador()
@@ -270,7 +270,7 @@ class SolicitudesPantalla(host: DuenoActivity) : Pantalla(host) {
     }
 
     private fun actualizarContador() {
-        val pendientes = DuenoRepo.solicitudes.count { it.estado == frgp.utn.edu.petcare.SolicitudItem.Estado.PENDIENTE }
+        val pendientes = DuenoRepo.solicitudes.count { it.estado == frgp.utn.edu.petcare.data.repositorio.SolicitudItem.Estado.PENDIENTE }
         texto(
             R.id.tvSolicitudesCount,
             when (pendientes) {

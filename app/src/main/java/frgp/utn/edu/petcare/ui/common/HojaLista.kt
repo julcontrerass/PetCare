@@ -11,8 +11,8 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
-import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.R
 
 /** Hoja inferior con una lista de opciones tocables (mascotas, veterinarios...). */
 object HojaLista {

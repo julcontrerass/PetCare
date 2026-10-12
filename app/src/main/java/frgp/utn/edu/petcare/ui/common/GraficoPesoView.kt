@@ -7,8 +7,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
-import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.model.SignosVitales
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 

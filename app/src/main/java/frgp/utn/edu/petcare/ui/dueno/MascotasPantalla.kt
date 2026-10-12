@@ -6,11 +6,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.imageview.ShapeableImageView
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.Mascota
+import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.util.Fechas
 
 /** Lista de mascotas con filtro por tipo. */
 class MascotasPantalla(host: DuenoActivity) : Pantalla(host) {
@@ -32,7 +32,7 @@ class MascotasPantalla(host: DuenoActivity) : Pantalla(host) {
     private var filtro = Filtro.TODAS
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.mis_mascotas, R.id.nav_mascotas)
+        host.mostrarContenido(R.layout.pantalla_mis_mascotas, R.id.nav_mascotas)
         filtro = Filtro.TODAS
 
         alTocar(R.id.btnBack) { host.irAHome() }

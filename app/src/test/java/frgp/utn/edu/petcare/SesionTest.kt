@@ -1,6 +1,10 @@
 package frgp.utn.edu.petcare
 
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.AdminRepo
+import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
+import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.data.Sesion
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

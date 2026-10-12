@@ -1,27 +1,28 @@
 package frgp.utn.edu.petcare.data
 
 import android.app.Activity
-import frgp.utn.edu.petcare.data.avisos.Recordatorios
-import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
-import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.Job
-import frgp.utn.edu.petcare.NotificacionesVet
 import android.content.Intent
-import frgp.utn.edu.petcare.AdminRepo
-import frgp.utn.edu.petcare.AgendaRepo
-import frgp.utn.edu.petcare.ArchivosRepo
-import frgp.utn.edu.petcare.InformesRepo
-import frgp.utn.edu.petcare.PacientesRepo
-import frgp.utn.edu.petcare.PerfilVetRepo
-import frgp.utn.edu.petcare.PrescripcionesRepo
-import frgp.utn.edu.petcare.SaludRepo
-import frgp.utn.edu.petcare.SolicitudesRepo
+import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
+import frgp.utn.edu.petcare.data.avisos.Recordatorios
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
+import frgp.utn.edu.petcare.data.repositorio.AdminRepo
+import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
+import frgp.utn.edu.petcare.data.repositorio.ArchivosRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.InformesRepo
+import frgp.utn.edu.petcare.data.repositorio.NotificacionesVet
+import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
+import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
+import frgp.utn.edu.petcare.data.repositorio.PrescripcionesRepo
+import frgp.utn.edu.petcare.data.repositorio.SaludRepo
+import frgp.utn.edu.petcare.data.repositorio.SolicitudesRepo
 import frgp.utn.edu.petcare.ui.auth.AuthActivity
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /** La cuenta que tiene la sesión iniciada y la carga de sus datos desde el servidor. */

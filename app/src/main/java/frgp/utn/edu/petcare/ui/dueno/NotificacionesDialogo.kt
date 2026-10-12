@@ -1,14 +1,14 @@
 package frgp.utn.edu.petcare.ui.dueno
 
-import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.TarjetaAviso
 import frgp.utn.edu.petcare.ui.common.TarjetaPermiso
 

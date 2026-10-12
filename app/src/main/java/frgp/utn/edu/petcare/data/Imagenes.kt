@@ -3,16 +3,16 @@ package frgp.utn.edu.petcare.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.LruCache
 import android.graphics.ImageDecoder
 import android.net.Uri
+import android.util.LruCache
 import android.widget.ImageView
 import frgp.utn.edu.petcare.R
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.util.UUID
 
 /**
  * Fotos y archivos que viven en Storage. Se descargan una sola vez a la carpeta de caché del teléfono y

@@ -2,7 +2,23 @@ package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
 import frgp.utn.edu.petcare.data.remoto.InformeDto
+import frgp.utn.edu.petcare.data.remoto.MascotaParaCuentaDto
 import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
+import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
+import frgp.utn.edu.petcare.data.repositorio.ArchivosRepo
+import frgp.utn.edu.petcare.data.repositorio.DisponibilidadVet
+import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
+import frgp.utn.edu.petcare.data.repositorio.InformesRepo
+import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
+import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
+import frgp.utn.edu.petcare.data.repositorio.PrescripcionesRepo
+import frgp.utn.edu.petcare.data.repositorio.SaludRepo
+import frgp.utn.edu.petcare.data.repositorio.SolicitudesRepo
+import frgp.utn.edu.petcare.data.repositorio.SolicitudItem
+import frgp.utn.edu.petcare.data.repositorio.TipoRegistro
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,9 +27,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 
 class VeterinarioRepoTest : PruebaBase() {
 
@@ -92,6 +105,70 @@ class VeterinarioRepoTest : PruebaBase() {
         assertEquals("Perro", nuevo.raza)
         assertTrue(fuente.llamadas.contains("crearMascota:Toby"))
         assertEquals("Carlos Gómez", fuente.mascotas.last().propietarioNombre)
+    }
+
+    // ---------- Cuenta del dueño ----------
+
+    @Test
+    fun cuentaDueno_creaLaMascotaYElPacienteQuedaConCuenta() {
+        ingresarComoVeterinario()
+
+        val cuenta = runBlocking {
+            PacientesRepo.crearCuentaDueno(
+                "Carlos Gómez", "30111222", "11 4444 3333", "Carlos@Prueba.test",
+                nuevas = listOf(MascotaParaCuentaDto("Toby", "Perro", sexo = "macho"))
+            )
+        }
+
+        assertEquals("carlos@prueba.test", cuenta.email)
+        assertEquals("Temp1234ab", cuenta.passwordTemporal)
+        assertEquals(listOf("Toby"), cuenta.mascotas)
+        assertEquals("carlos@prueba.test", fuente.ultimaCuentaPedida?.email)
+        val toby = PacientesRepo.pacientes.first { it.nombre == "Toby" }
+        assertTrue(toby.tieneCuenta)
+    }
+
+    @Test
+    fun cuentaDueno_vinculaLosPacientesYaCargadosDelMismoPropietario() {
+        ingresarComoVeterinario()
+        val toby = PacientesRepo.agregarManual("Toby", "Perro", "", "Macho", "Carlos Gómez", "1144443333", dni = "30111222")
+        val luna = PacientesRepo.agregarManual("Luna", "Gato", "", "Hembra", "Carlos Gómez", "1144443333", dni = "30111222")
+        PacientesRepo.agregarManual("Otro", "Perro", "", "Macho", "Ana Suárez", "1100000000", dni = "20999888")
+        assertFalse(toby.tieneCuenta)
+
+        val mismos = PacientesRepo.mismoPropietarioSinCuenta(toby)
+        assertEquals(listOf("Toby", "Luna"), mismos.map { it.nombre })
+
+        runBlocking {
+            PacientesRepo.crearCuentaDueno(
+                "Carlos Gómez", "30111222", "1144443333", "carlos@prueba.test", existentes = mismos.map { it.id }
+            )
+        }
+
+        assertEquals(listOf(toby.id, luna.id), fuente.ultimaCuentaPedida?.mascotasExistentes)
+        assertTrue(fuente.ultimaCuentaPedida!!.mascotasNuevas.isEmpty())
+        assertTrue(PacientesRepo.porId(toby.id)!!.tieneCuenta)
+        assertTrue(PacientesRepo.porId(luna.id)!!.tieneCuenta)
+        assertEquals(1, PacientesRepo.pacientes.count { !it.tieneCuenta })
+    }
+
+    @Test
+    fun cuentaDueno_elErrorDelServidorLlegaTalCualYNoCambiaNada() {
+        ingresarComoVeterinario()
+        fuente.errorAlCrearCuenta = "Ese DNI ya tiene una cuenta en PetCare."
+        val antes = PacientesRepo.pacientes.size
+
+        val error = runCatching {
+            runBlocking {
+                PacientesRepo.crearCuentaDueno(
+                    "Carlos Gómez", "30111222", "1144443333", "carlos@prueba.test",
+                    nuevas = listOf(MascotaParaCuentaDto("Toby", "Perro"))
+                )
+            }
+        }.exceptionOrNull()
+
+        assertEquals("Ese DNI ya tiene una cuenta en PetCare.", error?.message)
+        assertEquals(antes, PacientesRepo.pacientes.size)
     }
 
     // ---------- Agenda ----------

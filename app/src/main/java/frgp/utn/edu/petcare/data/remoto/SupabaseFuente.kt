@@ -1,37 +1,45 @@
 package frgp.utn.edu.petcare.data.remoto
 
 import android.content.Context
-import java.util.UUID
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CoroutineScope
-import io.github.jan.supabase.realtime.realtime
-import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.realtime.PostgresAction
 import frgp.utn.edu.petcare.BuildConfig
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.exceptions.RestException
+import io.github.jan.supabase.functions.Functions
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
+import io.github.jan.supabase.SupabaseClient
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import java.util.UUID
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /** Implementación de [FuenteDatos] contra el proyecto de Supabase. */
@@ -50,6 +58,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         install(Postgrest)
         install(Storage)
         install(Realtime)
+        install(Functions)
     }
 
     private companion object {
@@ -133,6 +142,39 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             this.password = actual
         }
         cliente.auth.updateUser { password = nueva }
+    }
+
+    override suspend fun definirPassword(nueva: String) {
+        cliente.auth.updateUser { password = nueva }
+    }
+
+    override suspend fun completarPrimerIngreso(terminosVersion: String) {
+        cliente.postgrest.rpc("completar_primer_ingreso", buildJsonObject { put("p_terminos", terminosVersion) })
+    }
+
+    override suspend fun crearCuentaDueno(datos: NuevaCuentaDuenoDto): CuentaDuenoCreadaDto {
+        val cuerpo = try {
+            val respuesta = cliente.functions.invoke("crear-cuenta-dueno", datos)
+            Json.parseToJsonElement(respuesta.bodyAsText()).jsonObject
+        } catch (e: RestException) {
+            // La función responde con un mensaje pensado para el veterinario también cuando rechaza el pedido
+            val mensaje = runCatching {
+                Json.parseToJsonElement(e.response.bodyAsText()).jsonObject["mensaje"]?.jsonPrimitive?.contentOrNull
+            }.getOrNull()
+            throw IllegalStateException(
+                mensaje ?: if (e.statusCode == 404) {
+                    "La creación de cuentas todavía no está habilitada en el servidor."
+                } else {
+                    "No pudimos crear la cuenta del dueño. Intentá de nuevo en un rato."
+                }
+            )
+        }
+        if (cuerpo["ok"]?.jsonPrimitive?.booleanOrNull != true) {
+            throw IllegalStateException(
+                cuerpo["mensaje"]?.jsonPrimitive?.contentOrNull ?: "No pudimos crear la cuenta del dueño."
+            )
+        }
+        return Json { ignoreUnknownKeys = true }.decodeFromJsonElement(CuentaDuenoCreadaDto.serializer(), cuerpo)
     }
 
     override suspend fun cerrarSesion() {

@@ -4,12 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import android.graphics.Typeface
 import androidx.core.content.FileProvider
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.RegistroSalud
+import frgp.utn.edu.petcare.data.repositorio.Paciente
+import frgp.utn.edu.petcare.data.repositorio.RegistroSalud
 import frgp.utn.edu.petcare.model.Prescripcion
+import frgp.utn.edu.petcare.util.Fechas
 import java.io.File
 import java.time.LocalDate
 

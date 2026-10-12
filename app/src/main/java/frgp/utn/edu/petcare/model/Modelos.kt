@@ -1,8 +1,8 @@
 package frgp.utn.edu.petcare.model
 
 import android.net.Uri
-import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.data.CatalogoMedico
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Period
@@ -156,7 +156,9 @@ class PerfilDueno(
     var fotoPath: String? = null,
     var ajusteFoto: AjusteFoto = AjusteFoto.LLENAR,
     var desplazamientoFotoX: Float = 0f,
-    var desplazamientoFotoY: Float = 0f
+    var desplazamientoFotoY: Float = 0f,
+    /** Cuenta creada por un veterinario: falta elegir la contraseña propia y aceptar los términos. */
+    var debeCambiarPassword: Boolean = false
 ) {
     val primerNombre: String get() = nombre.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
 }

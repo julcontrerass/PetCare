@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.storage)
     implementation(libs.supabase.realtime)
+    implementation(libs.supabase.functions)
     implementation(libs.ktor.okhttp)
     implementation(libs.serialization.json)
     implementation(libs.coroutines.android)

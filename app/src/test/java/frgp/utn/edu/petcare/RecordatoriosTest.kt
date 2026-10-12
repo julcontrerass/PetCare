@@ -1,13 +1,15 @@
 package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.avisos.Recordatorios
+import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
+import frgp.utn.edu.petcare.data.repositorio.EventoVet
 import frgp.utn.edu.petcare.model.EstadoTurno
 import frgp.utn.edu.petcare.model.EventoMascota
+import java.time.LocalDate
+import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 class RecordatoriosTest : PruebaBase() {
 

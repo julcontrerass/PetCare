@@ -8,8 +8,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
-import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
+import frgp.utn.edu.petcare.R
 
 /** Aviso, arriba de la lista de notificaciones, de que el teléfono tiene apagadas las de la app. */
 object TarjetaPermiso {

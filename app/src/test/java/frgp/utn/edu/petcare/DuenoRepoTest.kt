@@ -1,11 +1,12 @@
 package frgp.utn.edu.petcare
 
-import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
 import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.Mascota
+import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
@@ -15,7 +16,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.time.LocalDate
 
 class DuenoRepoTest : PruebaBase() {
 
@@ -383,9 +383,9 @@ class DuenoRepoTest : PruebaBase() {
         fuente.informes.add(frgp.utn.edu.petcare.data.remoto.InformeDto("i2", "m1", "t2", Escenario.VET_ID, "Control", "Sano", null))
         ingresarComoDueno()
 
-        runBlocking { frgp.utn.edu.petcare.SaludRepo.cargarComoDueno() }
+        runBlocking { frgp.utn.edu.petcare.data.repositorio.SaludRepo.cargarComoDueno() }
 
-        val tratamientos = frgp.utn.edu.petcare.SaludRepo.filtrar(frgp.utn.edu.petcare.TipoRegistro.TRATAMIENTO, "", null)
+        val tratamientos = frgp.utn.edu.petcare.data.repositorio.SaludRepo.filtrar(frgp.utn.edu.petcare.data.repositorio.TipoRegistro.TRATAMIENTO, "", null)
         assertEquals(listOf("Otitis"), tratamientos.map { it.titulo })
         assertEquals("Gotas cada 8 hs", tratamientos[0].detalle)
         assertEquals("Rex", tratamientos[0].mascota)
@@ -551,10 +551,10 @@ class DuenoRepoTest : PruebaBase() {
         )
         ingresarComoDueno()
 
-        runBlocking { frgp.utn.edu.petcare.SaludRepo.cargarComoDueno() }
+        runBlocking { frgp.utn.edu.petcare.data.repositorio.SaludRepo.cargarComoDueno() }
 
-        val vacunas = frgp.utn.edu.petcare.SaludRepo.filtrar(frgp.utn.edu.petcare.TipoRegistro.VACUNA, "", null)
-        val documentos = frgp.utn.edu.petcare.SaludRepo.filtrar(frgp.utn.edu.petcare.TipoRegistro.DOCUMENTO, "", null)
+        val vacunas = frgp.utn.edu.petcare.data.repositorio.SaludRepo.filtrar(frgp.utn.edu.petcare.data.repositorio.TipoRegistro.VACUNA, "", null)
+        val documentos = frgp.utn.edu.petcare.data.repositorio.SaludRepo.filtrar(frgp.utn.edu.petcare.data.repositorio.TipoRegistro.DOCUMENTO, "", null)
         assertEquals(listOf("Rabia"), vacunas.map { it.titulo })
         assertEquals("Rex", vacunas[0].mascota)
         assertEquals(listOf("Radiografía"), documentos.map { it.titulo })

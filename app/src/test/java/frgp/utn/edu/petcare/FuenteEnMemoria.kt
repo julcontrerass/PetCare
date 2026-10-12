@@ -1,25 +1,28 @@
 package frgp.utn.edu.petcare
 
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
-import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
-import frgp.utn.edu.petcare.data.remoto.EstudioTurnoDto
+import frgp.utn.edu.petcare.data.remoto.CuentaDuenoCreadaDto
+import frgp.utn.edu.petcare.data.remoto.MascotaCreadaDto
+import frgp.utn.edu.petcare.data.remoto.NuevaCuentaDuenoDto
 import frgp.utn.edu.petcare.data.remoto.ActividadDto
 import frgp.utn.edu.petcare.data.remoto.ArchivoDto
 import frgp.utn.edu.petcare.data.remoto.DuenoBuscadoDto
+import frgp.utn.edu.petcare.data.remoto.EstudioTurnoDto
 import frgp.utn.edu.petcare.data.remoto.FuenteDatos
 import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.data.remoto.InformeDto
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
+import frgp.utn.edu.petcare.data.remoto.NuevaPrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.NuevoAccesoDto
 import frgp.utn.edu.petcare.data.remoto.NuevoArchivoDto
+import frgp.utn.edu.petcare.data.remoto.NuevoEstudioTurnoDto
 import frgp.utn.edu.petcare.data.remoto.NuevoInformeDto
 import frgp.utn.edu.petcare.data.remoto.NuevoRegistroSaludDto
-import frgp.utn.edu.petcare.data.remoto.NuevaPrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.NuevoTurnoDto
-import frgp.utn.edu.petcare.data.remoto.PrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
+import frgp.utn.edu.petcare.data.remoto.PrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.PrivadoDto
 import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
 import frgp.utn.edu.petcare.data.remoto.ResultadoRegistro
@@ -27,10 +30,10 @@ import frgp.utn.edu.petcare.data.remoto.RutaDto
 import frgp.utn.edu.petcare.data.remoto.SolicitudAccesoDto
 import frgp.utn.edu.petcare.data.remoto.TurnoDto
 import frgp.utn.edu.petcare.data.remoto.VeterinarioDto
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
 
 /**
@@ -87,6 +90,42 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         llamadas.add("password:$email")
     }
 
+    override suspend fun definirPassword(nueva: String) {
+        llamadas.add("definirPassword")
+    }
+
+    override suspend fun completarPrimerIngreso(terminosVersion: String) {
+        llamadas.add("primerIngreso:$terminosVersion")
+    }
+
+    /** Lo último que se le pidió al servidor al crear la cuenta de un dueño. */
+    var ultimaCuentaPedida: NuevaCuentaDuenoDto? = null
+    /** Si tiene valor, crear la cuenta falla con ese mensaje (DNI repetido, correo repetido...). */
+    var errorAlCrearCuenta: String? = null
+
+    /** Como el servidor: crea las mascotas nuevas, las deja a nombre del dueño y el veterinario conserva el acceso. */
+    override suspend fun crearCuentaDueno(datos: NuevaCuentaDuenoDto): CuentaDuenoCreadaDto {
+        llamadas.add("crearCuentaDueno:${datos.email}")
+        ultimaCuentaPedida = datos
+        errorAlCrearCuenta?.let { throw IllegalStateException(it) }
+        val duenoId = "dueno-nuevo"
+        val creadas = datos.mascotasNuevas.mapIndexed { i, m ->
+            val id = "nueva-$i"
+            mascotas.add(MascotaDto(id = id, duenoId = duenoId, nombre = m.nombre, tipo = m.tipo, raza = m.raza))
+            accesos.add(AccesoDto("acc-$id", id, Escenario.VET_ID, "activo", "veterinario"))
+            MascotaCreadaDto(id, m.nombre)
+        }
+        val vinculadas = datos.mascotasExistentes.map { id ->
+            val i = mascotas.indexOfFirst { it.id == id }
+            mascotas[i] = mascotas[i].copy(duenoId = duenoId)
+            if (accesos.none { it.mascotaId == id }) {
+                accesos.add(AccesoDto("acc-$id", id, Escenario.VET_ID, "activo", "veterinario"))
+            }
+            MascotaCreadaDto(id, mascotas[i].nombre)
+        }
+        return CuentaDuenoCreadaDto(duenoId, datos.email, "Temp1234ab", creadas + vinculadas)
+    }
+
     override suspend fun cerrarSesion() {
         haySesionGuardada = false
         sesionCerrada = true
@@ -118,7 +157,7 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
             MascotaDto(
                 id = mascota.id, duenoId = mascota.duenoId, nombre = mascota.nombre, tipo = mascota.tipo, raza = mascota.raza,
                 nacimiento = mascota.nacimiento, sexo = mascota.sexo, pesoKg = mascota.pesoKg,
-                propietarioNombre = mascota.propietarioNombre
+                propietarioNombre = mascota.propietarioNombre, propietarioDni = mascota.propietarioDni
             )
         )
     }

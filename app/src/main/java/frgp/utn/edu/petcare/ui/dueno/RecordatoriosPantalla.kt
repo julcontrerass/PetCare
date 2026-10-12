@@ -8,12 +8,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import frgp.utn.edu.petcare.Fechas
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.RecordatorioItem
-import frgp.utn.edu.petcare.RecordatoriosAdapter
-import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 
 /**
@@ -26,7 +24,7 @@ class RecordatoriosPantalla(host: DuenoActivity) : Pantalla(host) {
     private var mascota: String? = null
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.recordatorios_dueno, R.id.nav_lista)
+        host.mostrarContenido(R.layout.pantalla_recordatorios, R.id.nav_lista)
         alTocar(R.id.btnBack) { host.irAHome() }
         alTocarConRebote(R.id.btnToolbarAdd) { host.irANuevoEvento(LocalDate.now()) }
         configurarContenido(global = true, mascota = null)

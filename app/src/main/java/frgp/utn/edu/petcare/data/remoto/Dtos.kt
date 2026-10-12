@@ -1,10 +1,10 @@
 package frgp.utn.edu.petcare.data.remoto
 
 import frgp.utn.edu.petcare.model.TiposMascota
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 /*
  * Filas tal como las devuelve y recibe Supabase. Los nombres de las columnas van en snake_case,
@@ -25,6 +25,8 @@ data class PerfilDto(
     @SerialName("foto_ajuste") val fotoAjuste: JsonObject? = null,
     val preferencias: JsonObject? = null,
     @SerialName("created_at") val createdAt: String? = null,
+    /** Cuenta creada por un veterinario: el dueño todavía tiene que elegir su contraseña y aceptar los términos. */
+    @SerialName("debe_cambiar_password") val debeCambiarPassword: Boolean = false,
     /** Datos profesionales: solo vienen cuando el perfil es de un veterinario y se pidió el embebido. */
     val veterinarios: VeterinarioDto? = null,
     /** DNI: solo viene para el propio usuario o para el administrador. */
@@ -234,6 +236,45 @@ data class HoraOcupadaDto(
     val hora: String,
     @SerialName("duracion_min") val duracionMin: Int = 30
 )
+
+/** Mascota que se carga junto con la cuenta que el veterinario le crea al dueño. */
+@Serializable
+data class MascotaParaCuentaDto(
+    val nombre: String,
+    val tipo: String,
+    val sexo: String? = null,
+    val raza: String? = null,
+    val nacimiento: String? = null,
+    @SerialName("peso_kg") val pesoKg: Double? = null,
+    val color: String? = null,
+    val microchip: String? = null
+)
+
+/** Pedido a la función `crear-cuenta-dueno`. */
+@Serializable
+data class NuevaCuentaDuenoDto(
+    val nombre: String,
+    val dni: String,
+    val telefono: String,
+    val email: String,
+    val direccion: String? = null,
+    /** Mascotas que se crean junto con la cuenta. */
+    @SerialName("mascotas_nuevas") val mascotasNuevas: List<MascotaParaCuentaDto> = emptyList(),
+    /** Mascotas que el veterinario ya había cargado sin dueño con cuenta. */
+    @SerialName("mascotas_existentes") val mascotasExistentes: List<String> = emptyList()
+)
+
+/** Lo que devuelve la función al crear la cuenta: con esto el dueño ingresa por primera vez. */
+@Serializable
+data class CuentaDuenoCreadaDto(
+    @SerialName("usuario_id") val usuarioId: String,
+    val email: String,
+    @SerialName("password_temporal") val passwordTemporal: String,
+    val mascotas: List<MascotaCreadaDto> = emptyList()
+)
+
+@Serializable
+data class MascotaCreadaDto(val id: String, val nombre: String)
 
 /** Archivo de Storage que hay que borrar antes de eliminar la cuenta. */
 @Serializable

@@ -104,7 +104,7 @@ object Avisos {
         }
         retirarBanner()
 
-        val banner = LayoutInflater.from(actividad).inflate(R.layout.aviso_banner, contenedor, false)
+        val banner = LayoutInflater.from(actividad).inflate(R.layout.view_aviso_banner, contenedor, false)
         banner.findViewById<View>(R.id.avisoIconoFondo).setBackgroundResource(tipo.fondo)
         banner.findViewById<ImageView>(R.id.avisoIcono).apply {
             setImageResource(tipo.icono)

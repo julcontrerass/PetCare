@@ -1,14 +1,14 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.app.DatePickerDialog
-import frgp.utn.edu.petcare.ui.common.Avisos
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.Efectos
 
 /** Piezas de interfaz que usan varias secciones del dueño. */

@@ -11,8 +11,8 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
-import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.model.TipoNotificacion
+import frgp.utn.edu.petcare.R
 import java.time.Duration
 import java.time.LocalDateTime
 

@@ -31,29 +31,30 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity android:screenOrientation="portrait"
-            android:name=".HomeVeterinarioActivity"
+            android:name=".ui.veterinario.HomeVeterinarioActivity"
             android:exported="false" />
         <activity android:screenOrientation="portrait"
-            android:name=".RegistroDuenoActivity"
+            android:name=".ui.auth.RegistroDuenoActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity android:screenOrientation="portrait"
-            android:name=".RegistroVeterinarioActivity"
+            android:name=".ui.auth.RegistroVeterinarioActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:screenOrientation="portrait" android:name=".MisPacientesActivity" />
-        <activity android:screenOrientation="portrait" android:name=".DetallePacienteActivity" />
-        <activity android:screenOrientation="portrait" android:name=".SolicitudesVetActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".AgendaVetActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".PerfilVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.MisPacientesActivity" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.DetallePacienteActivity" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.SolicitudesVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.AgendaVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.PerfilVetActivity" android:exported="false" />
         <activity android:screenOrientation="portrait"
-            android:name=".AgregarConsultaActivity"
+            android:name=".ui.veterinario.AgregarConsultaActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:screenOrientation="portrait" android:name=".DetalleEventoVetActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".CarnetSaludActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".VacunasPendientesActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".HomeAdminActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.NuevoDuenoActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.DetalleEventoVetActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.dueno.CarnetSaludActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.VacunasPendientesActivity" android:exported="false" />
+        <activity android:screenOrientation="portrait" android:name=".ui.admin.HomeAdminActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

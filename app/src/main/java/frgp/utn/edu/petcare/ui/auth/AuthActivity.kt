@@ -1,7 +1,6 @@
 package frgp.utn.edu.petcare.ui.auth
 
 import android.content.Intent
-import frgp.utn.edu.petcare.ui.common.Avisos
 import android.os.Bundle
 import android.util.Patterns
 import android.view.View
@@ -15,18 +14,17 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
-import frgp.utn.edu.petcare.BaseActivity
-import frgp.utn.edu.petcare.HomeAdminActivity
-import frgp.utn.edu.petcare.HomeVeterinarioActivity
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.RegistroDuenoActivity
-import frgp.utn.edu.petcare.RegistroVeterinarioActivity
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.admin.HomeAdminActivity
+import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.BaseActivity
 import frgp.utn.edu.petcare.ui.dueno.DuenoActivity
-import kotlinx.coroutines.launch
+import frgp.utn.edu.petcare.ui.veterinario.HomeVeterinarioActivity
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 /**
  * Puerta de entrada de la app: bienvenida, ingreso, registro y recuperación de contraseña.
@@ -128,7 +126,7 @@ class AuthActivity : BaseActivity() {
     // ---------- Bienvenida ----------
 
     private fun mostrarPantallaInicial() {
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_auth)
         val raiz = findViewById<View>(R.id.main)
         val panel = findViewById<View>(R.id.panelBienvenida)
         val paddingInferior = panel?.paddingBottom ?: 0
@@ -147,7 +145,7 @@ class AuthActivity : BaseActivity() {
     // ---------- Ingreso ----------
 
     private fun mostrarLogin() {
-        setContentView(R.layout.iniciar_sesion)
+        setContentView(R.layout.pantalla_iniciar_sesion)
         aplicarInsets(findViewById(R.id.loginRoot))
 
         findViewById<View>(R.id.tvForgotPassword)?.setOnClickListener { mostrarRecuperarPassword() }
@@ -186,7 +184,7 @@ class AuthActivity : BaseActivity() {
     // ---------- Registro y recuperación ----------
 
     private fun mostrarRegistro() {
-        setContentView(R.layout.registro)
+        setContentView(R.layout.pantalla_registro)
         aplicarInsets(findViewById(R.id.registroRoot))
 
         registroComoVeterinario = false
@@ -213,7 +211,7 @@ class AuthActivity : BaseActivity() {
     }
 
     private fun mostrarRecuperarPassword() {
-        setContentView(R.layout.recuperar_password)
+        setContentView(R.layout.pantalla_recuperar_password)
         aplicarInsets(findViewById(R.id.recuperarRoot))
 
         findViewById<View>(R.id.btnBackRecuperar).setOnClickListener { mostrarLogin() }

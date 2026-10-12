@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="22dp"
+        android:paddingTop="8dp">
+
+        <TextView
+            android:id="@+id/tvPrimerIngresoTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="3dp"
+            android:textColor="@color/brand_navy"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etPrimerPassword"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_field_card"
+            android:hint="Nueva contraseña"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/brand_navy"
+            android:textColorHint="@color/text_gray"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/etPrimerPassword2"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_field_card"
+            android:hint="Repetí la contraseña"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/brand_navy"
+            android:textColorHint="@color/text_gray"
+            android:textSize="15sp" />
+
+        <CheckBox
+            android:id="@+id/cbPrimerTerminos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:buttonTint="@color/primary_teal"
+            android:text="Acepto los términos y condiciones" />
+    </LinearLayout>
+</ScrollView>

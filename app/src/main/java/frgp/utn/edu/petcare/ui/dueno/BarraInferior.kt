@@ -1,15 +1,15 @@
 package frgp.utn.edu.petcare.ui.dueno
 
+import android.view.animation.OvershootInterpolator
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
 
 /** Barra de navegación inferior del dueño y el menú "Más" que se abre sobre ella. */
 class BarraInferior(private val host: DuenoActivity) {
@@ -82,7 +82,7 @@ class BarraInferior(private val host: DuenoActivity) {
         val nav = host.findViewById<View>(R.id.bottom_navigation_container)
 
         navAntesDelMenu = ultimoResaltado
-        val overlay = host.layoutInflater.inflate(R.layout.menu_mas_popup, raiz, false)
+        val overlay = host.layoutInflater.inflate(R.layout.view_menu_mas_popup, raiz, false)
         (overlay.layoutParams as FrameLayout.LayoutParams).bottomMargin =
             if (nav != null && nav.height > 0) nav.height else host.dp(80)
         overlay.setOnClickListener { cerrarMenu(restaurarNav = true, animar = true) }

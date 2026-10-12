@@ -1,7 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -11,11 +11,11 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EventoMascota
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -23,7 +23,7 @@ import java.time.YearMonth
 class CalendarioPantalla(host: DuenoActivity) : Pantalla(host) {
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.calendario, -1)
+        host.mostrarContenido(R.layout.pantalla_calendario, -1)
 
         alTocar(R.id.btnBack) { host.irAHome() }
         alTocar(R.id.btnAgregarEvento) { host.irANuevoEvento(host.diaSeleccionado) }

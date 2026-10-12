@@ -1,10 +1,11 @@
 package frgp.utn.edu.petcare
 
+import frgp.utn.edu.petcare.util.Fechas
+import java.time.LocalDate
+import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 class FechasTest {
 

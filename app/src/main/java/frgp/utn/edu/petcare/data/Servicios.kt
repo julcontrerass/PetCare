@@ -1,16 +1,16 @@
 package frgp.utn.edu.petcare.data
 
 import android.content.Context
-import frgp.utn.edu.petcare.ui.common.Avisos
 import android.os.Handler
 import android.os.Looper
 import frgp.utn.edu.petcare.data.remoto.FuenteDatos
 import frgp.utn.edu.petcare.data.remoto.SupabaseFuente
+import frgp.utn.edu.petcare.ui.common.Avisos
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * Punto de acceso a lo que comparte toda la app: la fuente de datos (Supabase), el alcance de las

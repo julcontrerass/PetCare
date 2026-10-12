@@ -1,7 +1,7 @@
 package frgp.utn.edu.petcare.model
 
-import frgp.utn.edu.petcare.Fechas
 import frgp.utn.edu.petcare.data.remoto.PrescripcionDto
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.time.LocalDateTime
 

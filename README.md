@@ -8,13 +8,17 @@ El paquete base es `frgp.utn.edu.petcare`.
 
 | Carpeta | Qué contiene |
 |---|---|
-| `ui/auth` | `AuthActivity`: bienvenida, ingreso, registro y recuperación de contraseña. Deriva a cada rol. |
-| `ui/dueno` | App del dueño. `DuenoActivity` es el contenedor (barra inferior y navegación) y cada sección es una `Pantalla`. |
-| `ui/common` | Utilidades de interfaz compartidas. |
-| `model` | Clases de datos del dueño (`Mascota`, `EventoMascota`, `VeterinarioAcceso`, `PerfilDueno`...). |
-| `data` | `Sesion` (quién ingresó y carga de sus datos), `DuenoRepo`, `Registro`, `Servicios`, `Errores` e `Imagenes`. |
+| `ui/auth` | `AuthActivity` (bienvenida, ingreso y recuperación de contraseña, deriva a cada rol) y las pantallas de registro de dueño y de veterinario. |
+| `ui/dueno` | App del dueño. `DuenoActivity` es el contenedor (barra inferior y navegación) y cada sección es una `Pantalla`. Incluye el carnet de salud. |
+| `ui/veterinario` | App del veterinario: inicio, agenda, pacientes, informe de la consulta, perfil, solicitudes de acceso y vacunas a recordar. |
+| `ui/admin` | Panel del administrador: cuentas, revisión de veterinarios y registro de actividad. |
+| `ui/common` | Piezas de interfaz compartidas: `BaseActivity`, avisos, hojas de selección, PDFs (`Documentos`) y gráfico de peso. |
+| `model` | Clases de datos del dueño (`Mascota`, `EventoMascota`, `VeterinarioAcceso`...) y de la historia clínica. |
+| `data` | `Sesion` (quién ingresó y carga de sus datos), `Registro`, `Servicios`, `Errores`, `Imagenes` y el catálogo médico. |
+| `data/repositorio` | Un repositorio por tema, con la copia en memoria de lo que dice el servidor: `DuenoRepo`, `AgendaRepo`, `PacientesRepo`, `InformesRepo`, `SaludRepo`, `AdminRepo`... |
 | `data/remoto` | Conexión con Supabase: `FuenteDatos` (lo que la app le pide al servidor), `SupabaseFuente` (la implementación real) y los `Dtos` de cada tabla. |
-| raíz del paquete | Pantallas del veterinario y del administrador (`*Activity.kt`), sus repositorios (`AgendaRepo`, `PacientesRepo`, `SaludRepo`, `AdminRepo`...) y los asistentes de registro. |
+| `data/avisos` | Recordatorios locales (turnos, vacunas, medicación) y avisos del sistema. |
+| `util` | `Fechas`: formato de fechas y horas. |
 
 ### Cómo fluyen los datos
 
@@ -51,6 +55,17 @@ Para agregar una sección: crear la `Pantalla`, un método `irA...()` en `DuenoA
 - **Certificados:** de vacunación y de salud en PDF con la matrícula del veterinario (`ui/common/Documentos.kt`).
 - **Avisos al dueño:** una semana antes y el día de cada próxima dosis, y una sola vez cuando una vacuna ya venció (`Recordatorios.paraVacunas`).
 - **Alertas clínicas** de la mascota (alergias, carácter), editables por el veterinario con acceso (`guardar_alertas`).
+
+### Cuentas de dueños creadas por el veterinario
+
+Un dueño que todavía no usa la app puede recibir su cuenta en el consultorio, sin pasar por un turno:
+
+1. El veterinario carga al dueño (nombre, DNI, teléfono, correo) y a la mascota en *Nuevo dueño y mascota* (`NuevoDuenoActivity`), o elige *Crear cuenta del dueño* en la ficha de un paciente que ya cargó sin cuenta.
+2. La función `crear-cuenta-dueno` (Edge Function del proyecto de Supabase) valida que quien llama sea un veterinario activo, crea el usuario con una contraseña temporal, deja la mascota a nombre del dueño y mantiene el acceso del veterinario. Máximo 20 cuentas por veterinario por día.
+3. La app muestra el correo y la contraseña temporal una sola vez y arma el mensaje para WhatsApp.
+4. Al ingresar, el dueño tiene que elegir su propia contraseña y aceptar los términos (`profiles.debe_cambiar_password`, función `completar_primer_ingreso`).
+
+La función vive en el proyecto de Supabase (*Edge Functions*, con la verificación de JWT activada) y no está en este repositorio. Usa la clave de servicio, que Supabase le entrega al desplegarla: no va en la app. Para marcar la cuenta y pasar las mascotas al dueño llama a `public.vincular_cuenta_dueno`, una función de la base que solo puede ejecutar el servicio.
 
 ## Pruebas
 

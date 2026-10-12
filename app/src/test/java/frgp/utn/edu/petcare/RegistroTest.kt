@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare
 
+import frgp.utn.edu.petcare.data.DatosRegistroVeterinario
 import frgp.utn.edu.petcare.data.Registro
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

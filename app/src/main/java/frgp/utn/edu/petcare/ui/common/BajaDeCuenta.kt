@@ -1,6 +1,5 @@
 package frgp.utn.edu.petcare.ui.common
 
-import frgp.utn.edu.petcare.ui.common.Avisos
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.data.Errores

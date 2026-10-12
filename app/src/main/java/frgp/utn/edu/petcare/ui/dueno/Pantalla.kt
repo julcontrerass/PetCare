@@ -1,8 +1,8 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.view.View
-import frgp.utn.edu.petcare.ui.common.Avisos
 import android.widget.TextView
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.Efectos
 
 /**

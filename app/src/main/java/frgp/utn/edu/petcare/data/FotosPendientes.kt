@@ -2,15 +2,15 @@ package frgp.utn.edu.petcare.data
 
 import android.content.Context
 import android.net.Uri
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
+import java.io.File
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import java.io.File
 
 /**
  * Las fotos que se eligen durante el registro no se pueden subir hasta que hay una sesión abierta, y si el

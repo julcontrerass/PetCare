@@ -1,15 +1,15 @@
 package frgp.utn.edu.petcare.ui.common
 
 import android.content.ActivityNotFoundException
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import android.provider.OpenableColumns
-import android.net.Uri
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Imagenes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Abre con la aplicación del teléfono un archivo guardado en Storage (lo baja la primera vez). */
 object ArchivosUi {

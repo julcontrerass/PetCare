@@ -2,15 +2,15 @@ package frgp.utn.edu.petcare
 
 import androidx.test.core.app.ApplicationProvider
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.remoto.PerfilDto
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
-import frgp.utn.edu.petcare.data.remoto.PerfilDto
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.RobolectricTestRunner
 
 /** Prepara cada prueba con un servidor en memoria y sin ninguna sesión abierta. */
 @RunWith(RobolectricTestRunner::class)

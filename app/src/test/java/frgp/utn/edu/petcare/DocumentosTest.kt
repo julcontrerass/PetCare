@@ -1,12 +1,14 @@
 package frgp.utn.edu.petcare
 
+import frgp.utn.edu.petcare.data.repositorio.RegistroSalud
+import frgp.utn.edu.petcare.data.repositorio.TipoRegistro
 import frgp.utn.edu.petcare.model.Prescripcion
 import frgp.utn.edu.petcare.ui.common.Documentos
+import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.LocalDate
 
 /** Prueba lo que se imprime en los PDF; el dibujo en la hoja usa el motor gráfico de Android. */
 class DocumentosTest {

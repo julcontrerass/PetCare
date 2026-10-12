@@ -1,7 +1,6 @@
 package frgp.utn.edu.petcare.ui.dueno
 
 import android.graphics.drawable.GradientDrawable
-import frgp.utn.edu.petcare.model.TiposMascota
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -9,20 +8,21 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.imageview.ShapeableImageView
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
+import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 
 /** Inicio: resumen del próximo turno, accesos rápidos, mascotas, recordatorios y actividad reciente. */
 class HomePantalla(host: DuenoActivity) : Pantalla(host) {
 
     fun mostrar() {
-        host.mostrarContenido(R.layout.home_dueno, R.id.nav_home, inicio = true)
+        host.mostrarContenido(R.layout.pantalla_home, R.id.nav_home, inicio = true)
         configurarEncabezado()
 
         alTocar(R.id.iv_home_profile) { host.irAPerfil() }

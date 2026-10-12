@@ -1,13 +1,7 @@
 package frgp.utn.edu.petcare.ui.dueno
 
-import android.graphics.Color
-import frgp.utn.edu.petcare.model.EventoMascota
 import android.content.res.ColorStateList
-import frgp.utn.edu.petcare.data.CatalogoMedico
-import frgp.utn.edu.petcare.ui.common.ArchivosUi
-import frgp.utn.edu.petcare.ui.common.Avisos
-import frgp.utn.edu.petcare.data.Errores
-import androidx.appcompat.app.AlertDialog
+import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
@@ -17,22 +11,28 @@ import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.RelativeCornerSize
-import frgp.utn.edu.petcare.Fechas
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.data.DuenoRepo
+import frgp.utn.edu.petcare.data.CatalogoMedico
+import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
+import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EstadoAcceso
+import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
+import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.launch
 
 /** Asistente de tres pasos para agendar un turno: tipo y mascota, veterinario/fecha/hora, y confirmación. */
 class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
@@ -87,7 +87,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     }
 
     fun mostrar(fechaPedida: LocalDate?, mascotaPreseleccionada: String?) {
-        host.mostrarContenido(R.layout.nuevo_evento, -1)
+        host.mostrarContenido(R.layout.pantalla_nuevo_evento, -1)
 
         val inicial = if (fechaPedida == null || fechaPedida.isBefore(LocalDate.now())) LocalDate.now() else fechaPedida
 
