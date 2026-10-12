@@ -43,6 +43,10 @@ interface FuenteDatos {
     /** El dueño con cuenta creada por un veterinario termina su primer ingreso: acepta los términos y apaga la marca. */
     suspend fun completarPrimerIngreso(terminosVersion: String) {}
     suspend fun matriculaDisponible(matricula: String): Boolean = true
+    /** Un dueño con la cuenta activa pide el alta como veterinario; queda en revisión hasta que el administrador la apruebe. */
+    suspend fun solicitarAltaVeterinario(datos: SolicitudAltaVeterinarioDto) {}
+    /** Registra la foto del carnet o matrícula ya subida al bucket `credenciales`. */
+    suspend fun guardarCredencial(ruta: String) {}
 
     // ---------- Perfil propio ----------
     suspend fun miPerfil(): PerfilDto = throw UnsupportedOperationException("miPerfil")
@@ -124,6 +128,8 @@ interface FuenteDatos {
     suspend fun actividadAdmin(): List<ActividadDto> = emptyList()
     suspend fun resumenAdmin(): JsonObject = JsonObject(emptyMap())
     suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {}
+    /** Aprueba, rechaza, suspende o reactiva el rol de veterinario de una cuenta (la cuenta de dueño no se toca). */
+    suspend fun revisarVeterinario(id: String, estado: String, motivo: String?) {}
 
     // ---------- Baja de cuenta ----------
     suspend fun rutasArchivosCuenta(): List<RutaDto> = emptyList()

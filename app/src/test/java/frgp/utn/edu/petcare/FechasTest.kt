@@ -44,6 +44,6 @@ class FechasTest {
         assertEquals("Hace 5 min", hace(5))
         assertEquals("Hace 1 hora", hace(60))
         assertEquals("Hace 3 horas", hace(180))
-        assertEquals("Ayer", hace(60 * 30))
+        assertEquals("Ayer", hace(24 * 60))
     }
 }

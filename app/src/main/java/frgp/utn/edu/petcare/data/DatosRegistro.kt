@@ -45,5 +45,7 @@ data class DatosRegistroVeterinario(
     val dias: List<Int>,
     val apertura: String,
     val cierre: String,
-    val fotoPath: String? = null
+    val fotoPath: String? = null,
+    /** Foto del carnet o matrícula, en el teléfono: el administrador la ve para dar el alta. */
+    val credencialPath: String? = null
 ) : Serializable

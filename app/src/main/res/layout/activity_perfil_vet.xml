@@ -495,6 +495,46 @@
         <View style="@style/PetInfoDivider" />
 
         <LinearLayout
+            android:id="@+id/optModoDueno"
+            style="@style/PetInfoRow"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout
+                style="@style/PetInfoIconBox"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_dog"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_medium"
+                android:text="Pasar al modo dueño de mascotas"
+                android:textColor="@color/brand_navy"
+                android:textSize="15sp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/text_gray" />
+        </LinearLayout>
+
+        <View style="@style/PetInfoDivider" />
+
+        <LinearLayout
             android:id="@+id/optCambiarPassword"
             style="@style/PetInfoRow"
             android:background="?attr/selectableItemBackground"

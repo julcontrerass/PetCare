@@ -28,6 +28,7 @@ import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.ModoDeUso
 import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
 import frgp.utn.edu.petcare.ui.common.BaseActivity
 import frgp.utn.edu.petcare.ui.common.VetUi
@@ -69,6 +70,11 @@ class PerfilVetActivity : BaseActivity() {
         findViewById<View>(R.id.llVetTiposAnimales)?.setOnClickListener { configurarTiposAnimales() }
         findViewById<View>(R.id.llVetDuraciones)?.setOnClickListener { configurarDuraciones() }
 
+        // Todo veterinario puede cargar sus propias mascotas: el modo dueño está siempre disponible
+        findViewById<View>(R.id.optModoDueno)?.let { fila ->
+            fila.visibility = if (Sesion.Rol.DUENO in Sesion.rolesDisponibles) View.VISIBLE else View.GONE
+            fila.setOnClickListener { ModoDeUso.cambiar(this, Sesion.Rol.DUENO) }
+        }
         findViewById<View>(R.id.optEditarPerfil)?.setOnClickListener { editarPerfil() }
         findViewById<View>(R.id.optCambiarPassword)?.setOnClickListener { cambiarPassword() }
         findViewById<View>(R.id.optNotificaciones)?.setOnClickListener { configurarNotificaciones() }

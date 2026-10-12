@@ -36,6 +36,9 @@ object Sesion {
 
         /** La cuenta existe pero no puede ingresar (en revisión, rechazada o suspendida). */
         class Bloqueada(val mensaje: String) : Resultado
+
+        /** La cuenta es dueño y veterinario a la vez: hay que elegir cómo ingresar con [entrarComo]. */
+        class Elegir(val roles: List<Rol>) : Resultado
     }
 
     var usuarioId: String? = null
@@ -43,6 +46,10 @@ object Sesion {
     var rol: Rol? = null
         private set
     var perfil: PerfilDto? = null
+        private set
+
+    /** Modos en los que se puede usar la cuenta (dueño, veterinario o los dos). */
+    var rolesDisponibles: List<Rol> = emptyList()
         private set
 
     val activa: Boolean get() = usuarioId != null
@@ -73,6 +80,7 @@ object Sesion {
         var datos = Servicios.fuente.miPerfil()
         usuarioId = id
         perfil = datos
+        runCatching { FotosPendientes.subirCredencial(datos.email, id) }
         mensajeDeBloqueo(datos)?.let {
             cerrar()
             return Resultado.Bloqueada(it)
@@ -82,13 +90,34 @@ object Sesion {
             datos = Servicios.fuente.miPerfil()
             perfil = datos
         }
-        val rolCuenta = when (datos.rol) {
-            "veterinario" -> Rol.VETERINARIO
-            "admin" -> Rol.ADMIN
-            else -> Rol.DUENO
-        }
+        val roles = rolesDe(datos)
+        rolesDisponibles = roles
+        // Con dos modos posibles se pregunta cómo ingresar antes de cargar los datos de uno de ellos. A un veterinario
+        // solo se le pregunta si ya tiene mascotas propias; si no, entra directo (desde su perfil puede pasar a dueño).
+        val preguntar = roles.size > 1 && (datos.rol != "veterinario" || tieneMascotas())
+        if (preguntar) return Resultado.Elegir(roles)
+        return entrarComo(roles.first())
+    }
+
+    private suspend fun tieneMascotas(): Boolean =
+        runCatching { Servicios.fuente.misMascotas().isNotEmpty() }.getOrDefault(false)
+
+    /**
+     * Modos en los que puede usarse la cuenta. Todo veterinario puede ser también dueño de sus mascotas; un dueño
+     * suma el modo veterinario cuando el administrador aprueba su alta.
+     */
+    private fun rolesDe(datos: PerfilDto): List<Rol> = when (datos.rol) {
+        "admin" -> listOf(Rol.ADMIN)
+        "veterinario" -> listOf(Rol.VETERINARIO, Rol.DUENO)
+        else -> if (datos.veterinarios?.estadoRevision == "activo") listOf(Rol.DUENO, Rol.VETERINARIO) else listOf(Rol.DUENO)
+    }
+
+    /** Carga los datos del modo elegido y deja la sesión lista para usarse en él. */
+    suspend fun entrarComo(rolElegido: Rol): Resultado.Listo {
+        val datos = perfil ?: error("No hay una sesión abierta")
+        require(rolElegido in rolesDisponibles) { "La cuenta no puede ingresar como $rolElegido" }
         coroutineScope {
-            when (rolCuenta) {
+            when (rolElegido) {
                 Rol.DUENO -> DuenoRepo.cargar(datos)
                 Rol.VETERINARIO -> {
                     PerfilVetRepo.cargar(datos)
@@ -97,11 +126,25 @@ object Sesion {
                 Rol.ADMIN -> AdminRepo.cargar()
             }
         }
-        rol = rolCuenta
-        escucharCambios(rolCuenta)
+        rol = rolElegido
+        escucharCambios(rolElegido)
         Servicios.contextoApp?.let { Recordatorios.vigilarAvisos(it) }
-        avisarSiHayAvisosSinLeer(rolCuenta)
-        return Resultado.Listo(rolCuenta)
+        avisarSiHayAvisosSinLeer(rolElegido)
+        return Resultado.Listo(rolElegido)
+    }
+
+    /** Pasa de un modo al otro sin cerrar la sesión: se descartan los datos del anterior y se cargan los nuevos. */
+    suspend fun cambiarModo(nuevo: Rol): Resultado.Listo {
+        require(nuevo in rolesDisponibles) { "La cuenta no puede ingresar como $nuevo" }
+        descartarDatosDelModo()
+        return entrarComo(nuevo)
+    }
+
+    /** Vuelve a pedir el perfil: sirve para enterarse de que el rol de veterinario fue aprobado. */
+    suspend fun actualizarRoles() {
+        val datos = Servicios.fuente.miPerfil()
+        perfil = datos
+        rolesDisponibles = rolesDe(datos)
     }
 
     /**
@@ -223,15 +266,22 @@ object Sesion {
 
     /** Descarta los datos de la cuenta anterior sin tocar el servidor (la sesión ya se cerró o venció). */
     fun olvidar() {
+        descartarDatosDelModo()
+        usuarioId = null
+        perfil = null
+        rolesDisponibles = emptyList()
+        Imagenes.limpiarCache()
+    }
+
+    /** Vacía los datos del modo que se estaba usando; la sesión y el perfil siguen. */
+    private fun descartarDatosDelModo() {
         Servicios.contextoApp?.let {
             Recordatorios.cancelarTodo(it)
             AvisosDelSistema.olvidar(it)
         }
         escucha?.cancel()
         escucha = null
-        usuarioId = null
         rol = null
-        perfil = null
         DuenoRepo.limpiar()
         PerfilVetRepo.limpiar()
         PacientesRepo.limpiar()
@@ -243,6 +293,5 @@ object Sesion {
         SolicitudesRepo.limpiar()
         NotificacionesVet.limpiar()
         AdminRepo.limpiar()
-        Imagenes.limpiarCache()
     }
 }

@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
@@ -15,11 +16,13 @@ import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.data.Servicios
+import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
+import frgp.utn.edu.petcare.ui.common.ModoDeUso
 import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
 import frgp.utn.edu.petcare.ui.common.Efectos
 import frgp.utn.edu.petcare.ui.common.HojaLista
@@ -67,11 +70,71 @@ class PerfilPantalla(host: DuenoActivity) : Pantalla(host) {
         texto(R.id.tvUserPhoneValue, perfil.telefono)
         texto(R.id.tvUserAddressValue, perfil.direccion)
 
+        configurarModoVeterinario()
+        // Entre que se abre el perfil y se revisa el alta puede haber cambiado: se pide el estado al servidor
+        host.lifecycleScope.launch {
+            runCatching { Sesion.actualizarRoles() }.onSuccess { configurarModoVeterinario() }
+        }
+
         alTocar(R.id.llVeterinarios) { host.irAVeterinarios() }
         alTocar(R.id.llEditarDatos) { host.irAEditarPerfil() }
         alTocar(R.id.llCambiarContrasena) { cambiarPassword() }
         alTocar(R.id.llCerrarSesion) { host.cerrarSesion() }
         alTocar(R.id.llEliminarCuenta) { BajaDeCuenta.confirmar(host) }
+    }
+
+    /**
+     * Fila para usar la cuenta también como veterinario: pasa de modo si el alta ya fue aprobada, o permite pedirla
+     * (y muestra cómo va) si todavía no.
+     */
+    private fun configurarModoVeterinario() {
+        val fila = vista<View>(R.id.llModoVeterinario) ?: return
+        val titulo = vista<TextView>(R.id.tvModoVeterinario) ?: return
+        if (Sesion.perfil?.rol == "veterinario") {
+            // Su rol principal es veterinario: el cambio de modo está en el perfil de veterinario
+            fila.visibility = View.GONE
+            return
+        }
+        fila.visibility = View.VISIBLE
+        val revision = Sesion.perfil?.veterinarios
+        val motivo = revision?.motivoRevision?.takeIf { it.isNotBlank() }?.let { "\n\nMotivo: $it" }.orEmpty()
+        when {
+            Sesion.Rol.VETERINARIO in Sesion.rolesDisponibles -> {
+                titulo.text = "Pasar al modo veterinario"
+                fila.setOnClickListener { ModoDeUso.cambiar(host, Sesion.Rol.VETERINARIO) }
+            }
+            revision == null || revision.estadoRevision == "rechazado" -> {
+                titulo.text = if (revision == null) "Soy veterinario/a: pedir el alta" else "Alta rechazada: volver a presentarla"
+                fila.setOnClickListener {
+                    if (revision == null) {
+                        host.pedirAltaVeterinario()
+                    } else {
+                        Avisos.confirmar(
+                            host, "Alta rechazada",
+                            "El administrador no aprobó tu solicitud.$motivo\n\n¿Querés volver a presentarla con tus datos y tu carnet?",
+                            textoAceptar = "Volver a presentarla", textoCancelar = "Ahora no", peligro = false,
+                            icono = R.drawable.ic_srv_estetoscopio
+                        ) { host.pedirAltaVeterinario() }
+                    }
+                }
+            }
+            revision.estadoRevision == "pendiente_revision" -> {
+                titulo.text = "Alta como veterinario/a en revisión"
+                fila.setOnClickListener {
+                    Avisos.informar(
+                        host, "Alta en revisión",
+                        "El administrador está verificando tu matrícula. Cuando la apruebe vas a poder ingresar " +
+                            "también como veterinario, y te avisamos."
+                    )
+                }
+            }
+            else -> {
+                titulo.text = "Rol de veterinario/a suspendido"
+                fila.setOnClickListener {
+                    Avisos.informar(host, "Rol suspendido", "El administrador suspendió tu rol de veterinario.$motivo")
+                }
+            }
+        }
     }
 
     private fun elegirAjusteDeFoto(imagen: ImageView) {

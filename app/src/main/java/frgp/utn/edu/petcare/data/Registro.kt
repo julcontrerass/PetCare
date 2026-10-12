@@ -57,7 +57,12 @@ object Registro {
         }
         val resultado = crear(d.email, d.password, datos)
         FotosPendientes.guardar(d.email, d.fotoPath, emptyList())
-        // Un veterinario nuevo queda en revisión y todavía no puede subir fotos: se suben cuando lo aprueben
+        d.credencialPath?.let { FotosPendientes.guardarCredencial(d.email, it) }
+        // El carnet se sube ya (si hay sesión) porque el administrador lo necesita para revisar la cuenta; las demás
+        // fotos esperan a que lo aprueben
+        if (resultado.sesionIniciada) {
+            Sesion.usuarioIdActual()?.let { runCatching { FotosPendientes.subirCredencial(d.email, it) } }
+        }
         return resultado
     }
 

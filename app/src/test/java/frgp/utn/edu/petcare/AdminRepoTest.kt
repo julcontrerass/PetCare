@@ -3,6 +3,7 @@ package frgp.utn.edu.petcare
 import frgp.utn.edu.petcare.data.remoto.ActividadDto
 import frgp.utn.edu.petcare.data.repositorio.AdminRepo
 import frgp.utn.edu.petcare.data.repositorio.TipoActividad
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -58,7 +59,7 @@ class AdminRepoTest : PruebaBase() {
         AdminRepo.aprobarVet("vet-2")
 
         assertEquals(AdminRepo.ACTIVO, AdminRepo.vetPorId("vet-2")!!.estado)
-        assertTrue(fuente.llamadas.contains("estadoCuenta:vet-2=activo"))
+        assertTrue(fuente.llamadas.contains("revisionVet:vet-2=activo"))
         assertEquals(2, AdminRepo.vetsActivos())
     }
 
@@ -67,7 +68,7 @@ class AdminRepoTest : PruebaBase() {
         AdminRepo.rechazarVet("vet-2", "Matrícula no verificada")
         AdminRepo.suspenderDueno(Escenario.DUENO_ID, "Maltrato")
 
-        assertTrue(fuente.llamadas.contains("estadoCuenta:vet-2=rechazado:Matrícula no verificada"))
+        assertTrue(fuente.llamadas.contains("revisionVet:vet-2=rechazado:Matrícula no verificada"))
         assertTrue(fuente.llamadas.contains("estadoCuenta:${Escenario.DUENO_ID}=suspendido:Maltrato"))
         assertEquals(AdminRepo.SUSPENDIDO, AdminRepo.duenoPorId(Escenario.DUENO_ID)!!.estado)
         assertEquals("Maltrato", AdminRepo.duenoPorId(Escenario.DUENO_ID)!!.motivo)
@@ -80,7 +81,27 @@ class AdminRepoTest : PruebaBase() {
         val vet = AdminRepo.vetPorId("vet-3")!!
         assertEquals(AdminRepo.ACTIVO, vet.estado)
         assertEquals("", vet.motivo)
-        assertTrue(fuente.llamadas.contains("estadoCuenta:vet-3=activo"))
+        assertTrue(fuente.llamadas.contains("revisionVet:vet-3=activo"))
+    }
+
+    @Test
+    fun duenoConRolDeVeterinario_apareceEnAmbasListasYSeRevisaSoloElRol() {
+        // La cuenta de dueño de Ana sigue activa: lo que se revisa es su rol de veterinaria
+        fuente.perfiles.removeAll { it.id == Escenario.DUENO_ID }
+        fuente.perfiles.add(Escenario.duenoYVeterinario(revision = "pendiente_revision"))
+        runBlocking { AdminRepo.cargar() }
+
+        val vet = AdminRepo.vetPorId(Escenario.DUENO_ID)!!
+        assertEquals(AdminRepo.PENDIENTE, vet.estado)
+        assertTrue(vet.tambienEsDueno)
+        assertEquals("${Escenario.DUENO_ID}/carnet.jpg", vet.credencialPath)
+        assertEquals(AdminRepo.ACTIVO, AdminRepo.duenoPorId(Escenario.DUENO_ID)!!.estado)
+
+        AdminRepo.aprobarVet(Escenario.DUENO_ID)
+
+        assertTrue(fuente.llamadas.contains("revisionVet:${Escenario.DUENO_ID}=activo"))
+        assertEquals(AdminRepo.ACTIVO, AdminRepo.vetPorId(Escenario.DUENO_ID)!!.estado)
+        assertEquals(AdminRepo.ACTIVO, AdminRepo.duenoPorId(Escenario.DUENO_ID)!!.estado)
     }
 
     @Test

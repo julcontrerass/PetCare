@@ -37,6 +37,7 @@ import frgp.utn.edu.petcare.ui.veterinario.SolicitudesVetActivity
 import frgp.utn.edu.petcare.ui.veterinario.VacunasPendientesActivity
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -863,6 +864,90 @@ class PantallasTest : PruebaBase() {
 
         val chips = a.findViewById<com.google.android.material.chip.ChipGroup>(R.id.cgTiposAnimales)
         assertEquals(frgp.utn.edu.petcare.model.TiposMascota.TODOS.size, chips.childCount)
+    }
+
+    @Test
+    fun dueno_sinRolDeVeterinarioPuedePedirElAlta() {
+        val a = abrirDueno()
+        a.irAPerfil()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.llModoVeterinario).visibility)
+        assertEquals("Soy veterinario/a: pedir el alta", texto(a, R.id.tvModoVeterinario))
+    }
+
+    @Test
+    fun dueno_conAltaEnRevisionVeAlgunEstadoYNoPuedePasarDeModo() {
+        ingresarComo(Escenario.duenoYVeterinario(revision = "pendiente_revision"))
+        val a = abrir(DuenoActivity::class.java)
+        a.irAPerfil()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals("Alta como veterinario/a en revisión", texto(a, R.id.tvModoVeterinario))
+    }
+
+    @Test
+    fun dueno_conRolDeVeterinarioAprobadoPasaDeModoDesdeElPerfil() {
+        ingresarComo(Escenario.duenoYVeterinario())
+        runBlocking { Sesion.entrarComo(Sesion.Rol.DUENO) }
+        val a = abrir(DuenoActivity::class.java)
+        a.irAPerfil()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals("Pasar al modo veterinario", texto(a, R.id.tvModoVeterinario))
+        a.findViewById<View>(R.id.llModoVeterinario).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(Sesion.Rol.VETERINARIO, Sesion.rol)
+        assertEquals(
+            HomeVeterinarioActivity::class.java.name, shadowOf(a).nextStartedActivity.component!!.className
+        )
+    }
+
+    @Test
+    fun vet_elPerfilOfreceEntrarComoDueno() {
+        abrirVet()
+        val a = abrir(PerfilVetActivity::class.java)
+
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.optModoDueno).visibility)
+        a.findViewById<View>(R.id.optModoDueno).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(Sesion.Rol.DUENO, Sesion.rol)
+        assertEquals(DuenoActivity::class.java.name, shadowOf(a).nextStartedActivity.component!!.className)
+    }
+
+    @Test
+    fun registro_unDuenoQueSumaElRolSaltaLosDatosPersonalesYExigeElCarnet() {
+        ingresarComoDueno()
+        val a = abrir(
+            RegistroVeterinarioActivity::class.java,
+            intent(RegistroVeterinarioActivity::class.java)
+                .putExtra(RegistroVeterinarioActivity.EXTRA_CUENTA_EXISTENTE, true)
+        )
+
+        // Arranca en lo profesional: no pide nombre, DNI ni teléfono que la cuenta ya tiene
+        assertEquals(View.GONE, a.findViewById<View>(R.id.paso1).visibility)
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.paso2).visibility)
+        assertEquals(View.GONE, a.findViewById<View>(R.id.btnPasoAtras).visibility)
+        assertTrue(texto(a, R.id.tvPasoActual).startsWith("Paso 1 de 4"))
+
+        // Sin la foto del carnet no avanza
+        a.findViewById<EditText>(R.id.etVetMatricula).setText("MP-4321")
+        a.findViewById<EditText>(R.id.etVetClinica).setText("Clínica del Centro")
+        a.findViewById<EditText>(R.id.etVetDireccion).setText("Calle Falsa 123")
+        a.findViewById<View>(R.id.btnPasoSiguiente).performClick()
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.paso2).visibility)
+        assertNotNull(a.findViewById<View>(R.id.ivCredencial))
+    }
+
+    @Test
+    fun registro_unVeterinarioNuevoPideElCarnetEnElPasoProfesional() {
+        val a = abrir(RegistroVeterinarioActivity::class.java)
+
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.paso1).visibility)
+        assertNotNull(a.findViewById<View>(R.id.btnCredencial))
+        assertTrue(texto(a, R.id.tvPasoActual).startsWith("Paso 1 de 5"))
     }
 
     @Test

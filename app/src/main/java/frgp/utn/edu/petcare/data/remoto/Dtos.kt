@@ -50,8 +50,15 @@ data class VeterinarioDto(
     @SerialName("tipos_animales") val tiposAnimales: List<String> = TiposMascota.TODOS,
     /** Minutos que dura cada servicio o especialidad para este veterinario (lo que no está usa el valor por defecto). */
     val duraciones: Map<String, Int> = emptyMap(),
-    @SerialName("credencial_path") val credencialPath: String? = null
+    @SerialName("credencial_path") val credencialPath: String? = null,
+    /** Estado de la revisión del rol de veterinario: pendiente_revision, activo, rechazado o suspendido. */
+    @SerialName("estado_revision") val estadoRevision: String = "activo",
+    @SerialName("motivo_revision") val motivoRevision: String? = null
 )
+
+/** La cuenta está activa y su rol de veterinario fue aprobado: puede atender y aparece en el catálogo. */
+val PerfilDto.atiendeComoVeterinario: Boolean
+    get() = estado == "activo" && veterinarios?.estadoRevision == "activo"
 
 @Serializable
 data class DuenoResumenDto(
@@ -275,6 +282,21 @@ data class CuentaDuenoCreadaDto(
 
 @Serializable
 data class MascotaCreadaDto(val id: String, val nombre: String)
+
+/** Datos con los que un dueño pide el alta como veterinario (función `solicitar_alta_veterinario`). */
+data class SolicitudAltaVeterinarioDto(
+    val matricula: String,
+    val clinica: String,
+    val direccionClinica: String,
+    /** Días de atención como en la base: 1 = lunes ... 7 = domingo. */
+    val dias: List<Int>,
+    val apertura: String,
+    val cierre: String,
+    val especialidades: List<String>,
+    val tiposAnimales: List<String>,
+    /** Ruta de la foto del carnet o matrícula, ya subida al bucket `credenciales`. */
+    val credencialPath: String
+)
 
 /** Archivo de Storage que hay que borrar antes de eliminar la cuenta. */
 @Serializable

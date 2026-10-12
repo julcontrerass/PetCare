@@ -507,10 +507,22 @@ class HomeAdminActivity : BaseActivity() {
         texto(vista, R.id.tvVetHorarios, vet.diasYHorarios)
         texto(vista, R.id.tvVetRegistro, "${Fechas.corta(vet.fechaRegistro)} (${AdminUi.hace(vet.fechaRegistro).lowercase()})")
 
+        // La foto del carnet o matrícula es lo que se compara con el colegio profesional para dar el alta
+        vista.findViewById<MaterialButton>(R.id.btnVetCredencial).apply {
+            if (vet.credencialPath.isNullOrBlank()) {
+                text = "No cargó la foto del carnet"
+                isEnabled = false
+            } else {
+                setOnClickListener { mostrarCredencial(vet) }
+            }
+        }
+
         val aviso = vista.findViewById<TextView>(R.id.tvVetAviso)
         when {
             vet.estado == AdminRepo.PENDIENTE -> {
-                aviso.text = "Verificá la matrícula ${vet.matricula} en el colegio profesional antes de dar el alta."
+                aviso.text = "Verificá la matrícula ${vet.matricula} en el colegio profesional antes de dar el alta." +
+                    if (vet.tambienEsDueno) "\n\nYa tiene una cuenta de dueño: aprobarla suma el rol de veterinario, sin tocar lo demás."
+                    else ""
                 aviso.visibility = View.VISIBLE
             }
             vet.motivo.isNotBlank() -> {
@@ -539,6 +551,30 @@ class HomeAdminActivity : BaseActivity() {
                 principal.configurar("Dar de alta igualmente") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta") }
         }
         sheet.show()
+    }
+
+    /** Muestra la foto del carnet sin guardarla en el teléfono: se baja del bucket privado y se descarta. */
+    private fun mostrarCredencial(vet: VetAdminItem) {
+        val ruta = vet.credencialPath ?: return
+        lifecycleScope.launch {
+            try {
+                val bytes = Servicios.fuente.descargar("credenciales", ruta)
+                val imagen = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    ?: throw IllegalStateException("La foto no se pudo abrir")
+                val vistaImagen = ImageView(this@HomeAdminActivity).apply {
+                    adjustViewBounds = true
+                    setImageBitmap(imagen)
+                }
+                AlertDialog.Builder(this@HomeAdminActivity)
+                    .setTitle("Carnet de ${vet.nombre}")
+                    .setMessage("Matrícula declarada: ${vet.matricula}")
+                    .setView(android.widget.ScrollView(this@HomeAdminActivity).apply { addView(vistaImagen) })
+                    .setPositiveButton("Cerrar", null)
+                    .show()
+            } catch (e: Exception) {
+                Avisos.error(this@HomeAdminActivity, Errores.mensaje(e))
+            }
+        }
     }
 
     private fun mostrarDetalleDueno(dueno: DuenoAdminItem) {

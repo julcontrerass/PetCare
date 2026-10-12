@@ -34,6 +34,34 @@ object FotosPendientes {
         preferencias()?.edit()?.putString(email.lowercase(), datos.toString())?.apply()
     }
 
+    /**
+     * La foto del carnet se guarda aparte de las otras: se puede subir aunque la cuenta todavía esté en revisión
+     * (el bucket `credenciales` no pide cuenta activa), y es justamente lo que el administrador necesita para revisarla.
+     */
+    fun guardarCredencial(email: String, ruta: String) {
+        preferencias()?.edit()?.putString(email.lowercase() + "#credencial", ruta)?.apply()
+    }
+
+    /** Sube el carnet pendiente de [email], si hay. Devuelve true si quedó cargado. */
+    suspend fun subirCredencial(email: String, usuarioId: String): Boolean {
+        val prefs = preferencias() ?: return false
+        val clave = email.lowercase() + "#credencial"
+        val ruta = prefs.getString(clave, null) ?: return false
+        val archivo = File(ruta)
+        if (!archivo.exists()) {
+            prefs.edit().remove(clave).apply()
+            return false
+        }
+        return runCatching {
+            val preparada = Imagenes.prepararFoto(Uri.fromFile(archivo))
+            val subida = CredencialVet.subirArchivo(preparada, usuarioId)
+            Servicios.fuente.guardarCredencial(subida)
+            preparada.delete()
+            archivo.delete()
+            prefs.edit().remove(clave).apply()
+        }.isSuccess
+    }
+
     /** Sube lo que haya pendiente para [email]. Devuelve true si cambió la foto del perfil. */
     suspend fun subir(email: String, usuarioId: String): Boolean {
         val prefs = preferencias() ?: return false

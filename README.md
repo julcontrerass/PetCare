@@ -56,6 +56,16 @@ Para agregar una sección: crear la `Pantalla`, un método `irA...()` en `DuenoA
 - **Avisos al dueño:** una semana antes y el día de cada próxima dosis, y una sola vez cuando una vacuna ya venció (`Recordatorios.paraVacunas`).
 - **Alertas clínicas** de la mascota (alergias, carácter), editables por el veterinario con acceso (`guardar_alertas`).
 
+### Una cuenta, dos modos: dueño y veterinario
+
+Una misma cuenta (un correo, una contraseña) puede usarse como dueño de mascotas y como veterinario:
+
+- **Rol de veterinario con revisión propia:** `veterinarios.estado_revision` guarda si el alta fue aprobada. La cuenta de dueño sigue activa mientras el administrador revisa. Quien se registró como veterinario sigue el mismo estado que su cuenta (un disparador los mantiene juntos).
+- **Cómo se suma el rol:** el dueño toca *Soy veterinario/a: pedir el alta* en su perfil, carga matrícula, clínica, horarios y la **foto de su carnet o matrícula** (bucket privado `credenciales`, solo la ve el administrador) y la función `solicitar_alta_veterinario` lo deja pendiente. Los veterinarios nuevos suben el mismo carnet al registrarse.
+- **Revisión:** en el panel del administrador, *Ver foto del carnet o matrícula* y los botones de alta, rechazo o suspensión llaman a `revisar_veterinario`, que solo toca el rol (la cuenta de dueño no se suspende).
+- **Al ingresar** con las dos posibilidades activas, la app pregunta *¿Cómo querés ingresar?* (`Sesion.Resultado.Elegir`). Un veterinario sin mascotas propias entra directo. Desde el perfil se puede pasar de un modo al otro sin cerrar sesión (`ModoDeUso`).
+- **Seguridad:** las políticas y funciones de la base usan `private.es_vet_activo()` (rol aprobado y cuenta activa) en lugar de un rol único. Quien es veterinario de una mascota propia no se pide acceso a sí mismo: la ve desde el modo dueño.
+
 ### Cuentas de dueños creadas por el veterinario
 
 Un dueño que todavía no usa la app puede recibir su cuenta en el consultorio, sin pasar por un turno:

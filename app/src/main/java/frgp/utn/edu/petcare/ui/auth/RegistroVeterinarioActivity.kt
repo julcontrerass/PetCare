@@ -23,7 +23,12 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import frgp.utn.edu.petcare.data.CredencialVet
 import frgp.utn.edu.petcare.data.DatosRegistroVeterinario
+import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.Servicios
+import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.data.remoto.SolicitudAltaVeterinarioDto
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Registro
 import frgp.utn.edu.petcare.data.repositorio.DisponibilidadVet
@@ -47,6 +52,9 @@ class RegistroVeterinarioActivity : BaseActivity() {
         const val EXTRA_EMAIL = "email"
         const val EXTRA_CONFIRMAR_CORREO = "confirmar_correo"
 
+        /** Un dueño con cuenta activa pide el alta como veterinario: no crea usuario, solo manda sus datos. */
+        const val EXTRA_CUENTA_EXISTENTE = "cuenta_existente"
+
         private const val ESTADO_PASO = "paso"
         private const val ESTADO_ESPECIALIDADES = "especialidades"
         private const val ESTADO_TIPOS = "tipos_animales"
@@ -55,6 +63,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
         private const val ESTADO_CIERRE = "cierre"
         private const val ESTADO_FOTO = "foto"
         private const val ESTADO_TITULO = "titulo"
+        private const val ESTADO_CREDENCIAL = "credencial"
         private val TITULOS_PROFESIONALES = listOf("Dr.", "Dra.")
 
         private val TITULOS = listOf(
@@ -69,7 +78,12 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private var apertura = "09:00"
     private var cierre = "18:00"
     private var fotoPath: String? = null
+    private var credencialPath: String? = null
     private var titulo: String? = null
+
+    /** Cuenta de dueño que suma el rol de veterinario: se salta lo personal y la creación del usuario. */
+    private var cuentaExistente = false
+    private val primerPaso get() = if (cuentaExistente) 1 else 0
 
     private lateinit var paneles: List<View>
     private lateinit var segmentos: List<View>
@@ -80,11 +94,17 @@ class RegistroVeterinarioActivity : BaseActivity() {
         uri?.let { guardarFoto(it) }
     }
 
+    private val elegirCredencial = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { guardarCredencial(it) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registro_vet)
         VetUi.barras(this, conPadding = false)
         ajustarInsets()
+        cuentaExistente = intent.getBooleanExtra(EXTRA_CUENTA_EXISTENTE, false)
+        if (cuentaExistente && savedInstanceState == null) paso = primerPaso
 
         savedInstanceState?.let {
             paso = it.getInt(ESTADO_PASO)
@@ -94,6 +114,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             apertura = it.getString(ESTADO_APERTURA) ?: apertura
             cierre = it.getString(ESTADO_CIERRE) ?: cierre
             fotoPath = it.getString(ESTADO_FOTO)
+            credencialPath = it.getString(ESTADO_CREDENCIAL)
             titulo = it.getString(ESTADO_TITULO)
         }
 
@@ -106,8 +127,10 @@ class RegistroVeterinarioActivity : BaseActivity() {
         crearChipsTiposAnimales()
         crearChipsDias()
         configurarFoto()
+        configurarCredencial()
         crearChipsTitulo()
         configurarHorario()
+        if (cuentaExistente) prepararParaCuentaExistente()
 
         btnAtras.setOnClickListener { irAlPasoAnterior() }
         btnSiguiente.setOnClickListener { avanzar() }
@@ -128,6 +151,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
         outState.putString(ESTADO_APERTURA, apertura)
         outState.putString(ESTADO_CIERRE, cierre)
         outState.putString(ESTADO_FOTO, fotoPath)
+        outState.putString(ESTADO_CREDENCIAL, credencialPath)
         outState.putString(ESTADO_TITULO, titulo)
     }
 
@@ -147,7 +171,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private fun crearSegmentos() {
         val contenedor = findViewById<android.widget.LinearLayout>(R.id.llProgreso)
         val margen = (3 * resources.displayMetrics.density).toInt()
-        segmentos = TITULOS.map {
+        segmentos = TITULOS.drop(primerPaso).map {
             View(this).also { segmento ->
                 segmento.layoutParams = android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
                     .apply { setMargins(margen, 0, margen, 0) }
@@ -167,11 +191,16 @@ class RegistroVeterinarioActivity : BaseActivity() {
             }
         }
         segmentos.forEachIndexed { i, s ->
-            s.setBackgroundResource(if (i <= paso) R.drawable.bg_progreso_on else R.drawable.bg_progreso_off)
+            s.setBackgroundResource(if (i + primerPaso <= paso) R.drawable.bg_progreso_on else R.drawable.bg_progreso_off)
         }
-        findViewById<TextView>(R.id.tvPasoActual).text = "Paso ${paso + 1} de ${TITULOS.size} · ${TITULOS[paso]}"
-        btnAtras.visibility = if (paso == 0) View.GONE else View.VISIBLE
-        btnSiguiente.text = if (paso == TITULOS.lastIndex) "Crear cuenta" else "Continuar"
+        findViewById<TextView>(R.id.tvPasoActual).text =
+            "Paso ${paso - primerPaso + 1} de ${TITULOS.size - primerPaso} · ${TITULOS[paso]}"
+        btnAtras.visibility = if (paso == primerPaso) View.GONE else View.VISIBLE
+        btnSiguiente.text = when {
+            paso != TITULOS.lastIndex -> "Continuar"
+            cuentaExistente -> "Enviar solicitud"
+            else -> "Crear cuenta"
+        }
         findViewById<View>(R.id.scrollPasos).scrollTo(0, 0)
         currentFocus?.clearFocus()
         (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
@@ -181,7 +210,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
     }
 
     private fun irAlPasoAnterior() {
-        if (paso > 0) {
+        if (paso > primerPaso) {
             paso--
             mostrarPaso()
         } else if (hayDatosCargados()) {
@@ -197,7 +226,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
     }
 
     private fun hayDatosCargados() = listOf(R.id.etVetNombre, R.id.etVetDni, R.id.etVetTelefono)
-        .any { texto(it).isNotEmpty() } || fotoPath != null
+        .any { texto(it).isNotEmpty() } || fotoPath != null || credencialPath != null
 
     private fun avanzar() {
         if (!validarPasoActual()) return
@@ -247,6 +276,10 @@ class RegistroVeterinarioActivity : BaseActivity() {
         if (texto(R.id.etVetDireccion).length < 5) ok = error(R.id.etVetDireccion, "Ingresá la dirección de la veterinaria")
         if (texto(R.id.etVetClinica).length < 3) ok = error(R.id.etVetClinica, "Ingresá el nombre de la veterinaria")
         if (texto(R.id.etVetMatricula).length < 3) ok = error(R.id.etVetMatricula, "Ingresá tu matrícula")
+        if (credencialPath == null) {
+            Avisos.mostrar(this, "Subí la foto de tu carnet o matrícula para que el administrador pueda verificarte")
+            ok = false
+        }
         return ok
     }
 
@@ -276,6 +309,8 @@ class RegistroVeterinarioActivity : BaseActivity() {
     }
 
     private fun validarCuenta(): Boolean {
+        // La cuenta ya existe: no hay usuario ni contraseña que crear ni términos que volver a aceptar
+        if (cuentaExistente) return true
         var ok = true
         if (!findViewById<CheckBox>(R.id.cbVetTerminos).isChecked) {
             Avisos.mostrar(this, "Tenés que aceptar los términos y condiciones")
@@ -325,6 +360,53 @@ class RegistroVeterinarioActivity : BaseActivity() {
         }
     }
 
+    // ---------- Paso 2: foto del carnet o matrícula ----------
+
+    private fun configurarCredencial() {
+        val abrir = View.OnClickListener { elegirCredencial.launch("image/*") }
+        findViewById<View>(R.id.btnCredencial).setOnClickListener(abrir)
+        findViewById<View>(R.id.ivCredencial).setOnClickListener(abrir)
+        credencialPath?.let { mostrarCredencial(it) }
+    }
+
+    private fun guardarCredencial(uri: Uri) {
+        try {
+            val destino = File(filesDir, "credencial_vet_${System.currentTimeMillis()}.jpg")
+            contentResolver.openInputStream(uri)?.use { entrada ->
+                destino.outputStream().use { salida -> entrada.copyTo(salida) }
+            } ?: throw IllegalStateException("No se pudo leer la imagen")
+            credencialPath?.let { File(it).delete() }
+            credencialPath = destino.absolutePath
+            mostrarCredencial(destino.absolutePath)
+        } catch (e: Exception) {
+            Avisos.mostrar(this, "No pudimos cargar la imagen")
+        }
+    }
+
+    private fun mostrarCredencial(path: String) {
+        findViewById<ImageView>(R.id.ivCredencial).apply {
+            setPadding(0, 0, 0, 0)
+            imageTintList = null
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setImageURI(Uri.fromFile(File(path)))
+        }
+        findViewById<MaterialButton>(R.id.btnCredencial).text = "Cambiar foto"
+    }
+
+    /** Un dueño con cuenta pide el alta: se ocultan los datos personales y los de acceso, que ya tiene. */
+    private fun prepararParaCuentaExistente() {
+        findViewById<View>(R.id.paso1).visibility = View.GONE
+        for (id in listOf(
+            R.id.lblVetEmail, R.id.etVetEmail, R.id.lblVetPassword, R.id.etVetPassword,
+            R.id.lblVetPassword2, R.id.etVetPassword2, R.id.cbVetTerminos
+        )) {
+            findViewById<View>(id).visibility = View.GONE
+        }
+        findViewById<TextView>(R.id.tvPaso5Titulo).text = "Revisá y enviá"
+        findViewById<TextView>(R.id.tvPaso5Sub).text =
+            "El administrador va a verificar tu matrícula. Mientras tanto seguís usando la app como dueño."
+    }
+
     private fun crearChipsTitulo() {
         val grupo = findViewById<ChipGroup>(R.id.cgTitulo)
         TITULOS_PROFESIONALES.forEach { t ->
@@ -335,7 +417,9 @@ class RegistroVeterinarioActivity : BaseActivity() {
     }
 
     /** Nombre tal como se muestra en la app: título y nombre completo. */
-    private fun nombreCompleto() = "${titulo.orEmpty()} ${texto(R.id.etVetNombre)}".trim()
+    private fun nombreCompleto() =
+        if (cuentaExistente) Sesion.perfil?.nombre.orEmpty()
+        else "${titulo.orEmpty()} ${texto(R.id.etVetNombre)}".trim()
 
     // ---------- Paso 3: especialidades ----------
 
@@ -441,7 +525,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private fun actualizarResumenCuenta() {
         val elegidas = PerfilVetRepo.todasLasEspecialidades.filterIndexed { i, _ -> especialidades[i] }
         findViewById<TextView>(R.id.tvResumenCuenta).text = buildString {
-            appendLine(nombreCompleto() + " · DNI " + texto(R.id.etVetDni))
+            appendLine(if (cuentaExistente) nombreCompleto() else nombreCompleto() + " · DNI " + texto(R.id.etVetDni))
             appendLine("Matrícula " + texto(R.id.etVetMatricula))
             appendLine(texto(R.id.etVetClinica) + " · " + texto(R.id.etVetDireccion))
             appendLine(elegidas.joinToString(", "))
@@ -450,7 +534,53 @@ class RegistroVeterinarioActivity : BaseActivity() {
         }
     }
 
+    /** Un dueño con cuenta activa pide el alta como veterinario: sube el carnet y manda sus datos profesionales. */
+    private fun solicitarAlta() {
+        val usuario = Sesion.usuarioId ?: run {
+            Avisos.error(this, "Tu sesión venció. Volvé a ingresar.")
+            return
+        }
+        val carnet = credencialPath ?: return
+        btnSiguiente.isEnabled = false
+        btnSiguiente.text = "Enviando..."
+        lifecycleScope.launch {
+            try {
+                val preparada = Imagenes.prepararFoto(Uri.fromFile(File(carnet)))
+                val ruta = CredencialVet.subirArchivo(preparada, usuario)
+                Servicios.fuente.solicitarAltaVeterinario(
+                    SolicitudAltaVeterinarioDto(
+                        matricula = texto(R.id.etVetMatricula), clinica = texto(R.id.etVetClinica),
+                        direccionClinica = texto(R.id.etVetDireccion),
+                        dias = dias.indices.filter { dias[it] }.map { it + 1 },
+                        apertura = apertura, cierre = cierre,
+                        especialidades = PerfilVetRepo.todasLasEspecialidades.filterIndexed { i, _ -> especialidades[i] },
+                        tiposAnimales = tiposElegidos(), credencialPath = ruta
+                    )
+                )
+                runCatching { preparada.delete(); File(carnet).delete() }
+                runCatching { Sesion.actualizarRoles() }
+                Avisos.informar(
+                    this@RegistroVeterinarioActivity, "Solicitud enviada",
+                    "Tus datos y la foto de tu carnet fueron enviados al administrador. Cuando verifique tu matrícula " +
+                        "vas a poder ingresar también como veterinario. Mientras tanto seguís usando la app como dueño.",
+                    cancelable = false
+                ) {
+                    setResult(RESULT_OK)
+                    finish()
+                }
+            } catch (e: Exception) {
+                btnSiguiente.isEnabled = true
+                btnSiguiente.text = "Enviar solicitud"
+                Avisos.error(this@RegistroVeterinarioActivity, Errores.mensaje(e))
+            }
+        }
+    }
+
     private fun crearCuenta() {
+        if (cuentaExistente) {
+            solicitarAlta()
+            return
+        }
         val nombre = nombreCompleto()
         val datos = DatosRegistroVeterinario(
             nombre = nombre,
@@ -466,7 +596,8 @@ class RegistroVeterinarioActivity : BaseActivity() {
             dias = dias.indices.filter { dias[it] }.map { it + 1 },
             apertura = apertura,
             cierre = cierre,
-            fotoPath = fotoPath
+            fotoPath = fotoPath,
+            credencialPath = credencialPath
         )
         btnSiguiente.isEnabled = false
         btnSiguiente.text = "Creando cuenta..."
@@ -490,6 +621,11 @@ class RegistroVeterinarioActivity : BaseActivity() {
                 btnSiguiente.isEnabled = true
                 btnSiguiente.text = "Crear cuenta"
                 error(R.id.etVetEmail, "Ese correo ya está registrado")
+                Avisos.informar(
+                    this@RegistroVeterinarioActivity, "Ese correo ya tiene una cuenta",
+                    "Si es tu cuenta de dueño, no hace falta crear otra: ingresá con ella y, en tu perfil, tocá " +
+                        "\"Soy veterinario/a: pedir el alta\". Vas a poder usar la misma cuenta como dueño y como veterinario."
+                )
             } catch (e: Exception) {
                 btnSiguiente.isEnabled = true
                 btnSiguiente.text = "Crear cuenta"

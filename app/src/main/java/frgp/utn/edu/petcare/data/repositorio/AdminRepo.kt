@@ -28,7 +28,9 @@ data class VetAdminItem(
     /** Motivo del rechazo o de la suspensión, para que el veterinario sepa qué pasó. */
     var motivo: String = "",
     /** Ruta de la foto de la credencial en el bucket privado `credenciales` (solo la ve el administrador). */
-    var credencialPath: String? = null
+    var credencialPath: String? = null,
+    /** Ya tenía cuenta de dueño y pidió el alta como veterinario sobre esa misma cuenta. */
+    val tambienEsDueno: Boolean = false
 )
 
 data class DuenoAdminItem(
@@ -81,7 +83,7 @@ object AdminRepo {
 
         val mascotasPorDueno = mascotas.filter { it.duenoId != null }.groupBy { it.duenoId }
         listaVeterinarios.clear()
-        listaVeterinarios.addAll(perfiles.filter { it.rol == "veterinario" }.map(::aVeterinario))
+        listaVeterinarios.addAll(perfiles.filter { it.veterinarios != null }.map(::aVeterinario))
         listaDuenos.clear()
         listaDuenos.addAll(perfiles.filter { it.rol == "dueno" }.map { aDueno(it, mascotasPorDueno[it.id].orEmpty()) })
         actividad.clear()
@@ -103,9 +105,11 @@ object AdminRepo {
             clinica = v?.clinica.orEmpty(), direccion = v?.direccionClinica.orEmpty(), telefono = p.telefono.orEmpty(),
             especialidades = v?.especialidades.orEmpty().joinToString(", "),
             diasYHorarios = textoHorarios(diasAtencion, v?.horaApertura, v?.horaCierre),
-            estado = p.estado.uppercase(), dni = p.privados?.dni.orEmpty(), fotoPath = p.fotoPath,
-            fechaRegistro = Fechas.instante(p.createdAt).toLocalDate(), motivo = p.motivoEstado.orEmpty(),
-            credencialPath = v?.credencialPath
+            // El estado del rol de veterinario es el que se revisa; el de la cuenta puede ser otro (dueño activo)
+            estado = (v?.estadoRevision ?: p.estado).uppercase(), dni = p.privados?.dni.orEmpty(), fotoPath = p.fotoPath,
+            fechaRegistro = Fechas.instante(p.createdAt).toLocalDate(),
+            motivo = (v?.motivoRevision ?: p.motivoEstado).orEmpty(),
+            credencialPath = v?.credencialPath, tambienEsDueno = p.rol == "dueno"
         )
     }
 
@@ -169,32 +173,39 @@ object AdminRepo {
         }
     }
 
+    /** Revisión del rol de veterinario: no toca la cuenta de dueño de quien también tiene mascotas. */
+    private fun revisarRol(id: String, estado: String, motivo: String?) {
+        Servicios.escribir(alFallar = { recargar() }, alTerminar = { recargar() }) {
+            Servicios.fuente.revisarVeterinario(id, estado.lowercase(), motivo?.ifBlank { null })
+        }
+    }
+
     fun aprobarVet(id: String) {
         val vet = vetPorId(id) ?: return
         vet.estado = ACTIVO
         vet.motivo = ""
-        cambiarEstado(id, ACTIVO, null)
+        revisarRol(id, ACTIVO, null)
     }
 
     fun rechazarVet(id: String, motivo: String = "") {
         val vet = vetPorId(id) ?: return
         vet.estado = RECHAZADO
         vet.motivo = motivo
-        cambiarEstado(id, RECHAZADO, motivo)
+        revisarRol(id, RECHAZADO, motivo)
     }
 
     fun suspenderVet(id: String, motivo: String = "") {
         val vet = vetPorId(id) ?: return
         vet.estado = SUSPENDIDO
         vet.motivo = motivo
-        cambiarEstado(id, SUSPENDIDO, motivo)
+        revisarRol(id, SUSPENDIDO, motivo)
     }
 
     fun reactivarVet(id: String) {
         val vet = vetPorId(id) ?: return
         vet.estado = ACTIVO
         vet.motivo = ""
-        cambiarEstado(id, ACTIVO, null)
+        revisarRol(id, ACTIVO, null)
     }
 
     // ---------- Acciones sobre dueños ----------

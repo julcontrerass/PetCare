@@ -70,7 +70,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     private companion object {
         const val ENLACE_DE_RECUPERACION = "petcare://recuperar"
         const val PERFIL_COMPLETO = "*,veterinarios(*),perfiles_privados(dni)"
-        const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios(*)"
+        const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios!inner(*)"
         const val MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,telefono,direccion)"
     }
 
@@ -126,7 +126,8 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             if (e.statusCode >= 500) {
                 throw IllegalStateException(
                     "No pudimos crear la cuenta. Lo más probable es que el DNI o la matrícula ya estén registrados " +
-                        "con otra cuenta: revisalos e intentá de nuevo."
+                        "con otra cuenta: revisalos e intentá de nuevo. Si ya tenés una cuenta de dueño, ingresá con " +
+                        "ella y pedí el alta como veterinario desde tu perfil."
                 )
             }
             throw e
@@ -136,6 +137,24 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         return ResultadoRegistro(
             sesionIniciada = sesion != null, usuarioId = sesion?.user?.id ?: usuario?.id, correoYaRegistrado = yaExistia
         )
+    }
+
+    override suspend fun solicitarAltaVeterinario(datos: SolicitudAltaVeterinarioDto) {
+        cliente.postgrest.rpc("solicitar_alta_veterinario", buildJsonObject {
+            put("p_matricula", datos.matricula)
+            put("p_clinica", datos.clinica)
+            put("p_direccion_clinica", datos.direccionClinica)
+            put("p_dias", kotlinx.serialization.json.JsonArray(datos.dias.map { kotlinx.serialization.json.JsonPrimitive(it) }))
+            put("p_apertura", datos.apertura)
+            put("p_cierre", datos.cierre)
+            put("p_especialidades", kotlinx.serialization.json.JsonArray(datos.especialidades.map { kotlinx.serialization.json.JsonPrimitive(it) }))
+            put("p_tipos_animales", kotlinx.serialization.json.JsonArray(datos.tiposAnimales.map { kotlinx.serialization.json.JsonPrimitive(it) }))
+            put("p_credencial_path", datos.credencialPath)
+        })
+    }
+
+    override suspend fun guardarCredencial(ruta: String) {
+        cliente.postgrest.rpc("guardar_credencial", buildJsonObject { put("p_path", ruta) })
     }
 
     override suspend fun recuperarPassword(email: String) {
@@ -295,8 +314,8 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     // ---------- Veterinarios y accesos ----------
 
     override suspend fun catalogoVeterinarios(): List<PerfilDto> =
+        // Todas las cuentas con rol de veterinario visibles para el usuario (también los dueños que se dieron de alta)
         cliente.from("profiles").select(Columns.raw(CATALOGO)) {
-            filter { eq("rol", "veterinario") }
             order("nombre", Order.ASCENDING)
         }.decodeList()
 
@@ -484,6 +503,14 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     override suspend fun resumenAdmin(): JsonObject =
         cliente.postgrest.rpc("admin_resumen").decodeAs<JsonObject>()
+
+    override suspend fun revisarVeterinario(id: String, estado: String, motivo: String?) {
+        cliente.postgrest.rpc("revisar_veterinario", buildJsonObject {
+            put("p_id", id)
+            put("p_estado", estado)
+            if (motivo != null) put("p_motivo", motivo)
+        })
+    }
 
     override suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {
         cliente.from("profiles").update(buildJsonObject {

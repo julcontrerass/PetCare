@@ -21,6 +21,7 @@ import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.admin.HomeAdminActivity
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BaseActivity
+import frgp.utn.edu.petcare.ui.common.HojaLista
 import frgp.utn.edu.petcare.ui.dueno.DuenoActivity
 import frgp.utn.edu.petcare.ui.veterinario.HomeVeterinarioActivity
 import java.util.Locale
@@ -139,6 +140,35 @@ class AuthActivity : BaseActivity() {
                 finish()
             }
             is Sesion.Resultado.Bloqueada -> Avisos.error(this, resultado.mensaje, "No podés ingresar")
+            is Sesion.Resultado.Elegir -> elegirModo(resultado.roles)
+        }
+    }
+
+    /** La cuenta es dueño y veterinario a la vez: se pregunta cómo quiere ingresar esta vez. */
+    private fun elegirModo(roles: List<Sesion.Rol>) {
+        HojaLista.mostrar(
+            this, "¿Cómo querés ingresar?",
+            "Tu cuenta es de dueño y de veterinario. Después podés cambiar de modo desde tu perfil.",
+            roles.map { rol ->
+                val veterinario = rol == Sesion.Rol.VETERINARIO
+                HojaLista.Fila(
+                    titulo = if (veterinario) "Como veterinario" else "Como dueño de mascotas",
+                    subtitulo = if (veterinario) "Tu agenda, tus pacientes y tus turnos"
+                    else "Tus mascotas, sus vacunas y sus turnos",
+                    icono = if (veterinario) R.drawable.ic_srv_estetoscopio else R.drawable.ic_dog,
+                    alTocar = { entrarComo(rol) }
+                )
+            }
+        )
+    }
+
+    private fun entrarComo(rol: Sesion.Rol) {
+        lifecycleScope.launch {
+            try {
+                atender(Sesion.entrarComo(rol))
+            } catch (e: Exception) {
+                Avisos.error(this@AuthActivity, Errores.mensaje(e))
+            }
         }
     }
 

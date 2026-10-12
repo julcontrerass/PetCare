@@ -356,6 +356,35 @@
                 <View style="@style/PetInfoDivider" />
 
                 <LinearLayout
+                    android:id="@+id/llModoVeterinario"
+                    style="@style/PetInfoRow"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <FrameLayout style="@style/PetInfoIconBox">
+
+                        <ImageView
+                            style="@style/PetStatIcon"
+                            android:src="@drawable/ic_srv_estetoscopio" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvModoVeterinario"
+                        style="@style/MasRowText"
+                        android:text="Soy veterinario/a" />
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/text_gray" />
+                </LinearLayout>
+
+                <View style="@style/PetInfoDivider" />
+
+                <LinearLayout
                     android:id="@+id/llCambiarContrasena"
                     style="@style/PetInfoRow"
                     android:background="?attr/selectableItemBackground"

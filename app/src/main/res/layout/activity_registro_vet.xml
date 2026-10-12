@@ -332,6 +332,44 @@
                 android:textColorHint="@color/text_gray"
                 android:textSize="15sp" />
 
+            <TextView
+                android:id="@+id/lblCredencial"
+                style="@style/VetFormLabel"
+                android:layout_marginTop="14dp"
+                android:text="Foto de tu carnet o matrícula" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Solo la ve el administrador y la usa para verificar tu matrícula antes de darte el alta."
+                android:textColor="@color/text_gray"
+                android:textSize="12.5sp" />
+
+            <ImageView
+                android:id="@+id/ivCredencial"
+                android:layout_width="match_parent"
+                android:layout_height="170dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_field_card"
+                android:contentDescription="Foto del carnet o matrícula"
+                android:padding="48dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_camera"
+                app:tint="@color/text_gray" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCredencial"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="Elegir foto del carnet"
+                android:textAllCaps="false"
+                android:textColor="@color/primary_teal"
+                app:cornerRadius="24dp"
+                app:strokeColor="@color/primary_teal" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -608,6 +646,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:id="@+id/tvPaso5Titulo"
                 android:text="Creá tu cuenta"
                 android:textColor="@color/brand_navy"
                 android:textSize="24sp"
@@ -617,6 +656,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:id="@+id/tvPaso5Sub"
                 android:text="Con estos datos vas a iniciar sesión."
                 android:textColor="@color/text_gray"
                 android:textSize="14sp" />
@@ -624,6 +664,7 @@
             <TextView
                 style="@style/VetFormLabel"
                 android:layout_marginTop="22dp"
+                android:id="@+id/lblVetEmail"
                 android:text="Correo electrónico" />
 
             <EditText
@@ -642,6 +683,7 @@
             <TextView
                 style="@style/VetFormLabel"
                 android:layout_marginTop="14dp"
+                android:id="@+id/lblVetPassword"
                 android:text="Contraseña" />
 
             <EditText
@@ -660,6 +702,7 @@
             <TextView
                 style="@style/VetFormLabel"
                 android:layout_marginTop="14dp"
+                android:id="@+id/lblVetPassword2"
                 android:text="Confirmar contraseña" />
 
             <EditText

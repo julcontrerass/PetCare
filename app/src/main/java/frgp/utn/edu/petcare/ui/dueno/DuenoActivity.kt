@@ -18,6 +18,7 @@ import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.auth.RegistroVeterinarioActivity
 import frgp.utn.edu.petcare.ui.common.BaseActivity
 import java.time.LocalDate
 import java.time.YearMonth
@@ -66,6 +67,18 @@ class DuenoActivity : BaseActivity() {
         if (uri != null) alElegirImagen?.invoke(uri)
     }
     private var alElegirImagen: ((Uri) -> Unit)? = null
+
+    /** El dueño pide el alta como veterinario sobre su misma cuenta; al volver se redibuja el perfil. */
+    private val altaVeterinario = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        Servicios.avisarCambio()
+    }
+
+    fun pedirAltaVeterinario() {
+        altaVeterinario.launch(
+            Intent(this, RegistroVeterinarioActivity::class.java)
+                .putExtra(RegistroVeterinarioActivity.EXTRA_CUENTA_EXISTENTE, true)
+        )
+    }
 
     private val selectorDeArchivo = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) alElegirArchivo?.invoke(uri)

@@ -5,6 +5,7 @@ import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
 import frgp.utn.edu.petcare.data.avisos.Recordatorios
 import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.remoto.atiendeComoVeterinario
 import frgp.utn.edu.petcare.data.remoto.AccesoDto
 import frgp.utn.edu.petcare.data.remoto.HoraOcupadaDto
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
@@ -274,7 +275,7 @@ object DuenoRepo {
 
         val porVeterinario = accesos.groupBy { it.veterinarioId }
         for ((vetId, lista) in porVeterinario) {
-            val perfilVet = e.veterinarios[vetId]?.takeIf { it.estado == "activo" } ?: continue
+            val perfilVet = e.veterinarios[vetId]?.takeIf { it.atiendeComoVeterinario } ?: continue
             for (a in lista.filter { it.estado == "pendiente" && it.iniciadoPor == "veterinario" }) {
                 val propuesta = a.turnoPropuesto
                 val turno = propuesta?.let {
@@ -305,7 +306,7 @@ object DuenoRepo {
             e.autorizados.add(aVeterinario(perfilVet, estadoAcceso, conAcceso))
         }
         val yaListados = porVeterinario.keys
-        e.veterinarios.values.filter { it.id !in yaListados && it.estado == "activo" }.forEach {
+        e.veterinarios.values.filter { it.id !in yaListados && it.atiendeComoVeterinario }.forEach {
             e.disponibles.add(aVeterinario(it, EstadoAcceso.DISPONIBLE, emptyList()))
         }
     }

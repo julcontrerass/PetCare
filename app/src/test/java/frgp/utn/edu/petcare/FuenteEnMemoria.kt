@@ -390,7 +390,54 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     override suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {
         llamadas.add("estadoCuenta:$id=$estado" + (motivo?.let { ":$it" } ?: ""))
         val i = perfiles.indexOfFirst { it.id == id }
-        if (i >= 0) perfiles[i] = perfiles[i].copy(estado = estado, motivoEstado = motivo)
+        if (i >= 0) {
+            val p = perfiles[i]
+            // Como el servidor: en un veterinario el estado de la cuenta y el de la revisión van juntos
+            perfiles[i] = p.copy(
+                estado = estado, motivoEstado = motivo,
+                veterinarios = p.veterinarios?.takeIf { p.rol == "veterinario" }
+                    ?.copy(estadoRevision = estado, motivoRevision = motivo) ?: p.veterinarios
+            )
+        }
+    }
+
+    override suspend fun revisarVeterinario(id: String, estado: String, motivo: String?) {
+        llamadas.add("revisionVet:$id=$estado" + (motivo?.let { ":$it" } ?: ""))
+        val i = perfiles.indexOfFirst { it.id == id }
+        if (i < 0) return
+        val p = perfiles[i]
+        perfiles[i] = p.copy(
+            // Si es su rol principal la cuenta sigue la revisión; si es dueño, la cuenta no se toca
+            estado = if (p.rol == "veterinario") estado else p.estado,
+            motivoEstado = if (p.rol == "veterinario") motivo else p.motivoEstado,
+            veterinarios = p.veterinarios?.copy(estadoRevision = estado, motivoRevision = motivo)
+        )
+    }
+
+    // ---------- Alta como veterinario sobre una cuenta de dueño ----------
+
+    var ultimaSolicitudDeAlta: frgp.utn.edu.petcare.data.remoto.SolicitudAltaVeterinarioDto? = null
+    var ultimaCredencial: String? = null
+    val rutasSubidas get() = subidas.toList()
+
+    override suspend fun solicitarAltaVeterinario(datos: frgp.utn.edu.petcare.data.remoto.SolicitudAltaVeterinarioDto) {
+        llamadas.add("altaVeterinario:${datos.matricula}")
+        ultimaSolicitudDeAlta = datos
+        // Como el servidor: el dueño queda con un rol de veterinario pendiente de revisión
+        yo = yo.copy(
+            veterinarios = VeterinarioDto(
+                profileId = yo.id, matricula = datos.matricula, clinica = datos.clinica,
+                direccionClinica = datos.direccionClinica, credencialPath = datos.credencialPath,
+                estadoRevision = "pendiente_revision"
+            )
+        )
+        val i = perfiles.indexOfFirst { it.id == yo.id }
+        if (i >= 0) perfiles[i] = yo
+    }
+
+    override suspend fun guardarCredencial(ruta: String) {
+        llamadas.add("credencial:$ruta")
+        ultimaCredencial = ruta
     }
 
     // ---------- Baja ----------
@@ -425,7 +472,19 @@ object Escenario {
         veterinario = VeterinarioDto(
             profileId = id, matricula = "MP-100", clinica = "Clínica Sur", direccionClinica = "Av. Siempreviva 742",
             diasAtencion = listOf(1, 2, 3, 4, 5), horaApertura = "09:00:00", horaCierre = "12:00:00",
-            especialidades = listOf("Chequeo médico integral", "Cardiología")
+            especialidades = listOf("Chequeo médico integral", "Cardiología"),
+            // En el servidor la revisión del rol acompaña al estado de la cuenta
+            estadoRevision = estado
+        )
+    )
+
+    /** Un dueño que además es veterinario: la cuenta es de dueño y el rol de veterinario tiene su propia revisión. */
+    fun duenoYVeterinario(revision: String = "activo") = perfil(
+        DUENO_ID, "dueno", "Ana Prueba", dni = "30111222",
+        veterinario = VeterinarioDto(
+            profileId = DUENO_ID, matricula = "MP-777", clinica = "Clínica Norte", direccionClinica = "Calle 5",
+            diasAtencion = listOf(1, 2, 3, 4, 5), horaApertura = "09:00:00", horaCierre = "18:00:00",
+            credencialPath = "$DUENO_ID/carnet.jpg", estadoRevision = revision
         )
     )
 
