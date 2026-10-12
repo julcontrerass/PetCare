@@ -1,9 +1,11 @@
 package frgp.utn.edu.petcare.data.remoto
 
 import android.content.Context
+import android.net.Uri
 import frgp.utn.edu.petcare.BuildConfig
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.RestException
@@ -52,6 +54,10 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             explicitNulls = false
         })
         install(Auth) {
+            // Los enlaces del correo (recuperar contraseña) vuelven a la app con un código que se canjea por la sesión
+            flowType = FlowType.PKCE
+            scheme = "petcare"
+            host = "recuperar"
             sessionManager = SesionGuardada(contexto)
             codeVerifierCache = CodigoVerificadorGuardado(contexto)
         }
@@ -62,6 +68,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     }
 
     private companion object {
+        const val ENLACE_DE_RECUPERACION = "petcare://recuperar"
         const val PERFIL_COMPLETO = "*,veterinarios(*),perfiles_privados(dni)"
         const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios(*)"
         const val MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,telefono,direccion)"
@@ -132,7 +139,33 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     }
 
     override suspend fun recuperarPassword(email: String) {
-        cliente.auth.resetPasswordForEmail(email)
+        // El correo vuelve a la app con este enlace (está declarado en el manifest y en las URL permitidas de Supabase)
+        cliente.auth.resetPasswordForEmail(email, redirectUrl = ENLACE_DE_RECUPERACION)
+    }
+
+    override suspend fun abrirEnlaceDeRecuperacion(enlace: String) {
+        val uri = Uri.parse(enlace)
+        // Según cómo responda Supabase, los datos llegan en la consulta o en el fragmento
+        val fragmento = uri.fragment?.let { Uri.parse("?$it") }
+        fun dato(nombre: String) = uri.getQueryParameter(nombre) ?: fragmento?.getQueryParameter(nombre)
+
+        val enlaceInvalido = "El enlace no es válido. Pedí uno nuevo desde \"Olvidé mi contraseña\"."
+        dato("error_description")?.let { motivo ->
+            val vencido = dato("error_code") == "otp_expired" || "expired" in motivo.lowercase()
+            throw IllegalStateException(
+                if (vencido) "El enlace venció o ya se usó. Pedí uno nuevo desde \"Olvidé mi contraseña\"."
+                else enlaceInvalido
+            )
+        }
+        val codigo = dato("code") ?: throw IllegalStateException(enlaceInvalido)
+        try {
+            cliente.auth.exchangeCodeForSession(codigo)
+        } catch (e: Exception) {
+            if (e is java.io.IOException || e.cause is java.io.IOException) throw e
+            throw IllegalStateException(
+                "No pudimos validar el enlace. Pedí uno nuevo y abrilo en este mismo teléfono."
+            )
+        }
     }
 
     override suspend fun cambiarPassword(email: String, actual: String, nueva: String) {

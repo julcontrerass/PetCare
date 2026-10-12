@@ -94,6 +94,16 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         llamadas.add("definirPassword")
     }
 
+    /** Si tiene valor, abrir el enlace de recuperación falla con ese mensaje (enlace vencido, por ejemplo). */
+    var errorAlAbrirEnlace: String? = null
+
+    override suspend fun abrirEnlaceDeRecuperacion(enlace: String) {
+        llamadas.add("enlace:$enlace")
+        errorAlAbrirEnlace?.let { throw IllegalStateException(it) }
+        // Abrir el enlace deja una sesión abierta, como en el servidor real
+        haySesionGuardada = true
+    }
+
     override suspend fun completarPrimerIngreso(terminosVersion: String) {
         llamadas.add("primerIngreso:$terminosVersion")
     }

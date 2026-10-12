@@ -31,6 +31,11 @@ interface FuenteDatos {
     suspend fun registrar(email: String, password: String, datos: JsonObject): ResultadoRegistro =
         ResultadoRegistro(sesionIniciada = true, usuarioId = "usuario-de-prueba")
     suspend fun recuperarPassword(email: String) {}
+    /**
+     * Abre el enlace del correo de recuperación (`petcare://recuperar?code=...`). Deja una sesión abierta para
+     * poder elegir la contraseña nueva con [definirPassword]. Falla con un mensaje si el enlace venció.
+     */
+    suspend fun abrirEnlaceDeRecuperacion(enlace: String) {}
     suspend fun cambiarPassword(email: String, actual: String, nueva: String) {}
     suspend fun cerrarSesion() {}
     /** Elige una contraseña nueva para la sesión abierta (sirve para reemplazar la temporal del primer ingreso). */

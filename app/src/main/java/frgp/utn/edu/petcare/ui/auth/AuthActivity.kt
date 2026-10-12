@@ -60,7 +60,63 @@ class AuthActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         mostrarPantallaInicial()
-        retomarSesion()
+        // Si la app se abrió desde el enlace del correo de recuperación, se sigue ese camino en vez de retomar la sesión
+        if (!abrirEnlaceDeRecuperacion(intent)) retomarSesion()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        abrirEnlaceDeRecuperacion(intent)
+    }
+
+    /** Devuelve true si [intent] trae el enlace de recuperación y lo empezó a procesar. */
+    private fun abrirEnlaceDeRecuperacion(intent: Intent?): Boolean {
+        val enlace = intent?.data ?: return false
+        if (enlace.scheme != "petcare" || enlace.host != "recuperar") return false
+        // Evita volver a procesar el mismo enlace si la pantalla se recrea
+        intent.data = null
+        lifecycleScope.launch {
+            try {
+                Servicios.fuente.abrirEnlaceDeRecuperacion(enlace.toString())
+                mostrarNuevaPassword()
+            } catch (e: Exception) {
+                mostrarLogin()
+                Avisos.error(this@AuthActivity, Errores.mensaje(e), "No se pudo abrir el enlace")
+            }
+        }
+        return true
+    }
+
+    /** Tras abrir el enlace del correo: elige la contraseña nueva y entra directo a la cuenta. */
+    private fun mostrarNuevaPassword() {
+        setContentView(R.layout.pantalla_nueva_password)
+        aplicarInsets(findViewById(R.id.nuevaPasswordRoot))
+
+        val etNueva = findViewById<EditText>(R.id.etNuevaPassword)
+        val etRepetida = findViewById<EditText>(R.id.etNuevaPassword2)
+        val boton = findViewById<Button>(R.id.btnGuardarNuevaPassword)
+        boton.setOnClickListener {
+            val nueva = etNueva.text.toString()
+            when {
+                nueva.length < 6 -> etNueva.error = "Usá al menos 6 caracteres"
+                nueva != etRepetida.text.toString() -> etRepetida.error = "Las contraseñas no coinciden"
+                else -> {
+                    boton.isEnabled = false
+                    lifecycleScope.launch {
+                        try {
+                            Servicios.fuente.definirPassword(nueva)
+                            Avisos.mostrar(this@AuthActivity, "Contraseña actualizada")
+                            val resultado = Sesion.restaurar()
+                            if (resultado != null) atender(resultado) else mostrarLogin()
+                        } catch (e: Exception) {
+                            boton.isEnabled = true
+                            Avisos.error(this@AuthActivity, Errores.mensaje(e))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /** Si el teléfono todavía tiene una sesión abierta, entra directo al panel que corresponde. */

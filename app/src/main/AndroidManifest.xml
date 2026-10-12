@@ -19,11 +19,23 @@
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Enlace del correo de recuperación de contraseña: petcare://recuperar?code=... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="recuperar"
+                    android:scheme="petcare" />
             </intent-filter>
         </activity>
         <activity

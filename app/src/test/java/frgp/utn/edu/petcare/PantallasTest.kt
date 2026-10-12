@@ -187,6 +187,45 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun auth_elEnlaceDelCorreoPideLaContrasenaNuevaYEntraALaCuenta() {
+        val a = abrir(
+            AuthActivity::class.java,
+            intent(AuthActivity::class.java).setData(android.net.Uri.parse("petcare://recuperar?code=abc123"))
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(fuente.llamadas.contains("enlace:petcare://recuperar?code=abc123"))
+        a.findViewById<EditText>(R.id.etNuevaPassword).setText("NuevaClave1")
+        a.findViewById<EditText>(R.id.etNuevaPassword2).setText("OtraClave22")
+        a.findViewById<View>(R.id.btnGuardarNuevaPassword).performClick()
+        // Si no coinciden no se guarda
+        assertTrue(fuente.llamadas.none { it == "definirPassword" })
+
+        a.findViewById<EditText>(R.id.etNuevaPassword2).setText("NuevaClave1")
+        a.findViewById<View>(R.id.btnGuardarNuevaPassword).performClick()
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(fuente.llamadas.contains("definirPassword"))
+        val siguiente = shadowOf(a).nextStartedActivity
+        assertEquals(DuenoActivity::class.java.name, siguiente.component!!.className)
+    }
+
+    @Test
+    fun auth_unEnlaceVencidoVuelveAlIngresoConElMotivo() {
+        fuente.errorAlAbrirEnlace = "El enlace venció o ya se usó."
+        val a = abrir(
+            AuthActivity::class.java,
+            intent(AuthActivity::class.java).setData(android.net.Uri.parse("petcare://recuperar?code=viejo"))
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertNotNull(a.findViewById<View>(R.id.loginRoot))
+        assertNull(a.findViewById<View>(R.id.etNuevaPassword))
+        assertTrue(ShadowDialog.getLatestDialog() is AlertDialog)
+        assertTrue(fuente.llamadas.none { it == "definirPassword" })
+    }
+
+    @Test
     fun auth_elLoginYaNoOfreceRolNiCuentasSociales() {
         val a = abrir(AuthActivity::class.java)
         a.findViewById<View>(R.id.button).performClick()
