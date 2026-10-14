@@ -61,7 +61,7 @@
         android:layout_marginStart="14dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/tvBadge"
+        app:layout_constraintEnd_toStartOf="@id/ivDuenoFoto"
         app:layout_constraintStart_toEndOf="@id/barrierLeadingIcon"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -92,6 +92,21 @@
             android:textSize="12sp"
             android:visibility="gone" />
     </LinearLayout>
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivDuenoFoto"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="Foto del dueño"
+        android:scaleType="centerCrop"
+        android:src="@drawable/avatar_default"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/tvBadge"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/CircleImage" />
 
     <TextView
         android:id="@+id/tvBadge"

@@ -7,6 +7,10 @@ import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -61,35 +65,69 @@ object AdminRepo {
 
     private val dias = arrayOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
 
-    val listaVeterinarios = mutableListOf<VetAdminItem>()
-    val listaDuenos = mutableListOf<DuenoAdminItem>()
-    val actividad = mutableListOf<ActividadAdmin>()
+    // Cada carga arma listas nuevas y las reemplaza de una vez: la pantalla nunca recorre una lista a medio llenar
+    @Volatile
+    var listaVeterinarios: List<VetAdminItem> = emptyList()
+        private set
 
+    @Volatile
+    var listaDuenos: List<DuenoAdminItem> = emptyList()
+        private set
+
+    @Volatile
+    var actividad: List<ActividadAdmin> = emptyList()
+        private set
+
+    @Volatile
     private var resumen: JsonObject = JsonObject(emptyMap())
 
     fun limpiar() {
-        listaVeterinarios.clear()
-        listaDuenos.clear()
-        actividad.clear()
+        ultimaCarga = 0L
+        listaVeterinarios = emptyList()
+        listaDuenos = emptyList()
+        actividad = emptyList()
         resumen = JsonObject(emptyMap())
     }
 
+    /** Cuándo terminó la última carga completa; evita volver a pedir todo apenas se abre el panel. */
+    @Volatile
+    private var ultimaCarga = 0L
+
+    fun cargadoHaceMs(): Long = System.currentTimeMillis() - ultimaCarga
+
     suspend fun cargar() {
         val f = Servicios.fuente
-        val perfiles = f.perfilesAdmin()
-        val mascotas = f.mascotasAdmin()
-        val movimientos = f.actividadAdmin()
-        val datosResumen = f.resumenAdmin()
+        // Los cuatro pedidos no dependen entre sí: se hacen a la vez en vez de uno detrás del otro
+        val (perfiles, mascotas, movimientos, datosResumen) = coroutineScope {
+            val perfilesPedido = async { f.perfilesAdmin() }
+            val mascotasPedido = async { f.mascotasAdmin() }
+            val movimientosPedido = async { f.actividadAdmin() }
+            val resumenPedido = async { f.resumenAdmin() }
+            DatosAdmin(perfilesPedido.await(), mascotasPedido.await(), movimientosPedido.await(), resumenPedido.await())
+        }
 
-        val mascotasPorDueno = mascotas.filter { it.duenoId != null }.groupBy { it.duenoId }
-        listaVeterinarios.clear()
-        listaVeterinarios.addAll(perfiles.filter { it.veterinarios != null }.map(::aVeterinario))
-        listaDuenos.clear()
-        listaDuenos.addAll(perfiles.filter { it.rol == "dueno" }.map { aDueno(it, mascotasPorDueno[it.id].orEmpty()) })
-        actividad.clear()
-        actividad.addAll(movimientos.map(::aActividad))
+        // El armado de las listas no toca el hilo principal
+        val (vets, duenos, movs) = withContext(Dispatchers.Default) {
+            val mascotasPorDueno = mascotas.filter { it.duenoId != null }.groupBy { it.duenoId }
+            Triple(
+                perfiles.filter { it.veterinarios != null }.map(::aVeterinario),
+                perfiles.filter { it.rol == "dueno" }.map { aDueno(it, mascotasPorDueno[it.id].orEmpty()) },
+                movimientos.map(::aActividad)
+            )
+        }
+        listaVeterinarios = vets
+        listaDuenos = duenos
+        actividad = movs
         resumen = datosResumen
+        ultimaCarga = System.currentTimeMillis()
     }
+
+    private data class DatosAdmin(
+        val perfiles: List<PerfilDto>,
+        val mascotas: List<MascotaDto>,
+        val movimientos: List<ActividadDto>,
+        val resumen: JsonObject
+    )
 
     /** Vuelve a pedir lo que cambia cuando el administrador actúa (cuentas, actividad y contadores). */
     private suspend fun recargar() {

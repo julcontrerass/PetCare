@@ -10,6 +10,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 
 enum class ItemType {
     CONSULTA, SOLICITUD
@@ -23,7 +24,9 @@ data class HomeVetItem(
     val profileRes: Int? = null,
     val timeAgo: String? = null,
     val eventoId: String? = null,
-    val isEnHorario: Boolean = false
+    val isEnHorario: Boolean = false,
+    /** Foto de perfil del dueño del paciente (ruta en el bucket `fotos`). */
+    val fotoDueno: String? = null
 )
 
 class HomeVetAdapter(
@@ -47,6 +50,7 @@ class HomeVetAdapter(
         val tvBadge: TextView = view.findViewById(R.id.tvBadge)
         val ivChevron: ImageView = view.findViewById(R.id.ivChevron)
         val divider: View = view.findViewById(R.id.divider)
+        val ivDuenoFoto: ImageView = view.findViewById(R.id.ivDuenoFoto)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -59,6 +63,10 @@ class HomeVetAdapter(
         val context = holder.itemView.context
         holder.tvTitle.text = item.title
         holder.tvSubtitle.text = item.subtitle
+
+        // Los turnos del día muestran a quién pertenece el paciente
+        holder.ivDuenoFoto.visibility = if (item.type == ItemType.CONSULTA) View.VISIBLE else View.GONE
+        if (item.type == ItemType.CONSULTA) Avatares.mostrar(holder.ivDuenoFoto, item.fotoDueno)
 
         if (item.type == ItemType.CONSULTA) {
             holder.tvTime.visibility = View.VISIBLE

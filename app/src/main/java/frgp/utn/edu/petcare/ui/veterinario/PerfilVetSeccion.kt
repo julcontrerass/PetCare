@@ -1,9 +1,6 @@
 package frgp.utn.edu.petcare.ui.veterinario
 
 import android.app.TimePickerDialog
-import android.content.Intent
-import android.net.Uri
-import android.os.Bundle
 import android.text.InputType
 import android.util.Patterns
 import android.view.View
@@ -12,9 +9,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -30,11 +25,15 @@ import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.ModoDeUso
 import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
-import frgp.utn.edu.petcare.ui.common.BaseActivity
 import frgp.utn.edu.petcare.ui.common.VetUi
 import kotlinx.coroutines.launch
 
-class PerfilVetActivity : BaseActivity() {
+/** Perfil del veterinario: sus datos, horarios, especialidades, preferencias y cuenta. */
+class PerfilVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
+
+    override val layout = R.layout.seccion_vet_perfil
+    override val navId = R.id.nav_mas
+
 
     companion object {
         private val claves = listOf("solicitudes", "turnos", "cancelaciones")
@@ -43,26 +42,21 @@ class PerfilVetActivity : BaseActivity() {
         )
     }
 
-    private val pickPhotoLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            PerfilVetRepo.cambiarFoto(it)
-            mostrarPerfil()
-            Avisos.mostrar(this, "Foto de perfil actualizada correctamente")
-        }
+    private fun elegirFoto() = host.pedirFoto { uri ->
+        PerfilVetRepo.cambiarFoto(uri)
+        mostrarPerfil()
+        Avisos.mostrar(host, "Foto de perfil actualizada correctamente")
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        if (volverSiNoHaySesion()) return
-        setContentView(R.layout.activity_perfil_vet)
+    override fun refrescar() = mostrarPerfil()
 
-        VetBottomNav.setup(this, R.id.nav_mas)
+    override fun configurar() {
 
         findViewById<View>(R.id.btnEditVetProfilePic)?.setOnClickListener {
-            pickPhotoLauncher.launch("image/*")
+            elegirFoto()
         }
         findViewById<View>(R.id.ivVetProfilePic)?.setOnClickListener {
-            pickPhotoLauncher.launch("image/*")
+            elegirFoto()
         }
 
         findViewById<View>(R.id.llVetHorarios)?.setOnClickListener { configurarHorarios() }
@@ -73,17 +67,17 @@ class PerfilVetActivity : BaseActivity() {
         // Todo veterinario puede cargar sus propias mascotas: el modo dueño está siempre disponible
         findViewById<View>(R.id.optModoDueno)?.let { fila ->
             fila.visibility = if (Sesion.Rol.DUENO in Sesion.rolesDisponibles) View.VISIBLE else View.GONE
-            fila.setOnClickListener { ModoDeUso.cambiar(this, Sesion.Rol.DUENO) }
+            fila.setOnClickListener { ModoDeUso.cambiar(host, Sesion.Rol.DUENO) }
         }
         findViewById<View>(R.id.optEditarPerfil)?.setOnClickListener { editarPerfil() }
         findViewById<View>(R.id.optCambiarPassword)?.setOnClickListener { cambiarPassword() }
         findViewById<View>(R.id.optNotificaciones)?.setOnClickListener { configurarNotificaciones() }
-        findViewById<View>(R.id.optEliminarCuenta)?.setOnClickListener { BajaDeCuenta.confirmar(this) }
+        findViewById<View>(R.id.optEliminarCuenta)?.setOnClickListener { BajaDeCuenta.confirmar(host) }
         findViewById<View>(R.id.optCerrarSesion)?.setOnClickListener {
             Avisos.confirmar(
-                this, "¿Cerrar sesión?", "Vas a tener que ingresar de nuevo con tu correo y tu contraseña.",
+                host, "¿Cerrar sesión?", "Vas a tener que ingresar de nuevo con tu correo y tu contraseña.",
                 textoAceptar = "Cerrar sesión", textoCancelar = "Cancelar", peligro = false, icono = R.drawable.ic_logout
-            ) { Sesion.cerrarYVolver(this) }
+            ) { Sesion.cerrarYVolver(host) }
         }
         mostrarPerfil()
     }
@@ -104,7 +98,7 @@ class PerfilVetActivity : BaseActivity() {
         VetUi.cargarFotoVet(findViewById<ImageView>(R.id.ivVetProfilePic))
     }
 
-    private fun campo(hint: String, valor: String = "", tipo: Int = InputType.TYPE_CLASS_TEXT) = EditText(this).apply {
+    private fun campo(hint: String, valor: String = "", tipo: Int = InputType.TYPE_CLASS_TEXT) = EditText(host).apply {
         this.hint = hint
         setText(valor)
         inputType = tipo
@@ -114,14 +108,14 @@ class PerfilVetActivity : BaseActivity() {
     }
 
     private fun formulario(titulo: String, campos: List<EditText>, alGuardar: (AlertDialog) -> Boolean) {
-        val layout = LinearLayout(this).apply {
+        val layout = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 32, 48, 8)
             campos.forEach { addView(it) }
         }
-        val dialog = AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(host)
             .setTitle(titulo)
-            .setView(ScrollView(this).apply { addView(layout) })
+            .setView(ScrollView(host).apply { addView(layout) })
             .setPositiveButton("Guardar", null)
             .setNegativeButton("Cancelar", null)
             .create()
@@ -138,7 +132,7 @@ class PerfilVetActivity : BaseActivity() {
         val h = partes.getOrNull(0)?.toIntOrNull() ?: 9
         val m = partes.getOrNull(1)?.toIntOrNull() ?: 0
 
-        TimePickerDialog(this, { _, hourOfDay, minute ->
+        TimePickerDialog(host, { _, hourOfDay, minute ->
             val horaFormateada = String.format("%02d:%02d", hourOfDay, minute)
             alSeleccionar(horaFormateada)
         }, h, m, true).show()
@@ -149,7 +143,7 @@ class PerfilVetActivity : BaseActivity() {
         var tempInicio = PerfilVetRepo.horaApertura
         var tempFin = PerfilVetRepo.horaCierre
 
-        val btnInicio = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        val btnInicio = MaterialButton(host, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Hora de inicio: $tempInicio hs"
             setOnClickListener {
                 seleccionarHora(tempInicio) { elegida ->
@@ -159,7 +153,7 @@ class PerfilVetActivity : BaseActivity() {
             }
         }
 
-        val btnFin = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        val btnFin = MaterialButton(host, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Hora de cierre: $tempFin hs"
             setOnClickListener {
                 seleccionarHora(tempFin) { elegida ->
@@ -169,10 +163,10 @@ class PerfilVetActivity : BaseActivity() {
             }
         }
 
-        val container = LinearLayout(this).apply {
+        val container = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 20, 48, 10)
-            addView(TextView(this@PerfilVetActivity).apply {
+            addView(TextView(host).apply {
                 text = "Seleccioná el horario de atención:"
                 setTextColor(resources.getColor(R.color.black, null))
                 setPadding(0, 0, 0, 12)
@@ -181,7 +175,7 @@ class PerfilVetActivity : BaseActivity() {
             addView(btnFin)
         }
 
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(host)
             .setTitle("Días y Horarios de atención")
             .setView(container)
             .setMultiChoiceItems(PerfilVetRepo.todosLosDias, marcadas) { _, which, checked ->
@@ -189,16 +183,16 @@ class PerfilVetActivity : BaseActivity() {
             }
             .setPositiveButton("Guardar") { _, _ ->
                 if (marcadas.none { it }) {
-                    Avisos.mostrar(this, "Elegí al menos un día de atención")
+                    Avisos.mostrar(host, "Elegí al menos un día de atención")
                 } else if (tempFin <= tempInicio) {
-                    Avisos.mostrar(this, "El horario de cierre tiene que ser posterior al de apertura")
+                    Avisos.mostrar(host, "El horario de cierre tiene que ser posterior al de apertura")
                 } else {
                     System.arraycopy(marcadas, 0, PerfilVetRepo.diasSeleccionados, 0, marcadas.size)
                     PerfilVetRepo.horaApertura = tempInicio
                     PerfilVetRepo.horaCierre = tempFin
                     PerfilVetRepo.guardarHorarios()
                     mostrarPerfil()
-                    Avisos.mostrar(this, "Días y horarios actualizados")
+                    Avisos.mostrar(host, "Días y horarios actualizados")
                 }
             }
             .setNegativeButton("Cancelar", null)
@@ -207,7 +201,7 @@ class PerfilVetActivity : BaseActivity() {
 
     private fun configurarEspecialidades() {
         val marcadas = PerfilVetRepo.especialidadesSeleccionadas.clone()
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(host)
             .setTitle("Especialidades y prácticas que realizás")
             .setMultiChoiceItems(PerfilVetRepo.todasLasEspecialidades, marcadas) { _, which, checked ->
                 marcadas[which] = checked
@@ -216,7 +210,7 @@ class PerfilVetActivity : BaseActivity() {
                 System.arraycopy(marcadas, 0, PerfilVetRepo.especialidadesSeleccionadas, 0, marcadas.size)
                 PerfilVetRepo.guardarEspecialidades()
                 mostrarPerfil()
-                Avisos.mostrar(this, "Especialidades actualizadas")
+                Avisos.mostrar(host, "Especialidades actualizadas")
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -224,13 +218,13 @@ class PerfilVetActivity : BaseActivity() {
 
     /** Qué tipos de mascota atiende: los dueños solo pueden sacar turno para esos. */
     private fun configurarTiposAnimales() {
-        val hoja = BottomSheetDialog(this)
-        val vista = layoutInflater.inflate(R.layout.sheet_tipos_animales, null)
+        val hoja = BottomSheetDialog(host)
+        val vista = host.layoutInflater.inflate(R.layout.sheet_tipos_animales, null)
         hoja.setContentView(vista)
         val elegidos = PerfilVetRepo.tiposAnimales.toMutableSet()
         val grupo = vista.findViewById<ChipGroup>(R.id.cgTiposAnimales)
         TiposMascota.TODOS.forEach { tipo ->
-            val chip = layoutInflater.inflate(R.layout.view_chip_registro, grupo, false) as Chip
+            val chip = host.layoutInflater.inflate(R.layout.view_chip_registro, grupo, false) as Chip
             chip.text = TiposMascota.plural(tipo)
             chip.isChecked = tipo in elegidos
             chip.setOnCheckedChangeListener { _, marcado ->
@@ -249,7 +243,7 @@ class PerfilVetActivity : BaseActivity() {
             PerfilVetRepo.guardarTiposAnimales()
             mostrarPerfil()
             hoja.dismiss()
-            Avisos.mostrar(this, "Animales que atendés actualizados")
+            Avisos.mostrar(host, "Animales que atendés actualizados")
         }
         vista.findViewById<View>(R.id.btnCancelarTipos).setOnClickListener { hoja.dismiss() }
         hoja.show()
@@ -259,17 +253,17 @@ class PerfilVetActivity : BaseActivity() {
     private fun configurarDuraciones() {
         val servicios = PerfilVetRepo.serviciosOfrecidos()
         if (servicios.isEmpty()) {
-            Avisos.mostrar(this, "Primero elegí tus especialidades y prácticas")
+            Avisos.mostrar(host, "Primero elegí tus especialidades y prácticas")
             return
         }
-        val hoja = BottomSheetDialog(this)
-        val vista = layoutInflater.inflate(R.layout.sheet_duraciones, null)
+        val hoja = BottomSheetDialog(host)
+        val vista = host.layoutInflater.inflate(R.layout.sheet_duraciones, null)
         hoja.setContentView(vista)
         val valores = servicios.associateWith { PerfilVetRepo.duracionDe(it) }.toMutableMap()
 
         val lista = vista.findViewById<LinearLayout>(R.id.llDuraciones)
         servicios.forEach { servicio ->
-            val fila = layoutInflater.inflate(R.layout.item_duracion, lista, false)
+            val fila = host.layoutInflater.inflate(R.layout.item_duracion, lista, false)
             val valor = fila.findViewById<TextView>(R.id.tvDuracionValor)
             val predeterminada = fila.findViewById<TextView>(R.id.tvDuracionPredeterminada)
             val porDefecto = CatalogoMedico.duracionPorDefecto(servicio)
@@ -305,7 +299,7 @@ class PerfilVetActivity : BaseActivity() {
             PerfilVetRepo.guardarDuraciones()
             mostrarPerfil()
             hoja.dismiss()
-            Avisos.mostrar(this, "Duración de los turnos actualizada")
+            Avisos.mostrar(host, "Duración de los turnos actualizada")
         }
         vista.findViewById<View>(R.id.btnCancelarDuraciones).setOnClickListener { hoja.dismiss() }
         hoja.show()
@@ -333,7 +327,7 @@ class PerfilVetActivity : BaseActivity() {
                 PerfilVetRepo.telefono = telefono.text.toString().trim()
                 PerfilVetRepo.guardarDatos()
                 mostrarPerfil()
-                Avisos.mostrar(this, "Perfil profesional actualizado")
+                Avisos.mostrar(host, "Perfil profesional actualizado")
             }
             ok
         }
@@ -353,19 +347,19 @@ class PerfilVetActivity : BaseActivity() {
                 else -> null
             }
             if (error != null) {
-                Avisos.mostrar(this, error)
+                Avisos.mostrar(host, error)
             } else {
                 val boton = dialogo.getButton(AlertDialog.BUTTON_POSITIVE)
                 boton.isEnabled = false
-                lifecycleScope.launch {
+                host.lifecycleScope.launch {
                     try {
                         Servicios.fuente.cambiarPassword(PerfilVetRepo.email, actual.text.toString(), nueva.text.toString())
-                        Avisos.mostrar(this@PerfilVetActivity, "Contraseña actualizada")
+                        Avisos.mostrar(host, "Contraseña actualizada")
                         dialogo.dismiss()
                     } catch (e: Exception) {
                         boton.isEnabled = true
                         val mensaje = Errores.mensaje(e)
-                        Avisos.mostrar(this@PerfilVetActivity, if (mensaje.startsWith("Correo o contraseña")) "La contraseña actual es incorrecta" else mensaje)
+                        Avisos.mostrar(host, if (mensaje.startsWith("Correo o contraseña")) "La contraseña actual es incorrecta" else mensaje)
                     }
                 }
             }
@@ -376,13 +370,13 @@ class PerfilVetActivity : BaseActivity() {
 
     private fun configurarNotificaciones() {
         val marcadas = BooleanArray(claves.size) { PerfilVetRepo.preferencia(claves[it]) }
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(host)
             .setTitle("Notificaciones")
             .setMultiChoiceItems(etiquetas, marcadas) { _, which, checked -> marcadas[which] = checked }
             .setPositiveButton("Guardar") { _, _ ->
                 claves.forEachIndexed { i, clave -> PerfilVetRepo.preferencias[clave] = marcadas[i] }
                 PerfilVetRepo.guardarPreferencias()
-                Avisos.mostrar(this, "Preferencias guardadas")
+                Avisos.mostrar(host, "Preferencias guardadas")
             }
             .setNegativeButton("Cancelar", null)
             .show()

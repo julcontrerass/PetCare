@@ -1,41 +1,33 @@
 package frgp.utn.edu.petcare.ui.veterinario
 
 import android.content.Intent
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
 import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
 import frgp.utn.edu.petcare.data.repositorio.EventoVet
 import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.ui.common.BaseActivity
 import frgp.utn.edu.petcare.util.Fechas
 
-class AgendaVetActivity : BaseActivity() {
+/** Agenda del veterinario: los turnos próximos, completados y cancelados, agrupados por fecha. */
+class AgendaVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
+
+    override val layout = R.layout.seccion_vet_agenda
+    override val navId = R.id.nav_agenda
 
     private lateinit var adapter: AgendaAdapter
     private lateinit var tabLayout: TabLayout
     private lateinit var tvVacia: View
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        if (volverSiNoHaySesion()) return
-        setContentView(R.layout.activity_agenda_vet)
-
-        VetBottomNav.setup(this, R.id.nav_agenda)
-        findViewById<View>(R.id.toolbar).setOnClickListener {
-            val intent = Intent(this, HomeVeterinarioActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            startActivity(intent)
-            finish()
-        }
+    override fun configurar() {
+        findViewById<View>(R.id.toolbar).setOnClickListener { host.irA(R.id.nav_inicio) }
 
         tabLayout = findViewById(R.id.tabLayoutAgenda)
         tvVacia = findViewById(R.id.emptyAgenda)
@@ -51,14 +43,8 @@ class AgendaVetActivity : BaseActivity() {
         })
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (isFinishing) return
-        refrescar()
-        actualizarDatosVeterinario { refrescar() }
-    }
-
-    private fun refrescar() {
+    override fun refrescar() {
+        if (!::adapter.isInitialized) return
         val eventos = when (tabLayout.selectedTabPosition) {
             1 -> AgendaRepo.porEstado(EstadoEvento.COMPLETADO)
             2 -> AgendaRepo.porEstado(EstadoEvento.CANCELADO)
@@ -81,7 +67,7 @@ class AgendaVetActivity : BaseActivity() {
             2 -> "No hay turnos cancelados"
             else -> "No hay turnos próximos"
         }
-        tvVacia.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_calendar)
+        tvVacia.findViewById<ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_calendar)
         tvVacia.findViewById<TextView>(R.id.tvEmptyTitle).text = sinTurnos
         tvVacia.findViewById<TextView>(R.id.tvEmptyMessage).text = "Los turnos agendados con vos aparecen acá"
         val cantidad = eventos.size
@@ -112,6 +98,7 @@ class AgendaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val tvPaciente: TextView = view.findViewById(R.id.tvPaciente)
         val tvMotivo: TextView = view.findViewById(R.id.tvMotivo)
         val tvEstado: TextView = view.findViewById(R.id.tvEstadoAgenda)
+        val ivDuenoFoto: android.widget.ImageView = view.findViewById(R.id.ivDuenoFoto)
     }
 
     override fun getItemViewType(position: Int) = if (items[position] is AgendaFila.Encabezado) 0 else 1
@@ -131,6 +118,7 @@ class AgendaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 val ctx = h.itemView.context
                 h.tvHora.text = e.hora
                 h.tvPaciente.text = PacientesRepo.nombreDe(e.pacienteId)
+                frgp.utn.edu.petcare.ui.common.Avatares.mostrar(h.ivDuenoFoto, PacientesRepo.fotoDuenoDe(e.pacienteId))
                 h.tvMotivo.text = "${e.tipo} · ${e.motivo}"
                 h.tvEstado.text = e.estado.etiqueta
                 val (fondo, color) = when (e.estado) {

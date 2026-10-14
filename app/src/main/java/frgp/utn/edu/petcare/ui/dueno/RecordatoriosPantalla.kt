@@ -62,7 +62,8 @@ class RecordatoriosPantalla(host: DuenoActivity) : Pantalla(host) {
             }
             RecordatorioItem(
                 evento.categoria, evento.mascota, fecha, estado, EstiloCategoria.icono(evento.categoria),
-                EstiloCategoria.fondo(evento.categoria), EstiloCategoria.colorIcono(evento.categoria)
+                EstiloCategoria.fondo(evento.categoria), EstiloCategoria.colorIcono(evento.categoria),
+                evento.veterinarioId
             )
         }
     }

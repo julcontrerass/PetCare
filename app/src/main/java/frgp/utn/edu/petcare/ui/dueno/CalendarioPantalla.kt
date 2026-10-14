@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.Efectos
 import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
@@ -169,6 +170,7 @@ class CalendarioPantalla(host: DuenoActivity) : Pantalla(host) {
             if (evento.categoria == DuenoRepo.CATEGORIA_VACUNA) "Vacunación" else evento.categoria
         val veterinario = if (evento.veterinario.isNotEmpty()) " · ${evento.veterinario}" else ""
         tarjeta.findViewById<TextView>(R.id.tvSubtitulo).text = evento.mascota + veterinario
+        Avatares.deEvento(tarjeta.findViewById(R.id.ivVet), evento.veterinarioId)
 
         tarjeta.findViewById<TextView>(R.id.tvChip).apply {
             text = evento.hora

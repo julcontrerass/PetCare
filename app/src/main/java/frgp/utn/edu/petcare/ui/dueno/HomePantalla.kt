@@ -14,6 +14,7 @@ import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.Efectos
 import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
@@ -77,6 +78,9 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
         val subtitulo = vista<TextView>(R.id.tvHeroSubtitle) ?: return
         val accion = vista<TextView>(R.id.btnHeroAction) ?: return
         val icono = vista<ImageView>(R.id.ivHeroIcon)
+        val fotoVet = vista<ImageView>(R.id.ivHeroVet)
+        fotoVet?.visibility = View.GONE
+        icono?.visibility = View.VISIBLE
 
         val proximo = DuenoRepo.eventosOrdenados(proximos = true).firstOrNull()
         if (proximo == null) {
@@ -108,6 +112,10 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
         subtitulo.text = detalle
         accion.setText(R.string.home_hero_ver_detalle)
         icono?.setImageResource(R.drawable.ic_calendar)
+        // Con veterinario asignado, su foto reemplaza al ícono del calendario
+        if (proximo.veterinarioId != null) {
+            Avatares.conRespaldo(fotoVet, DuenoRepo.perfilDeVeterinario(proximo.veterinarioId)?.fotoPath, icono)
+        }
         accion.setOnClickListener {
             Efectos.rebote(it)
             host.irARecordatorios()
@@ -193,6 +201,7 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
         tarjeta.findViewById<TextView>(R.id.tvTitulo).text = evento.categoria
         val subtitulo = tarjeta.findViewById<TextView>(R.id.tvSubtitulo)
         val chip = tarjeta.findViewById<TextView>(R.id.tvChip)
+        Avatares.deEvento(tarjeta.findViewById(R.id.ivVet), evento.veterinarioId)
 
         if (proximo) {
             subtitulo.text = "${evento.mascota} · $fechaCorta · ${evento.hora}"

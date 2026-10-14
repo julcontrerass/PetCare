@@ -19,6 +19,7 @@ import frgp.utn.edu.petcare.model.EstadoTurno
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.ArchivosUi
+import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.Documentos
 import frgp.utn.edu.petcare.util.Fechas
@@ -57,6 +58,11 @@ class EventosDialogos(private val host: DuenoActivity) {
         vista.findViewById<TextView>(R.id.tvTurnoFecha).text = Fechas.larga(evento.fecha)
         vista.findViewById<TextView>(R.id.tvTurnoHora).text = "${evento.hora} hs"
         vista.findViewById<TextView>(R.id.tvTurnoVet).text = evento.veterinario.ifEmpty { "Sin asignar" }
+        Avatares.conRespaldo(
+            vista.findViewById(R.id.ivTurnoVetFoto),
+            DuenoRepo.perfilDeVeterinario(evento.veterinarioId)?.fotoPath,
+            vista.findViewById(R.id.ivTurnoVetIcono)
+        )
         val hayObservaciones = evento.observaciones.isNotEmpty()
         vista.findViewById<View>(R.id.rowTurnoObs).visibility = if (hayObservaciones) View.VISIBLE else View.GONE
         if (hayObservaciones) vista.findViewById<TextView>(R.id.tvTurnoObs).text = evento.observaciones

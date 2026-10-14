@@ -25,14 +25,11 @@ import frgp.utn.edu.petcare.ui.auth.AuthActivity
 import frgp.utn.edu.petcare.ui.auth.RegistroVeterinarioActivity
 import frgp.utn.edu.petcare.ui.dueno.CarnetSaludActivity
 import frgp.utn.edu.petcare.ui.dueno.DuenoActivity
-import frgp.utn.edu.petcare.ui.veterinario.AgendaVetActivity
 import frgp.utn.edu.petcare.ui.veterinario.AgregarConsultaActivity
 import frgp.utn.edu.petcare.ui.veterinario.DetalleEventoVetActivity
 import frgp.utn.edu.petcare.ui.veterinario.DetallePacienteActivity
 import frgp.utn.edu.petcare.ui.veterinario.HomeVeterinarioActivity
-import frgp.utn.edu.petcare.ui.veterinario.MisPacientesActivity
 import frgp.utn.edu.petcare.ui.veterinario.NuevoDuenoActivity
-import frgp.utn.edu.petcare.ui.veterinario.PerfilVetActivity
 import frgp.utn.edu.petcare.ui.veterinario.SolicitudesVetActivity
 import frgp.utn.edu.petcare.ui.veterinario.VacunasPendientesActivity
 import java.time.LocalDate
@@ -42,6 +39,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -61,6 +59,10 @@ class PantallasTest : PruebaBase() {
         Robolectric.buildActivity(clase, intent).setup().get()
 
     private fun intent(clase: Class<*>) = Intent(ApplicationProvider.getApplicationContext(), clase)
+
+    /** Abre el contenedor del veterinario ya parado en la solapa [navId] de la barra inferior. */
+    private fun abrirVetEn(navId: Int): HomeVeterinarioActivity =
+        abrir(HomeVeterinarioActivity::class.java, intent(HomeVeterinarioActivity::class.java).putExtra(HomeVeterinarioActivity.EXTRA_SECCION, navId))
 
     private fun medir(rv: RecyclerView) {
         rv.measure(View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(2000, View.MeasureSpec.AT_MOST))
@@ -496,12 +498,36 @@ class PantallasTest : PruebaBase() {
     fun vet_todasLasPantallasSeAbren() {
         abrirVet()
         abrir(HomeVeterinarioActivity::class.java)
-        abrir(MisPacientesActivity::class.java)
+        abrirVetEn(R.id.nav_pacientes)
         abrir(SolicitudesVetActivity::class.java)
-        abrir(AgendaVetActivity::class.java)
-        abrir(PerfilVetActivity::class.java)
+        abrirVetEn(R.id.nav_agenda)
+        abrirVetEn(R.id.nav_mas)
         abrir(AgregarConsultaActivity::class.java)
         abrir(CarnetSaludActivity::class.java)
+    }
+
+    @Test
+    fun vet_cambiarDeSolapaDejaLaBarraFijaYSoloCambiaElContenido() {
+        abrirVet()
+        val a = abrir(HomeVeterinarioActivity::class.java)
+        val barra = a.findViewById<View>(R.id.bottomNavContainer)
+        assertNotNull(a.findViewById<View>(R.id.rvConsultas))
+
+        a.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+            .selectedItemId = R.id.nav_pacientes
+        assertSame(barra, a.findViewById<View>(R.id.bottomNavContainer))
+        assertNotNull(a.findViewById<View>(R.id.rvPacientes))
+        assertNull(a.findViewById<View>(R.id.rvConsultas))
+
+        a.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+            .selectedItemId = R.id.nav_agenda
+        assertSame(barra, a.findViewById<View>(R.id.bottomNavContainer))
+        assertNotNull(a.findViewById<View>(R.id.rvAgenda))
+
+        a.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+            .selectedItemId = R.id.nav_mas
+        assertSame(barra, a.findViewById<View>(R.id.bottomNavContainer))
+        assertEquals("Dr. Vera", texto(a, R.id.tvNombreVet))
     }
 
     @Test
@@ -534,7 +560,7 @@ class PantallasTest : PruebaBase() {
     @Test
     fun vet_listaDePacientesFiltraPorBusqueda() {
         abrirVet()
-        val a = abrir(MisPacientesActivity::class.java)
+        val a = abrirVetEn(R.id.nav_pacientes)
         val rv = a.findViewById<RecyclerView>(R.id.rvPacientes)
         assertEquals(2, rv.adapter!!.itemCount)
 
@@ -630,7 +656,7 @@ class PantallasTest : PruebaBase() {
     @Test
     fun vet_agendaListaLosProximosYCambiaDeSolapa() {
         abrirVet()
-        val a = abrir(AgendaVetActivity::class.java)
+        val a = abrirVetEn(R.id.nav_agenda)
         val rv = a.findViewById<RecyclerView>(R.id.rvAgenda)
         val proximos = rv.adapter!!.itemCount
         assertTrue(proximos > 0)
@@ -667,7 +693,7 @@ class PantallasTest : PruebaBase() {
     @Test
     fun vet_elPerfilMuestraSusDatosYAbreLasOpciones() {
         abrirVet()
-        val a = abrir(PerfilVetActivity::class.java)
+        val a = abrirVetEn(R.id.nav_mas)
 
         assertEquals("Dr. Vera", texto(a, R.id.tvNombreVet))
         assertEquals("Matrícula MP-100", texto(a, R.id.tvDatosVet))
@@ -804,6 +830,8 @@ class PantallasTest : PruebaBase() {
     fun admin_siNoSePuedenCargarLosDatosLoAvisa() {
         ingresarComo(Escenario.admin())
         fuente.fallaAlCargarAdmin = true
+        // Sin datos cargados (o con los de hace rato): el panel los pide al abrirse y, si falla, lo avisa
+        frgp.utn.edu.petcare.data.repositorio.AdminRepo.limpiar()
 
         abrir(HomeAdminActivity::class.java)
 
@@ -814,7 +842,7 @@ class PantallasTest : PruebaBase() {
     @Test
     fun vet_elPerfilPermiteElegirAnimalesYLaDuracionDeLosTurnos() {
         abrirVet()
-        val a = abrir(PerfilVetActivity::class.java)
+        val a = abrirVetEn(R.id.nav_mas)
         assertTrue(texto(a, R.id.tvVetTiposAnimalesValue).contains("Perros"))
 
         a.findViewById<View>(R.id.llVetTiposAnimales).performClick()
@@ -907,7 +935,7 @@ class PantallasTest : PruebaBase() {
     @Test
     fun vet_elPerfilOfreceEntrarComoDueno() {
         abrirVet()
-        val a = abrir(PerfilVetActivity::class.java)
+        val a = abrirVetEn(R.id.nav_mas)
 
         assertEquals(View.VISIBLE, a.findViewById<View>(R.id.optModoDueno).visibility)
         a.findViewById<View>(R.id.optModoDueno).performClick()
@@ -962,7 +990,7 @@ class PantallasTest : PruebaBase() {
     @Test
     fun vet_cerrarSesionVuelveAlIngreso() {
         abrirVet()
-        val a = abrir(PerfilVetActivity::class.java)
+        val a = abrirVetEn(R.id.nav_mas)
         a.findViewById<View>(R.id.optCerrarSesion).performClick()
         aceptarCartel()
         ShadowLooper.idleMainLooper()
@@ -1040,6 +1068,39 @@ class PantallasTest : PruebaBase() {
     }
 
     // ---------- Administrador ----------
+
+    @Test
+    fun admin_cadaPestanaMuestraSuContenido() {
+        fuente.perfiles.add(Escenario.veterinario("vet-1", "Dr. Activo"))
+        fuente.perfiles.add(Escenario.veterinario("vet-2", "Dra. Nueva", estado = "pendiente_revision"))
+        fuente.perfiles.add(Escenario.veterinario("vet-3", "Dr. Suspendido", estado = "suspendido"))
+        fuente.perfiles.add(Escenario.dueno())
+        fuente.mascotas.add(Escenario.mascota("m1", "Rex"))
+        fuente.actividad.add(
+            frgp.utn.edu.petcare.data.remoto.ActividadDto("x1", "registro", "Dra. Nueva pidió el alta", "2026-01-02T10:00:00+00:00")
+        )
+        ingresarComo(Escenario.admin())
+        val admin = abrir(HomeAdminActivity::class.java)
+        val nav = admin.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+
+        listOf(
+            R.id.nav_admin_vets to R.id.tvVetsTitulo,
+            R.id.nav_admin_duenos to R.id.tvDuenosTitulo,
+            R.id.nav_admin_actividad to R.id.tvActividadTitulo,
+            R.id.nav_admin_inicio to R.id.tvAdminFecha
+        ).forEach { (pestana, titulo) ->
+            nav.selectedItemId = pestana
+            shadowOf(android.os.Looper.getMainLooper()).idle()
+            val vista = admin.findViewById<View>(titulo)
+            assertTrue("El título de la pestaña $pestana debería verse", vista.isShown)
+            assertTrue("El título de la pestaña $pestana debería tener tamaño", vista.width > 0 && vista.height > 0)
+            assertEquals(1f, (vista.parent as View).alpha, 0f)
+            // Dibujar la pantalla entera no debe lanzar errores
+            val ancho = admin.window.decorView.width.coerceAtLeast(1)
+            val alto = admin.window.decorView.height.coerceAtLeast(1)
+            admin.window.decorView.draw(android.graphics.Canvas(android.graphics.Bitmap.createBitmap(ancho, alto, android.graphics.Bitmap.Config.ARGB_8888)))
+        }
+    }
 
     @Test
     fun admin_elPanelMuestraCuentasYCierraSesion() {

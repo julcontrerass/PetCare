@@ -7,6 +7,10 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.VetUi
 
+/**
+ * Barra inferior de las pantallas que se abren encima de una sección (ficha del paciente, solicitudes, vacunas):
+ * tocar una solapa vuelve al contenedor [HomeVeterinarioActivity] en esa sección.
+ */
 object VetBottomNav {
 
     fun setup(activity: AppCompatActivity, selectedItemId: Int) {
@@ -21,20 +25,8 @@ object VetBottomNav {
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 selectedItemId -> true
-                R.id.nav_inicio -> {
-                    irA(activity, HomeVeterinarioActivity::class.java)
-                    false
-                }
-                R.id.nav_pacientes -> {
-                    irA(activity, MisPacientesActivity::class.java)
-                    false
-                }
-                R.id.nav_agenda -> {
-                    irA(activity, AgendaVetActivity::class.java)
-                    false
-                }
-                R.id.nav_mas -> {
-                    irA(activity, PerfilVetActivity::class.java)
+                R.id.nav_inicio, R.id.nav_pacientes, R.id.nav_agenda, R.id.nav_mas -> {
+                    irA(activity, item.itemId)
                     false
                 }
                 else -> false
@@ -42,13 +34,11 @@ object VetBottomNav {
         }
     }
 
-    private fun irA(activity: AppCompatActivity, destino: Class<*>) {
-        if (activity::class.java == destino) return
-        val intent = Intent(activity, destino)
-        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+    private fun irA(activity: AppCompatActivity, navId: Int) {
+        val intent = Intent(activity, HomeVeterinarioActivity::class.java)
+            .putExtra(HomeVeterinarioActivity.EXTRA_SECCION, navId)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         activity.startActivity(intent)
-        if (activity !is HomeVeterinarioActivity) {
-            activity.finish()
-        }
+        activity.finish()
     }
 }

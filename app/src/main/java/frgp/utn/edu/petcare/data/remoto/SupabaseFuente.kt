@@ -70,8 +70,12 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     private companion object {
         const val ENLACE_DE_RECUPERACION = "petcare://recuperar"
         const val PERFIL_COMPLETO = "*,veterinarios(*),perfiles_privados(dni)"
+
+        /** Lo que muestra el panel del administrador: sin las preferencias ni el encuadre de la foto. */
+        const val PERFIL_ADMIN = "id,rol,estado,motivo_estado,nombre,email,telefono,direccion,foto_path,created_at," +
+            "veterinarios(*),perfiles_privados(dni)"
         const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios!inner(*)"
-        const val MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,telefono,direccion)"
+        const val MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,telefono,direccion,foto_path)"
     }
 
     // ---------- Cambios en vivo ----------
@@ -283,7 +287,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         }.decodeList()
 
     override suspend fun mascotasAdmin(): List<MascotaDto> =
-        cliente.from("mascotas").select {
+        cliente.from("mascotas").select(Columns.raw("id,dueno_id,nombre,tipo,raza,activa")) {
             filter { eq("activa", true) }
         }.decodeList()
 
@@ -490,7 +494,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     // ---------- Administrador ----------
 
     override suspend fun perfilesAdmin(): List<PerfilDto> =
-        cliente.from("profiles").select(Columns.raw(PERFIL_COMPLETO)) {
+        cliente.from("profiles").select(Columns.raw(PERFIL_ADMIN)) {
             filter { neq("rol", "admin") }
             order("created_at", Order.DESCENDING)
         }.decodeList()

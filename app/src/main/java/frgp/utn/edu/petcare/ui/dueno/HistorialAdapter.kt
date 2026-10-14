@@ -9,12 +9,15 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 
 data class HistorialItem(
     val title: String,
     val subtitle: String,
     val iconRes: Int,
     val bgColorRes: Int,
+    /** Veterinario que atendió: si hay, se muestra su foto en la tarjeta. */
+    val veterinarioId: String? = null,
     /** Qué hacer al tocar la tarjeta; sin esto la tarjeta no es tocable. */
     val alTocar: (() -> Unit)? = null
 )
@@ -29,6 +32,7 @@ class HistorialAdapter(private val items: List<HistorialItem>) : RecyclerView.Ad
         val timelineLine: View = view.findViewById(R.id.timeline_line)
         val chevron: View? = view.findViewById(R.id.ivChevron)
         val tarjeta: View? = view.findViewById(R.id.tarjetaHistorial)
+        val fotoVet: ImageView? = view.findViewById(R.id.ivVet)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -41,6 +45,7 @@ class HistorialAdapter(private val items: List<HistorialItem>) : RecyclerView.Ad
         holder.tvTitle.text = item.title
         holder.tvSubtitle.text = item.subtitle
         holder.ivIcon.setImageResource(item.iconRes)
+        Avatares.deEvento(holder.fotoVet, item.veterinarioId)
         holder.iconContainer.backgroundTintList = ContextCompat.getColorStateList(holder.itemView.context, item.bgColorRes)
         
         val accion = item.alTocar

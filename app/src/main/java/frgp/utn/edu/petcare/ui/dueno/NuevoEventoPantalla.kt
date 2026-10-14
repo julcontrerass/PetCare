@@ -26,6 +26,7 @@ import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.ArchivosUi
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.Efectos
@@ -530,6 +531,12 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             setImageResource(R.drawable.ic_medical_kit)
             setColorFilter(ContextCompat.getColor(host, R.color.primary_teal))
         })
+        val foto = Avatares.redonda(ShapeableImageView(host)).apply {
+            layoutParams = FrameLayout.LayoutParams(dp(44), dp(44))
+            contentDescription = "Foto de ${vet.nombre}"
+        }
+        icono.addView(foto)
+        Avatares.conRespaldo(foto, vet.fotoPath, icono.getChildAt(0))
         tarjeta.addView(icono)
 
         val textos = LinearLayout(host).apply {

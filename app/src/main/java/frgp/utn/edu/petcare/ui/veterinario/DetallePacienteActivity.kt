@@ -97,6 +97,7 @@ class DetallePacienteActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvPetBreed).text = paciente.razaYSexo
         findViewById<TextView>(R.id.tvPetAge).text = paciente.nacimiento
         findViewById<TextView>(R.id.tvPetOwner).text = "Propietario: ${paciente.propietario}"
+        frgp.utn.edu.petcare.ui.common.Avatares.mostrar(findViewById(R.id.ivDuenoFoto), paciente.fotoDueno)
         findViewById<TextView>(R.id.tvPetOwnerContact).text = "Contacto: ${paciente.telefono}"
         findViewById<android.widget.ImageView>(R.id.ivPetPhoto).let {
             it.setImageResource(TiposMascota.icono(paciente.especie))

@@ -290,7 +290,8 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
                 val veterinario = if (evento.veterinario.isNotEmpty()) " · ${evento.veterinario}" else ""
                 HistorialItem(
                     evento.categoria, Fechas.corta(evento.fecha) + veterinario,
-                    EstiloCategoria.icono(evento.categoria), EstiloCategoria.fondo(evento.categoria)
+                    EstiloCategoria.icono(evento.categoria), EstiloCategoria.fondo(evento.categoria),
+                    veterinarioId = evento.veterinarioId
                 ) {
                     host.dialogosEventos.mostrarDetalle(evento) { configurarHistorial() }
                 }

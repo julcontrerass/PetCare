@@ -51,6 +51,9 @@ class InformacionVetFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvColor).text = p.color
         view.findViewById<TextView>(R.id.tvObservaciones).text = p.observaciones
         view.findViewById<TextView>(R.id.tvPropNombre).text = p.propietario
+        frgp.utn.edu.petcare.ui.common.Avatares.conRespaldo(
+            view.findViewById(R.id.ivPropFoto), p.fotoDueno, view.findViewById(R.id.ivPropIcono)
+        )
         view.findViewById<TextView>(R.id.tvPropDireccion).text = p.direccion
         view.findViewById<TextView>(R.id.tvPropTelefono).text = p.telefono
         view.findViewById<TextView>(R.id.tvPropEmail).text = p.email

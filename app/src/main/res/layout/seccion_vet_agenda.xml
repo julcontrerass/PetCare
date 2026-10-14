@@ -36,131 +36,65 @@
         android:layout_marginHorizontal="14dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="@id/toolbar"
-        app:layout_constraintEnd_toStartOf="@id/btnAgregarPaciente"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/toolbar"
         app:layout_constraintTop_toTopOf="@id/toolbar">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mis pacientes"
+            android:text="Agenda"
             android:textColor="@color/brand_navy"
             android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvPacientesCount"
+            android:id="@+id/tvAgendaCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_gray"
             android:textSize="13sp" />
     </LinearLayout>
 
-    <FrameLayout
-        android:id="@+id/btnAgregarPaciente"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
-        android:layout_marginEnd="20dp"
-        android:background="@drawable/circular_teal"
-        android:clickable="true"
-        android:contentDescription="@string/agregar_paciente"
-        android:elevation="3dp"
-        android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="@id/toolbar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/toolbar">
-
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_plus"
-            app:tint="@color/white" />
-    </FrameLayout>
-
-    <LinearLayout
-        android:id="@+id/searchContainer"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="18dp"
-        android:background="@drawable/bg_login_field"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbar">
-
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_search"
-            app:tint="@color/text_gray" />
-
-        <EditText
-            android:id="@+id/etBuscarPaciente"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@null"
-            android:hint="Buscar paciente, raza o propietario..."
-            android:inputType="text"
-            android:maxLines="1"
-            android:textColor="@color/black"
-            android:textColorHint="@color/text_gray"
-            android:textSize="15sp" />
-    </LinearLayout>
-
     <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayoutFilters"
+        android:id="@+id/tabLayoutAgenda"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="16dp"
         android:background="@color/login_bg"
-        app:layout_constraintTop_toBottomOf="@id/searchContainer"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:tabBackground="@drawable/tab_background_selector"
         app:tabIndicator="@drawable/tab_indicator"
         app:tabIndicatorColor="@color/primary_teal"
         app:tabIndicatorGravity="bottom"
-        app:tabMode="scrollable"
+        app:tabMode="fixed"
         app:tabRippleColor="@null"
         app:tabSelectedTextColor="@color/primary_teal"
         app:tabPaddingEnd="6dp"
         app:tabPaddingStart="6dp"
         app:tabTextAppearance="@style/TextAppearance.PetCare.Tab"
-        app:tabTextColor="@color/text_gray">
-    </com.google.android.material.tabs.TabLayout>
+        app:tabTextColor="@color/text_gray" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvPacientes"
+        android:id="@+id/rvAgenda"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:paddingHorizontal="20dp"
         android:paddingBottom="16dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
-        app:layout_constraintTop_toBottomOf="@id/tabLayoutFilters"
-        tools:listitem="@layout/item_paciente" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabLayoutAgenda" />
 
     <include
-        android:id="@+id/emptyPacientes"
+        android:id="@+id/emptyAgenda"
         layout="@layout/view_empty_state"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="10dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tabLayoutFilters" />
-
-    <include
-        layout="@layout/view_vet_bottom_nav"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
+        app:layout_constraintTop_toBottomOf="@id/tabLayoutAgenda" />
 </androidx.constraintlayout.widget.ConstraintLayout>

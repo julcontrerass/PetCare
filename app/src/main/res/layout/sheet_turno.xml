@@ -157,14 +157,29 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
+        <FrameLayout
             android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_icon_orange"
-            android:importantForAccessibility="no"
-            android:padding="9dp"
-            android:src="@drawable/ic_medical"
-            app:tint="@color/accent_orange" />
+            android:layout_height="40dp">
+
+            <ImageView
+                android:id="@+id/ivTurnoVetIcono"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_icon_orange"
+                android:importantForAccessibility="no"
+                android:padding="9dp"
+                android:src="@drawable/ic_medical"
+                app:tint="@color/accent_orange" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivTurnoVetFoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="Foto del veterinario"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                app:shapeAppearanceOverlay="@style/CircleImage" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"

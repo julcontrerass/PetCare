@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 
 data class RecordatorioItem @JvmOverloads constructor(
     val title: String,
@@ -16,7 +17,9 @@ data class RecordatorioItem @JvmOverloads constructor(
     val daysLeft: String,
     val iconRes: Int,
     val bgColorRes: Int = R.color.icon_teal_bg,
-    val fgColorRes: Int = R.color.primary_teal
+    val fgColorRes: Int = R.color.primary_teal,
+    /** Veterinario del turno: si hay, se muestra su foto en la tarjeta. */
+    val veterinarioId: String? = null
 )
 
 class RecordatoriosAdapter(private val items: List<RecordatorioItem>) : RecyclerView.Adapter<RecordatoriosAdapter.ViewHolder>() {
@@ -29,6 +32,7 @@ class RecordatoriosAdapter(private val items: List<RecordatorioItem>) : Recycler
         val tvDate: TextView = view.findViewById(R.id.tvDate)
         val tvDaysLeft: TextView = view.findViewById(R.id.tvDaysLeft)
         val timelineLine: View = view.findViewById(R.id.timeline_line)
+        val fotoVet: ImageView? = view.findViewById(R.id.ivVet)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -43,6 +47,7 @@ class RecordatoriosAdapter(private val items: List<RecordatorioItem>) : Recycler
         holder.tvPetName.text = item.petName
         holder.tvDate.text = item.date
         holder.tvDaysLeft.text = item.daysLeft
+        Avatares.deEvento(holder.fotoVet, item.veterinarioId)
         holder.ivIcon.setImageResource(item.iconRes)
         holder.iconContainer.backgroundTintList = ContextCompat.getColorStateList(context, item.bgColorRes)
         holder.ivIcon.setColorFilter(ContextCompat.getColor(context, item.fgColorRes))

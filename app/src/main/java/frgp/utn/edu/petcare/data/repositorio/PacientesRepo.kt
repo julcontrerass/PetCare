@@ -33,7 +33,9 @@ data class Paciente(
     /** Falso cuando el dueño todavía no usa la app: la mascota está a nombre del veterinario. */
     val tieneCuenta: Boolean = true,
     /** DNI del propietario cuando se cargó a mano; sirve para crearle la cuenta. */
-    val dniPropietario: String = ""
+    val dniPropietario: String = "",
+    /** Foto de perfil del dueño cuando tiene cuenta (ruta en el bucket `fotos`). */
+    val fotoDueno: String? = null
 ) {
     val razaYSexo: String get() = "$raza - $sexo"
 
@@ -90,7 +92,8 @@ object PacientesRepo {
             email = dueno?.email ?: m.propietarioEmail ?: SIN_DATOS,
             alertas = m.alertasClinicas.orEmpty(),
             tieneCuenta = m.duenoId != null,
-            dniPropietario = m.propietarioDni.orEmpty()
+            dniPropietario = m.propietarioDni.orEmpty(),
+            fotoDueno = dueno?.fotoPath
         )
     }
 
@@ -182,6 +185,9 @@ object PacientesRepo {
             Servicios.fuente.guardarAlertas(id, alertas.trim())
         }
     }
+
+    /** Foto de perfil del dueño de ese paciente, si tiene cuenta y subió una. */
+    fun fotoDuenoDe(id: String?): String? = porId(id)?.fotoDueno
 
     /** Nombre del paciente para mostrar en listas aunque ya no esté disponible. */
     fun nombreDe(id: String?): String = porId(id)?.nombre ?: "Mascota"

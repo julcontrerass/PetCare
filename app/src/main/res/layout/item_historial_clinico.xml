@@ -79,6 +79,17 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivVet"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="Foto del veterinario"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            app:shapeAppearanceOverlay="@style/CircleImage" />
+
         <ImageView
             android:id="@+id/ivChevron"
             android:layout_width="22dp"

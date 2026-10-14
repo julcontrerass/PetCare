@@ -78,6 +78,17 @@
             android:textColor="@color/teal_dark" />
     </LinearLayout>
 
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivDuenoFoto"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="6dp"
+        android:contentDescription="Foto del dueño"
+        android:scaleType="centerCrop"
+        android:src="@drawable/avatar_default"
+        app:shapeAppearanceOverlay="@style/CircleImage" />
+
     <ImageView
         android:id="@+id/ivChevron"
         android:layout_width="22dp"

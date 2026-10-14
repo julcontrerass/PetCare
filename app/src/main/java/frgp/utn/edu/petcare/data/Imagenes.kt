@@ -10,8 +10,12 @@ import android.widget.ImageView
 import frgp.utn.edu.petcare.R
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -120,10 +124,25 @@ object Imagenes {
     suspend fun archivoLocal(bucket: String, ruta: String): File {
         val destino = archivoDeCache(bucket, ruta)
         if (destino.exists() && destino.length() > 0) return destino
-        val bytes = Servicios.fuente.descargar(bucket, ruta)
-        withContext(Dispatchers.IO) { destino.writeBytes(bytes) }
-        return destino
+        // Si la misma foto ya se está bajando (la lista se redibuja seguido) se espera esa descarga, no se pide otra
+        val descarga = candadoDescargas.withLock {
+            descargas.getOrPut(destino.name) {
+                Servicios.scope.async {
+                    val bytes = Servicios.fuente.descargar(bucket, ruta)
+                    withContext(Dispatchers.IO) { destino.writeBytes(bytes) }
+                    destino
+                }
+            }
+        }
+        try {
+            return descarga.await()
+        } finally {
+            candadoDescargas.withLock { descargas.remove(destino.name, descarga) }
+        }
     }
+
+    private val descargas = HashMap<String, Deferred<File>>()
+    private val candadoDescargas = Mutex()
 
     /** Achica y comprime la foto elegida; devuelve un JPEG listo para subir. */
     suspend fun prepararFoto(uri: Uri): File = withContext(Dispatchers.IO) {

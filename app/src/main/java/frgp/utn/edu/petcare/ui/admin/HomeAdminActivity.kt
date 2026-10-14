@@ -32,6 +32,7 @@ import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BaseActivity
+import frgp.utn.edu.petcare.ui.common.Diseno
 import frgp.utn.edu.petcare.ui.common.VetUi
 import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
@@ -95,7 +96,6 @@ class HomeAdminActivity : BaseActivity() {
         })
 
         mostrarPanel(R.id.nav_admin_inicio)
-        refrescarTodo()
     }
 
     override fun onResume() {
@@ -106,7 +106,8 @@ class HomeAdminActivity : BaseActivity() {
         // Un solo ciclo de pedidos: si no, cada vez que se vuelve a la pantalla se sumaría otro
         bucleDeDatos?.cancel()
         bucleDeDatos = lifecycleScope.launch {
-            cargarDatos(avisarSiFalla = true)
+            // Al entrar ya se cargó todo en el inicio de sesión: solo se repite si pasó un rato
+            if (AdminRepo.cargadoHaceMs() > RECARGA_MINIMA_MS) cargarDatos(avisarSiFalla = true)
             // Las cuentas nuevas no llegan en vivo: mientras la pantalla está a la vista se piden cada tanto
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (true) {
@@ -124,8 +125,6 @@ class HomeAdminActivity : BaseActivity() {
     private suspend fun cargarDatos(avisarSiFalla: Boolean) {
         try {
             AdminRepo.cargar()
-            errorMostrado = false
-            refrescarTodo()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -133,11 +132,15 @@ class HomeAdminActivity : BaseActivity() {
                 errorMostrado = true
                 Avisos.error(this, Errores.mensaje(e), "No se pudieron cargar los datos")
             }
+            return
         }
+        errorMostrado = false
+        refrescarTodo()
     }
 
     private companion object {
-        const val INTERVALO_ACTUALIZACION_MS = 15_000L
+        const val INTERVALO_ACTUALIZACION_MS = 30_000L
+        const val RECARGA_MINIMA_MS = 8_000L
     }
 
     override fun onPause() {
@@ -226,17 +229,16 @@ class HomeAdminActivity : BaseActivity() {
     // ---------- Navegación ----------
 
     private fun mostrarPanel(navId: Int) {
+        // Sin fundido: un panel nunca puede quedar a medias de una animación y verse en blanco
         paneles.forEach { (id, panel) ->
-            val visible = id == navId
-            if (visible && panel.visibility != View.VISIBLE) {
-                panel.alpha = 0f
-                panel.visibility = View.VISIBLE
-                panel.animate().alpha(1f).setDuration(180).start()
-            } else if (!visible) {
-                panel.visibility = View.GONE
-            }
+            panel.animate().cancel()
+            panel.alpha = 1f
+            panel.visibility = if (id == navId) View.VISIBLE else View.GONE
         }
+        refrescarTodo()
     }
+
+    private fun forzarDiseno() = Diseno.forzar(findViewById(R.id.panelesAdmin))
 
     private fun verVeterinarios(estado: String?) {
         filtroVets = estado
@@ -262,6 +264,7 @@ class HomeAdminActivity : BaseActivity() {
         } else {
             bottomNav.removeBadge(R.id.nav_admin_vets)
         }
+        forzarDiseno()
     }
 
     private fun mostrarVacio(vacio: View, icono: Int, titulo: String, mensaje: String) {

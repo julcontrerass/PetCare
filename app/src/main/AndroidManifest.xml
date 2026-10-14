@@ -44,7 +44,8 @@
             android:screenOrientation="portrait" />
         <activity android:screenOrientation="portrait"
             android:name=".ui.veterinario.HomeVeterinarioActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop" />
         <activity android:screenOrientation="portrait"
             android:name=".ui.auth.RegistroDuenoActivity"
             android:exported="false"
@@ -53,11 +54,8 @@
             android:name=".ui.auth.RegistroVeterinarioActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.MisPacientesActivity" />
         <activity android:screenOrientation="portrait" android:name=".ui.veterinario.DetallePacienteActivity" />
         <activity android:screenOrientation="portrait" android:name=".ui.veterinario.SolicitudesVetActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.AgendaVetActivity" android:exported="false" />
-        <activity android:screenOrientation="portrait" android:name=".ui.veterinario.PerfilVetActivity" android:exported="false" />
         <activity android:screenOrientation="portrait"
             android:name=".ui.veterinario.AgregarConsultaActivity"
             android:exported="false"

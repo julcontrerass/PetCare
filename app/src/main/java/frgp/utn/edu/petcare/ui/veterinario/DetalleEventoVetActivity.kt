@@ -258,6 +258,7 @@ class DetalleEventoVetActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvPaciente).text = p?.nombre ?: "Mascota"
         findViewById<TextView>(R.id.tvPacienteRaza).text = p?.razaYSexo.orEmpty()
         findViewById<TextView>(R.id.tvPropietario).text = "Propietario/a: ${p?.propietario ?: "Sin datos"}"
+        frgp.utn.edu.petcare.ui.common.Avatares.mostrar(findViewById(R.id.ivDuenoFoto), p?.fotoDueno)
 
         val pendiente = evento.estado == EstadoEvento.PENDIENTE
         findViewById<View>(R.id.btnIniciarTurno).visibility = if (pendiente) View.VISIBLE else View.GONE

@@ -1,19 +1,23 @@
 package frgp.utn.edu.petcare.ui.veterinario
 
 import android.content.Intent
-import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
+import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
 import frgp.utn.edu.petcare.model.TiposMascota
-import frgp.utn.edu.petcare.R
-import frgp.utn.edu.petcare.ui.common.BaseActivity
 
-class MisPacientesActivity : BaseActivity() {
+/** Lista de pacientes del veterinario, con búsqueda y una solapa por tipo de animal. */
+class PacientesVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
+
+    override val layout = R.layout.seccion_vet_pacientes
+    override val navId = R.id.nav_pacientes
 
     private lateinit var adapter: PacientesAdapter
     private lateinit var etBuscar: EditText
@@ -22,22 +26,11 @@ class MisPacientesActivity : BaseActivity() {
     /** Una solapa por tipo de animal, además de "Todos". */
     private val especiesPorTab = listOf<String?>(null) + TiposMascota.TODOS
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        if (volverSiNoHaySesion()) return
-        setContentView(R.layout.activity_mis_pacientes)
+    override fun configurar() {
+        findViewById<View>(R.id.toolbar).setOnClickListener { host.irA(R.id.nav_inicio) }
 
-        VetBottomNav.setup(this, R.id.nav_pacientes)
-
-        findViewById<View>(R.id.toolbar)?.setOnClickListener {
-            val intent = Intent(this, HomeVeterinarioActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            startActivity(intent)
-            finish()
-        }
-
-        findViewById<View>(R.id.btnAgregarPaciente)?.setOnClickListener {
-            startActivity(Intent(this, NuevoDuenoActivity::class.java))
+        findViewById<View>(R.id.btnAgregarPaciente).setOnClickListener {
+            host.startActivity(Intent(host, NuevoDuenoActivity::class.java))
         }
 
         etBuscar = findViewById(R.id.etBuscarPaciente)
@@ -61,6 +54,12 @@ class MisPacientesActivity : BaseActivity() {
         })
     }
 
+    override fun refrescar() {
+        if (!::adapter.isInitialized) return
+        actualizarContadores()
+        aplicarFiltros()
+    }
+
     private fun aplicarFiltros() {
         val especie = especiesPorTab[tabLayout.selectedTabPosition.coerceAtLeast(0)]
         val lista = PacientesRepo.filtrar(etBuscar.text.toString(), especie)
@@ -69,27 +68,14 @@ class MisPacientesActivity : BaseActivity() {
         val vacio = findViewById<View>(R.id.emptyPacientes)
         vacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
         findViewById<RecyclerView>(R.id.rvPacientes).visibility = if (lista.isEmpty()) View.GONE else View.VISIBLE
-        vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_dog)
-        vacio.findViewById<android.widget.TextView>(R.id.tvEmptyTitle).text = "No encontramos pacientes"
-        vacio.findViewById<android.widget.TextView>(R.id.tvEmptyMessage).text = "Probá con otra búsqueda o agregá uno nuevo"
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (isFinishing) return
-        val redibujar = {
-            if (::adapter.isInitialized) {
-                actualizarContadores()
-                aplicarFiltros()
-            }
-        }
-        redibujar()
-        actualizarDatosVeterinario(redibujar)
+        vacio.findViewById<ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_dog)
+        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "No encontramos pacientes"
+        vacio.findViewById<TextView>(R.id.tvEmptyMessage).text = "Probá con otra búsqueda o agregá uno nuevo"
     }
 
     private fun actualizarContadores() {
         val total = PacientesRepo.pacientes.size
-        findViewById<android.widget.TextView>(R.id.tvPacientesCount).text =
+        findViewById<TextView>(R.id.tvPacientesCount).text =
             if (total == 1) "1 paciente" else "$total pacientes"
         val nombres = listOf("Todos") + TiposMascota.TODOS.map { TiposMascota.plural(it) }
         for (i in nombres.indices) {

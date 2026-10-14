@@ -160,12 +160,22 @@
                 <FrameLayout style="@style/PetInfoIconBox">
 
                     <ImageView
+                        android:id="@+id/ivPropIcono"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_person"
                         app:tint="@color/teal_dark" />
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivPropFoto"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="Foto del dueño"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone"
+                        app:shapeAppearanceOverlay="@style/CircleImage" />
                 </FrameLayout>
 
                 <LinearLayout style="@style/PetInfoTexts">

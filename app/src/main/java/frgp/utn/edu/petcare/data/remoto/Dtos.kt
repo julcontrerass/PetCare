@@ -65,7 +65,8 @@ data class DuenoResumenDto(
     val nombre: String? = null,
     val email: String? = null,
     val telefono: String? = null,
-    val direccion: String? = null
+    val direccion: String? = null,
+    @SerialName("foto_path") val fotoPath: String? = null
 )
 
 @Serializable

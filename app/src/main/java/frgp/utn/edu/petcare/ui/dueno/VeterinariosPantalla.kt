@@ -17,6 +17,7 @@ import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.Efectos
 import frgp.utn.edu.petcare.util.Fechas
 
@@ -90,7 +91,9 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
         val activo = vet.tieneAcceso
 
         val sinTitulo = vet.nombre.replaceFirst(Regex("^Dra?\\.\\s*"), "")
-        tarjeta.findViewById<TextView>(R.id.tvInicial).text = sinTitulo.take(1).uppercase().ifEmpty { "?" }
+        val inicial = tarjeta.findViewById<TextView>(R.id.tvInicial)
+        inicial.text = sinTitulo.take(1).uppercase().ifEmpty { "?" }
+        Avatares.conRespaldo(tarjeta.findViewById(R.id.ivFotoVet), vet.fotoPath, inicial)
         tarjeta.findViewById<TextView>(R.id.tvNombre).text = vet.nombre
         val turnos = DuenoRepo.turnosDeVeterinario(vet)
         tarjeta.findViewById<TextView>(R.id.tvDatos).text =

@@ -192,7 +192,7 @@ object Sesion {
                 .conflate()
                 .collect {
                     // Si llegan varios cambios seguidos (un turno y su aviso) se piden los datos una sola vez
-                    delay(300)
+                    delay(if (rolCuenta == Rol.ADMIN) 1500 else 300)
                     runCatching {
                         when (rolCuenta) {
                             Rol.DUENO -> DuenoRepo.recargarDerivados()
