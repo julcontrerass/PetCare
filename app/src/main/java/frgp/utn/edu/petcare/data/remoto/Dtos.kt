@@ -53,7 +53,51 @@ data class VeterinarioDto(
     @SerialName("credencial_path") val credencialPath: String? = null,
     /** Estado de la revisión del rol de veterinario: pendiente_revision, activo, rechazado o suspendido. */
     @SerialName("estado_revision") val estadoRevision: String = "activo",
-    @SerialName("motivo_revision") val motivoRevision: String? = null
+    @SerialName("motivo_revision") val motivoRevision: String? = null,
+    /** Lugares de atención (solo vienen cuando se pidió el embebido `sedes`). */
+    val sedes: List<SedeDto> = emptyList()
+) {
+    /**
+     * Los lugares donde atiende, el principal primero. Si el servidor todavía no informa ninguno se arma uno
+     * con los datos de siempre (clínica, dirección, días y horario).
+     */
+    fun lugares(): List<SedeDto> {
+        val activos = sedes.filter { it.activa }.sortedBy { it.createdAt.orEmpty() }
+        if (activos.isNotEmpty()) return activos
+        return listOf(
+            SedeDto(
+                id = "", veterinarioId = profileId, nombre = clinica.orEmpty().ifBlank { "Consultorio" },
+                direccion = direccionClinica, diasAtencion = diasAtencion, horaApertura = horaApertura,
+                horaCierre = horaCierre
+            )
+        )
+    }
+}
+
+/** Un lugar de atención de un veterinario con sus días y horarios. */
+@Serializable
+data class SedeDto(
+    val id: String,
+    @SerialName("veterinario_id") val veterinarioId: String? = null,
+    val nombre: String,
+    val direccion: String? = null,
+    @SerialName("dias_atencion") val diasAtencion: List<Int> = listOf(1, 2, 3, 4, 5),
+    @SerialName("hora_apertura") val horaApertura: String = "09:00:00",
+    @SerialName("hora_cierre") val horaCierre: String = "18:00:00",
+    val activa: Boolean = true,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+/** Datos para crear un lugar de atención; el servidor pone el resto. */
+@Serializable
+data class NuevaSedeDto(
+    val id: String? = null,
+    @SerialName("veterinario_id") val veterinarioId: String,
+    val nombre: String,
+    val direccion: String? = null,
+    @SerialName("dias_atencion") val diasAtencion: List<Int>,
+    @SerialName("hora_apertura") val horaApertura: String,
+    @SerialName("hora_cierre") val horaCierre: String
 )
 
 /** La cuenta está activa y su rol de veterinario fue aprobado: puede atender y aparece en el catálogo. */
@@ -110,7 +154,9 @@ data class TurnoDto(
     @SerialName("creado_por") val creadoPor: String? = null,
     @SerialName("cancelado_por") val canceladoPor: String? = null,
     /** Minutos que dura el turno; lo fija el servidor según el servicio y el veterinario. */
-    @SerialName("duracion_min") val duracionMin: Int = 30
+    @SerialName("duracion_min") val duracionMin: Int = 30,
+    /** Lugar de atención donde es el turno. */
+    @SerialName("sede_id") val sedeId: String? = null
 )
 
 @Serializable
@@ -296,7 +342,9 @@ data class SolicitudAltaVeterinarioDto(
     val especialidades: List<String>,
     val tiposAnimales: List<String>,
     /** Ruta de la foto del carnet o matrícula, ya subida al bucket `credenciales`. */
-    val credencialPath: String
+    val credencialPath: String,
+    /** Otros lugares donde atiende, además del primero. */
+    val sedesExtra: List<frgp.utn.edu.petcare.model.SedeVet> = emptyList()
 )
 
 /** Archivo de Storage que hay que borrar antes de eliminar la cuenta. */
@@ -337,7 +385,8 @@ data class NuevoTurnoDto(
     val hora: String,
     val estado: String = "pendiente",
     val notas: String? = null,
-    @SerialName("creado_por") val creadoPor: String
+    @SerialName("creado_por") val creadoPor: String,
+    @SerialName("sede_id") val sedeId: String? = null
 )
 
 @Serializable

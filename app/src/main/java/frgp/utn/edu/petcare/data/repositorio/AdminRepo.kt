@@ -137,12 +137,25 @@ object AdminRepo {
 
     private fun aVeterinario(p: PerfilDto): VetAdminItem {
         val v = p.veterinarios
-        val diasAtencion = v?.diasAtencion.orEmpty().sorted()
+        val lugares = v?.lugares().orEmpty()
+        val principal = lugares.firstOrNull()
         return VetAdminItem(
             id = p.id, nombre = p.nombre, email = p.email, matricula = v?.matricula.orEmpty(),
-            clinica = v?.clinica.orEmpty(), direccion = v?.direccionClinica.orEmpty(), telefono = p.telefono.orEmpty(),
+            clinica = lugares.joinToString(" · ") { it.nombre }.ifBlank { v?.clinica.orEmpty() },
+            direccion = lugares.mapNotNull { it.direccion?.takeIf { d -> d.isNotBlank() } }.joinToString("\n")
+                .ifBlank { v?.direccionClinica.orEmpty() },
+            telefono = p.telefono.orEmpty(),
             especialidades = v?.especialidades.orEmpty().joinToString(", "),
-            diasYHorarios = textoHorarios(diasAtencion, v?.horaApertura, v?.horaCierre),
+            diasYHorarios = if (lugares.size > 1) {
+                lugares.joinToString("\n") {
+                    it.nombre + ": " + textoHorarios(it.diasAtencion.sorted(), it.horaApertura, it.horaCierre)
+                }
+            } else {
+                textoHorarios(
+                    (principal?.diasAtencion ?: v?.diasAtencion.orEmpty()).sorted(),
+                    principal?.horaApertura ?: v?.horaApertura, principal?.horaCierre ?: v?.horaCierre
+                )
+            },
             // El estado del rol de veterinario es el que se revisa; el de la cuenta puede ser otro (dueño activo)
             estado = (v?.estadoRevision ?: p.estado).uppercase(), dni = p.privados?.dni.orEmpty(), fotoPath = p.fotoPath,
             fechaRegistro = Fechas.instante(p.createdAt).toLocalDate(),

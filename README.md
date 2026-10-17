@@ -47,6 +47,13 @@ Para agregar una sección: crear la `Pantalla`, un método `irA...()` en `DuenoA
 - La duración real de un turno la fija el servidor al crearlo (`turnos.duracion_min`, trigger `turnos_duracion`) y de ahí sale el rango que impide superposiciones. La app calcula lo mismo para mostrar solo los horarios en los que el turno entra completo.
 - El veterinario elige qué animales atiende al registrarse o desde su perfil (`veterinarios.tipos_animales`). El dueño solo ve veterinarios que atienden el tipo de su mascota y la base rechaza el turno si no es así.
 
+### Lugares de atención
+
+- Un veterinario puede atender en hasta 3 lugares (tabla `sedes`), cada uno con su nombre, dirección, días y horario. Se cargan desde *Perfil → Lugares de atención*; el primero es el principal y sus datos se reflejan en `veterinarios.clinica`, `direccion_clinica`, `dias_atencion` y `hora_*` (lo que leen las versiones anteriores de la app).
+- Cada turno guarda dónde es (`turnos.sede_id`). El dueño elige el lugar al sacar el turno y los horarios que ve salen de ese lugar; el trigger `turnos_validar` valida el turno contra el lugar elegido (o, si no viene, contra el primero que atiende ese día y a esa hora).
+- La agenda es una sola: un turno en un lugar bloquea el mismo horario en los demás (la restricción `turnos_sin_superposicion_vet` no distingue lugares).
+- No se puede borrar el único lugar ni uno con turnos pendientes.
+
 ### Historia clínica, recetas y avisos de salud
 
 - **Informe de consulta (SOAP):** motivo, anamnesis, signos vitales (peso, temperatura, frecuencia cardíaca y respiratoria), examen físico, diagnóstico y plan. El peso medido pasa a ser el peso actual de la mascota (trigger `informes_peso`) y alimenta el gráfico de evolución.

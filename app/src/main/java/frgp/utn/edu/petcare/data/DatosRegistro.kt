@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare.data
 
+import frgp.utn.edu.petcare.model.SedeVet
 import java.io.Serializable
 
 /** Mascota cargada durante el registro del dueño. */
@@ -47,5 +48,7 @@ data class DatosRegistroVeterinario(
     val cierre: String,
     val fotoPath: String? = null,
     /** Foto del carnet o matrícula, en el teléfono: el administrador la ve para dar el alta. */
-    val credencialPath: String? = null
+    val credencialPath: String? = null,
+    /** Otros lugares donde atiende, además del primero (que es la clínica, la dirección, los días y el horario de arriba). */
+    val sedesExtra: List<SedeVet> = emptyList()
 ) : Serializable

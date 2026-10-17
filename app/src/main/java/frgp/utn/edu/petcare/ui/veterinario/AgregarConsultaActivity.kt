@@ -61,6 +61,13 @@ class AgregarConsultaActivity : BaseActivity() {
         spTipo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AgendaRepo.tipos())
         fun duracion() = PerfilVetRepo.duracionDe(spTipo.selectedItem as? String)
 
+        // Si atiende en más de un lugar, el turno es en uno de ellos (cada uno tiene sus días y horarios)
+        val sedes = PerfilVetRepo.sedes.toList()
+        val spSede = findViewById<Spinner>(R.id.spSede)
+        findViewById<View>(R.id.llSede).visibility = if (sedes.size > 1) View.VISIBLE else View.GONE
+        spSede.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, sedes.map { it.textoLugar() })
+        fun sede() = sedes.getOrNull(spSede.selectedItemPosition)
+
         // Preselección por intent si viene de DetallePaciente
         val preseleccionado = intent.getStringExtra(DetallePacienteActivity.EXTRA_PACIENTE_ID)
         val idx = pacientes.indexOfFirst { it.id == preseleccionado }
@@ -141,13 +148,13 @@ class AgregarConsultaActivity : BaseActivity() {
         val etFecha = findViewById<EditText>(R.id.etFecha)
         val etHora = findViewById<EditText>(R.id.etHora)
         etFecha.setOnClickListener {
-            SelectorFechaVet.mostrar(this, fecha) { elegida ->
+            SelectorFechaVet.mostrar(this, fecha, sede()) { elegida ->
                 fecha = elegida
                 etFecha.setText(Fechas.corta(elegida))
                 etFecha.error = null
                 // Si el horario ya cargado no sirve para el nuevo día, hay que elegirlo de nuevo
                 val hora = etHora.text.toString()
-                if (hora.isNotBlank() && DisponibilidadVet.validar(elegida, hora, duracion()) != null) {
+                if (hora.isNotBlank() && DisponibilidadVet.validar(elegida, hora, duracion(), null, sede()) != null) {
                     etHora.setText("")
                     Avisos.mostrar(this, "Elegí otro horario para ese día")
                 }
@@ -160,7 +167,7 @@ class AgregarConsultaActivity : BaseActivity() {
                 etFecha.error = "Elegí primero la fecha"
                 Avisos.mostrar(this, "Elegí primero la fecha")
             } else {
-                SelectorHoraVet.mostrar(this, f, etHora.text.toString().ifBlank { null }, null, duracion()) { hora ->
+                SelectorHoraVet.mostrar(this, f, etHora.text.toString().ifBlank { null }, null, duracion(), sede()) { hora ->
                     etHora.setText(hora)
                     etHora.error = null
                 }
@@ -177,7 +184,7 @@ class AgregarConsultaActivity : BaseActivity() {
             if (etMotivo.text.isBlank()) { etMotivo.error = "Requerido"; ok = false }
             if (!ok) return@setOnClickListener
 
-            val problema = DisponibilidadVet.validar(fecha!!, etHora.text.toString(), duracion())
+            val problema = DisponibilidadVet.validar(fecha!!, etHora.text.toString(), duracion(), null, sede())
             if (problema != null) {
                 etHora.error = problema
                 Avisos.mostrar(this, problema)
@@ -197,6 +204,7 @@ class AgregarConsultaActivity : BaseActivity() {
                         put("fecha", fecha!!.toString())
                         put("hora", etHora.text.toString() + ":00")
                         put("notas", etNotas.text.toString().trim())
+                        sede()?.id?.takeIf { it.isNotBlank() }?.let { put("sede_id", it) }
                     }
                     pedirAcceso(candidata, propuesta)
                     return@setOnClickListener
@@ -223,7 +231,7 @@ class AgregarConsultaActivity : BaseActivity() {
             val f = fecha!!
 
             val estado = if (f.isBefore(LocalDate.now())) EstadoEvento.COMPLETADO else EstadoEvento.PENDIENTE
-            AgendaRepo.agregar(pacienteElegido.id, tipo, motivo, f, etHora.text.toString(), estado, notas)
+            AgendaRepo.agregar(pacienteElegido.id, tipo, motivo, f, etHora.text.toString(), estado, notas, sede()?.id)
             registrarEnCarnet(pacienteElegido.id, tipo, motivo, notas, f)
 
             Avisos.mostrar(this, R.string.consulta_guardada)

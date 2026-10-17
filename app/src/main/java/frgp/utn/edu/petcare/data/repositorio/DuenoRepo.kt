@@ -26,6 +26,7 @@ import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.NotificacionDueno
 import frgp.utn.edu.petcare.model.PerfilDueno
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.model.Prescripcion
 import frgp.utn.edu.petcare.model.Sexo
 import frgp.utn.edu.petcare.model.SignosVitales
@@ -234,7 +235,7 @@ object DuenoRepo {
             hora = t.hora.take(5), observaciones = t.notas.orEmpty(), fecha = LocalDate.parse(t.fecha),
             id = t.id, mascotaId = t.mascotaId, veterinarioId = t.veterinarioId,
             estado = if (t.estado == "completado") EstadoTurno.COMPLETADO else EstadoTurno.PENDIENTE,
-            duracionMin = t.duracionMin
+            duracionMin = t.duracionMin, sedeId = t.sedeId
         )
     }
 
@@ -247,17 +248,26 @@ object DuenoRepo {
 
     private fun aVeterinario(p: PerfilDto, estadoAcceso: EstadoAcceso, mascotas: Collection<String>): VeterinarioAcceso {
         val datos = p.veterinarios
+        val sedes = datos?.lugares().orEmpty().map {
+            SedeVet(
+                id = it.id, nombre = it.nombre, direccion = it.direccion.orEmpty(), dias = it.diasAtencion.toSet(),
+                apertura = it.horaApertura.take(5), cierre = it.horaCierre.take(5)
+            )
+        }
+        val principal = sedes.firstOrNull()
         return VeterinarioAcceso(
             nombre = p.nombre, usuario = "@" + p.email.substringBefore('@'), email = p.email,
             matricula = datos?.matricula.orEmpty(),
             especialidad = datos?.especialidades.orEmpty().take(2).joinToString(", ").ifBlank { "Chequeo médico integral" },
             estado = estadoAcceso, mascotas = mascotas, id = p.id, fotoPath = p.fotoPath,
             especialidades = datos?.especialidades.orEmpty(),
-            diasAtencion = datos?.diasAtencion.orEmpty().toSet(),
-            apertura = (datos?.horaApertura ?: "09:00").take(5), cierre = (datos?.horaCierre ?: "18:00").take(5),
+            diasAtencion = principal?.dias ?: datos?.diasAtencion.orEmpty().toSet(),
+            apertura = principal?.apertura ?: (datos?.horaApertura ?: "09:00").take(5),
+            cierre = principal?.cierre ?: (datos?.horaCierre ?: "18:00").take(5),
             tiposAnimales = datos?.tiposAnimales?.map { TiposMascota.normalizar(it) }?.toSet()
                 ?: TiposMascota.TODOS.toSet(),
-            duraciones = datos?.duraciones.orEmpty()
+            duraciones = datos?.duraciones.orEmpty(),
+            sedes = sedes
         )
     }
 
@@ -506,7 +516,13 @@ object DuenoRepo {
         return lista
     }
 
-    fun trabajaEl(vet: VeterinarioAcceso, fecha: LocalDate): Boolean = fecha.dayOfWeek.value in vet.diasAtencion
+    /** True si atiende ese día en [sede] (o, sin indicarla, en su lugar principal). */
+    fun trabajaEl(vet: VeterinarioAcceso, fecha: LocalDate, sede: SedeVet? = vet.sede(null)): Boolean =
+        fecha.dayOfWeek.value in (sede?.dias ?: vet.diasAtencion)
+
+    /** True si atiende ese día en alguno de sus lugares. */
+    fun trabajaEnAlgunLugar(vet: VeterinarioAcceso, fecha: LocalDate): Boolean =
+        vet.sedes.ifEmpty { listOf(null) }.any { trabajaEl(vet, fecha, it) }
 
     private fun minutos(hora: String) = hora.substringBefore(':').toInt() * 60 + hora.substringAfter(':').toInt()
 
@@ -521,12 +537,13 @@ object DuenoRepo {
      * un turno que dura [duracionMin]: solo los que terminan antes de que cierre.
      */
     fun horasDe(
-        vet: VeterinarioAcceso, fecha: LocalDate, duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN
+        vet: VeterinarioAcceso, fecha: LocalDate, duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN,
+        sede: SedeVet? = vet.sede(null)
     ): List<String> {
-        if (!trabajaEl(vet, fecha)) return emptyList()
+        if (!trabajaEl(vet, fecha, sede)) return emptyList()
         val horas = mutableListOf<String>()
-        var t = minutos(vet.apertura)
-        val fin = minutos(vet.cierre)
+        var t = minutos(sede?.apertura ?: vet.apertura)
+        val fin = minutos(sede?.cierre ?: vet.cierre)
         while (t + duracionMin <= fin) {
             horas.add("%02d:%02d".format(t / 60, t % 60))
             t += PASO_HORARIOS_MIN
@@ -598,13 +615,14 @@ object DuenoRepo {
     /** Agenda el turno. El servidor valida el horario del veterinario y le da acceso a la mascota. */
     fun agendarEvento(
         fecha: LocalDate, categoria: String, mascota: String, veterinario: String, hora: String, observaciones: String,
-        estudios: List<EstudioAdjunto> = emptyList()
+        estudios: List<EstudioAdjunto> = emptyList(), sedeId: String? = null
     ) {
         val m = buscarMascota(mascota) ?: return
         val vet = buscarVeterinario(veterinario)
+        val sede = vet?.sede(sedeId)?.takeIf { it.id.isNotBlank() }
         val evento = EventoMascota(
             categoria, mascota, veterinario, hora, observaciones, fecha,
-            mascotaId = m.id, veterinarioId = vet?.id?.ifBlank { null }
+            mascotaId = m.id, veterinarioId = vet?.id?.ifBlank { null }, sedeId = sede?.id
         )
         eventos.add(evento)
         if (vet != null && veterinario.isNotEmpty()) autorizarPorTurno(veterinario, mascota, true)
@@ -613,7 +631,8 @@ object DuenoRepo {
             Servicios.fuente.crearTurno(
                 NuevoTurnoDto(
                     id = evento.id, mascotaId = m.id, veterinarioId = evento.veterinarioId, categoria = categoria,
-                    fecha = fecha.toString(), hora = "$hora:00", notas = observaciones.ifBlank { null }, creadoPor = usuario
+                    fecha = fecha.toString(), hora = "$hora:00", notas = observaciones.ifBlank { null }, creadoPor = usuario,
+                    sedeId = evento.sedeId
                 )
             )
             // Los estudios se enlazan después de crear el turno, que es de lo que dependen
@@ -638,13 +657,15 @@ object DuenoRepo {
     }
 
     fun modificarEvento(
-        evento: EventoMascota, fecha: LocalDate, hora: String, veterinario: String, observaciones: String
+        evento: EventoMascota, fecha: LocalDate, hora: String, veterinario: String, observaciones: String,
+        sedeId: String? = evento.sedeId
     ) {
         val vet = buscarVeterinario(veterinario)
         evento.fecha = fecha
         evento.hora = hora
         evento.veterinario = veterinario
         evento.veterinarioId = vet?.id?.ifBlank { null }
+        evento.sedeId = vet?.sede(sedeId)?.takeIf { it.id.isNotBlank() }?.id
         evento.observaciones = observaciones
         if (veterinario.isNotEmpty()) autorizarPorTurno(veterinario, evento.mascota, true)
         Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
@@ -652,6 +673,7 @@ object DuenoRepo {
                 put("fecha", fecha.toString())
                 put("hora", "$hora:00")
                 put("veterinario_id", evento.veterinarioId)
+                put("sede_id", evento.sedeId)
                 put("notas", observaciones.ifBlank { null })
             })
         }
@@ -660,6 +682,12 @@ object DuenoRepo {
     // ---------- Veterinarios y accesos ----------
 
     fun todosLosVeterinarios(): List<VeterinarioAcceso> = autorizados + disponibles
+
+    /** El lugar donde es [evento], si se sabe cuál. */
+    fun sedeDe(evento: EventoMascota): SedeVet? {
+        val vet = buscarVeterinario(evento.veterinario) ?: return null
+        return evento.sedeId?.let { id -> vet.sedes.firstOrNull { it.id == id } } ?: vet.sede(null)
+    }
 
     fun buscarVeterinario(nombre: String?): VeterinarioAcceso? {
         if (nombre.isNullOrBlank()) return null

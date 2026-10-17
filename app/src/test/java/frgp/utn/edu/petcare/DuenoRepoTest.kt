@@ -637,4 +637,38 @@ class DuenoRepoTest : PruebaBase() {
         assertTrue(DuenoRepo.tieneVacunaPendiente("Rex"))
         assertFalse(DuenoRepo.tieneVacunaPendiente("Mia"))
     }
+
+    @Test
+    fun lugares_elDuenoVeLosLugaresYLosHorariosDeCadaUno() {
+        fuente.perfiles.add(Escenario.veterinarioEnDosLugares())
+        ingresarComoDueno()
+        val vet = DuenoRepo.todosLosVeterinarios().first()
+        val lunes = LocalDate.now().with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY))
+        val sabado = lunes.plusDays(5)
+        val a = vet.sede("sede-a")!!
+        val b = vet.sede("sede-b")!!
+
+        assertEquals(listOf("Clínica Sur", "Consultorio Centro"), vet.sedes.map { it.nombre })
+        assertTrue(DuenoRepo.trabajaEl(vet, lunes, a))
+        assertFalse(DuenoRepo.trabajaEl(vet, lunes, b))
+        assertTrue(DuenoRepo.trabajaEl(vet, sabado, b))
+        assertTrue(DuenoRepo.trabajaEnAlgunLugar(vet, sabado))
+        assertEquals(listOf("09:00", "09:30", "10:00", "10:30", "11:00", "11:30"), DuenoRepo.horasDe(vet, lunes, sede = a))
+        assertEquals(8, DuenoRepo.horasDe(vet, sabado, sede = b).size)
+        assertEquals("10:00", DuenoRepo.horasDe(vet, sabado, sede = b).first())
+    }
+
+    @Test
+    fun lugares_elTurnoSeAgendaEnElLugarElegido() {
+        fuente.perfiles.add(Escenario.veterinarioEnDosLugares())
+        ingresarComoDueno()
+        val sabado = LocalDate.now().with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.SATURDAY))
+
+        DuenoRepo.agendarEvento(sabado, "Control", "Rex", "Dr. Vera", "10:00", "", emptyList(), "sede-b")
+
+        val evento = DuenoRepo.eventos.first { it.fecha == sabado }
+        assertEquals("sede-b", evento.sedeId)
+        assertEquals("Consultorio Centro", DuenoRepo.sedeDe(evento)!!.nombre)
+        assertEquals("sede-b", fuente.turnos.first { it.id == evento.id }.sedeId)
+    }
 }

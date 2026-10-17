@@ -970,6 +970,36 @@ class PantallasTest : PruebaBase() {
     }
 
     @Test
+    fun registro_elPasoDeHorariosPermiteSumarOtrosLugares() {
+        val a = abrir(RegistroVeterinarioActivity::class.java)
+
+        val agregar = a.findViewById<View>(R.id.btnAgregarLugar)
+        assertNotNull(agregar)
+        agregar.performClick()
+
+        // Se abre la hoja con nombre, dirección, días y horarios (la misma que usa el perfil)
+        val hoja = ShadowDialog.getLatestDialog() as BottomSheetDialog
+        assertTrue(hoja.isShowing)
+        assertEquals("Agregar otra veterinaria", hoja.findViewById<TextView>(R.id.tvSedeTitulo)!!.text.toString())
+        assertEquals(PerfilVetRepo.todosLosDias.size, hoja.findViewById<com.google.android.material.chip.ChipGroup>(R.id.cgSedeDias)!!.childCount)
+        assertEquals("09:00 hs", hoja.findViewById<EditText>(R.id.etSedeApertura)!!.text.toString())
+        assertEquals(View.GONE, hoja.findViewById<View>(R.id.btnSedeEliminar)!!.visibility)
+
+        // Sin nombre no guarda
+        hoja.findViewById<View>(R.id.btnSedeGuardar)!!.performClick()
+        assertTrue(hoja.isShowing)
+        assertNotNull(hoja.findViewById<EditText>(R.id.etSedeNombre)!!.error)
+
+        // Con nombre se suma a la lista de la pantalla
+        hoja.findViewById<EditText>(R.id.etSedeNombre)!!.setText("Consultorio Centro")
+        hoja.findViewById<EditText>(R.id.etSedeDireccion)!!.setText("San Martín 100")
+        hoja.findViewById<View>(R.id.btnSedeGuardar)!!.performClick()
+        assertFalse(hoja.isShowing)
+        assertEquals(1, a.findViewById<android.widget.LinearLayout>(R.id.llOtrosLugares).childCount)
+        assertEquals("Consultorio Centro", texto(a, R.id.tvSedeNombre))
+    }
+
+    @Test
     fun registro_unVeterinarioNuevoPideElCarnetEnElPasoProfesional() {
         val a = abrir(RegistroVeterinarioActivity::class.java)
 

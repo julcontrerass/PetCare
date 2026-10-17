@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import frgp.utn.edu.petcare.data.repositorio.DisponibilidadVet
 import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
@@ -33,7 +34,7 @@ object SelectorFechaVet {
 
     private val SEMANA = arrayOf("L", "M", "X", "J", "V", "S", "D")
 
-    fun mostrar(activity: AppCompatActivity, inicial: LocalDate?, alElegir: (LocalDate) -> Unit) {
+    fun mostrar(activity: AppCompatActivity, inicial: LocalDate?, sede: SedeVet? = null, alElegir: (LocalDate) -> Unit) {
         val vista = LayoutInflater.from(activity).inflate(R.layout.dialog_fecha_vet, null)
         val dialog = crearDialogo(activity, vista)
         val hoy = LocalDate.now()
@@ -45,10 +46,14 @@ object SelectorFechaVet {
         val btnAnterior = vista.findViewById<View>(R.id.btnMesAnterior)
         val btnSiguiente = vista.findViewById<View>(R.id.btnMesSiguiente)
 
-        val diasActivos = PerfilVetRepo.todosLosDias.filterIndexed { i, _ -> PerfilVetRepo.diasSeleccionados[i] }
+        val lugar = sede ?: PerfilVetRepo.sede(null)
+        val diasActivos = PerfilVetRepo.todosLosDias.filterIndexed { i, _ ->
+            if (lugar != null) (i + 1) in lugar.dias else PerfilVetRepo.diasSeleccionados[i]
+        }
+        val enLugar = if (PerfilVetRepo.sedes.size > 1 && lugar != null) " en ${lugar.nombre}" else ""
         vista.findViewById<TextView>(R.id.tvDiasAtencion).text =
             if (diasActivos.isEmpty()) "No configuraste días de atención en tu perfil"
-            else "Atendés: " + diasActivos.joinToString(", ") { it.take(3) }
+            else "Atendés$enLugar: " + diasActivos.joinToString(", ") { it.take(3) }
 
         val encabezado = vista.findViewById<LinearLayout>(R.id.headerSemana)
         SEMANA.forEach { letra ->
@@ -71,7 +76,7 @@ object SelectorFechaVet {
                 val fecha = mes.atDay(dia)
                 val pos = offset + dia - 1
                 val pasado = fecha.isBefore(hoy)
-                val bloqueado = !pasado && !DisponibilidadVet.trabajaEl(fecha)
+                val bloqueado = !pasado && !DisponibilidadVet.trabajaEl(fecha, sede)
                 val elegido = fecha == inicial
                 val celda = TextView(activity).apply {
                     text = dia.toString()
@@ -129,15 +134,16 @@ object SelectorHoraVet {
 
     fun mostrar(
         activity: AppCompatActivity, fecha: LocalDate, horaActual: String?, ignorarId: String?,
-        duracionMin: Int = DisponibilidadVet.DURACION_MIN, alElegir: (String) -> Unit
+        duracionMin: Int = DisponibilidadVet.DURACION_MIN, sede: SedeVet? = null, alElegir: (String) -> Unit
     ) {
         val vista = LayoutInflater.from(activity).inflate(R.layout.dialog_hora_vet, null)
         val dialog = crearDialogo(activity, vista)
-        val horarios = DisponibilidadVet.horarios(fecha, duracionMin, ignorarId)
+        val horarios = DisponibilidadVet.horarios(fecha, duracionMin, ignorarId, sede)
+        val lugar = sede ?: PerfilVetRepo.sede(null)
 
         vista.findViewById<TextView>(R.id.tvResumenHorario).text =
             "${Fechas.relativa(fecha)} · ${Fechas.corta(fecha)} · atendés de " +
-                "${PerfilVetRepo.horaApertura} a ${PerfilVetRepo.horaCierre} hs · el turno dura " +
+                "${lugar?.apertura ?: PerfilVetRepo.horaApertura} a ${lugar?.cierre ?: PerfilVetRepo.horaCierre} hs · el turno dura " +
                 frgp.utn.edu.petcare.data.CatalogoMedico.textoDuracion(duracionMin)
 
         val grid = vista.findViewById<GridLayout>(R.id.gridHoras)

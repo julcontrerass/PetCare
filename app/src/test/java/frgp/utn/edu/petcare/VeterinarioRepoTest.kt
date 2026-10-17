@@ -7,6 +7,8 @@ import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
 import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
 import frgp.utn.edu.petcare.data.repositorio.ArchivosRepo
 import frgp.utn.edu.petcare.data.repositorio.DisponibilidadVet
+import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
 import frgp.utn.edu.petcare.data.repositorio.InformesRepo
 import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
@@ -574,20 +576,115 @@ class VeterinarioRepoTest : PruebaBase() {
     fun perfil_guardaHorariosEspecialidadesYPreferencias() {
         ingresarComoVeterinario()
 
-        PerfilVetRepo.diasSeleccionados[5] = true
-        PerfilVetRepo.horaCierre = "14:00"
-        PerfilVetRepo.guardarHorarios()
+        val principal = PerfilVetRepo.sede(null)!!
+        PerfilVetRepo.guardarSede(principal.copy(dias = principal.dias + 6, cierre = "14:00"))
         PerfilVetRepo.especialidadesSeleccionadas[PerfilVetRepo.todasLasEspecialidades.indexOf("Dermatología")] = true
         PerfilVetRepo.guardarEspecialidades()
         PerfilVetRepo.preferencias["notif_turnos"] = false
         PerfilVetRepo.guardarPreferencias()
 
-        assertTrue(fuente.llamadas.contains("veterinario:dias_atencion,hora_apertura,hora_cierre"))
+        assertTrue(
+            fuente.llamadas.contains("veterinario:clinica,dias_atencion,direccion_clinica,hora_apertura,hora_cierre")
+        )
         assertTrue(fuente.llamadas.contains("veterinario:especialidades"))
         assertTrue(fuente.llamadas.contains("perfil:preferencias"))
         assertFalse(PerfilVetRepo.preferencia("notif_turnos"))
         assertTrue(PerfilVetRepo.preferencia("notif_solicitudes"))
         assertTrue(PerfilVetRepo.textoHorarios().contains("Sábado"))
         assertTrue(PerfilVetRepo.textoEspecialidades().contains("Dermatología"))
+    }
+
+    // ---------- Lugares de atención ----------
+
+    @Test
+    fun lugares_sinLugaresEnElServidorSeArmaUnoConLosDatosDeSiempre() {
+        ingresarComoVeterinario()
+
+        assertEquals(1, PerfilVetRepo.sedes.size)
+        val unico = PerfilVetRepo.sedes.first()
+        assertEquals("Clínica Sur", unico.nombre)
+        assertEquals("Av. Siempreviva 742", unico.direccion)
+        assertEquals(setOf(1, 2, 3, 4, 5), unico.dias)
+        assertEquals("12:00", unico.cierre)
+    }
+
+    @Test
+    fun lugares_agregaEditaYQuitaLugaresDeAtencion() {
+        ingresarComoVeterinario()
+
+        PerfilVetRepo.agregarSede(SedeVet("", "Consultorio Centro", "San Martín 100", setOf(6), "10:00", "14:00"))
+        assertEquals(2, PerfilVetRepo.sedes.size)
+        assertTrue(fuente.llamadas.contains("crearSede:Consultorio Centro"))
+
+        runBlocking { Sesion.recargarPerfil() }
+        assertEquals(listOf("Clínica Sur", "Consultorio Centro"), PerfilVetRepo.sedes.map { it.nombre })
+        // El principal sigue siendo el primero: lo "de siempre" lo refleja
+        assertEquals("Clínica Sur", PerfilVetRepo.clinica)
+
+        val centro = PerfilVetRepo.sedes[1]
+        PerfilVetRepo.guardarSede(centro.copy(cierre = "13:00"))
+        assertEquals("13:00", PerfilVetRepo.sedes[1].cierre)
+        assertTrue(fuente.llamadas.any { it.startsWith("actualizarSede:${centro.id}:") })
+
+        PerfilVetRepo.eliminarSede(centro.id)
+        assertEquals(1, PerfilVetRepo.sedes.size)
+        assertTrue(fuente.llamadas.contains("eliminarSede:${centro.id}"))
+
+        // El único lugar que queda no se puede quitar
+        PerfilVetRepo.eliminarSede(PerfilVetRepo.sedes.first().id)
+        assertEquals(1, PerfilVetRepo.sedes.size)
+    }
+
+    @Test
+    fun lugares_noSePuedeTenerMasDelMaximo() {
+        ingresarComoVeterinario()
+
+        repeat(PerfilVetRepo.MAX_SEDES + 2) { PerfilVetRepo.agregarSede(SedeVet("", "Lugar $it", "", setOf(1), "09:00", "10:00")) }
+
+        assertEquals(PerfilVetRepo.MAX_SEDES, PerfilVetRepo.sedes.size)
+    }
+
+    @Test
+    fun lugares_cadaLugarTieneSusPropiosDiasYHorarios() {
+        ingresarComo(Escenario.veterinarioEnDosLugares())
+        val lunes = proximoLunes()
+        val sabado = lunes.plusDays(5)
+        val a = PerfilVetRepo.sede("sede-a")!!
+        val b = PerfilVetRepo.sede("sede-b")!!
+
+        assertNull(DisponibilidadVet.validar(lunes, "09:00", sede = a))
+        assertTrue(DisponibilidadVet.validar(lunes, "10:00", sede = b)!!.startsWith("No atendés"))
+        assertNull(DisponibilidadVet.validar(sabado, "10:00", sede = b))
+        assertTrue(DisponibilidadVet.validar(sabado, "09:00", sede = b)!!.contains("fuera de tu atención"))
+        // Sin indicar el lugar se usa el principal
+        assertTrue(DisponibilidadVet.validar(sabado, "10:00")!!.startsWith("No atendés"))
+        assertEquals(listOf("10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30"),
+            DisponibilidadVet.horarios(sabado, sede = b).map { it.hora })
+    }
+
+    @Test
+    fun lugares_unTurnoEnUnLugarOcupaElHorarioDelOtro() {
+        // El veterinario no puede estar en dos lugares a la vez: la agenda es una sola
+        ingresarComo(Escenario.veterinarioEnDosLugares())
+        val sabado = proximoLunes().plusDays(5)
+        fuente.turnos.add(Escenario.turno("t9", "m1", sabado.toString(), "10:00:00").copy(sedeId = "sede-a"))
+        runBlocking { frgp.utn.edu.petcare.data.repositorio.AgendaRepo.cargar() }
+
+        val b = PerfilVetRepo.sede("sede-b")!!
+        assertEquals("Ya tenés un turno en ese horario", DisponibilidadVet.validar(sabado, "10:00", sede = b))
+    }
+
+    @Test
+    fun lugares_elTurnoGuardaElLugarElegido() {
+        ingresarComo(Escenario.veterinarioEnDosLugares())
+        val sabado = proximoLunes().plusDays(5)
+
+        val evento = frgp.utn.edu.petcare.data.repositorio.AgendaRepo.agregar(
+            "m1", "Control", "Control", sabado, "10:00",
+            frgp.utn.edu.petcare.data.repositorio.EstadoEvento.PENDIENTE, "", "sede-b"
+        )
+
+        assertEquals("sede-b", evento.sedeId)
+        assertEquals("sede-b", fuente.turnos.first { it.id == evento.id }.sedeId)
     }
 }

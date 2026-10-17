@@ -57,7 +57,9 @@ class EventosDialogos(private val host: DuenoActivity) {
         }
         vista.findViewById<TextView>(R.id.tvTurnoFecha).text = Fechas.larga(evento.fecha)
         vista.findViewById<TextView>(R.id.tvTurnoHora).text = "${evento.hora} hs"
-        vista.findViewById<TextView>(R.id.tvTurnoVet).text = evento.veterinario.ifEmpty { "Sin asignar" }
+        val lugar = DuenoRepo.sedeDe(evento)?.takeIf { (DuenoRepo.buscarVeterinario(evento.veterinario)?.sedes?.size ?: 0) > 1 }
+        vista.findViewById<TextView>(R.id.tvTurnoVet).text =
+            evento.veterinario.ifEmpty { "Sin asignar" } + (lugar?.let { "\n${it.textoLugar()}" }.orEmpty())
         Avatares.conRespaldo(
             vista.findViewById(R.id.ivTurnoVetFoto),
             DuenoRepo.perfilDeVeterinario(evento.veterinarioId)?.fotoPath,

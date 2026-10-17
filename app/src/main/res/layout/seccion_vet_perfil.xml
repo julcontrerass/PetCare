@@ -145,66 +145,6 @@
         <View style="@style/PetInfoDivider" />
 
         <LinearLayout
-            android:id="@+id/llVetClinica"
-            style="@style/PetInfoRow">
-
-            <FrameLayout style="@style/PetInfoIconBox">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_medical"
-                    app:tint="@color/teal_dark" />
-            </FrameLayout>
-
-            <LinearLayout style="@style/PetInfoTexts">
-
-                <TextView
-                    style="@style/PetInfoLabel"
-                    android:text="Clínica" />
-
-                <TextView
-                    android:id="@+id/tvVetClinicaValue"
-                    style="@style/PetInfoValue"
-                    tools:text="Clínica Veterinaria Central" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <View style="@style/PetInfoDivider" />
-
-        <LinearLayout
-            android:id="@+id/llVetDireccion"
-            style="@style/PetInfoRow">
-
-            <FrameLayout style="@style/PetInfoIconBox">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_location"
-                    app:tint="@color/teal_dark" />
-            </FrameLayout>
-
-            <LinearLayout style="@style/PetInfoTexts">
-
-                <TextView
-                    style="@style/PetInfoLabel"
-                    android:text="Dirección" />
-
-                <TextView
-                    android:id="@+id/tvVetDireccionValue"
-                    style="@style/PetInfoValue"
-                    tools:text="Av. Santa Fe 2345, CABA" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <View style="@style/PetInfoDivider" />
-
-        <LinearLayout
             android:id="@+id/llVetPhone"
             style="@style/PetInfoRow">
 
@@ -279,8 +219,15 @@
             android:paddingHorizontal="14dp"
             android:paddingVertical="4dp">
 
+        <!-- Lugares de atención: cada uno con su dirección, sus días y sus horarios -->
         <LinearLayout
-            android:id="@+id/llVetHorarios"
+            android:id="@+id/llVetSedes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:id="@+id/llVetAgregarSede"
             style="@style/PetInfoRow"
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
@@ -293,28 +240,17 @@
                     android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:contentDescription="@null"
-                    android:src="@drawable/ic_calendar"
+                    android:src="@drawable/ic_plus"
                     app:tint="@color/teal_dark" />
             </FrameLayout>
 
             <LinearLayout style="@style/PetInfoTexts">
 
                 <TextView
-                    style="@style/PetInfoLabel"
-                    android:text="Días y horarios de atención" />
-
-                <TextView
-                    android:id="@+id/tvVetHorariosValue"
                     style="@style/PetInfoValue"
-                    tools:text="Lun a Vie: 09:00 - 18:00 hs · Sáb: 09:00 - 13:00 hs" />
+                    android:text="Agregar otro lugar de atención"
+                    android:textColor="@color/primary_teal" />
             </LinearLayout>
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_chevron_right"
-                app:tint="@color/text_gray" />
-
         </LinearLayout>
 
         <View style="@style/PetInfoDivider" />

@@ -52,6 +52,9 @@ interface FuenteDatos {
     suspend fun miPerfil(): PerfilDto = throw UnsupportedOperationException("miPerfil")
     suspend fun actualizarPerfil(cambios: JsonObject) {}
     suspend fun actualizarVeterinario(cambios: JsonObject) {}
+    suspend fun crearSede(sede: NuevaSedeDto) {}
+    suspend fun actualizarSede(id: String, cambios: JsonObject) {}
+    suspend fun eliminarSede(id: String) {}
     suspend fun actualizarDni(dni: String) {}
 
     // ---------- Mascotas ----------

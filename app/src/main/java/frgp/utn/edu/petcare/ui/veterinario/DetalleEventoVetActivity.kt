@@ -69,23 +69,32 @@ class DetalleEventoVetActivity : BaseActivity() {
                 setSelection(opciones.indexOf(evento.tipo).coerceAtLeast(0))
             }
             fun duracion() = PerfilVetRepo.duracionDe(spTipo.selectedItem as? String)
+
+            // Con más de un lugar de atención se elige dónde es el turno
+            val sedes = PerfilVetRepo.sedes.toList()
+            val spSede = Spinner(ctx).apply {
+                adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, sedes.map { it.textoLugar() })
+                setSelection(sedes.indexOfFirst { it.id == evento.sedeId }.coerceAtLeast(0))
+                visibility = if (sedes.size > 1) android.view.View.VISIBLE else android.view.View.GONE
+            }
+            fun sede() = sedes.getOrNull(spSede.selectedItemPosition)
             val etMotivo = campo("Motivo", evento.motivo)
             var fecha = evento.fecha
             val etFecha = campo("Fecha", Fechas.corta(fecha)).apply { isFocusable = false }
             val etHora = campo("Hora", evento.hora).apply { isFocusable = false }
             etFecha.setOnClickListener {
-                SelectorFechaVet.mostrar(ctx, fecha) { nuevaFecha ->
+                SelectorFechaVet.mostrar(ctx, fecha, sede()) { nuevaFecha ->
                     fecha = nuevaFecha
                     etFecha.setText(Fechas.corta(fecha))
                     val hora = etHora.text.toString()
-                    if (hora.isNotBlank() && DisponibilidadVet.validar(nuevaFecha, hora, duracion(), evento.id) != null) {
+                    if (hora.isNotBlank() && DisponibilidadVet.validar(nuevaFecha, hora, duracion(), evento.id, sede()) != null) {
                         etHora.setText("")
                         Avisos.mostrar(ctx, "Elegí otro horario para ese día")
                     }
                 }
             }
             etHora.setOnClickListener {
-                SelectorHoraVet.mostrar(ctx, fecha, etHora.text.toString().ifBlank { null }, evento.id, duracion()) { hora ->
+                SelectorHoraVet.mostrar(ctx, fecha, etHora.text.toString().ifBlank { null }, evento.id, duracion(), sede()) { hora ->
                     etHora.setText(hora)
                     etHora.error = null
                 }
@@ -94,7 +103,7 @@ class DetalleEventoVetActivity : BaseActivity() {
                 minLines = 3
                 gravity = android.view.Gravity.TOP
             }
-            listOf(spTipo, etMotivo, etFecha, etHora, etNotas).forEach { layout.addView(it) }
+            listOf(spTipo, spSede, etMotivo, etFecha, etHora, etNotas).forEach { layout.addView(it) }
 
             val dialog = AlertDialog.Builder(ctx)
                 .setTitle("Editar turno")
@@ -111,9 +120,10 @@ class DetalleEventoVetActivity : BaseActivity() {
                     val hora = etHora.text.toString()
                     // Si no se movió el turno no se revalida (puede ser de hoy y ya estar en curso)
                     val cambioHorario = fecha != evento.fecha || hora != evento.hora ||
-                        spTipo.selectedItem as String != evento.tipo
+                        spTipo.selectedItem as String != evento.tipo ||
+                        (sede()?.id?.takeIf { it.isNotBlank() } ?: evento.sedeId) != evento.sedeId
                     val problema = if (hora.isBlank()) "Elegí un horario"
-                    else if (cambioHorario) DisponibilidadVet.validar(fecha, hora, duracion(), evento.id) else null
+                    else if (cambioHorario) DisponibilidadVet.validar(fecha, hora, duracion(), evento.id, sede()) else null
                     if (problema != null) {
                         etHora.error = problema
                         Avisos.mostrar(ctx, problema)
@@ -124,6 +134,7 @@ class DetalleEventoVetActivity : BaseActivity() {
                     evento.motivo = etMotivo.text.toString().trim()
                     evento.fecha = fecha
                     evento.hora = etHora.text.toString()
+                    sede()?.id?.takeIf { it.isNotBlank() }?.let { evento.sedeId = it }
                     evento.notas = etNotas.text.toString().trim()
                     AgendaRepo.guardar(evento)
                     alGuardar()
@@ -248,7 +259,9 @@ class DetalleEventoVetActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvFecha).text = Fechas.relativa(evento.fecha)
         findViewById<TextView>(R.id.tvHora).text = "${evento.hora} hs"
         findViewById<TextView>(R.id.tvFechaHora).text = "${Fechas.corta(evento.fecha)} · ${evento.hora} hs"
-        findViewById<TextView>(R.id.tvVeterinario).text = evento.veterinario
+        val lugar = PerfilVetRepo.sede(evento.sedeId)?.takeIf { PerfilVetRepo.sedes.size > 1 }
+        findViewById<TextView>(R.id.tvVeterinario).text =
+            evento.veterinario + (lugar?.let { "\n${it.textoLugar()}" }.orEmpty())
         findViewById<TextView>(R.id.tvNotas).text = evento.notas.ifBlank { "Sin notas" }
 
         findViewById<ImageView>(R.id.ivPaciente).let {

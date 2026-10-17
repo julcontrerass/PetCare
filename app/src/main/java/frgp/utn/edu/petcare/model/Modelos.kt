@@ -77,8 +77,41 @@ class EventoMascota(
     var veterinarioId: String? = null,
     var estado: EstadoTurno = EstadoTurno.PENDIENTE,
     /** Minutos que dura el turno; lo fija el servidor según el servicio y el veterinario. */
-    var duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN
+    var duracionMin: Int = CatalogoMedico.DURACION_GENERAL_MIN,
+    /** Lugar de atención donde es el turno; null en los que se cargaron sin elegir uno. */
+    var sedeId: String? = null
 )
+
+/** Un lugar donde atiende un veterinario, con sus propios días y horarios. */
+data class SedeVet(
+    val id: String,
+    val nombre: String,
+    val direccion: String = "",
+    /** Días de atención: 1 = lunes ... 7 = domingo. */
+    val dias: Set<Int> = setOf(1, 2, 3, 4, 5),
+    val apertura: String = "09:00",
+    val cierre: String = "18:00"
+) : java.io.Serializable {
+    /** "Lun a Vie · 09:00 a 18:00 hs", o los días separados por comas si no son consecutivos. */
+    fun textoHorario(): String {
+        val ordenados = dias.sorted()
+        if (ordenados.isEmpty()) return "Sin días de atención configurados"
+        val consecutivos = ordenados.zipWithNext().all { (a, b) -> b == a + 1 }
+        val textoDias = if (consecutivos && ordenados.size > 2) {
+            "${DIAS_CORTOS[ordenados.first() - 1]} a ${DIAS_CORTOS[ordenados.last() - 1]}"
+        } else {
+            ordenados.joinToString(", ") { DIAS_CORTOS[it - 1] }
+        }
+        return "$textoDias · $apertura a $cierre hs"
+    }
+
+    /** Nombre y dirección en una línea. */
+    fun textoLugar(): String = if (direccion.isBlank()) nombre else "$nombre · $direccion"
+
+    companion object {
+        val DIAS_CORTOS = arrayOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+    }
+}
 
 enum class EstadoTurno { PENDIENTE, COMPLETADO, CANCELADO }
 
@@ -104,9 +137,14 @@ class VeterinarioAcceso(
     /** Tipos de mascota que atiende, con los nombres de [TiposMascota]. */
     val tiposAnimales: Set<String> = TiposMascota.TODOS.toSet(),
     /** Minutos que dura cada servicio para este veterinario; lo que falta usa la duración por defecto. */
-    val duraciones: Map<String, Int> = emptyMap()
+    val duraciones: Map<String, Int> = emptyMap(),
+    /** Lugares donde atiende, el principal primero. */
+    val sedes: List<SedeVet> = emptyList()
 ) {
     val mascotas: MutableSet<String> = LinkedHashSet(mascotas)
+
+    /** El lugar con ese id; si no se indica (o ya no existe) el principal. */
+    fun sede(id: String?): SedeVet? = sedes.firstOrNull { it.id == id } ?: sedes.firstOrNull()
 
     val tieneAcceso: Boolean get() = estado == EstadoAcceso.ACTIVO
 

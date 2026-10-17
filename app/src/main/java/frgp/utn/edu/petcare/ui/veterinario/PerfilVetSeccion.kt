@@ -17,15 +17,19 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.Errores
+import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
+import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
 import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.ModoDeUso
 import frgp.utn.edu.petcare.ui.common.BajaDeCuenta
 import frgp.utn.edu.petcare.ui.common.VetUi
+import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 /** Perfil del veterinario: sus datos, horarios, especialidades, preferencias y cuenta. */
@@ -59,7 +63,13 @@ class PerfilVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
             elegirFoto()
         }
 
-        findViewById<View>(R.id.llVetHorarios)?.setOnClickListener { configurarHorarios() }
+        findViewById<View>(R.id.llVetAgregarSede)?.setOnClickListener {
+            if (PerfilVetRepo.sedes.size >= PerfilVetRepo.MAX_SEDES) {
+                Avisos.mostrar(host, "Podés cargar hasta ${PerfilVetRepo.MAX_SEDES} lugares de atención")
+            } else {
+                editarSede(null)
+            }
+        }
         findViewById<View>(R.id.llVetEspecialidades)?.setOnClickListener { configurarEspecialidades() }
         findViewById<View>(R.id.llVetTiposAnimales)?.setOnClickListener { configurarTiposAnimales() }
         findViewById<View>(R.id.llVetDuraciones)?.setOnClickListener { configurarDuraciones() }
@@ -86,11 +96,9 @@ class PerfilVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
         findViewById<TextView>(R.id.tvNombreVet)?.text = PerfilVetRepo.nombre
         findViewById<TextView>(R.id.tvDatosVet)?.text = "Matrícula ${PerfilVetRepo.matricula}"
         findViewById<TextView>(R.id.tvVetDniValue)?.text = PerfilVetRepo.dni
-        findViewById<TextView>(R.id.tvVetClinicaValue)?.text = PerfilVetRepo.clinica
-        findViewById<TextView>(R.id.tvVetDireccionValue)?.text = PerfilVetRepo.direccionClinica
         findViewById<TextView>(R.id.tvVetPhoneValue)?.text = PerfilVetRepo.telefono
         findViewById<TextView>(R.id.tvVetEmailValue)?.text = PerfilVetRepo.email
-        findViewById<TextView>(R.id.tvVetHorariosValue)?.text = PerfilVetRepo.textoHorarios()
+        pintarSedes()
         findViewById<TextView>(R.id.tvVetEspecialidadesValue)?.text = PerfilVetRepo.textoEspecialidades()
         findViewById<TextView>(R.id.tvVetTiposAnimalesValue)?.text = PerfilVetRepo.textoTiposAnimales()
         findViewById<TextView>(R.id.tvVetDuracionesValue)?.text = PerfilVetRepo.textoDuraciones()
@@ -138,65 +146,55 @@ class PerfilVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
         }, h, m, true).show()
     }
 
-    private fun configurarHorarios() {
-        val marcadas = PerfilVetRepo.diasSeleccionados.clone()
-        var tempInicio = PerfilVetRepo.horaApertura
-        var tempFin = PerfilVetRepo.horaCierre
-
-        val btnInicio = MaterialButton(host, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "Hora de inicio: $tempInicio hs"
-            setOnClickListener {
-                seleccionarHora(tempInicio) { elegida ->
-                    tempInicio = elegida
-                    text = "Hora de inicio: $tempInicio hs"
-                }
-            }
+    /** Una fila por lugar de atención, con su dirección, sus días y su horario. */
+    private fun pintarSedes() {
+        val lista = findViewById<LinearLayout>(R.id.llVetSedes)
+        lista.removeAllViews()
+        val total = PerfilVetRepo.sedes.size
+        PerfilVetRepo.sedes.forEachIndexed { i, sede ->
+            val fila = host.layoutInflater.inflate(R.layout.item_sede_vet, lista, false)
+            fila.findViewById<TextView>(R.id.tvSedeNombre).text =
+                if (total > 1 && i == 0) "${sede.nombre} (principal)" else sede.nombre
+            fila.findViewById<TextView>(R.id.tvSedeDetalle).text =
+                listOf(sede.direccion, sede.textoHorario()).filter { it.isNotBlank() }.joinToString("\n")
+            fila.setOnClickListener { editarSede(sede) }
+            lista.addView(fila)
         }
+        findViewById<View>(R.id.llVetAgregarSede).visibility =
+            if (total >= PerfilVetRepo.MAX_SEDES) View.GONE else View.VISIBLE
+    }
 
-        val btnFin = MaterialButton(host, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "Hora de cierre: $tempFin hs"
-            setOnClickListener {
-                seleccionarHora(tempFin) { elegida ->
-                    tempFin = elegida
-                    text = "Hora de cierre: $tempFin hs"
-                }
-            }
+    /** Alta o edición de un lugar de atención: nombre, dirección, días y horario propios. */
+    private fun editarSede(sede: SedeVet?) {
+        val puedeBorrar = sede != null && PerfilVetRepo.sedes.size > 1
+        EditorSede.mostrar(
+            host, sede,
+            alGuardar = { nuevo ->
+                if (sede == null) PerfilVetRepo.agregarSede(nuevo) else PerfilVetRepo.guardarSede(nuevo)
+                mostrarPerfil()
+                Avisos.mostrar(host, if (sede == null) "Lugar de atención agregado" else "Lugar de atención actualizado")
+            },
+            alEliminar = if (puedeBorrar && sede != null) { dialogo -> borrarSede(sede, dialogo) } else null
+        )
+    }
+
+    private fun borrarSede(sede: SedeVet, dialogo: android.app.Dialog) {
+        val hoy = LocalDate.now()
+        val conTurnos = AgendaRepo.eventos.any {
+            it.sedeId == sede.id && it.estado == EstadoEvento.PENDIENTE && !it.fecha.isBefore(hoy)
         }
-
-        val container = LinearLayout(host).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 20, 48, 10)
-            addView(TextView(host).apply {
-                text = "Seleccioná el horario de atención:"
-                setTextColor(resources.getColor(R.color.black, null))
-                setPadding(0, 0, 0, 12)
-            })
-            addView(btnInicio)
-            addView(btnFin)
+        if (conTurnos) {
+            Avisos.mostrar(host, "Ese lugar tiene turnos pendientes: cancelalos o pasalos a otro lugar antes de borrarlo")
+            return
         }
-
-        AlertDialog.Builder(host)
-            .setTitle("Días y Horarios de atención")
-            .setView(container)
-            .setMultiChoiceItems(PerfilVetRepo.todosLosDias, marcadas) { _, which, checked ->
-                marcadas[which] = checked
-            }
-            .setPositiveButton("Guardar") { _, _ ->
-                if (marcadas.none { it }) {
-                    Avisos.mostrar(host, "Elegí al menos un día de atención")
-                } else if (tempFin <= tempInicio) {
-                    Avisos.mostrar(host, "El horario de cierre tiene que ser posterior al de apertura")
-                } else {
-                    System.arraycopy(marcadas, 0, PerfilVetRepo.diasSeleccionados, 0, marcadas.size)
-                    PerfilVetRepo.horaApertura = tempInicio
-                    PerfilVetRepo.horaCierre = tempFin
-                    PerfilVetRepo.guardarHorarios()
-                    mostrarPerfil()
-                    Avisos.mostrar(host, "Días y horarios actualizados")
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        Avisos.confirmar(
+            host, "¿Eliminar este lugar?", "Los dueños ya no van a poder sacar turnos en ${sede.nombre}.",
+            textoAceptar = "Eliminar", textoCancelar = "Cancelar", peligro = true, icono = R.drawable.ic_warning
+        ) {
+            PerfilVetRepo.eliminarSede(sede.id)
+            mostrarPerfil()
+            dialogo.dismiss()
+        }
     }
 
     private fun configurarEspecialidades() {
@@ -308,22 +306,18 @@ class PerfilVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
     private fun editarPerfil() {
         val nombre = campo("Nombre y Apellido", PerfilVetRepo.nombre)
         val matricula = campo("Matrícula", PerfilVetRepo.matricula)
-        val clinica = campo("Clínica / Veterinaria", PerfilVetRepo.clinica)
-        val direccion = campo("Dirección de la Clínica", PerfilVetRepo.direccionClinica)
         val telefono = campo("Teléfono de Contacto", PerfilVetRepo.telefono, InputType.TYPE_CLASS_PHONE)
         // El correo es el de la cuenta: no se cambia desde el perfil profesional
         val email = campo("Correo Electrónico", PerfilVetRepo.email, InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
             .apply { isEnabled = false }
 
-        formulario("Editar perfil profesional", listOf(nombre, matricula, clinica, direccion, telefono, email)) {
+        formulario("Editar perfil profesional", listOf(nombre, matricula, telefono, email)) {
             var ok = true
             if (nombre.text.isBlank()) { nombre.error = "Requerido"; ok = false }
             if (matricula.text.isBlank()) { matricula.error = "Requerido"; ok = false }
             if (ok) {
                 PerfilVetRepo.nombre = nombre.text.toString().trim()
                 PerfilVetRepo.matricula = matricula.text.toString().trim()
-                PerfilVetRepo.clinica = clinica.text.toString().trim()
-                PerfilVetRepo.direccionClinica = direccion.text.toString().trim()
                 PerfilVetRepo.telefono = telefono.text.toString().trim()
                 PerfilVetRepo.guardarDatos()
                 mostrarPerfil()

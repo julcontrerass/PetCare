@@ -3,11 +3,14 @@ package frgp.utn.edu.petcare.data.repositorio
 import android.net.Uri
 import frgp.utn.edu.petcare.data.CatalogoMedico
 import frgp.utn.edu.petcare.data.Imagenes
+import frgp.utn.edu.petcare.data.remoto.NuevaSedeDto
 import frgp.utn.edu.petcare.data.remoto.PerfilDto
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.ui.common.Documentos
+import java.util.UUID
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonArray
@@ -28,11 +31,82 @@ object PerfilVetRepo {
     /** Foto elegida en este teléfono; se muestra mientras se sube. */
     var fotoUri: Uri? = null
 
-    // Días y horarios
+    // Días y horarios del lugar principal (los demás lugares están en [sedes])
     val todosLosDias = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
     val diasSeleccionados = BooleanArray(7)
     var horaApertura = "09:00"
     var horaCierre = "18:00"
+
+    /** Lugares donde atiende, el principal primero; cada uno tiene sus propios días y horarios. */
+    val sedes: MutableList<SedeVet> = mutableListOf()
+
+    /** Cuántos lugares puede tener como máximo (el servidor aplica el mismo tope). */
+    const val MAX_SEDES = 3
+
+    /** El lugar con ese id; si no se indica (o ya no existe) el principal. */
+    fun sede(id: String?): SedeVet? = sedes.firstOrNull { it.id == id } ?: sedes.firstOrNull()
+
+    /** Lo "de siempre" (clínica, dirección, días y horario) refleja el lugar principal. */
+    private fun reflejarPrincipal() {
+        val principal = sedes.firstOrNull() ?: return
+        clinica = principal.nombre
+        direccionClinica = principal.direccion
+        diasSeleccionados.fill(false)
+        principal.dias.forEach { if (it in 1..7) diasSeleccionados[it - 1] = true }
+        horaApertura = principal.apertura
+        horaCierre = principal.cierre
+    }
+
+    private fun sedeNueva(id: String, sede: SedeVet) = NuevaSedeDto(
+        id = id, veterinarioId = Sesion.usuarioId.orEmpty(), nombre = sede.nombre,
+        direccion = sede.direccion.ifBlank { null }, diasAtencion = sede.dias.sorted(),
+        horaApertura = "${sede.apertura}:00", horaCierre = "${sede.cierre}:00"
+    )
+
+    fun agregarSede(sede: SedeVet): SedeVet? {
+        if (sedes.size >= MAX_SEDES) return null
+        val nueva = sede.copy(id = UUID.randomUUID().toString())
+        sedes.add(nueva)
+        Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {
+            Servicios.fuente.crearSede(sedeNueva(nueva.id, nueva))
+        }
+        return nueva
+    }
+
+    fun guardarSede(sede: SedeVet) {
+        val i = sedes.indexOfFirst { it.id == sede.id }
+        if (i < 0) return
+        sedes[i] = sede
+        if (i == 0) reflejarPrincipal()
+        Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {
+            if (sede.id.isBlank()) {
+                // Todavía sin lugares propios en el servidor: se guardan los datos "de siempre" del veterinario
+                Servicios.fuente.actualizarVeterinario(buildJsonObject {
+                    put("clinica", sede.nombre)
+                    put("direccion_clinica", sede.direccion.ifBlank { null })
+                    put("dias_atencion", buildJsonArray { sede.dias.sorted().forEach { add(it) } })
+                    put("hora_apertura", "${sede.apertura}:00")
+                    put("hora_cierre", "${sede.cierre}:00")
+                })
+            } else {
+                Servicios.fuente.actualizarSede(sede.id, buildJsonObject {
+                    put("nombre", sede.nombre)
+                    put("direccion", sede.direccion.ifBlank { null })
+                    put("dias_atencion", buildJsonArray { sede.dias.sorted().forEach { add(it) } })
+                    put("hora_apertura", "${sede.apertura}:00")
+                    put("hora_cierre", "${sede.cierre}:00")
+                })
+            }
+        }
+    }
+
+    /** Quita un lugar. El servidor no deja borrar el único ni uno que todavía tiene turnos pendientes. */
+    fun eliminarSede(id: String) {
+        if (sedes.size <= 1) return
+        sedes.removeAll { it.id == id }
+        reflejarPrincipal()
+        Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) { Servicios.fuente.eliminarSede(id) }
+    }
 
     fun textoHorarios(): String {
         val diasActivos = todosLosDias.filterIndexed { index, _ -> diasSeleccionados[index] }
@@ -109,6 +183,7 @@ object PerfilVetRepo {
         nombre = ""; dni = ""; matricula = ""; clinica = ""; direccionClinica = ""; telefono = ""; email = ""
         fotoPath = null; fotoUri = null
         diasSeleccionados.fill(false)
+        sedes.clear()
         especialidadesSeleccionadas.fill(false)
         tiposAnimales.clear()
         duraciones.clear()
@@ -134,6 +209,16 @@ object PerfilVetRepo {
         v?.diasAtencion?.forEach { if (it in 1..7) diasSeleccionados[it - 1] = true }
         horaApertura = (v?.horaApertura ?: "09:00").take(5)
         horaCierre = (v?.horaCierre ?: "18:00").take(5)
+        sedes.clear()
+        v?.lugares()?.forEach {
+            sedes.add(
+                SedeVet(
+                    id = it.id, nombre = it.nombre, direccion = it.direccion.orEmpty(), dias = it.diasAtencion.toSet(),
+                    apertura = it.horaApertura.take(5), cierre = it.horaCierre.take(5)
+                )
+            )
+        }
+        reflejarPrincipal()
         especialidadesSeleccionadas.fill(false)
         v?.especialidades?.forEach { esp ->
             val i = todasLasEspecialidades.indexOf(esp)
@@ -154,20 +239,6 @@ object PerfilVetRepo {
             })
             Servicios.fuente.actualizarVeterinario(buildJsonObject {
                 put("matricula", matricula)
-                put("clinica", clinica.ifBlank { null })
-                put("direccion_clinica", direccionClinica.ifBlank { null })
-            })
-        }
-    }
-
-    fun guardarHorarios() {
-        Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {
-            Servicios.fuente.actualizarVeterinario(buildJsonObject {
-                put("dias_atencion", buildJsonArray {
-                    diasSeleccionados.forEachIndexed { i, activo -> if (activo) add(i + 1) }
-                })
-                put("hora_apertura", "$horaApertura:00")
-                put("hora_cierre", "$horaCierre:00")
             })
         }
     }

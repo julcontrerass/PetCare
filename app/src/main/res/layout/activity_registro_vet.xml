@@ -332,6 +332,33 @@
                 android:textColorHint="@color/text_gray"
                 android:textSize="15sp" />
 
+            <!-- Otras veterinarias donde atiende, cada una con su dirección, sus días y su horario -->
+            <LinearLayout
+                android:id="@+id/llOtrosLugares"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAgregarLugar"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Agregar otra veterinaria"
+                android:textColor="@color/primary_teal"
+                android:textStyle="bold"
+                app:icon="@drawable/ic_plus"
+                app:iconTint="@color/primary_teal" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Si trabajás en más de una veterinaria o consultorio, sumala con su dirección, sus días y sus horarios."
+                android:textColor="@color/text_gray"
+                android:textSize="12.5sp" />
+
             <TextView
                 android:id="@+id/lblCredencial"
                 style="@style/VetFormLabel"

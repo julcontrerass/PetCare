@@ -54,6 +54,7 @@ object Registro {
             put("dias_atencion", buildJsonArray { d.dias.forEach { add(it) } })
             put("hora_apertura", d.apertura)
             put("hora_cierre", d.cierre)
+            put("sedes", datosDeSedes(d.sedesExtra))
         }
         val resultado = crear(d.email, d.password, datos)
         FotosPendientes.guardar(d.email, d.fotoPath, emptyList())
@@ -64,6 +65,19 @@ object Registro {
             Sesion.usuarioIdActual()?.let { runCatching { FotosPendientes.subirCredencial(d.email, it) } }
         }
         return resultado
+    }
+
+    /** Los lugares extra como los espera el servidor (`sedes` del registro y `p_sedes` del pedido de alta). */
+    fun datosDeSedes(sedes: List<frgp.utn.edu.petcare.model.SedeVet>) = buildJsonArray {
+        sedes.forEach { s ->
+            add(buildJsonObject {
+                put("nombre", s.nombre)
+                put("direccion", s.direccion)
+                put("dias_atencion", buildJsonArray { s.dias.sorted().forEach { add(it) } })
+                put("hora_apertura", s.apertura)
+                put("hora_cierre", s.cierre)
+            })
+        }
     }
 
     /** Si el registro dejó la sesión abierta, sube las fotos ya; si no, quedan para el primer ingreso. */

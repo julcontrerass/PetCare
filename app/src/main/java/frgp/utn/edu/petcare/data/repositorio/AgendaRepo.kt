@@ -27,7 +27,9 @@ data class EventoVet(
     var veterinario: String,
     var veterinarioId: String? = null,
     /** Minutos que dura el turno; lo fija el servidor según el servicio. */
-    var duracionMin: Int = 30
+    var duracionMin: Int = 30,
+    /** Lugar de atención donde es el turno. */
+    var sedeId: String? = null
 )
 
 /** Turnos y consultas del veterinario en sesión. */
@@ -62,7 +64,7 @@ object AgendaRepo {
             else -> EstadoEvento.PENDIENTE
         },
         notas = t.notas.orEmpty(), veterinario = PerfilVetRepo.nombre, veterinarioId = t.veterinarioId,
-        duracionMin = t.duracionMin
+        duracionMin = t.duracionMin, sedeId = t.sedeId
     )
 
     private val alFallar: suspend () -> Unit = {
@@ -73,13 +75,14 @@ object AgendaRepo {
     /** Agenda un turno propio. El servidor valida que el horario esté libre y dentro de la atención. */
     fun agregar(
         pacienteId: String, tipo: String, motivo: String, fecha: LocalDate, hora: String,
-        estado: EstadoEvento, notas: String
+        estado: EstadoEvento, notas: String, sedeId: String? = null
     ): EventoVet {
         val id = UUID.randomUUID().toString()
         val vetId = Sesion.usuarioId
+        val lugar = PerfilVetRepo.sede(sedeId)?.id?.takeIf { it.isNotBlank() }
         val e = EventoVet(
             id, pacienteId, tipo, motivo, fecha, hora, estado, notas, PerfilVetRepo.nombre, vetId,
-            PerfilVetRepo.duracionDe(tipo)
+            PerfilVetRepo.duracionDe(tipo), lugar
         )
         eventos.add(e)
         Servicios.escribir(alFallar = alFallar) {
@@ -87,7 +90,8 @@ object AgendaRepo {
                 NuevoTurnoDto(
                     id = id, mascotaId = pacienteId, veterinarioId = vetId, categoria = tipo, motivo = motivo,
                     fecha = fecha.toString(), hora = "$hora:00", estado = nombreEstado(estado),
-                    notas = notas.ifBlank { null }, creadoPor = vetId ?: error("No hay una sesión iniciada")
+                    notas = notas.ifBlank { null }, creadoPor = vetId ?: error("No hay una sesión iniciada"),
+                    sedeId = lugar
                 )
             )
         }
@@ -102,6 +106,7 @@ object AgendaRepo {
                 put("motivo", e.motivo)
                 put("fecha", e.fecha.toString())
                 put("hora", "${e.hora}:00")
+                e.sedeId?.let { put("sede_id", it) }
                 put("notas", e.notas.ifBlank { null })
             })
         }

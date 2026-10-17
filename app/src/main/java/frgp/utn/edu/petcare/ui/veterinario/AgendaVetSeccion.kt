@@ -14,6 +14,7 @@ import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
 import frgp.utn.edu.petcare.data.repositorio.EstadoEvento
 import frgp.utn.edu.petcare.data.repositorio.EventoVet
 import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
+import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.util.Fechas
 
 /** Agenda del veterinario: los turnos próximos, completados y cancelados, agrupados por fecha. */
@@ -119,7 +120,8 @@ class AgendaAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 h.tvHora.text = e.hora
                 h.tvPaciente.text = PacientesRepo.nombreDe(e.pacienteId)
                 frgp.utn.edu.petcare.ui.common.Avatares.mostrar(h.ivDuenoFoto, PacientesRepo.fotoDuenoDe(e.pacienteId))
-                h.tvMotivo.text = "${e.tipo} · ${e.motivo}"
+                val lugar = PerfilVetRepo.sede(e.sedeId)?.takeIf { PerfilVetRepo.sedes.size > 1 }
+                h.tvMotivo.text = "${e.tipo} · ${e.motivo}" + (lugar?.let { "\n${it.nombre}" }.orEmpty())
                 h.tvEstado.text = e.estado.etiqueta
                 val (fondo, color) = when (e.estado) {
                     EstadoEvento.PENDIENTE -> R.drawable.bg_chip_warn to R.color.accent_orange_dark

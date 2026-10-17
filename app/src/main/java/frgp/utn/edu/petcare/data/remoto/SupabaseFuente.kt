@@ -69,12 +69,12 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     private companion object {
         const val ENLACE_DE_RECUPERACION = "petcare://recuperar"
-        const val PERFIL_COMPLETO = "*,veterinarios(*),perfiles_privados(dni)"
+        const val PERFIL_COMPLETO = "*,veterinarios(*,sedes(*)),perfiles_privados(dni)"
 
         /** Lo que muestra el panel del administrador: sin las preferencias ni el encuadre de la foto. */
         const val PERFIL_ADMIN = "id,rol,estado,motivo_estado,nombre,email,telefono,direccion,foto_path,created_at," +
-            "veterinarios(*),perfiles_privados(dni)"
-        const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios!inner(*)"
+            "veterinarios(*,sedes(*)),perfiles_privados(dni)"
+        const val CATALOGO = "id,rol,estado,nombre,email,telefono,direccion,foto_path,veterinarios!inner(*,sedes(*))"
         const val MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,telefono,direccion,foto_path)"
     }
 
@@ -82,7 +82,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     private val tablasEscuchadas = listOf(
         "turnos", "accesos_mascota", "notificaciones", "mascotas", "informes_clinicos", "archivos_mascota",
-        "registros_salud", "prescripciones"
+        "registros_salud", "prescripciones", "sedes"
     )
 
     /** Escucha los cambios de las tablas; el servidor solo manda los que el usuario puede ver (RLS). */
@@ -154,6 +154,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             put("p_especialidades", kotlinx.serialization.json.JsonArray(datos.especialidades.map { kotlinx.serialization.json.JsonPrimitive(it) }))
             put("p_tipos_animales", kotlinx.serialization.json.JsonArray(datos.tiposAnimales.map { kotlinx.serialization.json.JsonPrimitive(it) }))
             put("p_credencial_path", datos.credencialPath)
+            put("p_sedes", frgp.utn.edu.petcare.data.Registro.datosDeSedes(datos.sedesExtra))
         })
     }
 
@@ -261,6 +262,18 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     override suspend fun actualizarVeterinario(cambios: JsonObject) {
         cliente.from("veterinarios").update(cambios) { filter { eq("profile_id", miId()) } }
+    }
+
+    override suspend fun crearSede(sede: NuevaSedeDto) {
+        cliente.from("sedes").insert(sede)
+    }
+
+    override suspend fun actualizarSede(id: String, cambios: JsonObject) {
+        cliente.from("sedes").update(cambios) { filter { eq("id", id) } }
+    }
+
+    override suspend fun eliminarSede(id: String) {
+        cliente.from("sedes").delete { filter { eq("id", id) } }
     }
 
     override suspend fun actualizarDni(dni: String) {

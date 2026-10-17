@@ -14,6 +14,7 @@ import frgp.utn.edu.petcare.data.remoto.InformeDto
 import frgp.utn.edu.petcare.data.remoto.MascotaDto
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.data.remoto.NuevaMascotaDto
+import frgp.utn.edu.petcare.data.remoto.NuevaSedeDto
 import frgp.utn.edu.petcare.data.remoto.NuevaPrescripcionDto
 import frgp.utn.edu.petcare.data.remoto.NuevoAccesoDto
 import frgp.utn.edu.petcare.data.remoto.NuevoArchivoDto
@@ -27,6 +28,7 @@ import frgp.utn.edu.petcare.data.remoto.PrivadoDto
 import frgp.utn.edu.petcare.data.remoto.RegistroSaludDto
 import frgp.utn.edu.petcare.data.remoto.ResultadoRegistro
 import frgp.utn.edu.petcare.data.remoto.RutaDto
+import frgp.utn.edu.petcare.data.remoto.SedeDto
 import frgp.utn.edu.petcare.data.remoto.SolicitudAccesoDto
 import frgp.utn.edu.petcare.data.remoto.TurnoDto
 import frgp.utn.edu.petcare.data.remoto.VeterinarioDto
@@ -81,8 +83,12 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
 
     override suspend fun matriculaDisponible(matricula: String) = matricula.lowercase() !in matriculasEnUso
 
+    /** Los datos con los que se creó la última cuenta (lo que el servidor guarda de la persona y del veterinario). */
+    var ultimosDatosDeRegistro: JsonObject? = null
+
     override suspend fun registrar(email: String, password: String, datos: JsonObject): ResultadoRegistro {
         llamadas.add("registrar:$email")
+        ultimosDatosDeRegistro = datos
         return ResultadoRegistro(sesionIniciada = true, usuarioId = yo.id)
     }
 
@@ -153,6 +159,55 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         llamadas.add("veterinario:" + cambios.keys.sorted().joinToString(","))
     }
 
+    // ---------- Lugares de atención ----------
+
+    private fun cambiarSedes(veterinarioId: String, nuevas: (List<SedeDto>) -> List<SedeDto>) {
+        fun PerfilDto.conSedes() = copy(veterinarios = veterinarios?.copy(sedes = nuevas(veterinarios.lugares())))
+        if (yo.id == veterinarioId) yo = yo.conSedes()
+        val i = perfiles.indexOfFirst { it.id == veterinarioId }
+        if (i >= 0) perfiles[i] = perfiles[i].conSedes()
+    }
+
+    override suspend fun crearSede(sede: NuevaSedeDto) {
+        llamadas.add("crearSede:${sede.nombre}")
+        cambiarSedes(sede.veterinarioId) { actuales ->
+            // Una sede "de siempre" (sin id) pasa a ser real al agregar la segunda
+            val reales = actuales.mapIndexed { i, s -> if (s.id.isBlank()) s.copy(id = "sede-base-$i") else s }
+            reales + SedeDto(
+                id = sede.id ?: "sede-${reales.size + 1}", veterinarioId = sede.veterinarioId, nombre = sede.nombre,
+                direccion = sede.direccion, diasAtencion = sede.diasAtencion, horaApertura = sede.horaApertura,
+                horaCierre = sede.horaCierre, createdAt = "2026-01-%02d".format(reales.size + 1)
+            )
+        }
+    }
+
+    override suspend fun actualizarSede(id: String, cambios: JsonObject) {
+        llamadas.add("actualizarSede:$id:" + cambios.keys.sorted().joinToString(","))
+        fun texto(clave: String) = (cambios[clave] as? JsonPrimitive)?.takeIf { it.content != "null" }?.content
+        val duenos = (perfiles + yo).map { it.id }.distinct()
+        duenos.forEach { vet ->
+            cambiarSedes(vet) { actuales ->
+                actuales.map { s ->
+                    if (s.id != id) s else s.copy(
+                        nombre = texto("nombre") ?: s.nombre,
+                        direccion = if ("direccion" in cambios) texto("direccion") else s.direccion,
+                        horaApertura = texto("hora_apertura") ?: s.horaApertura,
+                        horaCierre = texto("hora_cierre") ?: s.horaCierre,
+                        diasAtencion = (cambios["dias_atencion"] as? kotlinx.serialization.json.JsonArray)
+                            ?.map { it.toString().toInt() } ?: s.diasAtencion
+                    )
+                }
+            }
+        }
+    }
+
+    override suspend fun eliminarSede(id: String) {
+        llamadas.add("eliminarSede:$id")
+        (perfiles + yo).map { it.id }.distinct().forEach { vet ->
+            cambiarSedes(vet) { actuales -> actuales.filterNot { it.id == id } }
+        }
+    }
+
     // ---------- Mascotas ----------
 
     override suspend fun misMascotas() = mascotas.filter { it.duenoId == yo.id && it.activa }
@@ -189,7 +244,8 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         turnos.add(
             TurnoDto(
                 id = turno.id, mascotaId = turno.mascotaId, veterinarioId = turno.veterinarioId, categoria = turno.categoria,
-                motivo = turno.motivo, fecha = turno.fecha, hora = turno.hora, estado = turno.estado, notas = turno.notas
+                motivo = turno.motivo, fecha = turno.fecha, hora = turno.hora, estado = turno.estado, notas = turno.notas,
+                sedeId = turno.sedeId
             )
         )
         // El servidor le da acceso al veterinario apenas se agenda el turno
@@ -209,6 +265,7 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
         texto("fecha")?.let { t = t.copy(fecha = it) }
         texto("hora")?.let { t = t.copy(hora = it) }
         if ("veterinario_id" in cambios) t = t.copy(veterinarioId = texto("veterinario_id"))
+        if ("sede_id" in cambios) t = t.copy(sedeId = texto("sede_id"))
         if ("notas" in cambios) t = t.copy(notas = texto("notas"))
         turnos[i] = t
     }
@@ -428,7 +485,21 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
             veterinarios = VeterinarioDto(
                 profileId = yo.id, matricula = datos.matricula, clinica = datos.clinica,
                 direccionClinica = datos.direccionClinica, credencialPath = datos.credencialPath,
-                estadoRevision = "pendiente_revision"
+                estadoRevision = "pendiente_revision",
+                // Como el servidor: el primer lugar sale de lo "de siempre" y los demás son los extra
+                sedes = if (datos.sedesExtra.isEmpty()) emptyList() else listOf(
+                    SedeDto(
+                        id = "sede-1", veterinarioId = yo.id, nombre = datos.clinica, direccion = datos.direccionClinica,
+                        diasAtencion = datos.dias, horaApertura = datos.apertura + ":00", horaCierre = datos.cierre + ":00",
+                        createdAt = "2026-01-01"
+                    )
+                ) + datos.sedesExtra.mapIndexed { i, e ->
+                    SedeDto(
+                        id = "sede-${i + 2}", veterinarioId = yo.id, nombre = e.nombre, direccion = e.direccion,
+                        diasAtencion = e.dias.sorted(), horaApertura = e.apertura + ":00", horaCierre = e.cierre + ":00",
+                        createdAt = "2026-01-0${i + 2}"
+                    )
+                }
             )
         )
         val i = perfiles.indexOfFirst { it.id == yo.id }
@@ -477,6 +548,27 @@ object Escenario {
             estadoRevision = estado
         )
     )
+
+    /** El mismo veterinario atendiendo en dos lugares: de lunes a viernes por la mañana y los sábados en otro. */
+    fun veterinarioEnDosLugares(id: String = VET_ID, nombre: String = "Dr. Vera"): PerfilDto {
+        val base = veterinario(id, nombre)
+        return base.copy(
+            veterinarios = base.veterinarios!!.copy(
+                sedes = listOf(
+                    SedeDto(
+                        id = "sede-a", veterinarioId = id, nombre = "Clínica Sur", direccion = "Av. Siempreviva 742",
+                        diasAtencion = listOf(1, 2, 3, 4, 5), horaApertura = "09:00:00", horaCierre = "12:00:00",
+                        createdAt = "2026-01-01"
+                    ),
+                    SedeDto(
+                        id = "sede-b", veterinarioId = id, nombre = "Consultorio Centro", direccion = "San Martín 100",
+                        diasAtencion = listOf(6), horaApertura = "10:00:00", horaCierre = "14:00:00",
+                        createdAt = "2026-01-02"
+                    )
+                )
+            )
+        )
+    }
 
     /** Un dueño que además es veterinario: la cuenta es de dueño y el rol de veterinario tiene su propia revisión. */
     fun duenoYVeterinario(revision: String = "activo") = perfil(

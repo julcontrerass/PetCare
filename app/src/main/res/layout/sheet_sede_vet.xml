@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:clipToPadding="false"
+    android:fillViewport="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="22dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="20dp">
+
+        <!-- Encabezado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_icon_tile">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_location"
+                    app:tint="@color/teal_dark" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvSedeTitulo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Cada lugar tiene su dirección, sus días y sus horarios."
+                    android:textColor="@color/text_gray"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Datos del lugar -->
+        <TextView
+            style="@style/VetFormLabel"
+            android:layout_marginTop="20dp"
+            android:text="Nombre de la veterinaria" />
+
+        <EditText
+            android:id="@+id/etSedeNombre"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_field_card"
+            android:hint="Ej: Veterinaria Central"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/brand_navy"
+            android:textColorHint="@color/text_gray"
+            android:textSize="15sp" />
+
+        <TextView
+            style="@style/VetFormLabel"
+            android:layout_marginTop="14dp"
+            android:text="Dirección" />
+
+        <EditText
+            android:id="@+id/etSedeDireccion"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_field_card"
+            android:hint="Calle, número y ciudad"
+            android:importantForAutofill="no"
+            android:inputType="textPostalAddress|textCapWords"
+            android:maxLines="1"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/brand_navy"
+            android:textColorHint="@color/text_gray"
+            android:textSize="15sp" />
+
+        <!-- Días -->
+        <TextView
+            style="@style/VetFormLabel"
+            android:layout_marginTop="14dp"
+            android:text="Días de atención" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cgSedeDias"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnSedePresetLV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="6dp"
+                android:text="Lunes a viernes"
+                android:textColor="@color/primary_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnSedePresetLS"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="6dp"
+                android:text="Lunes a sábado"
+                android:textColor="@color/primary_teal"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Horario -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/VetFormLabel"
+                    android:text="Desde" />
+
+                <EditText
+                    android:id="@+id/etSedeApertura"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/bg_field_card"
+                    android:focusable="false"
+                    android:importantForAutofill="no"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/VetFormLabel"
+                    android:text="Hasta" />
+
+                <EditText
+                    android:id="@+id/etSedeCierre"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/bg_field_card"
+                    android:focusable="false"
+                    android:importantForAutofill="no"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/brand_navy"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvSedeResumen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_info_banner"
+            android:padding="14dp"
+            android:textColor="@color/teal_dark"
+            android:textSize="13.5sp" />
+
+        <!-- Acciones -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSedeGuardar"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="20dp"
+            android:text="Guardar"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/primary_teal"
+            app:cornerRadius="25dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSedeCancelar"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="8dp"
+            android:text="Cancelar"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_navy"
+            app:cornerRadius="25dp"
+            app:strokeColor="@color/login_field_stroke" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSedeEliminar"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Eliminar este lugar"
+            android:textAllCaps="false"
+            android:textColor="@color/danger_red"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

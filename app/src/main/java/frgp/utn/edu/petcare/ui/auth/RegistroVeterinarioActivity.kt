@@ -33,11 +33,13 @@ import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.Registro
 import frgp.utn.edu.petcare.data.repositorio.DisponibilidadVet
 import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BaseActivity
 import frgp.utn.edu.petcare.ui.common.VetUi
+import frgp.utn.edu.petcare.ui.veterinario.EditorSede
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -61,6 +63,11 @@ class RegistroVeterinarioActivity : BaseActivity() {
         private const val ESTADO_DIAS = "dias"
         private const val ESTADO_APERTURA = "apertura"
         private const val ESTADO_CIERRE = "cierre"
+        private const val ESTADO_SEDES = "sedes"
+        private const val SEPARADOR = '\u001F'
+
+        /** Cuántos lugares extra se pueden cargar al registrarse (con el primero son 3, como en el perfil). */
+        private val MAX_EXTRA = PerfilVetRepo.MAX_SEDES - 1
         private const val ESTADO_FOTO = "foto"
         private const val ESTADO_TITULO = "titulo"
         private const val ESTADO_CREDENCIAL = "credencial"
@@ -77,6 +84,9 @@ class RegistroVeterinarioActivity : BaseActivity() {
     private var dias = booleanArrayOf(true, true, true, true, true, false, false)
     private var apertura = "09:00"
     private var cierre = "18:00"
+
+    /** Otros lugares donde atiende, además del primero. */
+    private val sedesExtra = mutableListOf<SedeVet>()
     private var fotoPath: String? = null
     private var credencialPath: String? = null
     private var titulo: String? = null
@@ -113,6 +123,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             dias = it.getBooleanArray(ESTADO_DIAS) ?: dias
             apertura = it.getString(ESTADO_APERTURA) ?: apertura
             cierre = it.getString(ESTADO_CIERRE) ?: cierre
+            it.getStringArrayList(ESTADO_SEDES)?.mapNotNull(::decodificarSede)?.let { lista -> sedesExtra.addAll(lista) }
             fotoPath = it.getString(ESTADO_FOTO)
             credencialPath = it.getString(ESTADO_CREDENCIAL)
             titulo = it.getString(ESTADO_TITULO)
@@ -130,6 +141,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
         configurarCredencial()
         crearChipsTitulo()
         configurarHorario()
+        configurarOtrosLugares()
         if (cuentaExistente) prepararParaCuentaExistente()
 
         btnAtras.setOnClickListener { irAlPasoAnterior() }
@@ -150,6 +162,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
         outState.putBooleanArray(ESTADO_DIAS, dias)
         outState.putString(ESTADO_APERTURA, apertura)
         outState.putString(ESTADO_CIERRE, cierre)
+        outState.putStringArrayList(ESTADO_SEDES, ArrayList(sedesExtra.map(::codificarSede)))
         outState.putString(ESTADO_FOTO, fotoPath)
         outState.putString(ESTADO_CREDENCIAL, credencialPath)
         outState.putString(ESTADO_TITULO, titulo)
@@ -483,6 +496,61 @@ class RegistroVeterinarioActivity : BaseActivity() {
         for (i in dias.indices) (grupo.getChildAt(i) as Chip).isChecked = i < cantidad
     }
 
+    private fun codificarSede(s: SedeVet) =
+        listOf(s.nombre, s.direccion, s.dias.sorted().joinToString(","), s.apertura, s.cierre).joinToString(SEPARADOR.toString())
+
+    private fun decodificarSede(texto: String): SedeVet? {
+        val p = texto.split(SEPARADOR)
+        if (p.size != 5) return null
+        return SedeVet(
+            id = "", nombre = p[0], direccion = p[1], dias = p[2].split(",").mapNotNull { it.toIntOrNull() }.toSet(),
+            apertura = p[3], cierre = p[4]
+        )
+    }
+
+    /** Otros lugares de atención: cada uno con su dirección, sus días y su horario. */
+    private fun configurarOtrosLugares() {
+        findViewById<View>(R.id.btnAgregarLugar).setOnClickListener {
+            if (sedesExtra.size >= MAX_EXTRA) {
+                Avisos.mostrar(this, "Podés cargar hasta ${PerfilVetRepo.MAX_SEDES} lugares de atención")
+            } else {
+                EditorSede.mostrar(this, null, alGuardar = { nueva ->
+                    sedesExtra.add(nueva)
+                    pintarOtrosLugares()
+                })
+            }
+        }
+        pintarOtrosLugares()
+    }
+
+    private fun pintarOtrosLugares() {
+        val lista = findViewById<android.widget.LinearLayout>(R.id.llOtrosLugares)
+        lista.removeAllViews()
+        sedesExtra.forEachIndexed { i, sede ->
+            val fila = layoutInflater.inflate(R.layout.item_sede_vet, lista, false)
+            fila.findViewById<TextView>(R.id.tvSedeNombre).text = sede.nombre
+            fila.findViewById<TextView>(R.id.tvSedeDetalle).text = EditorSede.detalle(sede)
+            fila.setOnClickListener {
+                EditorSede.mostrar(
+                    this, sede,
+                    alGuardar = { editada ->
+                        sedesExtra[i] = editada
+                        pintarOtrosLugares()
+                    },
+                    alEliminar = { dialogo ->
+                        sedesExtra.removeAt(i)
+                        pintarOtrosLugares()
+                        dialogo.dismiss()
+                    }
+                )
+            }
+            lista.addView(fila)
+        }
+        findViewById<View>(R.id.btnAgregarLugar).visibility =
+            if (sedesExtra.size >= MAX_EXTRA) View.GONE else View.VISIBLE
+        actualizarResumenHorario()
+    }
+
     private fun configurarHorario() {
         val etApertura = findViewById<EditText>(R.id.etVetApertura)
         val etCierre = findViewById<EditText>(R.id.etVetCierre)
@@ -514,7 +582,8 @@ class RegistroVeterinarioActivity : BaseActivity() {
         } else if (minutosDia < DisponibilidadVet.DURACION_MIN) {
             "El horario de cierre tiene que ser posterior al de apertura."
         } else {
-            "Atendés ${textoDias()} de $apertura a $cierre hs. La duración de cada práctica la podés ajustar " +
+            val donde = if (sedesExtra.isEmpty()) "" else "En ${texto(R.id.etVetClinica).ifBlank { "tu primera veterinaria" }}: "
+            donde + "Atendés ${textoDias()} de $apertura a $cierre hs. La duración de cada práctica la podés ajustar " +
                 "después desde tu perfil."
         }
         findViewById<TextView>(R.id.tvResumenHorarioReg).text = texto
@@ -528,6 +597,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
             appendLine(if (cuentaExistente) nombreCompleto() else nombreCompleto() + " · DNI " + texto(R.id.etVetDni))
             appendLine("Matrícula " + texto(R.id.etVetMatricula))
             appendLine(texto(R.id.etVetClinica) + " · " + texto(R.id.etVetDireccion))
+            sedesExtra.forEach { appendLine(it.textoLugar()) }
             appendLine(elegidas.joinToString(", "))
             appendLine("Animales: " + tiposElegidos().joinToString(", ") { TiposMascota.plural(it) })
             append("Atención: ${textoDias()} · $apertura a $cierre hs")
@@ -554,7 +624,7 @@ class RegistroVeterinarioActivity : BaseActivity() {
                         dias = dias.indices.filter { dias[it] }.map { it + 1 },
                         apertura = apertura, cierre = cierre,
                         especialidades = PerfilVetRepo.todasLasEspecialidades.filterIndexed { i, _ -> especialidades[i] },
-                        tiposAnimales = tiposElegidos(), credencialPath = ruta
+                        tiposAnimales = tiposElegidos(), credencialPath = ruta, sedesExtra = sedesExtra.toList()
                     )
                 )
                 runCatching { preparada.delete(); File(carnet).delete() }
@@ -597,7 +667,8 @@ class RegistroVeterinarioActivity : BaseActivity() {
             apertura = apertura,
             cierre = cierre,
             fotoPath = fotoPath,
-            credencialPath = credencialPath
+            credencialPath = credencialPath,
+            sedesExtra = sedesExtra.toList()
         )
         btnSiguiente.isEnabled = false
         btnSiguiente.text = "Creando cuenta..."

@@ -24,6 +24,7 @@ import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EstadoAcceso
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.TiposMascota
+import frgp.utn.edu.petcare.model.SedeVet
 import frgp.utn.edu.petcare.model.VeterinarioAcceso
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avatares
@@ -48,6 +49,9 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private var categoria: String? = null
     private var mascota: String? = null
     private var veterinario: String? = null
+
+    /** Lugar de atención elegido; null usa el principal del veterinario. */
+    private var sedeId: String? = null
     private var hora: String? = null
     private var ocupadas: List<HoraOcupadaDto> = emptyList()
     private val estudios = mutableListOf<DuenoRepo.EstudioAdjunto>()
@@ -68,6 +72,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         categoria = evento.categoria
         mascota = evento.mascota
         veterinario = evento.veterinario.ifBlank { null }
+        sedeId = evento.sedeId
         fecha = evento.fecha
         mes = YearMonth.from(evento.fecha)
         hora = evento.hora
@@ -98,6 +103,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         categoria = null
         mascota = mascotaPreseleccionada
         veterinario = null
+        sedeId = null
         hora = null
         ocupadas = emptyList()
         estudios.clear()
@@ -173,6 +179,9 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
     private fun tipoDeLaMascota(): String? = mascotaElegida()?.tipo
 
+    /** El lugar donde se atendería el turno: el elegido o, si no eligió, el principal del veterinario. */
+    private fun sedeElegida(vet: VeterinarioAcceso?): SedeVet? = vet?.sede(sedeId)
+
     /** Veterinarios que ofrecen el servicio elegido y atienden el tipo de animal de la mascota. */
     private fun veterinariosElegibles(): List<VeterinarioAcceso> =
         DuenoRepo.veterinariosPara(categoria, tipoDeLaMascota())
@@ -194,7 +203,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             fecha.isBefore(LocalDate.now()) -> "No podés seleccionar una fecha que ya pasó"
             !vet.atiende(tipoDeLaMascota()) ->
                 "${vet.nombre} no atiende ${TiposMascota.plural(TiposMascota.normalizar(tipoDeLaMascota())).lowercase()}"
-            !DuenoRepo.trabajaEl(vet, fecha) -> "${vet.nombre} no atiende ese día"
+            !DuenoRepo.trabajaEl(vet, fecha, sedeElegida(vet)) -> "${vet.nombre} no atiende ese día en ese lugar"
             horaElegida == null || DuenoRepo.horaPasada(fecha, horaElegida) -> "Elegí un horario disponible"
             DuenoRepo.estaOcupado(horaElegida, duracion, ocupadas) -> "Ese horario ya fue reservado, elegí otro"
             DuenoRepo.hayConflictoDeTurno(fecha, horaElegida, nombre, edicion, duracion) ->
@@ -217,13 +226,15 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val evento = edicion ?: return
         guardarObservaciones()
         if (!horarioValido()) return
+        val sedeNueva = sedeElegida(DuenoRepo.buscarVeterinario(veterinario))?.id
+        val sedeVieja = DuenoRepo.sedeDe(evento)?.id
         val sinCambios = fecha == evento.fecha && hora == evento.hora && veterinario.orEmpty() == evento.veterinario &&
-            observaciones == evento.observaciones
+            sedeNueva == sedeVieja && observaciones == evento.observaciones
         if (sinCambios) {
             toast("No hiciste ningún cambio")
             return
         }
-        DuenoRepo.modificarEvento(evento, fecha, hora!!, veterinario.orEmpty(), observaciones)
+        DuenoRepo.modificarEvento(evento, fecha, hora!!, veterinario.orEmpty(), observaciones, sedeId)
         host.diaSeleccionado = fecha
         host.mesCalendario = YearMonth.from(fecha)
         toast("Turno actualizado")
@@ -236,7 +247,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
             return
         }
         DuenoRepo.agendarEvento(
-            fecha, categoria!!, mascota!!, veterinario.orEmpty(), hora!!, observaciones, estudios.toList()
+            fecha, categoria!!, mascota!!, veterinario.orEmpty(), hora!!, observaciones, estudios.toList(), sedeId
         )
         host.diaSeleccionado = fecha
         host.mesCalendario = YearMonth.from(fecha)
@@ -506,6 +517,57 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         }
         sinVeterinarios?.visibility = View.GONE
         filtrados.forEach { contenedor.addView(tarjetaVeterinario(it)) }
+
+        // Si el elegido atiende en más de un lugar, se pregunta dónde (cada lugar tiene sus días y horarios)
+        val elegido = filtrados.firstOrNull { it.nombre == veterinario }
+        if (elegido != null && elegido.sedes.size > 1) {
+            contenedor.addView(TextView(host).apply {
+                text = "¿Dónde querés atenderte con ${elegido.nombre}?"
+                setTextColor(ContextCompat.getColor(host, R.color.brand_navy))
+                textSize = 15f
+                setTypeface(typeface, Typeface.BOLD)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(16); bottomMargin = dp(4) }
+            })
+            elegido.sedes.forEach { contenedor.addView(tarjetaSede(elegido, it)) }
+        }
+    }
+
+    private fun tarjetaSede(vet: VeterinarioAcceso, sede: SedeVet): View {
+        val seleccionada = vet.sede(sedeId)?.id == sede.id
+        val tarjeta = LinearLayout(host).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setBackgroundResource(if (seleccionada) R.drawable.bg_card_selected else R.drawable.bg_card_white)
+            elevation = dp(2).toFloat()
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(8) }
+            isClickable = true
+            isFocusable = true
+        }
+        tarjeta.addView(TextView(host).apply {
+            text = sede.nombre
+            setTextColor(ContextCompat.getColor(host, R.color.brand_navy))
+            textSize = 15f
+            setTypeface(typeface, Typeface.BOLD)
+        })
+        tarjeta.addView(TextView(host).apply {
+            text = listOf(sede.direccion, sede.textoHorario()).filter { it.isNotBlank() }.joinToString("\n")
+            setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+            textSize = 12.5f
+        })
+        tarjeta.setOnClickListener {
+            Efectos.rebote(it)
+            sedeId = sede.id
+            hora = null
+            dibujarVeterinarios()
+            dibujarCalendarioMini()
+            dibujarHoras()
+            cargarOcupadas()
+        }
+        return tarjeta
     }
 
     private fun tarjetaVeterinario(vet: VeterinarioAcceso): View {
@@ -571,9 +633,12 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
         tarjeta.setOnClickListener {
             Efectos.rebote(it)
+            if (veterinario != vet.nombre) sedeId = null
             veterinario = vet.nombre
             hora = null
             dibujarVeterinarios()
+            dibujarCalendarioMini()
+            dibujarHoras()
             cargarOcupadas()
         }
         return tarjeta
@@ -599,7 +664,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private fun casilleroDia(dia: LocalDate, numero: Int): FrameLayout {
         val casillero = FrameLayout(host).apply { layoutParams = parametrosCasillero() }
         val vet = DuenoRepo.buscarVeterinario(veterinario)
-        val noAtiende = vet != null && !DuenoRepo.trabajaEl(vet, dia)
+        val noAtiende = vet != null && !DuenoRepo.trabajaEl(vet, dia, sedeElegida(vet))
         val esPasado = dia.isBefore(LocalDate.now())
         val esHoy = dia == LocalDate.now()
         val seleccionado = dia == fecha
@@ -633,7 +698,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
                 return@setOnClickListener
             }
             if (noAtiende) {
-                toast("${vet?.nombre} no atiende ese día")
+                toast("${vet?.nombre} no atiende ese día" + if ((vet?.sedes?.size ?: 0) > 1) " en ese lugar" else "")
                 return@setOnClickListener
             }
             Efectos.rebote(texto)
@@ -652,15 +717,18 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
 
         val vet = DuenoRepo.buscarVeterinario(veterinario)
         val duracion = duracionElegida()
-        val horas = if (vet == null) emptyList() else DuenoRepo.horasDe(vet, fecha, duracion)
+        val sede = sedeElegida(vet)
+        val horas = if (vet == null) emptyList() else DuenoRepo.horasDe(vet, fecha, duracion, sede)
         texto(
             R.id.tvSinHoras,
             when {
                 vet == null -> "Elegí un veterinario para ver sus horarios"
-                !DuenoRepo.trabajaEl(vet, fecha) -> "${vet.nombre} no atiende ese día"
+                !DuenoRepo.trabajaEl(vet, fecha, sede) ->
+                    "${vet.nombre} no atiende ese día" + if (vet.sedes.size > 1) " en ${sede?.nombre}" else ""
                 horas.isEmpty() ->
                     "${categoria ?: "Este servicio"} dura ${CatalogoMedico.textoDuracion(duracion)} y no entra " +
-                        "en el horario de atención de ${vet.nombre} (${vet.apertura} a ${vet.cierre} hs)"
+                        "en el horario de atención de ${vet.nombre} (${sede?.apertura ?: vet.apertura} a " +
+                        "${sede?.cierre ?: vet.cierre} hs)"
                 else -> ""
             }
         )
@@ -884,7 +952,12 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
     private fun mostrarResumen() {
         texto(R.id.tvResumenCategoria, categoria.orEmpty())
         texto(R.id.tvResumenMascota, mascota.orEmpty())
-        texto(R.id.tvResumenVeterinario, veterinario.orEmpty())
+        val vetResumen = DuenoRepo.buscarVeterinario(veterinario)
+        val lugar = sedeElegida(vetResumen)?.takeIf { (vetResumen?.sedes?.size ?: 0) > 1 }
+        texto(
+            R.id.tvResumenVeterinario,
+            veterinario.orEmpty() + (lugar?.let { "\n${it.textoLugar()}" }.orEmpty())
+        )
         texto(R.id.tvResumenFecha, "${fecha.dayOfMonth} de ${Fechas.nombreMes(fecha.monthValue)}, ${fecha.year}")
         val duracion = duracionElegida()
         texto(
