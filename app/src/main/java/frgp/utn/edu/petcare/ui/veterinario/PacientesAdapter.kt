@@ -39,7 +39,7 @@ class PacientesAdapter(private var items: List<Paciente>) : RecyclerView.Adapter
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.tvPetName.text = item.nombre
-        holder.tvPetBreed.text = item.razaYSexo
+        holder.tvPetBreed.text = item.razaYSexo + if (item.estaActiva) "" else " · ${item.estado.etiqueta}"
         holder.tvOwnerName.text = item.propietario
         Avatares.mostrar(holder.ivDuenoFoto, item.fotoDueno)
         val proximo = AgendaRepo.proximoEvento(item.id)

@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare.ui.dueno
 
+import android.app.DatePickerDialog
 import android.graphics.Typeface
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,6 +13,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.model.EstadoAcceso
@@ -20,6 +22,8 @@ import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.Efectos
 import frgp.utn.edu.petcare.util.Fechas
+import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 /** Veterinarios con acceso a las mascotas: se puede revocar, restablecer o autorizar a uno nuevo. */
 class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
@@ -53,7 +57,79 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
             })
         }
         alTocarConRebote(R.id.btnAgregarVeterinario) { autorizarNuevo() }
+        alTocar(R.id.btnHistorialPermisos) { mostrarHistorial() }
         dibujar()
+    }
+
+    /** Opciones de duración del permiso; null = sin vencimiento. */
+    private fun elegirVencimiento(titulo: String, alElegir: (LocalDate?) -> Unit) {
+        val hoy = LocalDate.now()
+        val opciones = listOf<Pair<String, LocalDate?>>(
+            "Sin vencimiento" to null,
+            "1 mes" to hoy.plusMonths(1),
+            "3 meses" to hoy.plusMonths(3),
+            "6 meses" to hoy.plusMonths(6),
+            "1 año" to hoy.plusYears(1)
+        )
+        AlertDialog.Builder(host)
+            .setTitle(titulo)
+            .setItems((opciones.map { (nombre, fecha) -> nombre + (fecha?.let { " (hasta ${Fechas.corta(it)})" } ?: "") } +
+                "Elegir una fecha…").toTypedArray()) { _, i ->
+                if (i < opciones.size) alElegir(opciones[i].second)
+                else DatePickerDialog(host, { _, a, m, d -> alElegir(LocalDate.of(a, m + 1, d)) },
+                    hoy.year, hoy.monthValue - 1, hoy.dayOfMonth).apply {
+                    datePicker.minDate = java.time.ZoneId.systemDefault().let {
+                        hoy.atStartOfDay(it).toInstant().toEpochMilli()
+                    }
+                }.show()
+            }
+            .setNegativeButton(R.string.btn_cancelar, null)
+            .show()
+    }
+
+    /** Quién autorizó, pidió o sacó cada permiso y cuándo. */
+    private fun mostrarHistorial() {
+        val lista = LinearLayout(host).apply {
+            orientation = LinearLayout.VERTICAL
+            val margen = dp(20)
+            setPadding(margen, dp(8), margen, margen)
+        }
+        val cargando = TextView(host).apply {
+            text = "Cargando…"
+            setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+        }
+        lista.addView(cargando)
+        AlertDialog.Builder(host)
+            .setTitle("Historial de permisos")
+            .setView(ScrollView(host).apply { addView(lista) })
+            .setPositiveButton("Cerrar", null)
+            .show()
+        host.lifecycleScope.launch {
+            val entradas = runCatching { DuenoRepo.historialDePermisos() }.getOrNull()
+            lista.removeAllViews()
+            if (entradas.isNullOrEmpty()) {
+                lista.addView(TextView(host).apply {
+                    text = if (entradas == null) "No se pudo cargar el historial" else "Todavía no hay movimientos"
+                    setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+                })
+                return@launch
+            }
+            entradas.forEach { e ->
+                lista.addView(TextView(host).apply {
+                    text = e.evento
+                    textSize = 14f
+                    setTypeface(typeface, Typeface.BOLD)
+                    setTextColor(ContextCompat.getColor(host, R.color.black))
+                    setPadding(0, dp(10), 0, 0)
+                })
+                lista.addView(TextView(host).apply {
+                    text = "${e.veterinario} · ${e.mascota}" + (e.venceEl?.let { " · hasta ${Fechas.corta(it)}" } ?: "") +
+                        "\n${e.actor} · ${Fechas.corta(e.cuando.toLocalDate())}, " + "%02d:%02d".format(e.cuando.hour, e.cuando.minute)
+                    textSize = 12f
+                    setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+                })
+            }
+        }
     }
 
     private fun alCambiarTexto(accion: (String) -> Unit) = object : TextWatcher {
@@ -100,7 +176,12 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
             "${vet.especialidad} · ${vet.matricula} · " + if (turnos == 1) "1 turno" else "$turnos turnos"
 
         tarjeta.findViewById<TextView>(R.id.tvEstado).apply {
-            text = if (activo) "Con acceso" else "Sin acceso"
+            text = when {
+                activo && vet.venceEl != null -> "Con acceso hasta ${Fechas.corta(vet.venceEl!!)}"
+                activo -> "Con acceso"
+                vet.vencido -> "Venció el ${Fechas.corta(vet.venceEl!!)}"
+                else -> "Sin acceso"
+            }
             setBackgroundResource(if (activo) R.drawable.bg_chip_ok else R.drawable.bg_chip_danger)
             setTextColor(ContextCompat.getColor(host, if (activo) R.color.success_green else R.color.danger_red))
         }
@@ -148,8 +229,20 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
                 text = "Restablecer acceso"
                 setTextColor(ContextCompat.getColor(host, R.color.primary_teal))
                 setOnClickListener {
-                    DuenoRepo.restablecerAcceso(vet)
-                    toast(host.getString(R.string.vet_autorizado_exito, vet.nombre))
+                    elegirVencimiento("¿Por cuánto tiempo?") { hasta ->
+                        DuenoRepo.restablecerAcceso(vet, hasta)
+                        toast(host.getString(R.string.vet_autorizado_exito, vet.nombre))
+                        dibujar()
+                    }
+                }
+            }
+        }
+        tarjeta.findViewById<TextView>(R.id.btnVencimiento).apply {
+            visibility = if (activo) View.VISIBLE else View.GONE
+            setOnClickListener {
+                elegirVencimiento("Vencimiento del permiso") { hasta ->
+                    DuenoRepo.cambiarVencimiento(vet, hasta)
+                    toast(if (hasta == null) "El permiso ya no vence" else "El permiso vence el ${Fechas.corta(hasta)}")
                     dibujar()
                 }
             }
@@ -240,10 +333,12 @@ class VeterinariosPantalla(host: DuenoActivity) : Pantalla(host) {
             isAllCaps = false
             backgroundTintList = ContextCompat.getColorStateList(host, R.color.primary_teal)
             setOnClickListener {
-                DuenoRepo.autorizarVeterinario(vet)
-                toast(host.getString(R.string.vet_autorizado_exito, vet.nombre))
                 dialogo.dismiss()
-                dibujar()
+                elegirVencimiento("¿Por cuánto tiempo?") { hasta ->
+                    DuenoRepo.autorizarVeterinario(vet, hasta)
+                    toast(host.getString(R.string.vet_autorizado_exito, vet.nombre))
+                    dibujar()
+                }
             }
         })
         fila.addView(contenido)

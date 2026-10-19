@@ -21,6 +21,7 @@ import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.model.AjusteFoto
 import frgp.utn.edu.petcare.model.EstadoAcceso
+import frgp.utn.edu.petcare.model.EstadoMascota
 import frgp.utn.edu.petcare.model.EstadoTurno
 import frgp.utn.edu.petcare.model.EventoMascota
 import frgp.utn.edu.petcare.model.Mascota
@@ -111,6 +112,7 @@ object DuenoRepo {
         nuevo.notificaciones.addAll(avisosDelServidor.map(::aNotificacion))
         reconstruirVeterinarios(nuevo)
         estado = nuevo
+        runCatching { RecordatoriosRepo.cargar() }
         cargarSalud(nuevo, forzar = true)
         // Al iniciar sesión lo que ya estaba no suena; solo se programan los recordatorios de lo que viene
         Servicios.contextoApp?.let {
@@ -148,10 +150,11 @@ object DuenoRepo {
         val ahora = java.time.LocalDateTime.now()
         val nombres = e.mascotas.associate { it.id to it.nombre }
         val vacunas = e.salud
-            .filter { it.tipo == "vacuna" && it.mascotaId in nombres }
+            .filter { (it.tipo == "vacuna" || it.tipo == "desparasitacion") && it.mascotaId in nombres }
             .mapNotNull { r ->
                 val proxima = r.proximaDosis?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
-                Recordatorios.VacunaProxima(r.id, nombres.getValue(r.mascotaId), r.titulo, proxima)
+                val clase = if (r.tipo == "vacuna") "vacuna" else "desparasitación"
+                Recordatorios.VacunaProxima(r.id, nombres.getValue(r.mascotaId), r.titulo, proxima, clase)
             }
         val medicacion = e.recetas
             .filter { it.mascotaId in nombres }
@@ -163,9 +166,14 @@ object DuenoRepo {
                     ?: return@mapNotNull null
                 Recordatorios.Medicacion(p.id, nombres.getValue(p.mascotaId), p.medicamento, p.dosis.orEmpty(), cada, inicio, dias)
             }
+        val manuales = RecordatoriosRepo.lista.mapNotNull { r ->
+            val mascota = nombres[r.mascotaId] ?: return@mapNotNull null
+            Recordatorios.Manual(r.id, mascota, r.titulo, r.fecha, r.hora, r.nota)
+        }
         val avisos = Recordatorios.paraDueno(e.eventos, ahora) +
             Recordatorios.paraVacunas(vacunas, ahora, AvisosDelSistema.vacunasAvisadas(contexto)) +
-            Recordatorios.paraMedicacion(medicacion, ahora)
+            Recordatorios.paraMedicacion(medicacion, ahora) +
+            Recordatorios.paraManuales(manuales, ahora)
         Recordatorios.programar(contexto, avisos, ahora)
     }
 
@@ -186,6 +194,7 @@ object DuenoRepo {
         actual.eventos.addAll(turnos.filter { t -> t.estado != "cancelado" && actual.mascotas.any { it.id == t.mascotaId } }.map { aEvento(it, actual) })
         actual.notificaciones.clear()
         actual.notificaciones.addAll(avisos.map(::aNotificacion))
+        runCatching { RecordatoriosRepo.cargar() }
         cargarSalud(actual, forzar = false)
         Servicios.contextoApp?.let {
             runCatching { AvisosDelSistema.mostrarNuevas(it, avisos) }
@@ -225,7 +234,7 @@ object DuenoRepo {
         peso = textoDePeso(m.pesoKg), microchip = m.microchip?.takeIf { it.isNotBlank() } ?: SIN_DATOS,
         color = m.color?.takeIf { it.isNotBlank() } ?: SIN_DATOS,
         observaciones = m.observaciones?.takeIf { it.isNotBlank() } ?: "Sin observaciones",
-        alertas = m.alertasClinicas.orEmpty()
+        alertas = m.alertasClinicas.orEmpty(), estado = EstadoMascota.deClave(m.estado)
     )
 
     private fun aEvento(t: TurnoDto, e: EstadoDueno): EventoMascota {
@@ -241,7 +250,7 @@ object DuenoRepo {
 
     private fun aNotificacion(n: NotificacionDto) = NotificacionDueno(
         tipo = TipoNotificacion.deClave(n.tipo),
-        titulo = n.titulo, mensaje = n.mensaje, creada = Fechas.instante(n.createdAt), leida = n.leida
+        titulo = n.titulo, mensaje = n.mensaje, creada = Fechas.instante(n.createdAt), leida = n.leida, id = n.id
     )
 
     private fun nombreVeterinario(e: EstadoDueno, id: String) = e.veterinarios[id]?.nombre.orEmpty()
@@ -276,6 +285,9 @@ object DuenoRepo {
      * quien pidió acceso y todavía no fue aceptado aparece como solicitud; quien tiene al menos un acceso
      * activo o pendiente (iniciado por el dueño) como veterinario autorizado; el resto, como disponible.
      */
+    private fun vencio(a: AccesoDto, hoy: LocalDate): Boolean =
+        Fechas.iso(a.venceEl)?.isBefore(hoy) == true
+
     private fun reconstruirVeterinarios(e: EstadoDueno) {
         val nombrePorMascota = e.mascotas.associate { it.id to it.nombre }
         val accesos = e.accesos.filter { it.mascotaId in nombrePorMascota }
@@ -306,14 +318,24 @@ object DuenoRepo {
             }
             val propios = lista.filterNot { it.estado == "pendiente" && it.iniciadoPor == "veterinario" }
             if (propios.isEmpty()) continue
+            // Un permiso activo con la fecha pasada ya no vale: el servidor tampoco lo deja ver
+            val hoy = LocalDate.now()
+            val vigentes = propios.filter { it.estado == "activo" && !vencio(it, hoy) }
+            val vencidos = propios.filter { it.estado == "activo" && vencio(it, hoy) }
             val estadoAcceso = when {
-                propios.any { it.estado == "activo" } -> EstadoAcceso.ACTIVO
+                vigentes.isNotEmpty() -> EstadoAcceso.ACTIVO
                 propios.any { it.estado == "pendiente" } -> EstadoAcceso.PENDIENTE
                 else -> EstadoAcceso.INACTIVO
             }
-            val conAcceso = propios.filter { it.estado == "activo" || it.estado == "pendiente" }
+            val conAcceso = (vigentes + propios.filter { it.estado == "pendiente" })
                 .mapNotNull { nombrePorMascota[it.mascotaId] }
-            e.autorizados.add(aVeterinario(perfilVet, estadoAcceso, conAcceso))
+            val vet = aVeterinario(perfilVet, estadoAcceso, conAcceso)
+            vet.venceEl = vigentes.mapNotNull { Fechas.iso(it.venceEl) }.minOrNull()
+            if (vigentes.isEmpty() && vencidos.isNotEmpty()) {
+                vet.vencido = true
+                vet.venceEl = vencidos.mapNotNull { Fechas.iso(it.venceEl) }.maxOrNull()
+            }
+            e.autorizados.add(vet)
         }
         val yaListados = porVeterinario.keys
         e.veterinarios.values.filter { it.id !in yaListados && it.atiendeComoVeterinario }.forEach {
@@ -426,14 +448,37 @@ object DuenoRepo {
         }
     }
 
-    fun darDeBajaMascota(mascota: Mascota) {
+    /** Las mascotas con las que se puede sacar turno: las inactivas y las fallecidas quedan en el historial. */
+    val mascotasActivas: List<Mascota> get() = mascotas.filter { it.estado == EstadoMascota.ACTIVA }
+
+    /**
+     * Pasa la mascota a otro estado. Si deja de estar activa se cancelan los turnos que le quedaban pendientes
+     * (los ya completados se conservan en su historial).
+     */
+    fun cambiarEstadoMascota(mascota: Mascota, nuevo: EstadoMascota) {
+        if (mascota.estado == nuevo) return
+        mascota.estado = nuevo
+        val pendientes = if (nuevo == EstadoMascota.ACTIVA) emptyList()
+        else eventos.filter { it.mascotaId == mascota.id && it.estado == EstadoTurno.PENDIENTE }
+        eventos.removeAll(pendientes.toSet())
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            pendientes.forEach { Servicios.fuente.actualizarTurno(it.id, buildJsonObject { put("estado", "cancelado") }) }
+            Servicios.fuente.actualizarMascota(mascota.id, buildJsonObject { put("estado", nuevo.clave) })
+        }
+    }
+
+    /** [motivo] es por qué se da de baja (fallecimiento, adopción u otro) y queda guardado. */
+    fun darDeBajaMascota(mascota: Mascota, motivo: String? = null) {
         mascotas.remove(mascota)
         // Los turnos que le quedaban se cancelan para que no queden colgados en la agenda del veterinario
         val turnos = eventos.filter { it.mascotaId == mascota.id }.map { it.id }
         eventos.removeAll { it.mascotaId == mascota.id }
         Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
             turnos.forEach { Servicios.fuente.actualizarTurno(it, buildJsonObject { put("estado", "cancelado") }) }
-            Servicios.fuente.actualizarMascota(mascota.id, buildJsonObject { put("activa", false) })
+            Servicios.fuente.actualizarMascota(mascota.id, buildJsonObject {
+                put("activa", false)
+                put("motivo_baja", motivo?.takeIf { it.isNotBlank() })
+            })
             Imagenes.borrarFoto(mascota.fotoPath)
         }
     }
@@ -729,18 +774,63 @@ object DuenoRepo {
         }
     }
 
-    fun restablecerAcceso(vet: VeterinarioAcceso) {
+    /** Vuelve a dar acceso; [venceEl] es el último día del permiso (null = sin vencimiento). */
+    fun restablecerAcceso(vet: VeterinarioAcceso, venceEl: LocalDate? = null) {
         vet.estado = EstadoAcceso.ACTIVO
+        vet.vencido = false
+        vet.venceEl = venceEl
         Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
             Servicios.fuente.actualizarAccesosDeVeterinario(vet.id, "activo")
+            Servicios.fuente.fijarVencimientoDeAccesos(vet.id, venceEl?.toString())
+        }
+    }
+
+    /** Cambia hasta cuándo sirve el permiso de un veterinario que ya tiene acceso. */
+    fun cambiarVencimiento(vet: VeterinarioAcceso, venceEl: LocalDate?) {
+        vet.venceEl = venceEl
+        Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
+            Servicios.fuente.fijarVencimientoDeAccesos(vet.id, venceEl?.toString())
+        }
+    }
+
+    /** Una línea del historial de permisos ya con los nombres. */
+    class EntradaPermiso(
+        val cuando: java.time.LocalDateTime,
+        val evento: String,
+        val veterinario: String,
+        val mascota: String,
+        val actor: String,
+        val venceEl: LocalDate?
+    )
+
+    /** Quién autorizó, pidió o sacó cada permiso y cuándo (lo más nuevo primero). */
+    suspend fun historialDePermisos(): List<EntradaPermiso> {
+        val e = estado
+        val yo = Sesion.usuarioId
+        val mascotas = e.mascotas.associate { it.id to it.nombre }
+        return Servicios.fuente.historialDeAccesos().filter { it.mascotaId in mascotas }.map {
+            EntradaPermiso(
+                cuando = Fechas.instante(it.createdAt), evento = it.evento,
+                veterinario = e.veterinarios[it.veterinarioId]?.nombre ?: "Veterinario",
+                mascota = mascotas[it.mascotaId].orEmpty(),
+                actor = when (it.actorId) {
+                    null -> "El sistema"
+                    yo -> "Vos"
+                    else -> e.veterinarios[it.actorId]?.nombre ?: "Otra persona"
+                },
+                venceEl = Fechas.iso(it.venceEl)
+            )
         }
     }
 
     /** Autoriza a un veterinario del catálogo para que vea todas las mascotas actuales. */
-    fun autorizarVeterinario(candidato: VeterinarioAcceso) {
+    fun autorizarVeterinario(candidato: VeterinarioAcceso, venceEl: LocalDate? = null) {
         val existente = autorizados.firstOrNull { it.id == candidato.id }
+        candidato.venceEl = venceEl
         if (existente != null) {
             existente.estado = EstadoAcceso.ACTIVO
+            existente.vencido = false
+            existente.venceEl = venceEl
         } else {
             disponibles.remove(candidato)
             candidato.estado = EstadoAcceso.ACTIVO
@@ -749,7 +839,7 @@ object DuenoRepo {
         }
         val ids = mascotas.map { it.id }
         Servicios.escribir(alFallar = recargarSiFalla(), alTerminar = recargarAlTerminar()) {
-            Servicios.fuente.compartirMascotas(ids, candidato.id)
+            Servicios.fuente.compartirMascotas(ids, candidato.id, venceEl?.toString())
         }
     }
 
@@ -849,6 +939,13 @@ object DuenoRepo {
         if (estado.notificaciones.none { !it.leida }) return
         estado.notificaciones.forEach { it.leida = true }
         Servicios.escribir { Servicios.fuente.marcarNotificacionesLeidas() }
+    }
+
+    /** Borra una sola notificación: se saca de la lista ya y se borra del servidor en segundo plano. */
+    fun borrarNotificacion(notificacion: NotificacionDueno) {
+        estado.notificaciones.remove(notificacion)
+        if (notificacion.id.isBlank()) return
+        Servicios.escribir { Servicios.fuente.borrarNotificacion(notificacion.id) }
     }
 
     fun limpiarNotificaciones() {

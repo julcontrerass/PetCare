@@ -54,6 +54,19 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_gray"
             android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btnHistorialPermisos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingVertical="4dp"
+            android:text="Historial de permisos"
+            android:textColor="@color/primary_teal"
+            android:textSize="13sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <FrameLayout

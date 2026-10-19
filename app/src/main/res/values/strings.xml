@@ -25,6 +25,7 @@
     <string name="filtro_perros">Perros</string>
     <string name="filtro_gatos">Gatos</string>
     <string name="filtro_otras">Otras</string>
+    <string name="filtro_historicas">Históricas</string>
     <string name="stat_edad">Edad</string>
     <string name="stat_sexo">Sexo</string>
     <string name="salud_titulo">Salud</string>

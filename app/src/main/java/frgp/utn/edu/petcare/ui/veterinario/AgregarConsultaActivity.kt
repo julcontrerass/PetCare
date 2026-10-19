@@ -53,7 +53,8 @@ class AgregarConsultaActivity : BaseActivity() {
 
         val spPaciente = findViewById<Spinner>(R.id.spPaciente)
         val spTipo = findViewById<Spinner>(R.id.spTipo)
-        val pacientes = PacientesRepo.pacientes
+        // Solo las activas: a las inactivas y a las fallecidas no se les agendan turnos
+        val pacientes = PacientesRepo.pacientes.filter { it.estaActiva }
 
         spPaciente.adapter = ArrayAdapter(
             this, android.R.layout.simple_spinner_dropdown_item, pacientes.map { "${it.nombre} (${it.propietario})" }
@@ -86,7 +87,7 @@ class AgregarConsultaActivity : BaseActivity() {
         val altaDeDueno = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { resultado ->
             val id = resultado.data?.getStringExtra(NuevoDuenoActivity.EXTRA_PACIENTE_ID)
             if (resultado.resultCode != RESULT_OK || id == null) return@registerForActivityResult
-            val actuales = PacientesRepo.pacientes
+            val actuales = PacientesRepo.pacientes.filter { it.estaActiva }
             spPaciente.adapter = ArrayAdapter(
                 this, android.R.layout.simple_spinner_dropdown_item, actuales.map { "${it.nombre} (${it.propietario})" }
             )
@@ -302,7 +303,9 @@ class AgregarConsultaActivity : BaseActivity() {
         val detalle = notas.ifEmpty { "Registrado por el veterinario" }
         when (tipo) {
             "Vacuna" -> SaludRepo.agregar(TipoRegistro.VACUNA, mascotaId, motivo, detalle, fecha)
+            "Desparasitación" -> SaludRepo.agregar(TipoRegistro.DESPARASITACION, mascotaId, motivo, detalle, fecha)
             "Tratamiento" -> SaludRepo.agregar(TipoRegistro.TRATAMIENTO, mascotaId, motivo, detalle, fecha)
+            "Cirugía" -> SaludRepo.agregar(TipoRegistro.CIRUGIA, mascotaId, motivo, detalle, fecha)
         }
     }
 }

@@ -427,6 +427,20 @@
                 app:iconPadding="10dp"
                 app:iconTint="@color/white" />
 
+            <!-- BOTÓN CAMBIAR ESTADO -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCambiarEstado"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="Cambiar estado: activa, inactiva o fallecida"
+                android:textAllCaps="false"
+                android:textColor="@color/brand_navy"
+                android:textSize="15sp"
+                app:cornerRadius="26dp"
+                app:strokeColor="@color/login_field_stroke" />
+
             <!-- BOTÓN DAR DE BAJA -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDarDeBaja"

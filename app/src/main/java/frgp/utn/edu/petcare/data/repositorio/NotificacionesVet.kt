@@ -40,6 +40,12 @@ object NotificacionesVet {
         Servicios.contextoApp?.let { runCatching { AvisosDelSistema.mostrarNuevas(it, ultimas, silencioso) } }
     }
 
+    /** Borra una sola notificación: se saca ya de la lista y se borra del servidor en segundo plano. */
+    fun borrar(id: String) {
+        ultimas = ultimas.filterNot { it.id == id }
+        Servicios.escribir { Servicios.fuente.borrarNotificacion(id) }
+    }
+
     fun mostrar(actividad: AppCompatActivity, alCambiar: () -> Unit = {}) {
         actividad.lifecycleScope.launch {
             try {
@@ -60,11 +66,16 @@ object NotificacionesVet {
                         gravity = Gravity.CENTER
                     })
                 } else {
-                    avisos.forEach {
+                    avisos.forEach { aviso ->
                         contenido.addView(
                             TarjetaAviso.crear(
-                                actividad, TipoNotificacion.deClave(it.tipo), it.titulo, it.mensaje,
-                                Fechas.instante(it.createdAt), it.id in noLeidas
+                                actividad, TipoNotificacion.deClave(aviso.tipo), aviso.titulo, aviso.mensaje,
+                                Fechas.instante(aviso.createdAt), aviso.id in noLeidas,
+                                alBorrar = { tarjeta ->
+                                    borrar(aviso.id)
+                                    contenido.removeView(tarjeta)
+                                    alCambiar()
+                                }
                             )
                         )
                     }

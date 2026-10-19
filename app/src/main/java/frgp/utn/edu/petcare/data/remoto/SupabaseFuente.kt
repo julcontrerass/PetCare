@@ -82,7 +82,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     private val tablasEscuchadas = listOf(
         "turnos", "accesos_mascota", "notificaciones", "mascotas", "informes_clinicos", "archivos_mascota",
-        "registros_salud", "prescripciones", "sedes"
+        "registros_salud", "prescripciones", "sedes", "recordatorios"
     )
 
     /** Escucha los cambios de las tablas; el servidor solo manda los que el usuario puede ver (RLS). */
@@ -338,7 +338,7 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     override suspend fun accesos(): List<AccesoDto> = cliente.from("accesos_mascota").select().decodeList()
 
-    override suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String) {
+    override suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String, venceEl: String?) {
         if (mascotaIds.isEmpty()) return
         val existentes = cliente.from("accesos_mascota").select {
             filter {
@@ -348,16 +348,37 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         }.decodeList<AccesoDto>()
         val yaTienen = existentes.map { it.mascotaId }.toSet()
         val nuevos = mascotaIds.filter { it !in yaTienen }.map {
-            NuevoAccesoDto(mascotaId = it, veterinarioId = veterinarioId, estado = "activo", iniciadoPor = "dueno")
+            NuevoAccesoDto(
+                mascotaId = it, veterinarioId = veterinarioId, estado = "activo", iniciadoPor = "dueno", venceEl = venceEl
+            )
         }
         if (nuevos.isNotEmpty()) cliente.from("accesos_mascota").insert(nuevos)
-        val aReactivar = existentes.filter { it.estado != "activo" }.map { it.id }
-        if (aReactivar.isNotEmpty()) {
-            cliente.from("accesos_mascota").update(buildJsonObject { put("estado", "activo") }) {
-                filter { isIn("id", aReactivar) }
+        // Los que ya existían quedan activos y con el vencimiento elegido
+        val actuales = existentes.map { it.id }
+        if (actuales.isNotEmpty()) {
+            cliente.from("accesos_mascota").update(buildJsonObject {
+                put("estado", "activo")
+                put("vence_el", venceEl)
+            }) {
+                filter { isIn("id", actuales) }
             }
         }
     }
+
+    override suspend fun fijarVencimientoDeAccesos(veterinarioId: String, venceEl: String?) {
+        cliente.from("accesos_mascota").update(buildJsonObject { put("vence_el", venceEl) }) {
+            filter {
+                eq("veterinario_id", veterinarioId)
+                eq("estado", "activo")
+            }
+        }
+    }
+
+    override suspend fun historialDeAccesos(): List<AccesoHistorialDto> =
+        cliente.from("accesos_historial").select {
+            order("created_at", Order.DESCENDING)
+            limit(200)
+        }.decodeList()
 
     override suspend fun actualizarAcceso(id: String, estado: String) {
         cliente.from("accesos_mascota").update(buildJsonObject { put("estado", estado) }) {
@@ -410,6 +431,23 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     override suspend fun crearRegistroSalud(registro: NuevoRegistroSaludDto) {
         cliente.from("registros_salud").insert(registro)
+    }
+
+    override suspend fun recordatorios(): List<RecordatorioDto> =
+        cliente.from("recordatorios").select {
+            order("fecha", Order.ASCENDING)
+        }.decodeList()
+
+    override suspend fun crearRecordatorio(recordatorio: NuevoRecordatorioDto) {
+        cliente.from("recordatorios").insert(recordatorio)
+    }
+
+    override suspend fun actualizarRecordatorio(id: String, cambios: JsonObject) {
+        cliente.from("recordatorios").update(cambios) { filter { eq("id", id) } }
+    }
+
+    override suspend fun borrarRecordatorio(id: String) {
+        cliente.from("recordatorios").delete { filter { eq("id", id) } }
     }
 
     override suspend fun eliminarRegistroSalud(id: String) {
@@ -502,6 +540,10 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
 
     override suspend fun borrarNotificaciones() {
         cliente.from("notificaciones").delete { filter { eq("usuario_id", miId()) } }
+    }
+
+    override suspend fun borrarNotificacion(id: String) {
+        cliente.from("notificaciones").delete { filter { eq("id", id); eq("usuario_id", miId()) } }
     }
 
     // ---------- Administrador ----------

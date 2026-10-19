@@ -32,7 +32,7 @@ object SolicitudesRepo {
             SolicitudItem(
                 id = s.id, solicitante = s.duenoNombre ?: "Un dueño",
                 mascota = if (propia) "Pediste acceso a ${s.mascotaNombre}" else "Quiere compartir a ${s.mascotaNombre}",
-                hace = Fechas.haceTexto(s.createdAt),
+                hace = Fechas.haceTexto(s.createdAt), fotoPath = s.duenoFotoPath,
                 estado = when (s.estado) {
                     "activo" -> SolicitudItem.Estado.ACEPTADA
                     "rechazado", "inactivo" -> SolicitudItem.Estado.RECHAZADA

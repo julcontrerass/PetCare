@@ -35,9 +35,13 @@ data class Paciente(
     /** DNI del propietario cuando se cargó a mano; sirve para crearle la cuenta. */
     val dniPropietario: String = "",
     /** Foto de perfil del dueño cuando tiene cuenta (ruta en el bucket `fotos`). */
-    val fotoDueno: String? = null
+    val fotoDueno: String? = null,
+    val estado: frgp.utn.edu.petcare.model.EstadoMascota = frgp.utn.edu.petcare.model.EstadoMascota.ACTIVA
 ) {
     val razaYSexo: String get() = "$raza - $sexo"
+
+    /** Para turnos nuevos: las inactivas y las fallecidas no se agendan. */
+    val estaActiva: Boolean get() = estado == frgp.utn.edu.petcare.model.EstadoMascota.ACTIVA
 
     /** La ficha tal como se imprime en una receta o un certificado (sin los "Sin datos"). */
     fun comoDocumento() = Documentos.DatosPaciente(
@@ -93,7 +97,8 @@ object PacientesRepo {
             alertas = m.alertasClinicas.orEmpty(),
             tieneCuenta = m.duenoId != null,
             dniPropietario = m.propietarioDni.orEmpty(),
-            fotoDueno = dueno?.fotoPath
+            fotoDueno = dueno?.fotoPath,
+            estado = frgp.utn.edu.petcare.model.EstadoMascota.deClave(m.estado)
         )
     }
 

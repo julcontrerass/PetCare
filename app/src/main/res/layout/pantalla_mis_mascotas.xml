@@ -118,6 +118,11 @@
                 android:id="@+id/chipOtras"
                 style="@style/PetFilterChip"
                 android:text="@string/filtro_otras" />
+
+            <TextView
+                android:id="@+id/chipHistoricas"
+                style="@style/PetFilterChip"
+                android:text="@string/filtro_historicas" />
         </LinearLayout>
     </HorizontalScrollView>
 

@@ -14,6 +14,7 @@ import frgp.utn.edu.petcare.data.repositorio.NotificacionesVet
 import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
 import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.data.repositorio.PrescripcionesRepo
+import frgp.utn.edu.petcare.data.repositorio.RecordatoriosRepo
 import frgp.utn.edu.petcare.data.repositorio.SaludRepo
 import frgp.utn.edu.petcare.data.repositorio.SolicitudesRepo
 import frgp.utn.edu.petcare.ui.auth.AuthActivity
@@ -213,11 +214,18 @@ object Sesion {
         val salud = async { SaludRepo.cargar() }
         val solicitudes = async { SolicitudesRepo.cargar() }
         val avisos = async { runCatching { NotificacionesVet.cargar(silencioso) } }
+        val recordatorios = async { runCatching { RecordatoriosRepo.cargar() } }
         avisos.await()
+        recordatorios.await()
         agenda.await()
         salud.await()
         solicitudes.await()
-        Servicios.contextoApp?.let { Recordatorios.programar(it, Recordatorios.paraVeterinario(AgendaRepo.eventos)) }
+        Servicios.contextoApp?.let {
+            val manuales = RecordatoriosRepo.lista.map { r ->
+                Recordatorios.Manual(r.id, PacientesRepo.nombreDe(r.mascotaId), r.titulo, r.fecha, r.hora, r.nota)
+            }
+            Recordatorios.programar(it, Recordatorios.paraVeterinario(AgendaRepo.eventos) + Recordatorios.paraManuales(manuales))
+        }
     }
 
     /** Vuelve a pedir el perfil propio después de un cambio que el servidor rechazó. */
@@ -287,6 +295,7 @@ object Sesion {
         PacientesRepo.limpiar()
         AgendaRepo.limpiar()
         SaludRepo.limpiar()
+        RecordatoriosRepo.limpiar()
         ArchivosRepo.limpiar()
         InformesRepo.limpiar()
         PrescripcionesRepo.limpiar()

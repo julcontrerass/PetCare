@@ -18,6 +18,17 @@ enum class Sexo(val etiqueta: String) {
     }
 }
 
+/** En qué situación está una mascota: las inactivas y las fallecidas dejan de agendar turnos pero conservan su historial. */
+enum class EstadoMascota(val etiqueta: String, val clave: String, val descripcion: String) {
+    ACTIVA("Activa", "activa", "Se atiende con normalidad y puede sacar turnos."),
+    INACTIVA("Inactiva", "inactiva", "Ya no está con vos o no se atiende: queda en el historial."),
+    FALLECIDA("Fallecida", "fallecida", "Se conserva su historia clínica como recuerdo.");
+
+    companion object {
+        fun deClave(clave: String?): EstadoMascota = entries.firstOrNull { it.clave == clave } ?: ACTIVA
+    }
+}
+
 /** Mascota del dueño con sesión iniciada. */
 class Mascota(
     var nombre: String,
@@ -35,7 +46,8 @@ class Mascota(
     var color: String = SIN_DATOS,
     var observaciones: String = "Sin observaciones",
     /** Alergias, carácter y condiciones a tener en cuenta; los veterinarios lo ven destacado. */
-    var alertas: String = ""
+    var alertas: String = "",
+    var estado: EstadoMascota = EstadoMascota.ACTIVA
 ) {
     /** "Perro - Golden Retriever", o solo el tipo si no se cargó la raza. */
     val tipoRazaTexto: String
@@ -143,6 +155,12 @@ class VeterinarioAcceso(
 ) {
     val mascotas: MutableSet<String> = LinkedHashSet(mascotas)
 
+    /** Último día del permiso; null si no vence. */
+    var venceEl: LocalDate? = null
+
+    /** True si el permiso existía pero ya venció (el veterinario dejó de ver las fichas). */
+    var vencido: Boolean = false
+
     /** El lugar con ese id; si no se indica (o ya no existe) el principal. */
     fun sede(id: String?): SedeVet? = sedes.firstOrNull { it.id == id } ?: sedes.firstOrNull()
 
@@ -179,7 +197,8 @@ class NotificacionDueno(
     val titulo: String,
     val mensaje: String,
     val creada: LocalDateTime = LocalDateTime.now(),
-    var leida: Boolean = false
+    var leida: Boolean = false,
+    val id: String = ""
 )
 
 enum class AjusteFoto { LLENAR, COMPLETA, CENTRADA }

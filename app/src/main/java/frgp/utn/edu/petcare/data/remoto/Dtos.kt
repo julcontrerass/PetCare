@@ -128,6 +128,10 @@ data class MascotaDto(
     val observaciones: String? = null,
     @SerialName("foto_path") val fotoPath: String? = null,
     val activa: Boolean = true,
+    /** activa, inactiva o fallecida. */
+    val estado: String = "activa",
+    /** Por qué el dueño dio de baja a la mascota (fallecimiento, adopción u otro). */
+    @SerialName("motivo_baja") val motivoBaja: String? = null,
     @SerialName("creada_por") val creadaPor: String? = null,
     @SerialName("propietario_nombre") val propietarioNombre: String? = null,
     @SerialName("propietario_dni") val propietarioDni: String? = null,
@@ -169,7 +173,22 @@ data class AccesoDto(
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     /** Turno que el veterinario dejó pedido junto con el acceso: se agenda solo cuando el dueño acepta. */
-    @SerialName("turno_propuesto") val turnoPropuesto: JsonObject? = null
+    @SerialName("turno_propuesto") val turnoPropuesto: JsonObject? = null,
+    /** Último día en que el permiso sirve; null = sin vencimiento. */
+    @SerialName("vence_el") val venceEl: String? = null
+)
+
+/** Una línea del historial de permisos: quién lo dio, lo pidió o lo sacó, y cuándo. */
+@Serializable
+data class AccesoHistorialDto(
+    val id: String,
+    @SerialName("mascota_id") val mascotaId: String,
+    @SerialName("veterinario_id") val veterinarioId: String,
+    val estado: String,
+    @SerialName("vence_el") val venceEl: String? = null,
+    @SerialName("actor_id") val actorId: String? = null,
+    val evento: String,
+    @SerialName("created_at") val createdAt: String? = null
 )
 
 @Serializable
@@ -282,7 +301,9 @@ data class SolicitudAccesoDto(
     @SerialName("dueno_nombre") val duenoNombre: String? = null,
     val estado: String,
     @SerialName("iniciado_por") val iniciadoPor: String,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    /** Foto de perfil del dueño de la mascota. */
+    @SerialName("dueno_foto_path") val duenoFotoPath: String? = null
 )
 
 @Serializable
@@ -394,7 +415,8 @@ data class NuevoAccesoDto(
     @SerialName("mascota_id") val mascotaId: String,
     @SerialName("veterinario_id") val veterinarioId: String,
     val estado: String,
-    @SerialName("iniciado_por") val iniciadoPor: String
+    @SerialName("iniciado_por") val iniciadoPor: String,
+    @SerialName("vence_el") val venceEl: String? = null
 )
 
 @Serializable
@@ -472,4 +494,30 @@ data class NuevoArchivoDto(
     @SerialName("tamano_bytes") val tamanoBytes: Long? = null,
     @SerialName("subido_por") val subidoPor: String,
     @SerialName("turno_id") val turnoId: String? = null
+)
+
+/** Recordatorio creado a mano: por el dueño para su mascota o por el veterinario para un paciente. */
+@Serializable
+data class RecordatorioDto(
+    val id: String,
+    @SerialName("mascota_id") val mascotaId: String,
+    @SerialName("creado_por") val creadoPor: String,
+    val titulo: String,
+    val tipo: String = "otro",
+    val fecha: String,
+    val hora: String? = null,
+    val nota: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class NuevoRecordatorioDto(
+    val id: String,
+    @SerialName("mascota_id") val mascotaId: String,
+    @SerialName("creado_por") val creadoPor: String,
+    val titulo: String,
+    val tipo: String,
+    val fecha: String,
+    val hora: String? = null,
+    val nota: String? = null
 )

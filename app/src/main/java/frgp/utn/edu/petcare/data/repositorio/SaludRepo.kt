@@ -8,10 +8,15 @@ import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
 import java.util.UUID
 
-enum class TipoRegistro(val etiqueta: String, val clave: String) {
-    VACUNA("Vacunas", "vacuna"),
-    TRATAMIENTO("Tratamientos", "tratamiento"),
-    DOCUMENTO("Documentos", "documento")
+enum class TipoRegistro(val etiqueta: String, val clave: String, val singular: String) {
+    VACUNA("Vacunas", "vacuna", "vacuna"),
+    DESPARASITACION("Desparasitaciones", "desparasitacion", "desparasitación"),
+    TRATAMIENTO("Tratamientos", "tratamiento", "tratamiento"),
+    CIRUGIA("Cirugías", "cirugia", "cirugía"),
+    DOCUMENTO("Documentos", "documento", "documento");
+
+    /** Las vacunas y las desparasitaciones se repiten: tienen próxima dosis y pueden estar vencidas. */
+    val conProximaDosis: Boolean get() = this == VACUNA || this == DESPARASITACION
 }
 
 data class RegistroSalud(
@@ -103,7 +108,7 @@ object SaludRepo {
         val fin = r.fechaFin?.let { LocalDate.parse(it) }
         val hoy = LocalDate.now()
         val (detalle, textoFecha, estado) = when (tipo) {
-            TipoRegistro.VACUNA -> Triple(
+            TipoRegistro.VACUNA, TipoRegistro.DESPARASITACION -> Triple(
                 listOfNotNull(
                     proxima?.let { "Próxima dosis: ${Fechas.corta(it)}" } ?: "Sin próxima dosis",
                     r.marca?.takeIf { it.isNotBlank() },
@@ -124,6 +129,7 @@ object SaludRepo {
                 if (fin != null) "${Fechas.corta(fecha)} - ${Fechas.corta(fin)}" else "Desde ${Fechas.corta(fecha)}",
                 if (fin != null && fin.isBefore(hoy)) "Finalizado" else "Activo"
             )
+            TipoRegistro.CIRUGIA -> Triple(r.detalle?.takeIf { it.isNotBlank() } ?: "Sin detalles", Fechas.corta(fecha), null)
             TipoRegistro.DOCUMENTO -> Triple(r.detalle?.takeIf { it.isNotBlank() } ?: "Documento", Fechas.corta(fecha), null)
         }
         return RegistroSalud(
@@ -135,9 +141,12 @@ object SaludRepo {
         )
     }
 
-    /** Vacunas vencidas o que vencen en los próximos [dias] días, de la más atrasada a la más lejana. */
+    /**
+     * Vacunas y desparasitaciones vencidas o que vencen en los próximos [dias] días, de la más atrasada a la más
+     * lejana.
+     */
     fun vacunasARecordar(dias: Int = 30, hoy: LocalDate = LocalDate.now()): List<RegistroSalud> =
-        registros.filter { it.tipo == TipoRegistro.VACUNA && it.proximaDosis != null }
+        registros.filter { it.tipo.conProximaDosis && it.proximaDosis != null }
             .filter { !it.proximaDosis!!.isAfter(hoy.plusDays(dias.toLong())) }
             .sortedBy { it.proximaDosis }
 

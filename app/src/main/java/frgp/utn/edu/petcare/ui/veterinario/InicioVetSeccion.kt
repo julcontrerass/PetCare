@@ -66,8 +66,8 @@ class InicioVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
         val aRecordar = SaludRepo.vacunasARecordar().size
         findViewById<TextView>(R.id.tvVacunasARecordar).text = when (aRecordar) {
             0 -> "Todo al día"
-            1 -> "1 paciente con una vacuna vencida o por vencer"
-            else -> "$aRecordar vacunas vencidas o por vencer"
+            1 -> "1 paciente con una dosis vencida o por vencer"
+            else -> "$aRecordar dosis vencidas o por vencer"
         }
 
         val hoy = AgendaRepo.deHoy()

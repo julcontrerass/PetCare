@@ -48,8 +48,26 @@ object Recordatorios {
             )
         }.filter { it.momento.isAfter(ahora) }
 
+    /** Un recordatorio hecho a mano: avisa el día elegido a su hora (a las 9 si no tiene). */
+    class Manual(
+        val id: String, val mascota: String, val titulo: String, val fecha: LocalDate, val hora: String?, val nota: String
+    )
+
+    fun paraManuales(lista: List<Manual>, ahora: LocalDateTime = LocalDateTime.now()): List<Aviso> =
+        lista.mapNotNull { m ->
+            val momento = inicio(m.fecha, m.hora ?: "09:00") ?: return@mapNotNull null
+            Aviso(
+                "${m.id}-manual", momento, "Recordatorio: ${m.titulo}",
+                m.mascota + m.nota.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+            )
+        }.filter { it.momento.isAfter(ahora) }
+
     /** Una vacuna con próxima dosis cargada. */
-    class VacunaProxima(val id: String, val mascota: String, val vacuna: String, val proxima: LocalDate)
+    class VacunaProxima(
+        val id: String, val mascota: String, val vacuna: String, val proxima: LocalDate,
+        /** Lo que es, para los textos del aviso: "vacuna" o "desparasitación". */
+        val clase: String = "vacuna"
+    )
 
     /** Una medicación en curso: toma cada [cadaHoras] desde [inicio] durante [dias]. */
     class Medicacion(
@@ -71,11 +89,11 @@ object Recordatorios {
             val fecha = Fechas.corta(v.proxima)
             val avisos = mutableListOf(
                 Aviso(
-                    "${v.id}-vac-semana", v.proxima.minusDays(7).atTime(HORA_DE_AVISO), "Se acerca una vacuna",
+                    "${v.id}-vac-semana", v.proxima.minusDays(7).atTime(HORA_DE_AVISO), "Se acerca una ${v.clase}",
                     "${v.mascota}: ${v.vacuna} le toca el $fecha (en una semana)"
                 ),
                 Aviso(
-                    "${v.id}-vac-dia", v.proxima.atTime(HORA_DE_AVISO), "Hoy toca una vacuna",
+                    "${v.id}-vac-dia", v.proxima.atTime(HORA_DE_AVISO), "Hoy toca una ${v.clase}",
                     "${v.mascota}: ${v.vacuna}. Sacá un turno para aplicarla"
                 )
             )
@@ -85,7 +103,7 @@ object Recordatorios {
                     val dia = if (ahora.toLocalTime().isBefore(HORA_DE_AVISO)) hoy else hoy.plusDays(1)
                     avisos.add(
                         Aviso(
-                            id, dia.atTime(HORA_DE_AVISO), "Vacuna vencida",
+                            id, dia.atTime(HORA_DE_AVISO), "${v.clase.replaceFirstChar { it.uppercase() }} vencida",
                             "${v.mascota}: ${v.vacuna} está vencida desde el $fecha. Sacá un turno para ponerla al día"
                         )
                     )

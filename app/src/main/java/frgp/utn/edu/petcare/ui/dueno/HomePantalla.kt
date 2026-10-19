@@ -126,7 +126,7 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
         val fila = vista<LinearLayout>(R.id.containerMisMascotasHome) ?: return
         val botonAgregar = vista<View>(R.id.btnAddPetHome) ?: return
         var posicion = fila.indexOfChild(botonAgregar)
-        for (mascota in DuenoRepo.mascotas) {
+        for (mascota in DuenoRepo.mascotasActivas) {
             fila.addView(tarjetaMascota(mascota, fila), posicion++)
         }
     }

@@ -19,7 +19,9 @@ data class RecordatorioItem @JvmOverloads constructor(
     val bgColorRes: Int = R.color.icon_teal_bg,
     val fgColorRes: Int = R.color.primary_teal,
     /** Veterinario del turno: si hay, se muestra su foto en la tarjeta. */
-    val veterinarioId: String? = null
+    val veterinarioId: String? = null,
+    /** Qué hacer al tocar la tarjeta (los recordatorios propios se editan o se borran); null = no se toca. */
+    val alTocar: (() -> Unit)? = null
 )
 
 class RecordatoriosAdapter(private val items: List<RecordatorioItem>) : RecyclerView.Adapter<RecordatoriosAdapter.ViewHolder>() {
@@ -57,6 +59,9 @@ class RecordatoriosAdapter(private val items: List<RecordatorioItem>) : Recycler
         holder.tvDaysLeft.setTextColor(
             ContextCompat.getColor(context, if (urgente) R.color.accent_orange_dark else R.color.success_green)
         )
+
+        holder.itemView.setOnClickListener(item.alTocar?.let { a -> View.OnClickListener { a() } })
+        holder.itemView.isClickable = item.alTocar != null
 
         // Ocultar la línea en el último elemento
         holder.timelineLine.visibility = if (position == items.size - 1) View.INVISIBLE else View.VISIBLE

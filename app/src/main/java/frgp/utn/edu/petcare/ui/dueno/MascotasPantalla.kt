@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.imageview.ShapeableImageView
 import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
+import frgp.utn.edu.petcare.model.EstadoMascota
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.util.Fechas
@@ -16,15 +17,19 @@ import frgp.utn.edu.petcare.util.Fechas
 class MascotasPantalla(host: DuenoActivity) : Pantalla(host) {
 
     private enum class Filtro(val chipId: Int) {
-        TODAS(R.id.chipTodas), PERROS(R.id.chipPerros), GATOS(R.id.chipGatos), OTRAS(R.id.chipOtras);
+        TODAS(R.id.chipTodas), PERROS(R.id.chipPerros), GATOS(R.id.chipGatos), OTRAS(R.id.chipOtras),
+        HISTORICAS(R.id.chipHistoricas);
 
+        /** Las inactivas y las fallecidas solo se ven en "Históricas"; el resto de las solapas muestra las activas. */
         fun admite(mascota: Mascota): Boolean {
+            if (this == HISTORICAS) return mascota.estado != EstadoMascota.ACTIVA
+            if (mascota.estado != EstadoMascota.ACTIVA) return false
             val tipo = mascota.tipo.trim().lowercase()
             return when (this) {
                 TODAS -> true
                 PERROS -> tipo == "perro"
                 GATOS -> tipo == "gato"
-                OTRAS -> tipo != "perro" && tipo != "gato"
+                else -> tipo != "perro" && tipo != "gato"
             }
         }
     }
@@ -56,14 +61,22 @@ class MascotasPantalla(host: DuenoActivity) : Pantalla(host) {
         visibles.forEach { lista.addView(tarjeta(it, lista)) }
         if (visibles.isEmpty()) {
             val vacio = Componentes.estadoVacio(
-                host, lista, R.drawable.ic_dog, "No hay mascotas en esta categoría",
-                "Probá con otro filtro o agregá una nueva mascota"
+                host, lista, R.drawable.ic_dog,
+                if (filtro == Filtro.HISTORICAS) "No tenés mascotas históricas" else "No hay mascotas en esta categoría",
+                if (filtro == Filtro.HISTORICAS) "Acá aparecen las que pasaron a estar inactivas o fallecidas"
+                else "Probá con otro filtro o agregá una nueva mascota"
             )
             lista.addView(vacio)
             (vacio.layoutParams as LinearLayout.LayoutParams).bottomMargin = dp(14)
         }
 
-        texto(R.id.tvPetsCount, if (todas.size == 1) "1 mascota" else "${todas.size} mascotas")
+        val activas = todas.count { it.estado == EstadoMascota.ACTIVA }
+        val historicas = todas.size - activas
+        texto(
+            R.id.tvPetsCount,
+            (if (activas == 1) "1 mascota" else "$activas mascotas") +
+                if (historicas > 0) " · $historicas en el historial" else ""
+        )
 
         Filtro.entries.forEach { f ->
             val chip = vista<TextView>(f.chipId) ?: return@forEach

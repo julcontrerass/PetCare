@@ -20,6 +20,13 @@
             android:layout_marginBottom="10dp"
             android:text="Eventos clínicos" />
 
+        <LinearLayout
+            android:id="@+id/filtrosHistorialVet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="-16dp"
+            android:orientation="vertical" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvEventosClinicos"
             android:layout_width="match_parent"

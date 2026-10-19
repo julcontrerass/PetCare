@@ -40,6 +40,7 @@ class DetalleEventoVetActivity : BaseActivity() {
         fun iconoDe(tipo: String): Int = when (tipo) {
             "Vacuna" -> R.drawable.ic_syringe
             "Cirugía" -> R.drawable.ic_cirugia
+            "Desparasitación" -> R.drawable.ic_medical_kit
             "Control" -> R.drawable.ic_pulse
             "Tratamiento" -> R.drawable.ic_activity
             "Consulta" -> R.drawable.ic_medical

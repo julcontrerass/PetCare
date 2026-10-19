@@ -186,7 +186,7 @@ class CarnetSaludActivity : BaseActivity() {
     }
 
     private fun actualizarResumen() {
-        val vacunas = SaludRepo.registros.filter { it.tipo == TipoRegistro.VACUNA }
+        val vacunas = SaludRepo.registros.filter { it.tipo.conProximaDosis }
         findViewById<TextView>(R.id.tvStatAlDia).text = vacunas.count { it.estado == "Al día" }.toString()
         findViewById<TextView>(R.id.tvStatPendientes).text =
             vacunas.count { it.estado == "Próxima" || it.estado == "Vencida" }.toString()
@@ -276,7 +276,9 @@ class CarnetSaludActivity : BaseActivity() {
         findViewById<RecyclerView>(R.id.rvRegistros).visibility = if (lista.isEmpty()) View.GONE else View.VISIBLE
         val icono = when (tipoActual()) {
             TipoRegistro.VACUNA -> R.drawable.ic_syringe
+            TipoRegistro.DESPARASITACION -> R.drawable.ic_medical_kit
             TipoRegistro.TRATAMIENTO -> R.drawable.ic_pulse
+            TipoRegistro.CIRUGIA -> R.drawable.ic_cirugia
             TipoRegistro.DOCUMENTO -> R.drawable.ic_document
         }
         vacio.findViewById<android.widget.ImageView>(R.id.ivEmptyIcon).setImageResource(icono)
@@ -427,7 +429,9 @@ class CarnetSaludActivity : BaseActivity() {
         val etTitulo = campo(
             when (tipo) {
                 TipoRegistro.VACUNA -> "Vacuna (ej: Antirrábica)"
+                TipoRegistro.DESPARASITACION -> "Desparasitación (ej: Interna)"
                 TipoRegistro.TRATAMIENTO -> "Medicamento / tratamiento"
+                TipoRegistro.CIRUGIA -> "Cirugía (ej: Castración)"
                 TipoRegistro.DOCUMENTO -> "Nombre del documento"
             }
         )
@@ -435,8 +439,9 @@ class CarnetSaludActivity : BaseActivity() {
 
         val etFecha = campoFecha(if (tipo == TipoRegistro.TRATAMIENTO) "Fecha de inicio" else "Fecha")
         val etExtra = when (tipo) {
-            TipoRegistro.VACUNA -> campoFecha("Próxima dosis (opcional)")
+            TipoRegistro.VACUNA, TipoRegistro.DESPARASITACION -> campoFecha("Próxima dosis (opcional)")
             TipoRegistro.TRATAMIENTO -> campo("Dosis / indicaciones")
+            TipoRegistro.CIRUGIA -> campo("Detalles (opcional)")
             TipoRegistro.DOCUMENTO -> null
         }
         var archivo: Uri? = null
@@ -446,7 +451,7 @@ class CarnetSaludActivity : BaseActivity() {
         layout.addView(etFecha)
         etExtra?.let { layout.addView(it) }
         // Lo que se aplicó: respalda la vacuna y permite ubicar un lote si hace falta
-        val etMarca = if (tipo == TipoRegistro.VACUNA) campo("Marca / producto (opcional)") else null
+        val etMarca = if (tipo.conProximaDosis) campo("Marca / producto (opcional)") else null
         val etLote = if (tipo == TipoRegistro.VACUNA) campo("Lote (opcional)") else null
         val etVenceLote = if (tipo == TipoRegistro.VACUNA) campoFecha("Vencimiento del lote (opcional)") else null
         listOfNotNull(etMarca, etLote, etVenceLote).forEach { layout.addView(it) }
@@ -467,7 +472,7 @@ class CarnetSaludActivity : BaseActivity() {
         }
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Agregar ${tipo.etiqueta.lowercase().removeSuffix("s")}")
+            .setTitle("Agregar ${tipo.singular}")
             .setView(android.widget.ScrollView(this).apply { addView(layout) })
             .setPositiveButton("Guardar", null)
             .setNegativeButton("Cancelar", null)
@@ -496,8 +501,15 @@ class CarnetSaludActivity : BaseActivity() {
                         lote = etLote?.text?.toString()?.trim().orEmpty().ifEmpty { null },
                         loteVencimiento = Fechas.parsear(etVenceLote?.text?.toString())
                     )
+                    TipoRegistro.DESPARASITACION -> SaludRepo.agregar(
+                        tipo, paciente.id, titulo, null, fechaElegida, proximaDosis = Fechas.parsear(extra),
+                        marca = etMarca?.text?.toString()?.trim().orEmpty().ifEmpty { null }
+                    )
                     TipoRegistro.TRATAMIENTO -> SaludRepo.agregar(
                         tipo, paciente.id, titulo, extra.ifEmpty { "Sin indicaciones" }, fechaElegida
+                    )
+                    TipoRegistro.CIRUGIA -> SaludRepo.agregar(
+                        tipo, paciente.id, titulo, extra.ifEmpty { "Sin detalles" }, fechaElegida
                     )
                     TipoRegistro.DOCUMENTO -> subirDocumento(
                         paciente.id, titulo, nombreSeleccionado ?: "Documento", archivo!!, fechaElegida
@@ -557,6 +569,8 @@ class RegistrosAdapter(
         }
         val (icono, fondoIcono, colorIcono) = when (r.tipo) {
             TipoRegistro.VACUNA -> Triple(R.drawable.ic_syringe, R.color.light_green, R.color.success_green)
+            TipoRegistro.DESPARASITACION -> Triple(R.drawable.ic_medical_kit, R.color.light_orange, R.color.accent_orange)
+            TipoRegistro.CIRUGIA -> Triple(R.drawable.ic_cirugia, R.color.light_purple, R.color.accent_purple)
             TipoRegistro.TRATAMIENTO -> Triple(R.drawable.ic_pulse, R.color.light_purple, R.color.accent_purple)
             TipoRegistro.DOCUMENTO -> Triple(R.drawable.ic_document, R.color.light_orange, R.color.accent_orange)
         }

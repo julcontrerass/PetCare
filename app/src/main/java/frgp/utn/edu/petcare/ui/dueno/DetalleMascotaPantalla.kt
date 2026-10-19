@@ -24,12 +24,15 @@ import com.google.android.material.tabs.TabLayout
 import frgp.utn.edu.petcare.data.Imagenes
 import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
 import frgp.utn.edu.petcare.data.repositorio.InformesRepo
+import frgp.utn.edu.petcare.model.EstadoMascota
+import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.model.Sexo
 import frgp.utn.edu.petcare.model.SIN_DATOS
 import frgp.utn.edu.petcare.model.TiposMascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Efectos
+import frgp.utn.edu.petcare.ui.common.FiltroLineaTiempo
 import frgp.utn.edu.petcare.ui.common.FichaClinica
 import frgp.utn.edu.petcare.util.Fechas
 import java.time.LocalDate
@@ -126,6 +129,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
         alTocar(R.id.imageView3, cambiarFoto)
 
         alTocarConRebote(R.id.btnEditarInfo) { editarInformacion() }
+        alTocar(R.id.btnCambiarEstado) { cambiarEstado() }
         alTocar(R.id.btnDarDeBaja) { confirmarBaja() }
         alTocar(R.id.btnVerCarnet) { host.abrirCarnet() }
         alTocarConRebote(R.id.btnAgendarTurno) { host.irANuevoEvento(LocalDate.now(), mascota?.nombre) }
@@ -283,21 +287,48 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
 
     // ---------- Pestaña "Historial" ----------
 
+    private var filtroHistorial: FiltroLineaTiempo? = null
+
     private fun configurarHistorial() {
         val m = mascota
+        // Buscador y filtros por tipo de evento y fechas, arriba de la línea de tiempo
+        val categorias = DuenoRepo.eventosDeMascota(m?.nombre).map { it.categoria }.distinct().sorted()
+        filtroHistorial = FiltroLineaTiempo(host, categorias) { dibujarHistorial() }.also { f ->
+            vista<LinearLayout>(R.id.filtrosHistorial)?.apply {
+                removeAllViews()
+                addView(f.vista)
+            }
+        }
+        dibujarHistorial()
+        alTocarConRebote(R.id.fabAdd) { host.irANuevoEvento(host.diaSeleccionado) }
+        alTocarConRebote(R.id.btnEditarEvento) { host.dialogosEventos.elegirParaEditar(m?.nombre) }
+    }
+
+    private fun dibujarHistorial() {
+        val m = mascota
+        val filtro = filtroHistorial
         vista<RecyclerView>(R.id.recyclerViewHistorial)?.let { lista ->
-            val items = DuenoRepo.eventosDeMascota(m?.nombre).sortedByDescending { it.fecha }.map { evento ->
+            val todos = DuenoRepo.eventosDeMascota(m?.nombre).sortedByDescending { it.fecha }
+            val visibles = todos.filter {
+                filtro == null || filtro.admite(
+                    listOf(it.categoria, it.veterinario, it.observaciones, it.mascota).joinToString(" "), it.categoria, it.fecha
+                )
+            }
+            val items = visibles.map { evento ->
                 val veterinario = if (evento.veterinario.isNotEmpty()) " · ${evento.veterinario}" else ""
                 HistorialItem(
                     evento.categoria, Fechas.corta(evento.fecha) + veterinario,
                     EstiloCategoria.icono(evento.categoria), EstiloCategoria.fondo(evento.categoria),
                     veterinarioId = evento.veterinarioId
                 ) {
-                    host.dialogosEventos.mostrarDetalle(evento) { configurarHistorial() }
+                    host.dialogosEventos.mostrarDetalle(evento) { dibujarHistorial() }
                 }
             }.ifEmpty {
                 listOf(
-                    HistorialItem(
+                    if (todos.isNotEmpty() && filtro?.activo == true) HistorialItem(
+                        "Sin resultados", "Ningún evento coincide con la búsqueda o los filtros",
+                        R.drawable.ic_search, R.color.icon_teal_bg
+                    ) else HistorialItem(
                         "Sin eventos clínicos", "No hay turnos registrados para ${m?.nombre ?: "esta mascota"}",
                         R.drawable.ic_calendar, R.color.icon_teal_bg
                     )
@@ -305,8 +336,6 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
             }
             lista.adapter = HistorialAdapter(items)
         }
-        alTocarConRebote(R.id.fabAdd) { host.irANuevoEvento(host.diaSeleccionado) }
-        alTocarConRebote(R.id.btnEditarEvento) { host.dialogosEventos.elegirParaEditar(m?.nombre) }
     }
 
     // ---------- Menú y baja ----------
@@ -316,17 +345,54 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
             menu.add(0, 1, 0, "Editar información")
             menu.add(0, 2, 1, "Cambiar foto")
             menu.add(0, 3, 2, "Agendar turno")
-            menu.add(0, 4, 3, "Eliminar mascota")
+            menu.add(0, 5, 3, "Cambiar estado")
+            menu.add(0, 4, 4, "Eliminar mascota")
             setOnMenuItemClickListener { opcion ->
                 when (opcion.itemId) {
                     1 -> editarInformacion()
                     2 -> elegirFoto()
                     3 -> host.irANuevoEvento(host.diaSeleccionado, mascota?.nombre)
+                    5 -> cambiarEstado()
                     else -> confirmarBaja()
                 }
                 true
             }
         }.show()
+    }
+
+    /** Activa, inactiva o fallecida: las dos últimas cancelan los turnos pendientes y conservan el historial. */
+    private fun cambiarEstado() {
+        val m = mascota ?: return
+        val estados = EstadoMascota.entries
+        var elegido = m.estado
+        val dialogo = AlertDialog.Builder(host)
+            .setTitle("Estado de ${m.nombre}")
+            .setSingleChoiceItems(
+                estados.map { "${it.etiqueta}\n${it.descripcion}" }.toTypedArray(), estados.indexOf(m.estado)
+            ) { _, i -> elegido = estados[i] }
+            .setPositiveButton("Guardar") { _, _ ->
+                val nuevo = elegido
+                when {
+                    nuevo == m.estado -> Unit
+                    nuevo == EstadoMascota.ACTIVA -> aplicarEstado(m, nuevo)
+                    else -> Avisos.confirmar(
+                        host, "¿Pasar a ${nuevo.etiqueta.lowercase()}?",
+                        "Se cancelan los turnos pendientes de ${m.nombre} y ya no se pueden sacar turnos nuevos. " +
+                            "Su historial se conserva y lo ves en \"Históricas\".",
+                        textoAceptar = "Confirmar", textoCancelar = "Cancelar", peligro = false,
+                        icono = R.drawable.ic_dog
+                    ) { aplicarEstado(m, nuevo) }
+                }
+            }
+            .setNegativeButton(R.string.btn_cancelar, null)
+            .create()
+        dialogo.show()
+    }
+
+    private fun aplicarEstado(m: Mascota, nuevo: EstadoMascota) {
+        DuenoRepo.cambiarEstadoMascota(m, nuevo)
+        llenarFicha()
+        toast("${m.nombre} ahora está ${nuevo.etiqueta.lowercase()}")
     }
 
     private fun confirmarBaja() {
@@ -350,7 +416,7 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(16) }
         })
-        contenedor.addView(RadioGroup(host).apply {
+        val grupoMotivo = RadioGroup(host).apply {
             orientation = RadioGroup.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -358,13 +424,16 @@ class DetalleMascotaPantalla(host: DuenoActivity) : Pantalla(host) {
             addView(RadioButton(host).apply { setText(R.string.motivo_fallecimiento); isChecked = true })
             addView(RadioButton(host).apply { setText(R.string.motivo_adopcion) })
             addView(RadioButton(host).apply { setText(R.string.motivo_otro) })
-        })
+        }
+        contenedor.addView(grupoMotivo)
 
         val dialogo = AlertDialog.Builder(host)
             .setTitle(host.getString(R.string.confirmar_baja_title, m.nombre))
             .setView(contenedor)
             .setPositiveButton(R.string.btn_confirmar_baja) { _, _ ->
-                DuenoRepo.darDeBajaMascota(m)
+                // Se guarda el texto de la opción elegida: fallecimiento, adopción u otro
+                val motivo = grupoMotivo.findViewById<RadioButton>(grupoMotivo.checkedRadioButtonId)?.text?.toString()
+                DuenoRepo.darDeBajaMascota(m, motivo)
                 host.mascotaActual = null
                 toast(R.string.mascota_dada_de_baja_msg)
                 host.irAMascotas()

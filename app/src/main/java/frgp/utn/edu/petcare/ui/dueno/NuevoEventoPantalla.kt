@@ -422,7 +422,7 @@ class NuevoEventoPantalla(host: DuenoActivity) : Pantalla(host) {
         val fila = vista<LinearLayout>(R.id.llMascotasEvento) ?: return
         fila.removeAllViews()
 
-        val mascotas = DuenoRepo.mascotas
+        val mascotas = DuenoRepo.mascotasActivas
         if (mascotas.none { it.nombre == mascota }) mascota = null
 
         for (m in mascotas) {

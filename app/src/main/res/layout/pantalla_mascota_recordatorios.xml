@@ -50,6 +50,23 @@
             android:textColor="@color/text_gray"
             android:textSize="14sp"
             app:cornerRadius="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_manuales"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:backgroundTint="@android:color/transparent"
+            android:elevation="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:stateListAnimator="@null"
+            android:text="Míos"
+            android:textAllCaps="false"
+            android:textColor="@color/text_gray"
+            android:textSize="14sp"
+            app:cornerRadius="20dp" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

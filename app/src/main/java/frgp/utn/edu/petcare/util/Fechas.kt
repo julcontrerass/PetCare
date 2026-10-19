@@ -32,6 +32,9 @@ object Fechas {
     /** "15 de mayo de 2026". */
     fun larga(f: LocalDate) = "${f.dayOfMonth} de ${nombreMes(f.monthValue).lowercase()} de ${f.year}"
 
+    /** Fecha tal como la guarda el servidor ("2026-03-15"); null si no hay o no se entiende. */
+    fun iso(texto: String?): LocalDate? = texto?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
+
     /** "15 Mar 2026" ("15 mar 2026" o "15/03/2026" también se entienden). */
     fun parsear(texto: String?): LocalDate? {
         if (texto == null) return null

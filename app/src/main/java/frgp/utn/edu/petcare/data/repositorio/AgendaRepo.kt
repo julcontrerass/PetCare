@@ -35,7 +35,7 @@ data class EventoVet(
 /** Turnos y consultas del veterinario en sesión. */
 object AgendaRepo {
 
-    private val TIPOS_GENERALES = listOf("Consulta", "Control", "Vacuna", "Tratamiento", "Otro")
+    private val TIPOS_GENERALES = listOf("Consulta", "Control", "Vacuna", "Desparasitación", "Tratamiento", "Cirugía", "Otro")
 
     /**
      * Tipos que se pueden elegir al cargar un turno propio: los servicios que ofrece el veterinario (cada uno con

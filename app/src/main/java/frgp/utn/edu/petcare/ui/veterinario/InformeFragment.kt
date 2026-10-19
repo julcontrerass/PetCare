@@ -208,7 +208,7 @@ class InformeFragment : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 val archivo = withContext(Dispatchers.IO) {
                     Documentos.receta(
-                        contexto, PerfilVetRepo.comoProfesional(), paciente.comoDocumento(), LocalDate.now(),
+                        contexto, PerfilVetRepo.comoProfesional(turno?.sedeId), paciente.comoDocumento(), LocalDate.now(),
                         medicamentos, indicaciones
                     )
                 }
@@ -298,7 +298,18 @@ class InformeFragment : Fragment() {
         }
 
         // ---------- Informe ----------
+        /** Pasado el día del informe, o si no es suyo, se puede leer pero no cambiar. */
+        fun bloquear(cerrado: Boolean) {
+            listOf(
+                etMotivo, etAnamnesis, etPeso, etTemperatura, etFrecuenciaCardiaca, etFrecuenciaRespiratoria,
+                etExamen, etDiagnostico, etTratamiento
+            ).forEach { it?.isEnabled = !cerrado }
+            btnGuardar?.visibility = if (cerrado) View.GONE else View.VISIBLE
+            view.findViewById<View>(R.id.tvInformeCerrado)?.visibility = if (cerrado) View.VISIBLE else View.GONE
+        }
+
         fun mostrar(informe: InformeData) {
+            bloquear(!informe.editable)
             etMotivo?.setText(informe.motivo.ifBlank { motivoTurno })
             etAnamnesis?.setText(informe.anamnesis)
             etExamen?.setText(informe.examenFisico)

@@ -43,7 +43,7 @@ object TarjetaAviso {
 
     fun crear(
         contexto: Context, tipo: TipoNotificacion, titulo: String, mensaje: String, creada: LocalDateTime,
-        sinLeer: Boolean = false
+        sinLeer: Boolean = false, alBorrar: ((View) -> Unit)? = null
     ): View {
         val dp = { valor: Int -> (valor * contexto.resources.displayMetrics.density).toInt() }
         val estilo = estilo(tipo)
@@ -85,6 +85,7 @@ object TarjetaAviso {
             ).apply {
                 addRule(RelativeLayout.END_OF, iconoId)
                 marginStart = dp(12)
+                if (alBorrar != null) marginEnd = dp(28)
             }
         }
         textos.addView(TextView(contexto).apply {
@@ -110,6 +111,22 @@ object TarjetaAviso {
             ).apply { topMargin = dp(4) }
         })
         fila.addView(textos)
+        if (alBorrar != null) {
+            fila.addView(ImageView(contexto).apply {
+                id = View.generateViewId()
+                layoutParams = RelativeLayout.LayoutParams(dp(24), dp(24)).apply {
+                    addRule(RelativeLayout.ALIGN_PARENT_END)
+                    addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                }
+                setPadding(dp(3), dp(3), dp(3), dp(3))
+                contentDescription = "Borrar la notificación"
+                setImageResource(R.drawable.ic_cancel)
+                setColorFilter(ContextCompat.getColor(contexto, R.color.text_gray))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { alBorrar(tarjeta) }
+            })
+        }
         tarjeta.addView(fila)
         return tarjeta
     }

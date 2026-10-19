@@ -117,6 +117,7 @@ class DetallePacienteActivity : BaseActivity() {
                 menu.add(0, 5, 4, "Certificado de salud (PDF)")
                 // Sin cuenta, el dueño no ve nada de lo que se completa acá: se la puede crear el veterinario
                 if (!actual.tieneCuenta) menu.add(0, 6, 5, "Crear cuenta del dueño")
+                menu.add(0, 7, 6, "Recordatorios del paciente")
                 setOnMenuItemClickListener {
                     when (it.itemId) {
                         1 -> abrirExterno(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + paciente.telefono.filter { c -> c.isDigit() || c == '+' })))
@@ -131,6 +132,7 @@ class DetallePacienteActivity : BaseActivity() {
                             )
                         }
                         4 -> generarCertificado(paciente, vacunacion = true)
+                        7 -> RecordatoriosPaciente.mostrar(this@DetallePacienteActivity, actual)
                         6 -> {
                             // También pasan al dueño los otros pacientes del mismo propietario que no tienen cuenta
                             val ids = PacientesRepo.mismoPropietarioSinCuenta(actual).map { p -> p.id }

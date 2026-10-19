@@ -76,7 +76,10 @@ interface FuenteDatos {
     suspend fun catalogoVeterinarios(): List<PerfilDto> = emptyList()
     suspend fun accesos(): List<AccesoDto> = emptyList()
     /** El dueño comparte las mascotas indicadas con un veterinario (si ya existe el acceso, lo reactiva). */
-    suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String) {}
+    suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String, venceEl: String? = null) {}
+    /** Cambia el vencimiento (null = sin vencimiento) de los permisos activos de ese veterinario. */
+    suspend fun fijarVencimientoDeAccesos(veterinarioId: String, venceEl: String?) {}
+    suspend fun historialDeAccesos(): List<AccesoHistorialDto> = emptyList()
     suspend fun actualizarAcceso(id: String, estado: String) {}
     /** El dueño cambia el estado de todos los accesos de un veterinario a sus mascotas. */
     suspend fun actualizarAccesosDeVeterinario(veterinarioId: String, estado: String) {}
@@ -101,6 +104,12 @@ interface FuenteDatos {
     // ---------- Historia clínica ----------
     suspend fun registrosSalud(): List<RegistroSaludDto> = emptyList()
     suspend fun crearRegistroSalud(registro: NuevoRegistroSaludDto) {}
+
+    // Recordatorios hechos a mano
+    suspend fun recordatorios(): List<RecordatorioDto> = emptyList()
+    suspend fun crearRecordatorio(recordatorio: NuevoRecordatorioDto) {}
+    suspend fun actualizarRecordatorio(id: String, cambios: JsonObject) {}
+    suspend fun borrarRecordatorio(id: String) {}
     suspend fun eliminarRegistroSalud(id: String) {}
     suspend fun informesDe(mascotaId: String): List<InformeDto> = emptyList()
     suspend fun crearInforme(informe: NuevoInformeDto) {}
@@ -125,6 +134,7 @@ interface FuenteDatos {
     suspend fun notificaciones(): List<NotificacionDto> = emptyList()
     suspend fun marcarNotificacionesLeidas() {}
     suspend fun borrarNotificaciones() {}
+    suspend fun borrarNotificacion(id: String) {}
 
     // ---------- Administrador ----------
     suspend fun perfilesAdmin(): List<PerfilDto> = emptyList()

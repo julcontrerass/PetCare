@@ -14,6 +14,7 @@ import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.data.repositorio.RegistroSalud
 import frgp.utn.edu.petcare.data.repositorio.SaludRepo
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.ui.common.Avatares
 import frgp.utn.edu.petcare.ui.common.BaseActivity
 import frgp.utn.edu.petcare.ui.common.Contacto
 import frgp.utn.edu.petcare.util.Fechas
@@ -52,16 +53,16 @@ class VacunasPendientesActivity : BaseActivity() {
         adapter.actualizar(lista)
         findViewById<TextView>(R.id.tvVacunasCount).text = when (lista.size) {
             0 -> "Todo al día"
-            1 -> "1 vacuna para recordar"
-            else -> "${lista.size} vacunas para recordar"
+            1 -> "1 dosis para recordar"
+            else -> "${lista.size} dosis para recordar"
         }
         val vacio = findViewById<View>(R.id.emptyVacunas)
         vacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
         findViewById<RecyclerView>(R.id.rvVacunas).visibility = if (lista.isEmpty()) View.GONE else View.VISIBLE
         vacio.findViewById<ImageView>(R.id.ivEmptyIcon).setImageResource(R.drawable.ic_syringe)
-        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "No hay vacunas para recordar"
+        vacio.findViewById<TextView>(R.id.tvEmptyTitle).text = "No hay dosis para recordar"
         vacio.findViewById<TextView>(R.id.tvEmptyMessage).text =
-            "Acá aparecen las vacunas vencidas o que vencen en los próximos 30 días"
+            "Acá aparecen las vacunas y desparasitaciones vencidas o que vencen en los próximos 30 días"
     }
 
     private fun avisar(v: RegistroSalud, canal: Canal) {
@@ -81,7 +82,7 @@ class VacunasPendientesActivity : BaseActivity() {
         val saludo = if (dueno != null) "Hola $dueno" else "Hola"
         val fecha = v.proximaDosis?.let { Fechas.corta(it) }.orEmpty()
         val estado = if (v.proximaDosis?.isBefore(LocalDate.now()) == true) "venció el $fecha" else "le toca el $fecha"
-        return "$saludo, te escribo de $clinica. A ${v.mascota} la vacuna ${v.titulo} $estado. " +
+        return "$saludo, te escribo de $clinica. A ${v.mascota} la ${v.tipo.singular} ${v.titulo} $estado. " +
             "¿Querés que te saque un turno para aplicarla?"
     }
 
@@ -94,6 +95,7 @@ class VacunasPendientesAdapter(
 ) : RecyclerView.Adapter<VacunasPendientesAdapter.ViewHolder>() {
 
     class ViewHolder(vista: View) : RecyclerView.ViewHolder(vista) {
+        val foto: ImageView = vista.findViewById(R.id.ivVacDueno)
         val paciente: TextView = vista.findViewById(R.id.tvVacPaciente)
         val vacuna: TextView = vista.findViewById(R.id.tvVacVacuna)
         val dueno: TextView = vista.findViewById(R.id.tvVacDueno)
@@ -114,6 +116,7 @@ class VacunasPendientesAdapter(
         val v = items[posicion]
         val contexto = h.itemView.context
         val paciente = PacientesRepo.porId(v.mascotaId)
+        Avatares.mostrar(h.foto, PacientesRepo.fotoDuenoDe(v.mascotaId))
         h.paciente.text = v.mascota
         h.vacuna.text = v.titulo
         h.dueno.text = "Dueño: ${paciente?.propietario ?: "Sin datos"} · ${paciente?.telefono ?: "Sin teléfono"}"

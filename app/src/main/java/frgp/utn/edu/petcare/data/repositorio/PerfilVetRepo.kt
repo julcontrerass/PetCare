@@ -254,7 +254,13 @@ object PerfilVetRepo {
     }
 
     /** Los datos con los que se firman las recetas y los certificados. */
-    fun comoProfesional() = Documentos.Profesional(nombre, matricula, clinica, direccionClinica, telefono)
+    fun comoProfesional(sedeId: String? = null): Documentos.Profesional {
+        // El encabezado lleva el lugar donde fue el turno; sin turno (o sin lugar) el principal
+        val lugar = sede(sedeId)?.takeIf { it.nombre.isNotBlank() }
+        return Documentos.Profesional(
+            nombre, matricula, lugar?.nombre ?: clinica, lugar?.direccion ?: direccionClinica, telefono
+        )
+    }
 
     fun guardarTiposAnimales() {
         Servicios.escribir(alFallar = { Sesion.recargarPerfil() }) {

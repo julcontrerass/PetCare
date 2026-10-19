@@ -168,11 +168,11 @@
         app:tabIndicator="@drawable/tab_indicator"
         app:tabIndicatorColor="@color/primary_teal"
         app:tabIndicatorGravity="bottom"
-        app:tabMode="fixed"
+        app:tabMode="scrollable"
         app:tabRippleColor="@null"
         app:tabSelectedTextColor="@color/primary_teal"
-        app:tabPaddingEnd="6dp"
-        app:tabPaddingStart="6dp"
+        app:tabPaddingEnd="12dp"
+        app:tabPaddingStart="12dp"
         app:tabTextAppearance="@style/TextAppearance.PetCare.Tab"
         app:tabTextColor="@color/text_gray" />
 

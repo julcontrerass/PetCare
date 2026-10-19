@@ -34,6 +34,7 @@ import frgp.utn.edu.petcare.data.remoto.TurnoDto
 import frgp.utn.edu.petcare.data.remoto.VeterinarioDto
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
@@ -233,6 +234,14 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
             val i = mascotas.indexOfFirst { it.id == id }
             if (i >= 0) mascotas[i] = mascotas[i].copy(activa = false)
         }
+        (cambios["motivo_baja"] as? JsonPrimitive)?.content?.let { motivo ->
+            val i = mascotas.indexOfFirst { it.id == id }
+            if (i >= 0) mascotas[i] = mascotas[i].copy(motivoBaja = motivo)
+        }
+        (cambios["estado"] as? JsonPrimitive)?.content?.let { nuevo ->
+            val i = mascotas.indexOfFirst { it.id == id }
+            if (i >= 0) mascotas[i] = mascotas[i].copy(estado = nuevo)
+        }
     }
 
     // ---------- Turnos ----------
@@ -287,14 +296,27 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
             )
         }
 
-    override suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String) {
-        llamadas.add("compartir:${mascotaIds.size}:$veterinarioId")
+    override suspend fun compartirMascotas(mascotaIds: List<String>, veterinarioId: String, venceEl: String?) {
+        llamadas.add("compartir:${mascotaIds.size}:$veterinarioId" + (venceEl?.let { ":$it" } ?: ""))
         mascotaIds.forEach { id ->
             val i = accesos.indexOfFirst { it.mascotaId == id && it.veterinarioId == veterinarioId }
-            if (i >= 0) accesos[i] = accesos[i].copy(estado = "activo")
-            else accesos.add(AccesoDto("acc-${accesos.size}", id, veterinarioId, "activo", "dueno"))
+            if (i >= 0) accesos[i] = accesos[i].copy(estado = "activo", venceEl = venceEl)
+            else accesos.add(AccesoDto("acc-${accesos.size}", id, veterinarioId, "activo", "dueno", venceEl = venceEl))
         }
     }
+
+    override suspend fun fijarVencimientoDeAccesos(veterinarioId: String, venceEl: String?) {
+        llamadas.add("vence:$veterinarioId=$venceEl")
+        for (i in accesos.indices) {
+            if (accesos[i].veterinarioId == veterinarioId && accesos[i].estado == "activo") {
+                accesos[i] = accesos[i].copy(venceEl = venceEl)
+            }
+        }
+    }
+
+    val historialAccesos = mutableListOf<frgp.utn.edu.petcare.data.remoto.AccesoHistorialDto>()
+
+    override suspend fun historialDeAccesos() = historialAccesos.toList()
 
     override suspend fun actualizarAcceso(id: String, estado: String) {
         llamadas.add("acceso:$id=$estado")
@@ -342,6 +364,36 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     override suspend fun crearRegistroSalud(registro: NuevoRegistroSaludDto) {
         llamadas.add("crearRegistro:${registro.tipo}:${registro.titulo}")
         ultimoRegistroCreado = registro
+    }
+
+    val recordatoriosGuardados = mutableListOf<frgp.utn.edu.petcare.data.remoto.RecordatorioDto>()
+
+    override suspend fun recordatorios() = recordatoriosGuardados.toList()
+
+    override suspend fun crearRecordatorio(recordatorio: frgp.utn.edu.petcare.data.remoto.NuevoRecordatorioDto) {
+        llamadas.add("crearRecordatorio:${recordatorio.titulo}")
+        recordatoriosGuardados.add(
+            frgp.utn.edu.petcare.data.remoto.RecordatorioDto(
+                recordatorio.id, recordatorio.mascotaId, recordatorio.creadoPor, recordatorio.titulo, recordatorio.tipo,
+                recordatorio.fecha, recordatorio.hora, recordatorio.nota
+            )
+        )
+    }
+
+    override suspend fun actualizarRecordatorio(id: String, cambios: JsonObject) {
+        llamadas.add("actualizarRecordatorio:$id")
+        val i = recordatoriosGuardados.indexOfFirst { it.id == id }
+        if (i < 0) return
+        val r = recordatoriosGuardados[i]
+        recordatoriosGuardados[i] = r.copy(
+            titulo = cambios["titulo"]?.jsonPrimitive?.content ?: r.titulo,
+            fecha = cambios["fecha"]?.jsonPrimitive?.content ?: r.fecha
+        )
+    }
+
+    override suspend fun borrarRecordatorio(id: String) {
+        llamadas.add("borrarRecordatorio:$id")
+        recordatoriosGuardados.removeAll { it.id == id }
     }
 
     override suspend fun eliminarRegistroSalud(id: String) {
@@ -429,6 +481,11 @@ class FuenteEnMemoria(var yo: PerfilDto) : FuenteDatos {
     override suspend fun borrarNotificaciones() {
         llamadas.add("notificacionesBorradas")
         notificaciones.clear()
+    }
+
+    override suspend fun borrarNotificacion(id: String) {
+        llamadas.add("notificacionBorrada:$id")
+        notificaciones.removeAll { it.id == id }
     }
 
     // ---------- Administrador ----------

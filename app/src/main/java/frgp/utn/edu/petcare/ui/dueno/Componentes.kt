@@ -39,6 +39,14 @@ object Componentes {
     /** "Al día" o "Vacuna pendiente", según tenga una vacuna agendada para los próximos días. */
     fun chipEstadoMascota(host: DuenoActivity, chip: TextView?, nombreMascota: String) {
         chip ?: return
+        // Las inactivas y las fallecidas muestran su estado en vez del de las vacunas
+        val estado = DuenoRepo.buscarMascota(nombreMascota)?.estado
+        if (estado != null && estado != frgp.utn.edu.petcare.model.EstadoMascota.ACTIVA) {
+            chip.text = estado.etiqueta
+            chip.setBackgroundResource(R.drawable.bg_chip_neutral)
+            chip.setTextColor(ContextCompat.getColor(host, R.color.text_gray))
+            return
+        }
         val pendiente = DuenoRepo.tieneVacunaPendiente(nombreMascota)
         chip.setText(if (pendiente) R.string.estado_vacuna_pendiente else R.string.estado_al_dia)
         chip.setBackgroundResource(if (pendiente) R.drawable.bg_chip_warn else R.drawable.bg_chip_ok)

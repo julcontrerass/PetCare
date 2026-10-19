@@ -160,12 +160,14 @@ class EventosDialogos(private val host: DuenoActivity) {
     private fun compartirReceta(d: DuenoRepo.DetalleTurno) {
         val primera = d.receta.firstOrNull() ?: return
         val mascota = DuenoRepo.mascotas.firstOrNull { it.id == primera.mascotaId } ?: return
-        val perfilVet = DuenoRepo.eventos.firstOrNull { it.id == primera.turnoId }
-            ?.let { DuenoRepo.perfilDeVeterinario(it.veterinarioId) }
+        val eventoReceta = DuenoRepo.eventos.firstOrNull { it.id == primera.turnoId }
+        val perfilVet = eventoReceta?.let { DuenoRepo.perfilDeVeterinario(it.veterinarioId) }
         val vet = perfilVet?.veterinarios
+        // El encabezado lleva el lugar donde fue el turno
+        val lugar = eventoReceta?.let { DuenoRepo.sedeDe(it) }
         val profesional = Documentos.Profesional(
             nombre = perfilVet?.nombre ?: "Veterinario", matricula = vet?.matricula.orEmpty(),
-            clinica = vet?.clinica.orEmpty(), direccion = vet?.direccionClinica.orEmpty(),
+            clinica = lugar?.nombre ?: vet?.clinica.orEmpty(), direccion = lugar?.direccion ?: vet?.direccionClinica.orEmpty(),
             telefono = perfilVet?.telefono.orEmpty()
         )
         val paciente = Documentos.DatosPaciente(

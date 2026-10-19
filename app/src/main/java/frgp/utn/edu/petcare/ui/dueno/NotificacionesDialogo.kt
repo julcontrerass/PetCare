@@ -36,8 +36,17 @@ class NotificacionesDialogo(private val host: DuenoActivity) {
                 gravity = Gravity.CENTER
             })
         } else {
-            lista.forEach {
-                contenido.addView(TarjetaAviso.crear(host, it.tipo, it.titulo, it.mensaje, it.creada, it in noLeidas))
+            lista.toList().forEach { aviso ->
+                contenido.addView(
+                    TarjetaAviso.crear(
+                        host, aviso.tipo, aviso.titulo, aviso.mensaje, aviso.creada, aviso in noLeidas,
+                        alBorrar = { tarjeta ->
+                            DuenoRepo.borrarNotificacion(aviso)
+                            contenido.removeView(tarjeta)
+                            host.actualizarBadgeNotificaciones()
+                        }
+                    )
+                )
             }
         }
 
