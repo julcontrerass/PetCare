@@ -62,10 +62,10 @@ class AgregarConsultaActivity : BaseActivity() {
         spTipo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AgendaRepo.tipos())
         fun duracion() = PerfilVetRepo.duracionDe(spTipo.selectedItem as? String)
 
-        // Si atiende en más de un lugar, el turno es en uno de ellos (cada uno tiene sus días y horarios)
+        // El turno es en uno de los lugares donde atiende (cada uno tiene sus días y horarios)
         val sedes = PerfilVetRepo.sedes.toList()
         val spSede = findViewById<Spinner>(R.id.spSede)
-        findViewById<View>(R.id.llSede).visibility = if (sedes.size > 1) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.llSede).visibility = if (sedes.isNotEmpty()) View.VISIBLE else View.GONE
         spSede.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, sedes.map { it.textoLugar() })
         fun sede() = sedes.getOrNull(spSede.selectedItemPosition)
 

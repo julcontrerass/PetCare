@@ -76,7 +76,7 @@ class DetalleEventoVetActivity : BaseActivity() {
             val spSede = Spinner(ctx).apply {
                 adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, sedes.map { it.textoLugar() })
                 setSelection(sedes.indexOfFirst { it.id == evento.sedeId }.coerceAtLeast(0))
-                visibility = if (sedes.size > 1) android.view.View.VISIBLE else android.view.View.GONE
+                visibility = if (sedes.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
             }
             fun sede() = sedes.getOrNull(spSede.selectedItemPosition)
             val etMotivo = campo("Motivo", evento.motivo)
