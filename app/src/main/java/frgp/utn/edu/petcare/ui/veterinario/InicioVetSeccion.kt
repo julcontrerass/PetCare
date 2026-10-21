@@ -9,6 +9,7 @@ import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.data.repositorio.AgendaRepo
 import frgp.utn.edu.petcare.data.repositorio.EventoVet
 import frgp.utn.edu.petcare.data.repositorio.NotificacionesVet
+import frgp.utn.edu.petcare.ui.common.Insignia
 import frgp.utn.edu.petcare.data.repositorio.PacientesRepo
 import frgp.utn.edu.petcare.data.repositorio.PerfilVetRepo
 import frgp.utn.edu.petcare.data.repositorio.SaludRepo
@@ -51,8 +52,7 @@ class InicioVetSeccion(host: HomeVeterinarioActivity) : SeccionVet(host) {
     }
 
     private fun actualizarPuntoDeAvisos() {
-        findViewById<View>(R.id.vetNotifBadge).visibility =
-            if (NotificacionesVet.hayNuevas) View.VISIBLE else View.GONE
+        Insignia.actualizar(findViewById(R.id.vetNotifBadge), NotificacionesVet.sinLeer)
     }
 
     override fun refrescar() {

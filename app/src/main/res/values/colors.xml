@@ -30,4 +30,6 @@
     <color name="teal_dark">#0B4F4C</color>
     <color name="login_bg">#F7F6F1</color>
     <color name="login_field_stroke">#E1E6E4</color>
+    <color name="text_aviso">#3F5266</color>
+    <color name="light_teal_soft">#EEF8F8</color>
 </resources>

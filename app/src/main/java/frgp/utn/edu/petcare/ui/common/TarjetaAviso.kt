@@ -1,18 +1,14 @@
 package frgp.utn.edu.petcare.ui.common
 
 import android.content.Context
-import android.graphics.Typeface
-import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import com.google.android.material.card.MaterialCardView
-import frgp.utn.edu.petcare.model.TipoNotificacion
 import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.model.TipoNotificacion
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -41,93 +37,29 @@ object TarjetaAviso {
         }
     }
 
+    /**
+     * Arma la tarjeta. Si la notificación está sin leer se resalta con un fondo suave y un punto;
+     * [alBorrar] recibe la tarjeta cuando se toca la cruz (si es null, la cruz no se muestra).
+     */
     fun crear(
         contexto: Context, tipo: TipoNotificacion, titulo: String, mensaje: String, creada: LocalDateTime,
         sinLeer: Boolean = false, alBorrar: ((View) -> Unit)? = null
     ): View {
-        val dp = { valor: Int -> (valor * contexto.resources.displayMetrics.density).toInt() }
         val estilo = estilo(tipo)
-        val tarjeta = MaterialCardView(contexto).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(10) }
-            setCardBackgroundColor(ContextCompat.getColor(contexto, R.color.white))
-            radius = dp(12).toFloat()
-            cardElevation = dp(1).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(contexto, if (sinLeer) R.color.primary_teal else R.color.divider_light)
-        }
-
-        val fila = RelativeLayout(contexto).apply {
-            layoutParams = RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
-            )
-            setPadding(dp(12), dp(12), dp(12), dp(12))
-        }
-
-        val iconoId = View.generateViewId()
-        val circulo = FrameLayout(contexto).apply {
-            id = iconoId
-            layoutParams = RelativeLayout.LayoutParams(dp(36), dp(36))
-            setBackgroundResource(estilo.fondo)
-        }
-        circulo.addView(ImageView(contexto).apply {
-            layoutParams = FrameLayout.LayoutParams(dp(18), dp(18)).apply { gravity = Gravity.CENTER }
+        val tarjeta = LayoutInflater.from(contexto).inflate(R.layout.item_aviso, null, false)
+        tarjeta.setBackgroundResource(if (sinLeer) R.drawable.bg_aviso_sin_leer else R.drawable.bg_aviso_tarjeta)
+        tarjeta.findViewById<FrameLayout>(R.id.circuloAviso).setBackgroundResource(estilo.fondo)
+        tarjeta.findViewById<ImageView>(R.id.ivIconoAviso).apply {
             setImageResource(estilo.icono)
             setColorFilter(ContextCompat.getColor(contexto, estilo.color))
-        })
-        fila.addView(circulo)
-
-        val textos = LinearLayout(contexto).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                addRule(RelativeLayout.END_OF, iconoId)
-                marginStart = dp(12)
-                if (alBorrar != null) marginEnd = dp(28)
-            }
         }
-        textos.addView(TextView(contexto).apply {
-            text = titulo
-            setTextColor(ContextCompat.getColor(contexto, R.color.black))
-            setTypeface(typeface, Typeface.BOLD)
-            textSize = 14f
-        })
-        textos.addView(TextView(contexto).apply {
-            text = mensaje
-            setTextColor(ContextCompat.getColor(contexto, R.color.text_gray))
-            textSize = 12f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(2) }
-        })
-        textos.addView(TextView(contexto).apply {
-            text = tiempo(creada)
-            setTextColor(ContextCompat.getColor(contexto, R.color.text_gray))
-            textSize = 10f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(4) }
-        })
-        fila.addView(textos)
-        if (alBorrar != null) {
-            fila.addView(ImageView(contexto).apply {
-                id = View.generateViewId()
-                layoutParams = RelativeLayout.LayoutParams(dp(24), dp(24)).apply {
-                    addRule(RelativeLayout.ALIGN_PARENT_END)
-                    addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                }
-                setPadding(dp(3), dp(3), dp(3), dp(3))
-                contentDescription = "Borrar la notificación"
-                setImageResource(R.drawable.ic_cancel)
-                setColorFilter(ContextCompat.getColor(contexto, R.color.text_gray))
-                isClickable = true
-                isFocusable = true
-                setOnClickListener { alBorrar(tarjeta) }
-            })
+        tarjeta.findViewById<TextView>(R.id.tvTituloAviso).text = titulo
+        tarjeta.findViewById<TextView>(R.id.tvMensajeAviso).text = mensaje
+        tarjeta.findViewById<TextView>(R.id.tvHoraAviso).text = tiempo(creada)
+        tarjeta.findViewById<View>(R.id.puntoSinLeer).visibility = if (sinLeer) View.VISIBLE else View.GONE
+        tarjeta.findViewById<View>(R.id.btnBorrarAviso).apply {
+            if (alBorrar == null) visibility = View.GONE else setOnClickListener { alBorrar(tarjeta) }
         }
-        tarjeta.addView(fila)
         return tarjeta
     }
 }
