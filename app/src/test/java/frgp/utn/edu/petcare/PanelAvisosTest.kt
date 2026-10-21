@@ -32,3 +32,13 @@ class PanelAvisosTest {
         assertEquals("9+", Insignia.texto(10))
     }
 }
+
+class ContactoRevisionTest {
+    @Test
+    fun mensajeDeRevision_aprobadoYRechazado() {
+        val ok = frgp.utn.edu.petcare.ui.common.Contacto.mensajeDeRevision("Ana Pérez", true)
+        assertEquals(true, ok.startsWith("Hola Ana,") && ok.contains("aprobada"))
+        val no = frgp.utn.edu.petcare.ui.common.Contacto.mensajeDeRevision("Ana Pérez", false, "Datos incompletos")
+        assertEquals(true, no.contains("no fue aprobada. Motivo: Datos incompletos"))
+    }
+}
