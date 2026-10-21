@@ -1,22 +1,14 @@
 package frgp.utn.edu.petcare.data.repositorio
 
-import android.view.Gravity
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import frgp.utn.edu.petcare.data.avisos.AvisosDelSistema
 import frgp.utn.edu.petcare.data.Errores
 import frgp.utn.edu.petcare.data.remoto.NotificacionDto
 import frgp.utn.edu.petcare.data.Servicios
 import frgp.utn.edu.petcare.model.TipoNotificacion
-import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
-import frgp.utn.edu.petcare.ui.common.TarjetaAviso
-import frgp.utn.edu.petcare.ui.common.TarjetaPermiso
+import frgp.utn.edu.petcare.ui.common.PanelAvisos
 import frgp.utn.edu.petcare.util.Fechas
 import kotlinx.coroutines.launch
 
@@ -52,54 +44,30 @@ object NotificacionesVet {
                 cargar()
                 val avisos = ultimas
                 val noLeidas = avisos.filter { !it.leida }.map { it.id }.toSet()
-                val dp = { valor: Int -> (valor * actividad.resources.displayMetrics.density).toInt() }
-                val contenido = LinearLayout(actividad).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(20), dp(16), dp(20), dp(16))
+                val items = avisos.map {
+                    PanelAvisos.Item(
+                        TipoNotificacion.deClave(it.tipo), it.titulo, it.mensaje,
+                        Fechas.instante(it.createdAt), it.id in noLeidas, origen = it
+                    )
                 }
-                TarjetaPermiso.crear(actividad)?.let { contenido.addView(it) }
-                if (avisos.isEmpty()) {
-                    contenido.addView(TextView(actividad).apply {
-                        text = "No tenés notificaciones."
-                        setTextColor(ContextCompat.getColor(actividad, R.color.text_gray))
-                        setPadding(0, dp(16), 0, dp(16))
-                        gravity = Gravity.CENTER
-                    })
-                } else {
-                    avisos.forEach { aviso ->
-                        contenido.addView(
-                            TarjetaAviso.crear(
-                                actividad, TipoNotificacion.deClave(aviso.tipo), aviso.titulo, aviso.mensaje,
-                                Fechas.instante(aviso.createdAt), aviso.id in noLeidas,
-                                alBorrar = { tarjeta ->
-                                    borrar(aviso.id)
-                                    contenido.removeView(tarjeta)
-                                    alCambiar()
-                                }
-                            )
-                        )
-                    }
-                }
-                val dialogo = AlertDialog.Builder(actividad)
-                    .setTitle("Notificaciones")
-                    .setView(ScrollView(actividad).apply { addView(contenido) })
-                    .setPositiveButton("Cerrar", null)
-                if (avisos.isNotEmpty()) {
-                    dialogo.setNeutralButton("Borrar todas") { _, _ ->
+                PanelAvisos.mostrar(
+                    actividad, items,
+                    alBorrar = { item ->
+                        borrar((item.origen as NotificacionDto).id)
+                        alCambiar()
+                    },
+                    alBorrarTodas = {
                         ultimas = emptyList()
                         Servicios.escribir { Servicios.fuente.borrarNotificaciones() }
                         alCambiar()
                         Avisos.exito(actividad, "Notificaciones borradas")
                     }
-                    if (noLeidas.isNotEmpty()) {
-                        ultimas = avisos.map { it.copy(leida = true) }
-                        Servicios.escribir { Servicios.fuente.marcarNotificacionesLeidas() }
-                        alCambiar()
-                    }
+                )
+                if (noLeidas.isNotEmpty()) {
+                    ultimas = avisos.map { it.copy(leida = true) }
+                    Servicios.escribir { Servicios.fuente.marcarNotificacionesLeidas() }
+                    alCambiar()
                 }
-                val creado = dialogo.create()
-                creado.show()
-                creado.window?.setBackgroundDrawable(ContextCompat.getDrawable(actividad, R.drawable.bg_dialog_rounded))
             } catch (e: Exception) {
                 Avisos.error(actividad, Errores.mensaje(e))
             }

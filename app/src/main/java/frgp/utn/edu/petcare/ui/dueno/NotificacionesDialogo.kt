@@ -1,68 +1,34 @@
 package frgp.utn.edu.petcare.ui.dueno
 
-import android.view.Gravity
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import frgp.utn.edu.petcare.data.repositorio.DuenoRepo
-import frgp.utn.edu.petcare.R
+import frgp.utn.edu.petcare.model.NotificacionDueno
 import frgp.utn.edu.petcare.ui.common.Avisos
-import frgp.utn.edu.petcare.ui.common.TarjetaAviso
-import frgp.utn.edu.petcare.ui.common.TarjetaPermiso
+import frgp.utn.edu.petcare.ui.common.PanelAvisos
 
-/** Lista de notificaciones del dueño en un diálogo. */
+/** Lista de notificaciones del dueño, en un panel que sube desde abajo. */
 class NotificacionesDialogo(private val host: DuenoActivity) {
 
-    private fun dp(valor: Int) = host.dp(valor)
-
     fun mostrar() {
-        val lista = DuenoRepo.notificaciones
+        val lista = DuenoRepo.notificaciones.toList()
         // Las que todavía no se vieron se marcan en la lista y recién después se dan por leídas
         val noLeidas = lista.filter { !it.leida }.toSet()
         DuenoRepo.marcarNotificacionesLeidas()
         host.actualizarBadgeNotificaciones()
-        val contenido = LinearLayout(host).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), dp(16))
-        }
-        TarjetaPermiso.crear(host)?.let { contenido.addView(it) }
-        if (lista.isEmpty()) {
-            contenido.addView(TextView(host).apply {
-                text = "No tenés notificaciones."
-                setTextColor(ContextCompat.getColor(host, R.color.text_gray))
-                setPadding(0, dp(16), 0, dp(16))
-                gravity = Gravity.CENTER
-            })
-        } else {
-            lista.toList().forEach { aviso ->
-                contenido.addView(
-                    TarjetaAviso.crear(
-                        host, aviso.tipo, aviso.titulo, aviso.mensaje, aviso.creada, aviso in noLeidas,
-                        alBorrar = { tarjeta ->
-                            DuenoRepo.borrarNotificacion(aviso)
-                            contenido.removeView(tarjeta)
-                            host.actualizarBadgeNotificaciones()
-                        }
-                    )
-                )
-            }
-        }
 
-        val constructor = AlertDialog.Builder(host)
-            .setTitle("Notificaciones")
-            .setView(ScrollView(host).apply { addView(contenido) })
-            .setPositiveButton("Cerrar") { dialogo, _ -> dialogo.dismiss() }
-        if (lista.isNotEmpty()) {
-            constructor.setNeutralButton("Limpiar notificaciones") { _, _ ->
+        val avisos = lista.map {
+            PanelAvisos.Item(it.tipo, it.titulo, it.mensaje, it.creada, it in noLeidas, origen = it)
+        }
+        PanelAvisos.mostrar(
+            host, avisos,
+            alBorrar = { item ->
+                DuenoRepo.borrarNotificacion(item.origen as NotificacionDueno)
+                host.actualizarBadgeNotificaciones()
+            },
+            alBorrarTodas = {
                 DuenoRepo.limpiarNotificaciones()
                 host.actualizarBadgeNotificaciones()
                 Avisos.mostrar(host, "Notificaciones borradas")
             }
-        }
-        val dialogo = constructor.create()
-        dialogo.show()
-        dialogo.window?.setBackgroundDrawable(ContextCompat.getDrawable(host, R.drawable.bg_dialog_rounded))
+        )
     }
 }

@@ -19,6 +19,7 @@ import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.model.Mascota
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.auth.RegistroVeterinarioActivity
+import frgp.utn.edu.petcare.ui.common.Insignia
 import frgp.utn.edu.petcare.ui.common.BaseActivity
 import java.time.LocalDate
 import java.time.YearMonth
@@ -186,10 +187,9 @@ class DuenoActivity : BaseActivity() {
         selectorDeImagen.launch("image/*")
     }
 
-    /** Muestra u oculta el punto rojo de la campana según haya notificaciones sin leer. */
+    /** Muestra u oculta el contador rojo de la campana según haya notificaciones sin leer. */
     fun actualizarBadgeNotificaciones() {
-        findViewById<View>(R.id.notification_badge)?.visibility =
-            if (DuenoRepo.hayNotificacionesSinLeer) View.VISIBLE else View.GONE
+        Insignia.actualizar(findViewById(R.id.notification_badge), DuenoRepo.notificacionesSinLeer)
     }
 
     // ---------- Navegación ----------

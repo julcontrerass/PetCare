@@ -87,6 +87,7 @@ object DuenoRepo {
     val solicitudes: MutableList<SolicitudItem> get() = estado.solicitudes
     val notificaciones: List<NotificacionDueno> get() = estado.notificaciones
     val hayNotificacionesSinLeer: Boolean get() = estado.notificaciones.any { !it.leida }
+    val notificacionesSinLeer: Int get() = estado.notificaciones.count { !it.leida }
 
     // ---------- Carga ----------
 
