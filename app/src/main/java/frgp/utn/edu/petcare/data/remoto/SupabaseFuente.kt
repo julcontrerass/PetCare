@@ -237,8 +237,8 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
     override suspend fun cerrarSesion() {
         try {
             cliente.auth.signOut()
-        } catch (e: Exception) {
-            // Sin conexión no se puede avisar al servidor, pero la sesión guardada en el teléfono igual se descarta
+        } finally {
+            // Sin conexión (o si se corta la espera) no se avisa al servidor, pero la sesión guardada en el teléfono igual se descarta
             cliente.auth.clearSession()
         }
     }

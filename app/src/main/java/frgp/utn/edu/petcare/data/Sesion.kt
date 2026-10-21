@@ -25,9 +25,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** La cuenta que tiene la sesión iniciada y la carga de sus datos desde el servidor. */
 object Sesion {
+
+    private const val TIEMPO_CIERRE_MS = 4_000L
 
     enum class Rol { DUENO, VETERINARIO, ADMIN }
 
@@ -248,8 +251,13 @@ object Sesion {
 
     /** Cierra la sesión y vuelve a la pantalla de ingreso, sin dejar pantallas anteriores en la pila. */
     fun cerrarYVolver(actividad: Activity) {
-        volverAlIngreso(actividad)
-        Servicios.scope.launch { runCatching { Servicios.fuente.cerrarSesion() } }
+        olvidar()
+        // Se espera a que la sesión quede cerrada antes de abrir el ingreso: si no, éste la encuentra todavía
+        // guardada y entra solo con la cuenta que se acaba de cerrar
+        Servicios.scope.launch {
+            withTimeoutOrNull(TIEMPO_CIERRE_MS) { runCatching { Servicios.fuente.cerrarSesion() } }
+            volverAlIngreso(actividad)
+        }
     }
 
     /** Descarta los datos en memoria y abre el ingreso como única pantalla. */
