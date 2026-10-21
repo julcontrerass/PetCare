@@ -143,6 +143,8 @@ interface FuenteDatos {
     suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {}
     /** Aprueba, rechaza, suspende o reactiva el rol de veterinario de una cuenta (la cuenta de dueño no se toca). */
     suspend fun revisarVeterinario(id: String, estado: String, motivo: String?) {}
+    /** Avisa por WhatsApp al veterinario cómo quedó su solicitud de alta (aprobada o rechazada). */
+    suspend fun avisarPorWhatsapp(veterinarioId: String) {}
 
     // ---------- Baja de cuenta ----------
     suspend fun rutasArchivosCuenta(): List<RutaDto> = emptyList()

@@ -231,7 +231,16 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
                 cuerpo["mensaje"]?.jsonPrimitive?.contentOrNull ?: "No pudimos crear la cuenta del dueño."
             )
         }
-        return Json { ignoreUnknownKeys = true }.decodeFromJsonElement(CuentaDuenoCreadaDto.serializer(), cuerpo)
+        val creada = Json { ignoreUnknownKeys = true }.decodeFromJsonElement(CuentaDuenoCreadaDto.serializer(), cuerpo)
+        // Al dueño le llega por WhatsApp su acceso. Si falla (o no está configurado) no importa: la cuenta ya está
+        // creada y el veterinario ve la contraseña en pantalla
+        runCatching {
+            cliente.functions.invoke("avisar-dueno-nuevo", buildJsonObject {
+                put("usuario_id", creada.usuarioId)
+                put("password_temporal", creada.passwordTemporal)
+            })
+        }
+        return creada
     }
 
     override suspend fun cerrarSesion() {
@@ -569,11 +578,13 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             put("p_estado", estado)
             if (motivo != null) put("p_motivo", motivo)
         })
-        // Alta aprobada o rechazada: además del aviso en la app, le llega un WhatsApp. Si el envío falla (o la
-        // función no está configurada) la revisión ya quedó guardada y no se muestra ningún error
-        if (estado == "activo" || estado == "rechazado") {
-            runCatching { cliente.functions.invoke("avisar-whatsapp", buildJsonObject { put("veterinario_id", id) }) }
-        }
+        // Si se rechaza, además del aviso en la app le llega un WhatsApp. Si el envío falla (o la función no está
+        // configurada) la revisión ya quedó guardada y no se muestra ningún error
+        if (estado == "rechazado") avisarPorWhatsapp(id)
+    }
+
+    override suspend fun avisarPorWhatsapp(veterinarioId: String) {
+        runCatching { cliente.functions.invoke("avisar-whatsapp", buildJsonObject { put("veterinario_id", veterinarioId) }) }
     }
 
     override suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {
