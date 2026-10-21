@@ -56,27 +56,6 @@ object Contacto {
             "Al entrar, la app te va a pedir que elijas tu propia contraseña."
     }
 
-    /** Mensaje con el que el administrador le cuenta a un veterinario cómo quedó su solicitud de alta. */
-    fun mensajeDeRevision(veterinario: String, aprobado: Boolean, motivo: String = ""): String {
-        val primerNombre = veterinario.trim().substringBefore(' ')
-        return if (aprobado) {
-            "Hola $primerNombre, te escribo de PetCare. Verificamos tu matrícula y tu alta como veterinario/a fue " +
-                "aprobada. Ya podés ingresar a la app con tu cuenta."
-        } else {
-            "Hola $primerNombre, te escribo de PetCare. Tu solicitud de alta como veterinario/a no fue aprobada" +
-                motivo.trim().takeIf { it.isNotEmpty() }?.let { ". Motivo: $it" }.orEmpty() +
-                ". Podés corregir tus datos y volver a solicitarla."
-        }
-    }
-
-    /** Abre la aplicación de correo con el mensaje armado; null si no hay una dirección usable. */
-    fun correo(email: String, asunto: String, mensaje: String): Intent? {
-        if (!email.contains('@')) return null
-        return Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(email.trim(), "@")))
-            .putExtra(Intent.EXTRA_SUBJECT, asunto)
-            .putExtra(Intent.EXTRA_TEXT, mensaje)
-    }
-
     /** Abre el selector de aplicaciones para mandar un texto (cuando no hay un número de WhatsApp usable). */
     fun compartirTexto(texto: String): Intent =
         Intent.createChooser(

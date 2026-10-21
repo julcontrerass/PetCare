@@ -32,7 +32,6 @@ import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BaseActivity
-import frgp.utn.edu.petcare.ui.common.Contacto
 import frgp.utn.edu.petcare.ui.common.Diseno
 import frgp.utn.edu.petcare.ui.common.VetUi
 import frgp.utn.edu.petcare.util.Fechas
@@ -393,19 +392,6 @@ class HomeAdminActivity : BaseActivity() {
         AdminRepo.aprobarVet(vet.id)
         Avisos.mostrar(this, "${vet.nombre} ya está dado de alta")
         refrescarTodo()
-        ofrecerAvisoPorCorreo(vet, aprobado = true)
-    }
-
-    /** Después de revisar una solicitud se ofrece avisarle al veterinario por correo, desde la cuenta del administrador. */
-    private fun ofrecerAvisoPorCorreo(vet: VetAdminItem, aprobado: Boolean, motivo: String = "") {
-        val asunto = if (aprobado) "Tu alta en PetCare fue aprobada" else "Tu solicitud de alta en PetCare"
-        val intent = Contacto.correo(vet.email, asunto, Contacto.mensajeDeRevision(vet.nombre, aprobado, motivo)) ?: return
-        Avisos.confirmar(
-            this, if (aprobado) "¿Avisarle que ya está dado de alta?" else "¿Avisarle que no fue aprobado?",
-            "Se abre tu aplicación de correo con el mensaje listo para mandarle a ${vet.nombre}.",
-            textoAceptar = "Avisar por correo", textoCancelar = "Ahora no", peligro = false,
-            icono = R.drawable.ic_check_circle
-        ) { Contacto.abrir(this, intent, "No encontramos una aplicación de correo") }
     }
 
     private fun pedirRechazo(vet: VetAdminItem, alTerminar: () -> Unit = {}) {
@@ -418,7 +404,6 @@ class HomeAdminActivity : BaseActivity() {
             Avisos.mostrar(this, "Solicitud de ${vet.nombre} rechazada")
             refrescarTodo()
             alTerminar()
-            ofrecerAvisoPorCorreo(vet, aprobado = false, motivo = motivo)
         }
     }
 
@@ -558,7 +543,7 @@ class HomeAdminActivity : BaseActivity() {
         secundario.visibility = View.GONE
         when (vet.estado) {
             AdminRepo.PENDIENTE -> {
-                principal.configurar("Dar de alta") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta"); ofrecerAvisoPorCorreo(vet, aprobado = true) }
+                principal.configurar("Dar de alta") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta") }
                 secundario.configurar("Rechazar solicitud") { pedirRechazo(vet) { sheet.dismiss() } }
             }
             AdminRepo.ACTIVO ->
@@ -566,7 +551,7 @@ class HomeAdminActivity : BaseActivity() {
             AdminRepo.SUSPENDIDO ->
                 principal.configurar("Reactivar cuenta") { AdminRepo.reactivarVet(vet.id); terminarAccion(sheet, "${vet.nombre} fue reactivado") }
             else ->
-                principal.configurar("Dar de alta igualmente") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta"); ofrecerAvisoPorCorreo(vet, aprobado = true) }
+                principal.configurar("Dar de alta igualmente") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta") }
         }
         sheet.show()
     }

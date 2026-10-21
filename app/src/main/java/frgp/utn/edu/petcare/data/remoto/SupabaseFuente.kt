@@ -571,6 +571,11 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
         })
     }
 
+    override suspend fun avisarRevisionPorCorreo(veterinarioId: String) {
+        // La revisión ya quedó guardada (y el veterinario ve el aviso en la app): si el correo no sale, no se muestra error
+        runCatching { cliente.functions.invoke("avisar-veterinario", buildJsonObject { put("veterinario_id", veterinarioId) }) }
+    }
+
     override suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {
         cliente.from("profiles").update(buildJsonObject {
             put("estado", estado)
