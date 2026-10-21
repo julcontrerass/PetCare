@@ -32,6 +32,7 @@ import frgp.utn.edu.petcare.data.Sesion
 import frgp.utn.edu.petcare.R
 import frgp.utn.edu.petcare.ui.common.Avisos
 import frgp.utn.edu.petcare.ui.common.BaseActivity
+import frgp.utn.edu.petcare.ui.common.Contacto
 import frgp.utn.edu.petcare.ui.common.Diseno
 import frgp.utn.edu.petcare.ui.common.VetUi
 import frgp.utn.edu.petcare.util.Fechas
@@ -392,6 +393,19 @@ class HomeAdminActivity : BaseActivity() {
         AdminRepo.aprobarVet(vet.id)
         Avisos.mostrar(this, "${vet.nombre} ya está dado de alta")
         refrescarTodo()
+        ofrecerAvisoPorWhatsApp(vet, aprobado = true)
+    }
+
+    /** Después de revisar una solicitud se ofrece avisarle al veterinario por WhatsApp, desde el número del administrador. */
+    private fun ofrecerAvisoPorWhatsApp(vet: VetAdminItem, aprobado: Boolean, motivo: String = "") {
+        val mensaje = Contacto.mensajeDeRevision(vet.nombre, aprobado, motivo)
+        val intent = Contacto.whatsApp(vet.telefono, mensaje) ?: return
+        Avisos.confirmar(
+            this, if (aprobado) "¿Avisarle que ya está dado de alta?" else "¿Avisarle que no fue aprobado?",
+            "Se abre WhatsApp con el mensaje listo para mandarle a ${vet.nombre}.",
+            textoAceptar = "Avisar por WhatsApp", textoCancelar = "Ahora no", peligro = false,
+            icono = R.drawable.ic_check_circle
+        ) { Contacto.abrir(this, intent, "No pudimos abrir WhatsApp") }
     }
 
     private fun pedirRechazo(vet: VetAdminItem, alTerminar: () -> Unit = {}) {
@@ -404,6 +418,7 @@ class HomeAdminActivity : BaseActivity() {
             Avisos.mostrar(this, "Solicitud de ${vet.nombre} rechazada")
             refrescarTodo()
             alTerminar()
+            ofrecerAvisoPorWhatsApp(vet, aprobado = false, motivo = motivo)
         }
     }
 
@@ -543,7 +558,7 @@ class HomeAdminActivity : BaseActivity() {
         secundario.visibility = View.GONE
         when (vet.estado) {
             AdminRepo.PENDIENTE -> {
-                principal.configurar("Dar de alta") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta") }
+                principal.configurar("Dar de alta") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta"); ofrecerAvisoPorWhatsApp(vet, aprobado = true) }
                 secundario.configurar("Rechazar solicitud") { pedirRechazo(vet) { sheet.dismiss() } }
             }
             AdminRepo.ACTIVO ->
@@ -551,7 +566,7 @@ class HomeAdminActivity : BaseActivity() {
             AdminRepo.SUSPENDIDO ->
                 principal.configurar("Reactivar cuenta") { AdminRepo.reactivarVet(vet.id); terminarAccion(sheet, "${vet.nombre} fue reactivado") }
             else ->
-                principal.configurar("Dar de alta igualmente") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta") }
+                principal.configurar("Dar de alta igualmente") { AdminRepo.aprobarVet(vet.id); terminarAccion(sheet, "${vet.nombre} ya está dado de alta"); ofrecerAvisoPorWhatsApp(vet, aprobado = true) }
         }
         sheet.show()
     }
