@@ -569,6 +569,11 @@ class SupabaseFuente(contexto: Context) : FuenteDatos {
             put("p_estado", estado)
             if (motivo != null) put("p_motivo", motivo)
         })
+        // Alta aprobada o rechazada: además del aviso en la app, le llega un WhatsApp. Si el envío falla (o la
+        // función no está configurada) la revisión ya quedó guardada y no se muestra ningún error
+        if (estado == "activo" || estado == "rechazado") {
+            runCatching { cliente.functions.invoke("avisar-whatsapp", buildJsonObject { put("veterinario_id", id) }) }
+        }
     }
 
     override suspend fun cambiarEstadoCuenta(id: String, estado: String, motivo: String?) {

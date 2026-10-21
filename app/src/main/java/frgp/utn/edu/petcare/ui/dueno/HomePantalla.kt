@@ -1,5 +1,6 @@
 package frgp.utn.edu.petcare.ui.dueno
 
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
@@ -134,8 +135,12 @@ class HomePantalla(host: DuenoActivity) : Pantalla(host) {
     private fun tarjetaMascota(mascota: Mascota, padre: ViewGroup): View {
         val tarjeta = host.layoutInflater.inflate(R.layout.item_home_mascota, padre, false)
         val foto = tarjeta.findViewById<ShapeableImageView>(R.id.ivFoto)
+        // Si la mascota tiene foto, mientras se baja queda el fondo del tamaño final: el ícono chico con margen
+        // aparecía primero y recién después se acomodaba la foto
+        val tieneFoto = mascota.fotoUri != null || !mascota.fotoPath.isNullOrBlank()
+        if (tieneFoto) foto.setImageDrawable(ColorDrawable(ContextCompat.getColor(host, R.color.light_teal)))
         Imagenes.mostrar(foto, mascota.fotoUri, mascota.fotoPath) { hayFoto ->
-            if (hayFoto) {
+            if (hayFoto || tieneFoto) {
                 foto.background = null
                 foto.clearColorFilter()
                 foto.setPadding(0, 0, 0, 0)
