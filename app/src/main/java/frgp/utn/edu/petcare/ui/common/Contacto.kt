@@ -69,6 +69,14 @@ object Contacto {
         }
     }
 
+    /** Abre la aplicación de correo con el mensaje armado; null si no hay una dirección usable. */
+    fun correo(email: String, asunto: String, mensaje: String): Intent? {
+        if (!email.contains('@')) return null
+        return Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(email.trim(), "@")))
+            .putExtra(Intent.EXTRA_SUBJECT, asunto)
+            .putExtra(Intent.EXTRA_TEXT, mensaje)
+    }
+
     /** Abre el selector de aplicaciones para mandar un texto (cuando no hay un número de WhatsApp usable). */
     fun compartirTexto(texto: String): Intent =
         Intent.createChooser(
