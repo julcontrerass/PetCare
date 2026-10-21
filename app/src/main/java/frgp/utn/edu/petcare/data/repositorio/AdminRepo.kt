@@ -225,9 +225,10 @@ object AdminRepo {
     }
 
     /** Revisión del rol de veterinario: no toca la cuenta de dueño de quien también tiene mascotas. */
-    private fun revisarRol(id: String, estado: String, motivo: String?) {
+    private fun revisarRol(id: String, estado: String, motivo: String?, avisar: Boolean = false) {
         Servicios.escribir(alFallar = { recargar() }, alTerminar = { recargar() }) {
             Servicios.fuente.revisarVeterinario(id, estado.lowercase(), motivo?.ifBlank { null })
+            if (avisar) Servicios.fuente.avisarRevisionPorCorreo(id)
         }
     }
 
@@ -235,14 +236,14 @@ object AdminRepo {
         val vet = vetPorId(id) ?: return
         vet.estado = ACTIVO
         vet.motivo = ""
-        revisarRol(id, ACTIVO, null)
+        revisarRol(id, ACTIVO, null, avisar = true)
     }
 
     fun rechazarVet(id: String, motivo: String = "") {
         val vet = vetPorId(id) ?: return
         vet.estado = RECHAZADO
         vet.motivo = motivo
-        revisarRol(id, RECHAZADO, motivo)
+        revisarRol(id, RECHAZADO, motivo, avisar = true)
     }
 
     fun suspenderVet(id: String, motivo: String = "") {
