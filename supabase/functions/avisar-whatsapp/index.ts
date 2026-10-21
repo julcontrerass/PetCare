@@ -9,13 +9,13 @@
 //   WHATSAPP_PHONE_ID     id del número emisor
 //   WHATSAPP_PLANTILLA_APROBADO / WHATSAPP_PLANTILLA_RECHAZADO   nombres de las plantillas aprobadas por Meta
 //     (opcional; si faltan se envía texto libre, que WhatsApp solo entrega dentro de las 24 h de una conversación)
-//   WHATSAPP_PAIS         prefijo por defecto para números sin código de país (por defecto 54, Argentina)
 //
 // Si no están configurados responde { ok: false, error: "sin_configurar" } y la app sigue como si nada: el aviso
 // dentro de la app (private.notificar) se envía igual.
 //
 // Se despliega con verify_jwt activado:  supabase functions deploy avisar-whatsapp
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { configurado, enviar, normalizar } from "../_shared/whatsapp.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -24,21 +24,6 @@ const CORS = {
 
 const responder = (status: number, cuerpo: unknown) =>
   new Response(JSON.stringify(cuerpo), { status, headers: { ...CORS, "Content-Type": "application/json" } });
-
-/** Deja el número en formato internacional sin "+" (WhatsApp para Argentina pide 549 + área + número). */
-function normalizar(telefono: string, pais: string): string | null {
-  let n = telefono.replace(/\D/g, "").replace(/^00/, "");
-  if (n.length < 8) return null;
-  if (n.startsWith(pais)) {
-    n = n.slice(pais.length);
-  }
-  n = n.replace(/^0+/, "");
-  if (pais === "54") {
-    n = n.replace(/^9/, "").replace(/^(\d{2,4})15(\d{6,8})$/, "$1$2");
-    return "549" + n;
-  }
-  return pais + n;
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -78,11 +63,9 @@ Deno.serve(async (req) => {
   const rechazado = vet.estado_revision === "rechazado";
   if (!aprobado && !rechazado) return responder(200, { ok: false, error: "estado", mensaje: "No hay nada para avisar" });
 
-  const tokenWa = Deno.env.get("WHATSAPP_TOKEN");
-  const telefonoId = Deno.env.get("WHATSAPP_PHONE_ID");
-  if (!tokenWa || !telefonoId) return responder(200, { ok: false, error: "sin_configurar" });
+  if (!configurado()) return responder(200, { ok: false, error: "sin_configurar" });
 
-  const destino = normalizar(String(perfil.telefono ?? ""), Deno.env.get("WHATSAPP_PAIS") ?? "54");
+  const destino = normalizar(String(perfil.telefono ?? ""));
   if (!destino) return responder(200, { ok: false, error: "sin_telefono" });
 
   const nombre = String(perfil.nombre ?? "").split(" ")[0] || "";
@@ -92,33 +75,12 @@ Deno.serve(async (req) => {
     : `Hola ${nombre}. Tu solicitud de alta como veterinario/a en PetCare no fue aprobada` +
       (motivo ? `. Motivo: ${motivo}` : "") + ". Podés corregir tus datos y volver a solicitarla.";
 
-  const plantilla = Deno.env.get(aprobado ? "WHATSAPP_PLANTILLA_APROBADO" : "WHATSAPP_PLANTILLA_RECHAZADO");
-  const mensaje = plantilla
-    ? {
-      messaging_product: "whatsapp",
-      to: destino,
-      type: "template",
-      template: {
-        name: plantilla,
-        language: { code: "es_AR" },
-        components: [{
-          type: "body",
-          parameters: aprobado
-            ? [{ type: "text", text: nombre || "colega" }]
-            : [{ type: "text", text: nombre || "colega" }, { type: "text", text: motivo || "sin detalle" }],
-        }],
-      },
-    }
-    : { messaging_product: "whatsapp", to: destino, type: "text", text: { body: texto } };
-
-  const r = await fetch(`https://graph.facebook.com/v21.0/${telefonoId}/messages`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${tokenWa}`, "Content-Type": "application/json" },
-    body: JSON.stringify(mensaje),
-  });
-  if (!r.ok) {
-    console.error("whatsapp", r.status, await r.text());
-    return responder(200, { ok: false, error: "envio" });
-  }
+  const enviado = await enviar(
+    destino,
+    texto,
+    Deno.env.get(aprobado ? "WHATSAPP_PLANTILLA_APROBADO" : "WHATSAPP_PLANTILLA_RECHAZADO"),
+    aprobado ? [nombre || "colega"] : [nombre || "colega", motivo || "sin detalle"],
+  );
+  if (!enviado) return responder(200, { ok: false, error: "envio" });
   return responder(200, { ok: true });
 });
