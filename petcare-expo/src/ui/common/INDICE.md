@@ -65,3 +65,75 @@ llama a `useDatos()` y `useSesionRequerida()` y lee los repositorios en el rende
 
 ## Lo que NO se portó (resuelto por la plataforma)
 - `Diseno.forzar` (relayout tras el ingreso), `BaseActivity.attachBaseContext/Responsive` (densidad en pantallas <360dp; se cubre con layout flexible y `ESCALA_LETRA_MAXIMA` en `Texto`), `delegate.localNightMode` (modo claro: `userInterfaceStyle: "light"` + `StatusBar` oscura), insets/edge-to-edge (SafeArea), `Avatares.kt` (→ `Avatar` e `ImagenRemota`; `Avatares.veterinario/deEvento` se arman en la pantalla con `DuenoRepo.perfilDeVeterinario(id)?.fotoPath`), `Insignia.actualizar` (→ `<Insignia />`), `Avisos.iniciar` y `enPrimerPlano` (no hay Activities; el host siempre está montado).
+
+---
+
+# Dominio (compartido entre roles)
+
+Port de los componentes de dominio de `ui/common/` y `ui/dueno/` del Kotlin. Todo se importa por archivo, igual que el kit.
+Los `object X` del Kotlin se exportan como funciones sueltas **y** como un objeto `X` con las mismas (`Contacto.llamar(...)`).
+Las pruebas están en `__tests__/ui/` (`npx jest __tests__/ui`).
+
+## Documentos.ts (lógica pura de recetas y certificados; sin dependencias de plataforma)
+- `interface Profesional { nombre; matricula; clinica; direccion; telefono }` (todos string) — `perfilVetRepo.comoProfesional(sedeId?)` ya lo arma. `crearProfesional({ nombre, matricula, clinica?, direccion?, telefono? })` pone `""` a lo que falte.
+- `interface DatosPaciente { nombre; especie; raza; sexo; edad; peso; microchip; propietario }` — `pacientesRepo.comoDocumento(p)` ya lo arma. `crearDatosPaciente({ nombre, especie, ...resto opcional })`.
+- `type Bloque` (unión por `tipo`: encabezado, titulo, subtitulo, texto, paciente, espacio, firma); `class Plano { tipo; paciente; fecha; bloques; texto(): string }`.
+- `planoDeReceta(profesional, paciente, fecha: LocalDate, medicamentos: Prescripcion[], indicaciones = ""): Plano`
+- `planoDeCertificadoVacunacion(profesional, paciente, fecha, vacunas: RegistroSalud[]): Plano`
+- `planoDeCertificadoSalud(profesional, paciente, fecha, observaciones = ""): Plano`
+- `nombreDeArchivo(plano): string` → `receta-rex-2026-10-12.pdf`. También `Documentos.{planoDeReceta, planoDeCertificadoVacunacion, planoDeCertificadoSalud, nombreDeArchivo}`.
+- Ejemplo: `const plano = planoDeReceta(PerfilVetRepo.comoProfesional(turno.sedeId), comoDocumento(paciente), LocalDate.now(), recetas);`
+
+## DocumentosPdf.ts (HTML A4 -> PDF con `expo-print`; compartir con `expo-sharing`)
+- `interface ArchivoPdf { uri: string | null; nombre: string; plano: Plano; html: string }` — `uri` es null en la web (no hay archivo).
+- `receta(profesional, paciente, fecha, medicamentos, indicaciones = ""): Promise<ArchivoPdf>`; `certificadoVacunacion(profesional, paciente, fecha, vacunas): Promise<ArchivoPdf>`; `certificadoSalud(profesional, paciente, fecha, observaciones = ""): Promise<ArchivoPdf>`; `generarPdf(plano): Promise<ArchivoPdf>`; `htmlDePlano(plano): string`.
+- `compartir(archivo, titulo): Promise<boolean>` — celular: selector del sistema con el PDF; web: `navigator.share` (con el texto) o, si no hay, el diálogo de impresión. Nunca lanza.
+- `imprimir(archivo, titulo?): Promise<boolean>` — web: abre el HTML en otra ventana (o iframe oculto) y llama a `print()` ("Guardar como PDF"); celular: igual que `compartir`. En la web `Print.printAsync({ html })` imprime la página actual, no el HTML, por eso no se usa.
+- Ejemplo: `await DocumentosPdf.compartir(await DocumentosPdf.certificadoSalud(prof, pac, LocalDate.now(), obs), "Certificado de salud");` (también `DocumentosPdf.*`)
+
+## Contacto.ts (WhatsApp, llamar, correo, compartir texto)
+- `type Intencion = string | (() => Promise<void>)` — una URL (`https://wa.me/...`, `tel:...`, `mailto:...`) o una acción propia; en Kotlin era un `Intent`.
+- `numeroWhatsApp(telefono): string | null`; `whatsApp(telefono, mensaje): Intencion | null`; `llamar(telefono): Intencion | null`; `correo(email): Intencion`; `compartirTexto(texto): Intencion` (celular: `Share`; web: `navigator.share` o copia con expo-clipboard).
+- `mensajeDeAcceso(dueno, mascotas: string[], email, password, veterinario, clinica): string`.
+- `mensajeDeSaludo(propietario, mascota): string` ("Hola Ana, te escribo por Rex.", el del menú de la ficha del paciente) y `mensajeDeRevision(propietario | null, clinica, mascota, tipo, titulo, proximaDosis: LocalDate | null, hoy: LocalDate): string` (el recordatorio de "Vacunas pendientes"). Estos dos no estaban en `Contacto.kt` (eran privados de las Activities); se agregaron acá.
+- `abrir(intencion: Intencion | null, sinDatos: string): Promise<void>` — null avisa `sinDatos`; si falla avisa "No hay una aplicación disponible para esta acción".
+- Ejemplo: `await Contacto.abrir(Contacto.whatsApp(p.telefono, msg) ?? Contacto.compartirTexto(msg), "No pudimos abrir WhatsApp");`
+
+## PanelAvisos.tsx, TarjetaAviso.tsx, TarjetaPermiso.tsx
+- `<PanelAvisos visible alCerrar avisos: ItemAviso[] alBorrar(item) alBorrarTodas() />` — hoja inferior con grupos HOY/AYER/ESTA SEMANA/ANTERIORES, resumen, estado vacío, borrar una y "Borrar todas" con confirmación; `TarjetaPermiso` va arriba. La lista es una copia tomada al abrir. `interface ItemAviso { tipo: TipoNotificacion; titulo; mensaje; creada: LocalDateTime; sinLeer: boolean; origen?: unknown }`. Puras: `grupo(fecha, hoy?)`, `resumen(total, sinLeer)` (también `PanelAvisos.grupo/resumen`).
+- `<TarjetaAviso tipo titulo mensaje creada sinLeer? alBorrar? estilo? />` (sin `alBorrar` no hay cruz; `alBorrar` se llama después de la animación de salida). Puras: `estilo(tipo): { fondo, color, icono }`, `tiempo(creada, ahora?)` (también `TarjetaAviso.estilo/tiempo`).
+- `<TarjetaPermiso estilo? />` — se dibuja sola solo si las notificaciones están apagadas ("Activar" abre los ajustes; en la web pide el permiso y solo aparece si el navegador tiene `Notification`).
+- `<NotificacionesVetPanel visible alCerrar alCambiar? />` — al abrirse hace `NotificacionesVet.cargar()`, muestra los avisos (los sin leer resaltados), después los marca como leídos; borrar una/todas llama a `NotificacionesVet.borrar/borrarTodas`. Errores con `Avisos.error` y se cierra.
+- `<NotificacionesDuenoPanel visible alCerrar alCambiar? />` — igual con `DuenoRepo.notificaciones` / `marcarNotificacionesLeidas` / `borrarNotificacion` / `limpiarNotificaciones`. `alCambiar` sirve para refrescar la campana (los dos ya llaman a `Servicios.avisarCambio()`).
+- Ejemplo: `<NotificacionesDuenoPanel visible={panel} alCerrar={() => setPanel(false)} />` y la campana lee `DuenoRepo.notificacionesSinLeer` / `NotificacionesVet.sinLeer` con `<Insignia />`.
+
+## FiltroLineaTiempo.tsx (buscador + tipo + rango de fechas)
+- `useFiltroLineaTiempo(): FiltroControl { estado; cambiar(parcial); limpiar(); activo: boolean; admite(texto, tipoEvento, fecha: LocalDate | null): boolean }`.
+- `<FiltroLineaTiempo filtro={filtro} tipos={string[]} />` — con un solo tipo no se muestran los chips. Puras: `filtroAdmite(estado, texto, tipoEvento, fecha)`, `filtroActivo(estado)`, `FILTRO_VACIO`.
+- Ejemplo: `const f = useFiltroLineaTiempo(); <FiltroLineaTiempo filtro={f} tipos={["Consulta","Vacuna"]} /> … eventos.filter(e => f.admite(e.titulo, e.tipo, e.fecha))`; si queda vacío: `f.activo ? "sin resultados" : "sin eventos"`.
+
+## EditorRecordatorio.tsx
+- `<EditorRecordatorio visible alCerrar mascotas: { id: string; nombre: string }[] existente?: RecordatorioManual | null alGuardar() />` — crea con `RecordatoriosRepo.crear` o edita con `editar`; si no hay mascotas ni `existente` avisa "Primero necesitás una mascota para crear un recordatorio" y se cierra. Con una sola mascota o editando no pregunta cuál. Ejemplo: `<EditorRecordatorio visible={v} alCerrar={c} mascotas={[{ id: m.id, nombre: m.nombre }]} alGuardar={refrescar} />`.
+
+## FichaClinica.tsx + GraficoPesoView.tsx
+- `<AlertasClinicas texto alEditar? estilo? />` (también `FichaClinica.alertas`): sin `alEditar` solo se lee.
+- `<EvolucionPeso puntos: PuntoPeso[] estilo? />` (también `FichaClinica.peso`): `null` con menos de 2 mediciones. `type PuntoPeso = readonly [LocalDate, number]`.
+- `<GraficoPesoView puntos estilo? />` (react-native-svg, 170 de alto, ancho del contenedor); pura: `geometriaPeso(puntos, ancho, alto)`.
+- Ejemplo: `<AlertasClinicas texto={paciente.alertas} alEditar={editar} /><EvolucionPeso puntos={pesos} />`.
+
+## ArchivosUi.ts
+- `elegir(): Promise<ArchivoElegido | null>` — selector (PDF, jpg/png/webp, doc/docx), valida tipo y 15 MB, avisa los errores; `null` si se cancela o no sirve. `leer(uri, nombre?)` valida un uri ya elegido. `interface ArchivoElegido { nombre; extension; mime; bytes: Uint8Array }`.
+- `abrir(bucket, ruta, extension): Promise<void>` — baja (si hace falta) y lo abre con la aplicación del teléfono (`File.preview`); en la web `window.open(url)`. `compartir(bucket, ruta, extension, titulo?)` — `expo-sharing` (en la web abre en otra pestaña). Constantes `TIPOS_ADMITIDOS`, `TAMANO_MAXIMO`, `mimeDe(extension)`.
+- Ejemplo: `const a = await ArchivosUi.elegir(); if (a) await ArchivosRepo.agregar(pacienteId, a.nombre, a.extension, a.bytes, a.mime)` / `await ArchivosUi.abrir(ArchivosRepo.BUCKET, item.storagePath, item.tipoExtension)`.
+
+## VetUi.tsx, BajaDeCuenta.ts
+- `<FotoVet tamano? estilo? />` — foto del veterinario en sesión (`PerfilVetRepo.fotoUri/fotoPath`, con su inicial de respaldo). `VetUi.barras` no se portó (lo resuelven `StatusBar` y `PantallaBase`).
+- `BajaDeCuenta.confirmar(): void` — cartel "¿Eliminar tu cuenta?"; si acepta: `Sesion.eliminarCuenta()`, "Tu cuenta fue eliminada" y `Sesion.volverAlIngreso()` (RaizApp ya lo conecta con `router.replace("/auth")`). Ejemplo: `<Boton titulo="Eliminar cuenta" variante="peligro" onPress={BajaDeCuenta.confirmar} />`.
+
+## ComponentesDueno.tsx (de ui/dueno/Componentes.kt) y EstiloCategoria.ts
+- `<ChipEstadoMascota nombreMascota />` — "Al día" (ok) / "Vacuna pendiente" (aviso) o la etiqueta del estado si no está activa (neutro); lee `DuenoRepo` en el render (llamar a `useDatos()`).
+- `diasHasta(fecha: LocalDate): number` — días desde hoy (negativo si ya pasó).
+- `<SelectorFechaNacimiento visible inicial? alElegir(fecha) alCerrar />` — calendario sin días futuros.
+- `EstadoVacio` se reexporta del kit (el `Componentes.estadoVacio` del Kotlin).
+- `EstiloCategoria.icono(categoria | null): NombreIcono`, `.fondo(categoria | null): string`, `.colorIcono(categoria | null): string` (colores de `Colores`), `.servicio(nombre): { icono, fondo, color }` (servicios y especialidades del catálogo), `.turno(categoria): { icono, fondo, color }` (encabezado de la ficha de un turno). También exportadas sueltas (`icono`, `fondo`, `colorIcono`, `servicio`, `turno`).
+- Ejemplo: `const e = EstiloCategoria.servicio(nombre); <View style={{ backgroundColor: e.fondo }}><Icono nombre={e.icono} color={e.color} /></View>`.
