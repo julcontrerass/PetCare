@@ -188,7 +188,7 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
   // Si la mascota elegida ya no está activa se descarta (dibujarMascotas del Kotlin)
   useEffect(() => {
     if (paso === 1 && mascota != null && !mascotasActivas.some((m) => m.nombre === mascota)) setMascota(null);
-  });
+  }, [paso, mascota, mascotasActivas]);
 
   const vet = DuenoRepo.buscarVeterinario(veterinario);
   const mascotaElegida = DuenoRepo.buscarMascota(mascota);

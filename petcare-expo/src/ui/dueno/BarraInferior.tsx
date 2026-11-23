@@ -2,8 +2,8 @@
  * Migrado de ui/dueno/BarraInferior.kt + view_nav_bar.xml + view_menu_mas_popup.xml: barra inferior del dueño
  * (Inicio, Mascotas, "+" central, Recordatorios, Más) y el menú "Más" que se abre sobre ella.
  */
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { DuenoRepo } from "../../data/repositorio/duenoRepo";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { useMargenes } from "../common/Margenes";
@@ -52,12 +52,21 @@ export interface BarraInferiorProps {
   ruta?: string;
 }
 
+const PresionableAnimado = Animated.createAnimatedComponent(Pressable);
+
 /** La barra: la pestaña activa se pinta de teal; con el menú "Más" abierto se marca "Más". */
 export function BarraInferior({ ruta }: BarraInferiorProps) {
   const margenes = useMargenes();
   const menu = useMenuMasAbierto();
   const actual = pestanaDeRuta(ruta);
-  const [pulso, setPulso] = useState(false);
+  const escalaFab = useRef(new Animated.Value(1)).current;
+  // Como en Android: el botón crece un poco y vuelve (100 ms cada tramo)
+  const rebotarFab = () => {
+    Animated.sequence([
+      Animated.timing(escalaFab, { toValue: 1.2, duration: 100, useNativeDriver: true }),
+      Animated.timing(escalaFab, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
+  };
   return (
     <View style={estilos.exterior}>
       <View style={[estilos.barra, { height: ALTO_BARRA + margenes.bottom, paddingBottom: margenes.bottom }]}>
@@ -75,19 +84,18 @@ export function BarraInferior({ ruta }: BarraInferiorProps) {
           alTocar={() => { if (actual === "recordatorios" && !menu) return; MenuMas.cerrar(); PESTANAS[2].ir(); }}
         />
         <ItemPestana p={{ clave: "mas", texto: "Más", icono: "masOpciones" }} activa={menu} alTocar={() => MenuMas.alternar()} />
-        <Pressable
+        <PresionableAnimado
           accessibilityRole="button"
           accessibilityLabel="Agendar evento"
           onPress={() => {
-            setPulso(true);
-            setTimeout(() => setPulso(false), 200);
+            rebotarFab();
             MenuMas.cerrar();
             NavDueno.irANuevoEvento(EstadoDueno.diaSeleccionado);
           }}
-          style={[estilos.fab, { bottom: 16 + margenes.bottom }, pulso ? { transform: [{ scale: 1.2 }] } : null, cursorTocable]}
+          style={[estilos.fab, { bottom: 16 + margenes.bottom, transform: [{ scale: escalaFab }] }, cursorTocable]}
         >
           <Icono nombre="mas" tamano={28} color={Colores.white} />
-        </Pressable>
+        </PresionableAnimado>
       </View>
     </View>
   );

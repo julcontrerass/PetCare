@@ -20,11 +20,6 @@ afterEach(() => {
   Avisos.reiniciar();
 });
 
-const aceptarCartel = async (texto: string) => {
-  await fireEvent.press(screen.getByText(texto));
-  await act(async () => {});
-};
-
 describe("PerfilVet", () => {
   it("muestra los datos del veterinario", async () => {
     await ingresarComoVeterinario();

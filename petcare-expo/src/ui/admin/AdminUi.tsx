@@ -1,9 +1,9 @@
 /* Migrado de ui/admin/AdminUi.kt. */
-import { Linking, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { AdminRepo, type TipoActividad } from "../../data/repositorio/adminRepo";
 import { Fechas } from "../../util/fechas";
 import { LocalDate, type LocalDateTime } from "../../util/tiempo";
-import { Avisos } from "../common/Avisos";
+import { Contacto } from "../common/Contacto";
 import { ImagenRemota } from "../common/ImagenRemota";
 import { Texto } from "../common/Texto";
 import { Colores } from "../common/tema";
@@ -73,19 +73,14 @@ export const AdminUi = {
 
   /** Abre el marcador del teléfono con el número (solo dígitos y "+"). */
   llamar(telefono: string): void {
-    abrirExterno("tel:" + telefono.replace(/[^\d+]/g, ""));
+    void Contacto.abrir(Contacto.llamar(telefono), "No hay un teléfono cargado");
   },
 
   /** Abre el correo con el destinatario puesto. */
   escribir(email: string): void {
-    abrirExterno(`mailto:${email}`);
+    void Contacto.abrir(Contacto.correo(email), "No hay un correo cargado");
   },
 };
-
-/** `Linking.openURL` con el aviso de Android cuando no hay una aplicación que pueda abrirlo. */
-function abrirExterno(url: string): void {
-  Linking.openURL(url).catch(() => Avisos.mostrar("No hay una aplicación disponible para esta acción"));
-}
 
 export interface EtiquetaAdminProps {
   texto: string;

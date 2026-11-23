@@ -5,7 +5,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { DuenoRepo } from "../../data/repositorio/duenoRepo";
 import { InformesRepo } from "../../data/repositorio/informesRepo";
 import { EstadosMascota, type Mascota } from "../../model/modelos";
 import { LocalDate } from "../../util/tiempo";

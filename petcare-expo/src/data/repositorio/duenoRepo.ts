@@ -11,7 +11,7 @@ import { Sesion } from "../sesion";
 import { prescripcionDeDto, signosVacios } from "../../model/clinica";
 import type { Prescripcion, SignosVitales } from "../../model/clinica";
 import {
-  EstadoAcceso, EstadoMascota, EstadoTurno, EstadosMascota, EventoMascota, Mascota, NotificacionDueno, PerfilDueno,
+  EstadoAcceso, EstadoMascota, EstadosMascota, EventoMascota, Mascota, NotificacionDueno, PerfilDueno,
   SIN_DATOS, sexoDeTexto, tipoNotificacionDeClave, VeterinarioAcceso,
 } from "../../model/modelos";
 import type { AjusteFoto, SedeVet } from "../../model/modelos";

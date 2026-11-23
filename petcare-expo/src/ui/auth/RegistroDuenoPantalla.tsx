@@ -22,7 +22,7 @@ import { cerrarPantalla, EstadoAuth } from "./estadoAuth";
 import { FotoRedonda } from "./FotoRedonda";
 import { MascotaRegistroDialogo } from "./MascotaRegistroDialogo";
 import { CabeceraPaso, PasosRegistro } from "./PasosRegistro";
-import { contarDigitos, esCorreoValido, esNombreYApellido, soloNumeros } from "./validaciones";
+import { contarDigitos, esCorreoValido, soloNumeros } from "./validaciones";
 import { useAtras } from "./useAtras";
 import type { EntradaTexto } from "./tipos";
 

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { enrutador, fijarRuta } from "../../soporte/rutas";
 import { fuente, limpiarServicios, prepararServicios } from "../../soporte/pruebaBase";
 import { Escenario } from "../../soporte/fuenteEnMemoria";

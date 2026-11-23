@@ -5,7 +5,7 @@
  * `EXTRA_EVENTO_ID` de Android; en la web se mantiene al recargar). Las pestañas quedan montadas (como el ViewPager2)
  * para no perder lo que se está escribiendo en el informe.
  */
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { PacientesRepo , comoDocumento, razaYSexo } from "../../data/repositorio/pacientesRepo";
@@ -34,7 +34,6 @@ import { HistorialPacienteVet } from "./HistorialPacienteVet";
 import { InformacionVet } from "./InformacionVet";
 import { InformeVet } from "./InformeVet";
 import { RecordatoriosPaciente } from "./RecordatoriosPaciente";
-import { router } from "expo-router";
 
 /** Ícono del animal (el `TiposMascota.icono` del Kotlin devolvía un drawable). */
 function iconoDeEspecie(especie: string): NombreIcono {

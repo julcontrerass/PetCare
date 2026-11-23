@@ -20,6 +20,6 @@ module.exports = defineConfig([
   {
     // En las pruebas `jest.mock` va antes de los imports y se repite el módulo en simulaciones
     files: ["__tests__/**"],
-    rules: { "import/first": "off", "import/no-duplicates": "off" },
+    rules: { "import/first": "off", "import/no-duplicates": "off", "@typescript-eslint/no-require-imports": "off" },
   },
 ]);

@@ -1,6 +1,6 @@
 /* ChipEstadoMascota, SelectorFechaNacimiento, FotoVet y BajaDeCuenta. */
 import { fuente, ingresarComoDueno, ingresarComoVeterinario, limpiarServicios, prepararServicios } from "../soporte/pruebaBase";
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { act, render, screen } from "@testing-library/react-native";
 import { DuenoRepo } from "../../src/data/repositorio/duenoRepo";
 import { PerfilVetRepo } from "../../src/data/repositorio/perfilVetRepo";
 import { Avisos } from "../../src/ui/common/Avisos";
