@@ -3,7 +3,7 @@
  * ui/auth, de EditorSede.kt, que la sección del veterinario porta aparte: acá no se depende de aquel.
  */
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, View, type TextInput } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { crearSede, textoHorarioSede, type SedeVet } from "../../model/modelos";
 import { PerfilVetRepo } from "../../data/repositorio/perfilVetRepo";
 import { Colores } from "../common/tema";
@@ -14,6 +14,7 @@ import { Texto } from "../common/Texto";
 import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
 import { ChipRegistro, GrupoChips } from "./ChipRegistro";
 import { SelectorHoraLibre } from "./SelectorHoraLibre";
+import type { EntradaTexto } from "./tipos";
 
 /** Dirección y, debajo, los días y el horario; el texto que se muestra en las listas (`EditorSede.detalle`). */
 export function detalleSede(sede: SedeVet): string {
@@ -56,7 +57,7 @@ export function EditorSedeRegistro({ sede, alGuardar, alEliminar, alCerrar }: Ed
   const [cierre, setCierre] = useState(sede?.cierre ?? "18:00");
   const [dias, setDias] = useState<number[]>(sede?.dias ?? [1, 2, 3, 4, 5]);
   const [eligiendo, setEligiendo] = useState<"apertura" | "cierre" | null>(null);
-  const refNombre = useRef<TextInput>(null);
+  const refNombre = useRef<EntradaTexto>(null);
 
   /** Lo que se ve debajo de los horarios: cómo queda el lugar o, si falta algo, qué es. */
   const problema = (): string | null =>

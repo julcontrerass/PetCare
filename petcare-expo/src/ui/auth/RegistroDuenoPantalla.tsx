@@ -4,7 +4,7 @@
  * cuenta con `Registro.dueno` y le avisa al ingreso (que antes recibía el resultado de la Activity).
  */
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, View, type TextInput } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { crearDatosRegistroDueno, type MascotaRegistro } from "../../data/datosRegistro";
 import { Registro } from "../../data/registro";
 import { Errores } from "../../util/errores";
@@ -24,6 +24,7 @@ import { MascotaRegistroDialogo } from "./MascotaRegistroDialogo";
 import { CabeceraPaso, PasosRegistro } from "./PasosRegistro";
 import { contarDigitos, esCorreoValido, esNombreYApellido, soloNumeros } from "./validaciones";
 import { useAtras } from "./useAtras";
+import type { EntradaTexto } from "./tipos";
 
 const TITULOS = ["Datos personales", "Domicilio", "Tus mascotas", "Tu cuenta"];
 
@@ -84,8 +85,8 @@ export default function RegistroDuenoPantalla() {
   const [password2, setPassword2] = useState("");
   const [terminos, setTerminos] = useState(false);
 
-  const refs = useRef<Partial<Record<NombreCampo, TextInput | null>>>({});
-  const ref = (n: NombreCampo) => (r: TextInput | null) => {
+  const refs = useRef<Partial<Record<NombreCampo, EntradaTexto | null>>>({});
+  const ref = (n: NombreCampo) => (r: EntradaTexto | null) => {
     refs.current[n] = r;
   };
   /** Cambia un campo y le quita su error (como el `setError` de Android, que se va al escribir). */

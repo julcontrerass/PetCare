@@ -10,6 +10,7 @@ import { useEntradaDePaso } from "../common/Efectos";
 import { PantallaBase } from "../common/PantallaBase";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { Texto } from "../common/Texto";
+import type { Desplazable } from "./tipos";
 
 export interface PasosRegistroProps {
   /** "Crear cuenta" o "Cuenta profesional". */
@@ -46,7 +47,7 @@ export function CabeceraPaso({ icono, titulo, subtitulo }: { icono: NombreIcono;
 export function PasosRegistro({
   titulo, textoPaso, total, encendidos, clavePaso, mostrarAtras, textoSiguiente, enviando, alVolver, alAtras, alSiguiente, children,
 }: PasosRegistroProps) {
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<Desplazable>(null);
   const entrada = useEntradaDePaso(clavePaso, 60);
   useEffect(() => {
     scroll.current?.scrollTo({ y: 0, animated: false });

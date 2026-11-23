@@ -31,7 +31,6 @@ export function FondoLogin() {
   const hayInferior = h >= MIN_ALTO_MASCOTAS && inicioInferior < h;
   return (
     <View
-      pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       onLayout={alMedir}
@@ -54,5 +53,5 @@ export function FondoLogin() {
 }
 
 const estilos = StyleSheet.create({
-  raiz: { ...StyleSheet.absoluteFillObject, backgroundColor: Colores.loginBg },
+  raiz: { ...StyleSheet.absoluteFill, backgroundColor: Colores.loginBg, pointerEvents: "none" },
 });

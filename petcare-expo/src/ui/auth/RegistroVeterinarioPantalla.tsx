@@ -6,7 +6,7 @@
  */
 import { useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, View, type TextInput } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { CredencialVet } from "../../data/credencialVet";
 import { crearDatosRegistroVeterinario } from "../../data/datosRegistro";
 import { borrarArchivoLocal, Imagenes } from "../../data/imagenes";
@@ -36,6 +36,7 @@ import { CabeceraPaso, PasosRegistro } from "./PasosRegistro";
 import { SelectorHoraLibre } from "./SelectorHoraLibre";
 import { contarDigitos, esCorreoValido, soloNumeros } from "./validaciones";
 import { useAtras } from "./useAtras";
+import type { EntradaTexto } from "./tipos";
 
 const TITULOS = ["Datos personales", "Profesión y veterinaria", "Especialidades", "Días y horarios", "Tu cuenta"];
 const TITULOS_PROFESIONALES = ["Dr.", "Dra."];
@@ -126,8 +127,8 @@ export default function RegistroVeterinarioPantalla() {
   const [password2, setPassword2] = useState("");
   const [terminos, setTerminos] = useState(false);
 
-  const refs = useRef<Partial<Record<NombreCampo, TextInput | null>>>({});
-  const ref = (n: NombreCampo) => (r: TextInput | null) => {
+  const refs = useRef<Partial<Record<NombreCampo, EntradaTexto | null>>>({});
+  const ref = (n: NombreCampo) => (r: EntradaTexto | null) => {
     refs.current[n] = r;
   };
   const editar = (n: NombreCampo, poner: (t: string) => void, filtro?: (t: string) => string) => (t: string) => {

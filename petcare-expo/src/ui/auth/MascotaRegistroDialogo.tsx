@@ -1,6 +1,6 @@
 /* Port de dialog_mascota_registro.xml y de mostrarDialogoMascota (RegistroDuenoActivity.kt). */
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View, type TextInput } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { crearMascotaRegistro, type MascotaRegistro } from "../../data/datosRegistro";
 import { TiposMascota } from "../../model/tiposMascota";
 import { Fechas } from "../../util/fechas";
@@ -16,6 +16,7 @@ import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
 import { ChipRegistro, GrupoChips } from "./ChipRegistro";
 import { descartarFoto, elegirFoto } from "./elegirFoto";
 import { FotoRedonda } from "./FotoRedonda";
+import type { EntradaTexto } from "./tipos";
 
 const SEXOS = ["Macho", "Hembra"];
 
@@ -63,8 +64,8 @@ export function MascotaRegistroDialogo({ existente, alGuardar, alCerrar }: Masco
   const [observaciones, setObservaciones] = useState(existente?.observaciones ?? "");
   const [foto, setFoto] = useState<string | null>(existente?.fotoPath ?? null);
   const [eligiendoFecha, setEligiendoFecha] = useState(false);
-  const refNombre = useRef<TextInput>(null);
-  const refMicrochip = useRef<TextInput>(null);
+  const refNombre = useRef<EntradaTexto>(null);
+  const refMicrochip = useRef<EntradaTexto>(null);
 
   const cambiarFoto = async () => {
     const path = await elegirFoto({ recortar: true });
