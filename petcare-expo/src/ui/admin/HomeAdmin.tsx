@@ -319,6 +319,9 @@ export function HomeAdmin() {
           </View>
         ))}
       </View>
+      {AdminRepo.actividad.length === 0 ? (
+        <EstadoVacio icono="historial" titulo="Sin actividad" mensaje="Los registros y cambios de cuentas aparecen acá" />
+      ) : null}
     </View>
   );
 

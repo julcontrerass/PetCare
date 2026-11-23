@@ -11,7 +11,7 @@ import { RaizApp } from "../ui/common/RaizApp";
  */
 export default function LayoutRaiz() {
   useEffect(() => {
-    Sesion.alAvisar = (mensaje) => Avisos.mostrar(mensaje);
+    Sesion.alAvisar = (mensaje) => Avisos.mostrar(mensaje, "info");
     Sesion.alVolverAlIngreso = () => router.replace("/auth");
     void iniciarApp();
   }, []);

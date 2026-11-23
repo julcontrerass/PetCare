@@ -5,7 +5,7 @@ export const Colores = {
   primaryTeal: "#02797A",
   brandNavy: "#0B2A4A",
   lightGray: "#F5F5F5",
-  textGray: "#808080",
+  textGray: "#5E6873",
   lightTeal: "#E0F2F2",
   accentOrange: "#F5A623",
   lightOrange: "#FFF3E0",
