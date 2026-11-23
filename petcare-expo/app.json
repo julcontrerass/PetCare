@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "PetCare",
+    "slug": "petcare",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "petcare",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "frgp.utn.edu.petcare",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F7F6F1",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#02797A"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PetCare necesita acceder a tus fotos para elegir la imagen de tu mascota o de tu perfil.",
+          "cameraPermission": "PetCare necesita la cámara para sacar fotos de tu mascota, tu libreta o tu carnet."
+        }
+      ],
+      "expo-font",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "ios": {
+      "bundleIdentifier": "frgp.utn.edu.petcare",
+      "supportsTablet": false
+    }
+  }
+}
