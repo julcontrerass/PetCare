@@ -100,7 +100,7 @@ export function HojaInferior({ visible, alCerrar, children, alturaMaxima = 0.9, 
 }
 
 const estilos = StyleSheet.create({
-  fondo: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)" },
+  fondo: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.5)" },
   columna: { flex: 1, justifyContent: "flex-end", alignItems: "center" },
   hoja: {
     width: "100%",

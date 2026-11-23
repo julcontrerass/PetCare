@@ -49,4 +49,4 @@ export function useFoco(): { enfocado: boolean; props: { onFocus: () => void; on
 }
 
 /** El campo de texto de la web dibuja su propio borde de foco: se quita el contorno del navegador. */
-export const sinContorno: TextStyle = Platform.OS === "web" ? ({ outlineStyle: "none" } as TextStyle) : {};
+export const sinContorno: TextStyle = Platform.OS === "web" ? ({ outlineStyle: "none" } as unknown as TextStyle) : {};

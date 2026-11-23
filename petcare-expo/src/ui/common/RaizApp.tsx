@@ -56,7 +56,7 @@ export function RaizApp({ children }: { children?: ReactNode }) {
   return (
     <GestureHandlerRootView style={estilos.raiz}>
       <SafeAreaProvider>
-        <StatusBar style="dark" backgroundColor={Colores.loginBg} />
+        <StatusBar style="dark" />
         <View style={estilos.raiz}>
           {children}
           <AvisosHost />

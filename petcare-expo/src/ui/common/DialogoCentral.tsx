@@ -36,6 +36,6 @@ export function DialogoCentral({ visible, alCerrar, cancelable = true, anchoMaxi
 
 const estilos = StyleSheet.create({
   centro: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 16 },
-  fondo: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)" },
+  fondo: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.5)" },
   caja: { width: "100%", maxHeight: "92%", backgroundColor: Colores.white, borderRadius: 20, ...sombra(4) },
 });

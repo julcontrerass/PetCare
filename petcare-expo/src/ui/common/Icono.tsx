@@ -114,7 +114,7 @@ export const Iconos = {
   espGastro: "stomach",
   espHemato: "blood-bag",
   espHomeopatia: "leaf",
-  espNefro: "kidney",
+  espNefro: "water-outline",
   espNeuro: "brain",
   espNutricion: "food-apple",
   espOftalmologia: "eye-outline",

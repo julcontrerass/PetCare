@@ -1,4 +1,4 @@
-import { useState, type Ref } from "react";
+import { useState, type ComponentRef, type Ref } from "react";
 import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
 import { Colores, Fuentes } from "./tema";
 import { Diseno } from "./Diseno";
@@ -22,7 +22,7 @@ export interface CampoProps extends Omit<TextInputProps, "multiline" | "secureTe
   forma?: "tarjeta" | "pildora";
   /** Contenedor completo (etiqueta + campo + mensajes). */
   estilo?: StyleProp<ViewStyle>;
-  ref?: Ref<TextInput>;
+  ref?: Ref<ComponentRef<typeof TextInput>>;
 }
 
 /** Campo de texto con el mismo aspecto que bg_login_field / bg_field_card. Enter envía con `onSubmitEditing`. */
