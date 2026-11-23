@@ -1,5 +1,5 @@
-import type { SignosVitales } from "../../model/modelos";
-import { signosVacios } from "../../model/modelos";
+import type { SignosVitales } from "../../model/clinica";
+import { signosVacios } from "../../model/clinica";
 import { Fechas } from "../../util/fechas";
 import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
