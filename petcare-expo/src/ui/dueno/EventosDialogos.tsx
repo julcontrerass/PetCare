@@ -8,8 +8,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { DetalleTurno, DuenoRepo } from "../../data/repositorio/duenoRepo";
-import { posologia } from "../../model/clinica";
-import { signosTexto } from "../../model/clinica";
+import { posologia , signosTexto } from "../../model/clinica";
 import type { EventoMascota } from "../../model/modelos";
 import { textoLugarSede } from "../../model/modelos";
 import { Fechas } from "../../util/fechas";

@@ -265,7 +265,7 @@ export default PerfilVet;
 const estilos = StyleSheet.create({
   hero: { marginTop: 16, borderRadius: 22, padding: 20, alignItems: "center", overflow: "hidden", ...sombra(2) },
   lapiz: { position: "absolute", right: 0, bottom: 0, width: 34, height: 34, borderRadius: 17, backgroundColor: Colores.white, alignItems: "center", justifyContent: "center", ...sombra(1) },
-  cristal: { marginTop: 8, backgroundColor: "#33FFFFFF", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4 },
+  cristal: { marginTop: 8, backgroundColor: "#FFFFFF33", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4 },
   fila: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
   cajaIcono: { width: 38, height: 38, borderRadius: 12, backgroundColor: Colores.lightTeal, alignItems: "center", justifyContent: "center" },
   divisor: { height: 1, marginLeft: 50, backgroundColor: Colores.dividerLight },

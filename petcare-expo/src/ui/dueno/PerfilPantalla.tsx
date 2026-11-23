@@ -79,7 +79,7 @@ function Contador({ valor, etiqueta, alTocar }: { valor: number; etiqueta: strin
       style={[estilos.contador, cursorTocable, estiloFoco(foco.enfocado)]}
     >
       <Texto variante="titulo" tamano={20} color={Colores.white}>{String(valor)}</Texto>
-      <Texto variante="chico" tamano={12} color="#E6FFFFFF">{etiqueta}</Texto>
+      <Texto variante="chico" tamano={12} color="#FFFFFFE6">{etiqueta}</Texto>
     </Pressable>
   );
 }
@@ -269,7 +269,7 @@ export default function PerfilPantalla() {
   return (
     <PantallaBase titulo="Mi Perfil" alVolver={() => NavDueno.irAHome()}>
       <LinearGradient colors={["#02797A", "#17A58F"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.hero}>
-        <Icono nombre="perro" tamano={150} color="#1FFFFFFF" estilo={estilos.marcaAgua} />
+        <Icono nombre="perro" tamano={150} color="#FFFFFF1F" estilo={estilos.marcaAgua} />
         <View style={{ alignItems: "center" }}>
           <View style={estilos.marcoFoto}>
             <Pressable accessibilityRole="button" accessibilityLabel="Ajustar posición de la foto" onPress={tocarFoto} style={[estilos.circuloFoto, cursorTocable]}>
@@ -297,7 +297,7 @@ export default function PerfilPantalla() {
             </Pressable>
           </View>
           <Texto variante="titulo" color={Colores.white} centrado style={{ marginTop: 12 }}>{perfil.nombre}</Texto>
-          <Texto variante="chico" tamano={12} color="#E6FFFFFF">Propietario</Texto>
+          <Texto variante="chico" tamano={12} color="#FFFFFFE6">Propietario</Texto>
           <View style={estilos.contadores}>
             <Contador valor={mascotas.length} etiqueta="Mascotas" alTocar={abrirMascotas} />
             <Contador valor={vetsActivos.length} etiqueta="Veterinarios" alTocar={abrirVets} />
@@ -399,7 +399,7 @@ const estilos = StyleSheet.create({
   circuloFoto: { width: 108, height: 108, borderRadius: 54, overflow: "hidden", backgroundColor: Colores.lightTeal, borderWidth: 3, borderColor: Colores.white },
   botonFoto: { position: "absolute", right: 0, bottom: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: Colores.white, alignItems: "center", justifyContent: "center", ...sombra(2) },
   contadores: { flexDirection: "row", gap: 12, marginTop: 16, alignSelf: "stretch" },
-  contador: { flex: 1, alignItems: "center", backgroundColor: "#33FFFFFF", borderRadius: 16, paddingVertical: 10 },
+  contador: { flex: 1, alignItems: "center", backgroundColor: "#FFFFFF33", borderRadius: 16, paddingVertical: 10 },
   filaDato: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
   cajaIcono: { width: 38, height: 38, borderRadius: 12, backgroundColor: Colores.lightTeal, alignItems: "center", justifyContent: "center" },
   divisor: { height: 1, marginLeft: 50, backgroundColor: Colores.dividerLight },

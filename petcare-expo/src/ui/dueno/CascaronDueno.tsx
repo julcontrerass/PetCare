@@ -91,7 +91,7 @@ export default function LayoutTabsDueno() {
         <Tabs.Screen name="mascotas" />
         <Tabs.Screen name="recordatorios" />
         {PANTALLAS_OCULTAS.map((n) => (
-          <Tabs.Screen key={n} name={n} options={{ href: null }} />
+          <Tabs.Screen key={n} name={n} />
         ))}
       </Tabs>
       <MenuMasOverlay />

@@ -1,56 +1,54 @@
-# Welcome to your Expo app 👋
+# PetCare (Expo / React Native)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Migración completa de la app Android de PetCare (Kotlin) a **React Native con Expo**, con la misma funcionalidad, los
+mismos textos y el mismo backend (Supabase). Funciona en **Android, iOS y la web** desde una sola base de código.
+La app Android original sigue en `../app/` como referencia. Cómo se tradujo cada parte: [`MIGRACION.md`](MIGRACION.md) y
+[`GUIA_PANTALLAS.md`](GUIA_PANTALLAS.md).
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Requisitos
+Node 20 o más nuevo. No hace falta instalar nada más: Expo trae su propia herramienta.
 
 ```bash
-npm run reset-project
+cd petcare-expo
+npm install
+npx expo start            # menú: a = Android, w = web; o escaneá el QR con Expo Go
+npx expo start --web      # solo la web
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## Configuración
+Las claves públicas de Supabase ya vienen por defecto (la seguridad la da RLS en la base). Para usar otro proyecto
+copiá `.env.example` a `.env` y cambiá `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_KEY`.
 
-### Other setup steps
+En el panel de Supabase, en **Authentication > URL Configuration > Redirect URLs**, agregá:
+- `petcare://recuperar` (recuperar contraseña desde la app);
+- `https://TU-DOMINIO/auth/recuperar` (recuperar contraseña desde la web).
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Las funciones de servidor (`crear-cuenta-dueno`, `avisar-veterinario`) son las mismas que usaba la versión Android.
 
-## Learn more
+## Verificación
+```bash
+npm run typecheck                    # tipos (tsc)
+npm test                             # pruebas (jest)
+npx expo lint                        # estilo
+npx expo export --platform web       # sitio web estático en dist/
+npx expo export --platform android   # bundle de Android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Publicar
+- **Web**: `npx expo export --platform web` genera `dist/`, una página única (SPA): se sirve en cualquier hosting
+  estático con "todas las rutas a index.html" (Netlify, Vercel, Firebase Hosting, GitHub Pages con 404.html).
+- **Android/iOS**: `npx eas build` (hace falta una cuenta de Expo).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Estructura
+```
+src/app/        rutas (expo-router): auth/, dueno/, vet/, admin/
+src/ui/         pantallas por rol y el kit de componentes (src/ui/common, ver INDICE.md)
+src/data/       repositorios, sesión, avisos y la capa remota (Supabase)
+src/model/      modelos de dominio
+src/util/       fechas (LocalDate...), errores, ids
+__tests__/      pruebas de jest (datos, pantallas y componentes)
+```
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Lo que no se puede probar en este tipo de entorno
+Las notificaciones programadas con la app cerrada y las funciones del teléfono (cámara, archivos, compartir) se
+ejecutan en un dispositivo real; en la web las notificaciones solo se ven con la pestaña abierta.

@@ -333,7 +333,7 @@ export function HomeAdmin() {
       </View>
 
       <LinearGradient colors={["#0B2A4A", "#0B6E73"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.hero}>
-        <Texto variante="etiqueta" tamano={12} color="#CCFFFFFF" style={estilos.heroEtiqueta}>
+        <Texto variante="etiqueta" tamano={12} color="#FFFFFFCC" style={estilos.heroEtiqueta}>
           {pendientes > 0 ? "Revisión pendiente" : "Todo al día"}
         </Texto>
         <Texto variante="titulo" tamano={21} color={Colores.white} style={{ marginTop: 6 }}>
@@ -343,7 +343,7 @@ export function HomeAdmin() {
               ? "1 veterinario espera tu aprobación"
               : `${pendientes} veterinarios esperan tu aprobación`}
         </Texto>
-        <Texto variante="subtitulo" tamano={14} color="#E6FFFFFF" style={{ marginTop: 4 }}>
+        <Texto variante="subtitulo" tamano={14} color="#FFFFFFE6" style={{ marginTop: 4 }}>
           {pendientes > 0 ? "Verificá la matrícula antes de darlos de alta." : "Cuando un veterinario pida el alta lo vas a ver acá."}
         </Texto>
         <BotonHero
@@ -354,6 +354,7 @@ export function HomeAdmin() {
 
       <View style={[estilos.estadisticas, ancha ? estilos.estadisticasAncha : null]}>
         <Estadistica
+          ancha={ancha}
           icono="botiquin"
           fondo={Colores.lightGreen}
           color={Colores.successGreen}
@@ -362,6 +363,7 @@ export function HomeAdmin() {
           onPress={() => verVeterinarios(AdminRepo.ACTIVO)}
         />
         <Estadistica
+          ancha={ancha}
           icono="persona"
           fondo={Colores.lightTeal}
           color={Colores.primaryTeal}
@@ -370,6 +372,7 @@ export function HomeAdmin() {
           onPress={() => setPanel("duenos")}
         />
         <Estadistica
+          ancha={ancha}
           icono="perro"
           fondo={Colores.lightPurple}
           color={Colores.accentPurple}
@@ -378,6 +381,7 @@ export function HomeAdmin() {
           onPress={() => setPanel("duenos")}
         />
         <Estadistica
+          ancha={ancha}
           icono="calendario"
           fondo={Colores.lightOrange}
           color={Colores.accentOrange}
@@ -596,12 +600,14 @@ interface EstadisticaProps {
   valor: number;
   etiqueta: string;
   onPress: () => void;
+  /** En pantallas anchas los cuatro contadores comparten una fila: cada uno ocupa una cuarta parte. */
+  ancha?: boolean;
 }
 
 /** Contador del resumen (PetStatCard). */
-function Estadistica({ icono, fondo, color, valor, etiqueta, onPress }: EstadisticaProps) {
+function Estadistica({ icono, fondo, color, valor, etiqueta, onPress, ancha }: EstadisticaProps) {
   return (
-    <Tarjeta relleno={12} onPress={onPress} accessibilityLabel={`${etiqueta}: ${valor}`} estilo={estilos.estadistica}>
+    <Tarjeta relleno={12} onPress={onPress} accessibilityLabel={`${etiqueta}: ${valor}`} estilo={[estilos.estadistica, ancha ? estilos.estadisticaAncha1 : null]}>
       <View style={[estilos.cajaEstadistica, { backgroundColor: fondo }]}>
         <Icono nombre={icono} tamano={20} color={color} />
       </View>
@@ -720,6 +726,7 @@ const estilos = StyleSheet.create({
   estadisticas: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 14 },
   estadisticasAncha: { flexWrap: "nowrap" },
   estadistica: { flexBasis: "47%", flexGrow: 1, alignItems: "center", minWidth: 140 },
+  estadisticaAncha1: { flexBasis: 0, minWidth: 0 },
   cajaEstadistica: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   valorEstadistica: { marginTop: 8 },
   cabeceraSeccion: { flexDirection: "row", alignItems: "center", marginTop: 24 },

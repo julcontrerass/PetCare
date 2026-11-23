@@ -42,7 +42,7 @@ export function HojaCuentaAdmin({ visible, alCerrar }: HojaCuentaAdminProps) {
           <Texto variante="titulo" tamano={26} color={Colores.white}>AD</Texto>
         </View>
         <Texto variante="titulo" tamano={21} color={Colores.white} style={estilos.nombre}>Administrador</Texto>
-        <Texto variante="subtitulo" tamano={14} color="#E6FFFFFF" style={estilos.correo}>{Sesion.perfil?.email ?? ""}</Texto>
+        <Texto variante="subtitulo" tamano={14} color="#FFFFFFE6" style={estilos.correo}>{Sesion.perfil?.email ?? ""}</Texto>
         <View style={estilos.acceso}>
           <Texto variante="etiqueta" tamano={10.5} color={Colores.white}>Acceso total</Texto>
         </View>
@@ -85,13 +85,13 @@ const estilos = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 14,
-    backgroundColor: "#33FFFFFF",
+    backgroundColor: "#FFFFFF33",
     alignItems: "center",
     justifyContent: "center",
   },
   nombre: { marginTop: 12 },
   correo: { marginTop: 2 },
-  acceso: { marginTop: 10, backgroundColor: "#33FFFFFF", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4 },
+  acceso: { marginTop: 10, backgroundColor: "#FFFFFF33", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4 },
   tarjeta: { marginTop: 16 },
   cerrarSesion: { marginTop: 18 },
   volver: { marginTop: 4 },

@@ -13,7 +13,7 @@ const MIN_ALTO_MASCOTAS = 720;
 /** Tamaño de fondo_login.png. */
 const ANCHO_IMAGEN = 1024;
 const ALTO_IMAGEN = 1536;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const FONDO = require("../../../assets/images/fondo_login.png") as number;
 
 export function FondoLogin() {

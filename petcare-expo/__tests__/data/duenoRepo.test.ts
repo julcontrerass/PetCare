@@ -341,9 +341,9 @@ test("turno_traeLaDuracionQueFijoElServidorYSeSuperponeConLoQueCubre", async () 
   await ingresarComoDueno();
 
   expect(DuenoRepo.eventos[0].duracionMin).toBe(120);
-  expect(DuenoRepo.hayConflictoDeTurno(manana(), "11:30", "Rex", 30)).toBe(true);
-  expect(DuenoRepo.hayConflictoDeTurno(manana(), "12:00", "Rex", 30)).toBe(false);
-  expect(DuenoRepo.hayConflictoDeTurno(manana(), "11:30", "Mia", 30)).toBe(false);
+  expect(DuenoRepo.hayConflictoDeTurno(manana(), "11:30", "Rex", null, 30)).toBe(true);
+  expect(DuenoRepo.hayConflictoDeTurno(manana(), "12:00", "Rex", null, 30)).toBe(false);
+  expect(DuenoRepo.hayConflictoDeTurno(manana(), "11:30", "Mia", null, 30)).toBe(false);
 });
 
 test("carnetDelDueno_losTratamientosDeLosInformesSeVenEnTratamientos", async () => {

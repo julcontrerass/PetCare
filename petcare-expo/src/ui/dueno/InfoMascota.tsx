@@ -59,7 +59,7 @@ export interface InfoMascotaProps {
 }
 
 export function InfoMascota({ mascota: m, alCambiarFoto, alEditar, alCambiarEstado, alDarDeBaja }: InfoMascotaProps) {
-  const [pesos, setPesos] = useState<Array<[LocalDate, number]>>([]);
+  const [pesos, setPesos] = useState<[LocalDate, number][]>([]);
   useEffect(() => {
     let vigente = true;
     InformesRepo.pesos(m.id).then((p) => { if (vigente) setPesos(p); }, () => {});

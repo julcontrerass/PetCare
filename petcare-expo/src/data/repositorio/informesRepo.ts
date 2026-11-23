@@ -118,8 +118,8 @@ class InformesRepoImpl {
   }
 
   /** Todos los pesos medidos en consultas de esa mascota, del más viejo al más nuevo. */
-  async pesos(pacienteId: string): Promise<Array<[LocalDate, number]>> {
-    const pares: Array<[LocalDate, number]> = [];
+  async pesos(pacienteId: string): Promise<[LocalDate, number][]> {
+    const pares: [LocalDate, number][] = [];
     for (const i of await Servicios.fuente.informesDe(pacienteId)) {
       if (i.peso_kg != null) pares.push([Fechas.instante(i.created_at).toLocalDate(), i.peso_kg]);
     }

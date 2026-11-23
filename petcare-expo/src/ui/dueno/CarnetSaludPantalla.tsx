@@ -175,7 +175,7 @@ export default function CarnetSaludPantalla() {
       vigente = false;
     };
     // Una sola vez al abrir
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [sesionLista]);
 
   const mascotas = mascotasDelCarnet();

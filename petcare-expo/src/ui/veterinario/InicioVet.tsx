@@ -115,13 +115,13 @@ export function InicioVet() {
           <Icono nombre={siguiente ? "calendario" : "check"} tamano={26} color={Colores.white} />
         </View>
         <View style={{ padding: 18 }}>
-          <Texto variante="etiqueta" tamano={12} color="#D9FFFFFF" style={{ letterSpacing: 0.7, textTransform: "uppercase" }}>
+          <Texto variante="etiqueta" tamano={12} color="#FFFFFFD9" style={{ letterSpacing: 0.7, textTransform: "uppercase" }}>
             {!siguiente ? "Agenda libre" : siguiente.id === enHorarioId ? "En horario" : "Próxima consulta"}
           </Texto>
           <Texto variante="titulo" tamano={21} color={Colores.white} style={{ marginTop: 4, marginRight: 60 }}>
             {siguiente ? `${paciente?.nombre ?? "Paciente"} · ${siguiente.hora}` : "Sin consultas hoy"}
           </Texto>
-          <Texto variante="chico" tamano={13.5} color="#EBFFFFFF" style={{ marginTop: 3, marginRight: 40 }}>
+          <Texto variante="chico" tamano={13.5} color="#FFFFFFEB" style={{ marginTop: 3, marginRight: 40 }}>
             {siguiente ? `${siguiente.motivo} · ${paciente?.propietario ?? ""}` : "Revisá la agenda o cargá una consulta nueva."}
           </Texto>
           <Tocable
@@ -180,7 +180,7 @@ const estilos = StyleSheet.create({
   campana: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colores.white, alignItems: "center", justifyContent: "center", ...sombra(1) },
   hero: { marginTop: 18, borderRadius: 22, overflow: "hidden", ...sombra(2) },
   heroPerro: { position: "absolute", right: -16, bottom: -24, opacity: 0.13, transform: [{ rotate: "-10deg" }] },
-  heroIcono: { position: "absolute", top: 18, right: 18, width: 46, height: 46, borderRadius: 14, backgroundColor: "#33FFFFFF", alignItems: "center", justifyContent: "center" },
+  heroIcono: { position: "absolute", top: 18, right: 18, width: 46, height: 46, borderRadius: 14, backgroundColor: "#FFFFFF33", alignItems: "center", justifyContent: "center" },
   pildora: { alignSelf: "flex-start", marginTop: 14, backgroundColor: Colores.white, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 9 },
   resumenes: { flexDirection: "row", gap: 10, marginTop: 16 },
   resumen: { flex: 1 },

@@ -8,10 +8,9 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { PacientesRepo } from "../../data/repositorio/pacientesRepo";
+import { PacientesRepo , comoDocumento, razaYSexo } from "../../data/repositorio/pacientesRepo";
 import { PerfilVetRepo } from "../../data/repositorio/perfilVetRepo";
 import { SaludRepo } from "../../data/repositorio/saludRepo";
-import { comoDocumento, razaYSexo } from "../../data/repositorio/pacientesRepo";
 import { TiposMascota } from "../../model/tiposMascota";
 import { LocalDate } from "../../util/tiempo";
 import { Avatar } from "../common/Avatar";
@@ -132,7 +131,7 @@ export default function DetallePacientePantalla() {
           />
           <View style={{ flex: 1, marginLeft: 14 }}>
             <Texto variante="titulo" tamano={24} color={Colores.white} accessibilityRole="header">{paciente.nombre}</Texto>
-            <Texto variante="cuerpo" tamano={14} color="#E6FFFFFF">{razaYSexo(paciente)}</Texto>
+            <Texto variante="cuerpo" tamano={14} color="#FFFFFFE6">{razaYSexo(paciente)}</Texto>
             <View style={estilos.chip}><Texto variante="etiqueta" tamano={10.5} color={Colores.white}>{paciente.nacimiento}</Texto></View>
           </View>
         </View>

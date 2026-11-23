@@ -183,7 +183,7 @@ describe("RegistroDuenoPantalla", () => {
     expect(datos.nombre).toBe("Ana Prueba");
     expect(datos.direccion).toBe("Av. Santa Fe 1234, 3° B, Ciudad Autónoma de Buenos Aires");
     expect(datos.terminos_version).toBe("1.0");
-    expect((datos.mascotas as Array<Record<string, unknown>>)[0]).toMatchObject({ nombre: "Luna", tipo: "Perro", sexo: "Hembra", peso: "12.5 kg" });
+    expect((datos.mascotas as Record<string, unknown>[])[0]).toMatchObject({ nombre: "Luna", tipo: "Perro", sexo: "Hembra", peso: "12.5 kg" });
     expect(enrutador.back).toHaveBeenCalled();
   });
 

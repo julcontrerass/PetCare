@@ -9,7 +9,7 @@
  */
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View , Animated } from "react-native";
 import { CatalogoMedico } from "../../data/catalogoMedico";
 import type { HoraOcupadaDto } from "../../data/remoto/dtos";
 import { DuenoRepo, type EstudioAdjunto } from "../../data/repositorio/duenoRepo";
@@ -39,7 +39,6 @@ import { useDatos } from "../common/useDatos";
 import { useEntradaDePaso } from "../common/Efectos";
 import { useSesionRequerida } from "../common/useSesionRequerida";
 import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
-import { Animated } from "react-native";
 import { EstadoDueno } from "./estadoDueno";
 import { NavDueno } from "./navegacionDueno";
 
@@ -583,7 +582,7 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
         <Texto variante="titulo" tamano={22} color={Colores.white}>{categoria ?? ""}</Texto>
         <View style={[estilos.fila, { marginTop: 2 }]}>
           <Icono nombre="perro" tamano={18} color={Colores.white} />
-          <Texto variante="cuerpo" color="#F2FFFFFF" style={{ marginLeft: 8 }}>{mascota ?? ""}</Texto>
+          <Texto variante="cuerpo" color="#FFFFFFF2" style={{ marginLeft: 8 }}>{mascota ?? ""}</Texto>
         </View>
         <View style={[estilos.fila, { marginTop: 16, flexWrap: "wrap", gap: 8 }]}>
           <View style={estilos.chipVidrio}>
@@ -780,7 +779,7 @@ const estilos = StyleSheet.create({
   cajaSinVet: { backgroundColor: Colores.white, borderRadius: 16, borderWidth: 1, borderColor: Colores.loginFieldStroke, padding: 16 },
   duracion: { backgroundColor: Colores.lightTeal, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, marginTop: 6 },
   hero: { borderRadius: 22, padding: 20, marginTop: 12 },
-  chipVidrio: { flexDirection: "row", alignItems: "center", backgroundColor: "#33FFFFFF", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6 },
+  chipVidrio: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF33", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6 },
   divisor: { height: 1, marginLeft: 50, backgroundColor: Colores.dividerLight },
   opcionTipo: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colores.dividerLight },
 });

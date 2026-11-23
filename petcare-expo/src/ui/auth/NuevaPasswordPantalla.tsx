@@ -103,7 +103,7 @@ export default function NuevaPasswordPantalla() {
       vigente = false;
     };
     // El enlace llega una sola vez con la ruta
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [enlace]);
 
   const guardar = async () => {

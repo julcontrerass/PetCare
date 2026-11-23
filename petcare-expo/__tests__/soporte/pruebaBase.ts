@@ -49,6 +49,14 @@ export function limpiarServicios(): void {
   Servicios.fuentePrueba = null;
   Sesion.olvidar();
   fuenteActual = null;
+  // Un aviso breve que quedó en pantalla deja un temporizador de 3 s que Jest avisa como abierto: se retira acá.
+  // Se carga recién ahora para no arrastrar la interfaz a las pruebas de datos que no la usan.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    (require("../../src/ui/common/Avisos") as typeof import("../../src/ui/common/Avisos")).Avisos.retirarBanner();
+  } catch {
+    // sin interfaz cargada no hay nada que retirar
+  }
 }
 
 /** Inicia sesión con [perfil] como cuenta y devuelve el resultado del ingreso. */

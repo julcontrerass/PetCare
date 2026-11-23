@@ -7,7 +7,7 @@
  */
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Servicios } from "../../data/servicios";
 import { Sesion } from "../../data/sesion";
 import { Errores } from "../../util/errores";
@@ -25,9 +25,9 @@ import { useAtenderCuenta } from "./useAtenderCuenta";
 import { esCorreoValido } from "./validaciones";
 import type { EntradaTexto } from "./tipos";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const LOGO = require("../../../assets/images/logo_petcare.png") as number;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const MASCOTAS = require("../../../assets/images/mascotas_inicio.png") as number;
 
 type Vista = "inicio" | "login" | "registro" | "recuperar";
@@ -52,12 +52,17 @@ function Enlace({ texto, alTocar, negrita, tamano = 14 }: { texto: string; alToc
 // ---------- Bienvenida ----------
 
 function BienvenidaVista({ alIngresar, alRegistrarse }: { alIngresar: () => void; alRegistrarse: () => void }) {
+  // Las imágenes llevan el alto calculado: en la web `aspectRatio` junto con `width: "100%"` deja la imagen con su alto natural
+  const { width: anchoVentana } = useWindowDimensions();
+  const columna = Math.min(anchoVentana, 480);
+  const anchoLogo = Math.min(360, columna);
+  const anchoMascotas = columna - 48;
   return (
     <PantallaBase fondo={Colores.white} margen={0} scroll={false} bordes={["top"]}>
       <View style={estilos.bienvenida}>
-        <Image source={LOGO} resizeMode="contain" accessibilityLabel="Logo de PetCare" style={estilos.bienvenidaLogo} />
+        <Image source={LOGO} resizeMode="contain" accessibilityLabel="Logo de PetCare" style={[estilos.bienvenidaLogo, { width: anchoLogo, height: (anchoLogo * 648) / 840 }]} />
         <View style={estilos.bienvenidaMascotas}>
-          <Image source={MASCOTAS} resizeMode="contain" accessibilityLabel="mascotaInicio" style={estilos.mascotas} />
+          <Image source={MASCOTAS} resizeMode="contain" accessibilityLabel="mascotaInicio" style={[estilos.mascotas, { width: anchoMascotas, height: (anchoMascotas * 754) / 1100 }]} />
         </View>
         <View style={estilos.panel}>
           <Texto variante="titulo" tamano={28} centrado accessibilityRole="header">Bienvenido a PetCare</Texto>
@@ -359,9 +364,9 @@ export default function AuthPantalla() {
 const estilos = StyleSheet.create({
   enlace: { minHeight: 36, justifyContent: "center" },
   bienvenida: { flex: 1 },
-  bienvenidaLogo: { alignSelf: "center", width: "100%", maxWidth: 360, aspectRatio: 840 / 648, marginTop: 24, paddingHorizontal: 40 },
-  bienvenidaMascotas: { flex: 1, justifyContent: "flex-end", marginHorizontal: 24, marginTop: 8, minHeight: 120 },
-  mascotas: { width: "100%", aspectRatio: 1100 / 754, maxHeight: "100%", transform: [{ translateY: 12 }] },
+  bienvenidaLogo: { alignSelf: "center", marginTop: 24 },
+  bienvenidaMascotas: { flex: 1, justifyContent: "flex-end", alignItems: "center", marginTop: 8, minHeight: 0, overflow: "hidden" },
+  mascotas: { transform: [{ translateY: 12 }] },
   panel: {
     backgroundColor: Colores.lightTeal, borderTopLeftRadius: 40, borderTopRightRadius: 40,
     paddingHorizontal: 24, paddingTop: 40, paddingBottom: 32,
