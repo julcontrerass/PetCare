@@ -80,6 +80,32 @@ async function conTope(ms: number, accion: () => Promise<void>): Promise<void> {
   }
 }
 
+/** Esperas en curso (el retraso de las recargas y del aviso de sin leer): se cortan al olvidar la sesión. */
+const esperas = new Set<{ temporizador: ReturnType<typeof setTimeout>; resolver: () => void }>();
+
+/** Espera [ms] milisegundos sin mantener vivo el proceso; [cortarEsperas] la termina antes de tiempo. */
+function dormir(ms: number): Promise<void> {
+  return new Promise<void>((resolver) => {
+    const espera = {
+      temporizador: setTimeout(() => {
+        esperas.delete(espera);
+        resolver();
+      }, ms),
+      resolver,
+    };
+    (espera.temporizador as unknown as { unref?: () => void }).unref?.();
+    esperas.add(espera);
+  });
+}
+
+function cortarEsperas(): void {
+  for (const e of [...esperas]) {
+    clearTimeout(e.temporizador);
+    e.resolver();
+  }
+  esperas.clear();
+}
+
 /** Cuánto esperar antes de avisar de las notificaciones sin leer: da tiempo a que se abra la pantalla principal. */
 const ESPERA_AVISO_SIN_LEER_MS = 1500;
 
@@ -248,10 +274,12 @@ class SesionImpl {
     }
     if (cantidad === 0) return;
     // Da tiempo a que se abra la pantalla principal, que es donde tiene que verse
-    const t = setTimeout(() => {
+    const generacion = this.generacionEscucha;
+    void dormir(ESPERA_AVISO_SIN_LEER_MS).then(() => {
+      // Si mientras tanto se cerró la sesión, ya no corresponde avisar
+      if (generacion !== this.generacionEscucha) return;
       this.alAvisar?.(cantidad === 1 ? "Tenés 1 notificación sin leer" : `Tenés ${cantidad} notificaciones sin leer`);
-    }, ESPERA_AVISO_SIN_LEER_MS);
-    (t as unknown as { unref?: () => void }).unref?.();
+    });
   }
 
   /** Corta la escucha de cambios del servidor (null si no hay ninguna). */
@@ -274,7 +302,7 @@ class SesionImpl {
         do {
           pendiente = false;
           // Si llegan varios cambios seguidos (un turno y su aviso) se piden los datos una sola vez
-          await new Promise<void>((r) => setTimeout(r, rolCuenta === "ADMIN" ? 1500 : 300));
+          await dormir(rolCuenta === "ADMIN" ? 1500 : 300);
           if (generacion !== this.generacionEscucha) return;
           try {
             switch (rolCuenta) {
@@ -311,6 +339,7 @@ class SesionImpl {
 
   private detenerEscucha(): void {
     this.generacionEscucha += 1;
+    cortarEsperas();
     try {
       this.cortarEscucha?.();
     } catch {

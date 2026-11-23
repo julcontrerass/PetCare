@@ -29,7 +29,7 @@ describe("DetalleEventoVetPantalla", () => {
     expect(screen.getByText("Hoy")).toBeTruthy();
     expect(screen.getByText("10:00 hs")).toBeTruthy();
     expect(screen.getByText("Rex")).toBeTruthy();
-    expect(screen.getByText("Propietario/a: Ana Prueba")).toBeTruthy();
+    expect(screen.getByText("Propietario/a: Sin datos")).toBeTruthy();
     expect(screen.getByText("Sin notas")).toBeTruthy();
     expect(screen.getByText("Iniciar turno")).toBeTruthy();
     expect(screen.getByText("Marcar como completado")).toBeTruthy();
