@@ -338,7 +338,7 @@ class SesionImpl {
       segura(() => RecordatoriosRepo.cargar()),
     ]);
     const manuales = RecordatoriosRepo.lista.map(
-      (r) => new Manual(r.id, PacientesRepo.nombreDe(r.mascota_id), r.titulo, r.fecha, r.hora, r.nota),
+      (r) => new Manual(r.id, PacientesRepo.nombreDe(r.mascotaId), r.titulo, r.fecha, r.hora, r.nota),
     );
     await Recordatorios.programar([...Recordatorios.paraVeterinario(AgendaRepo.eventos), ...Recordatorios.paraManuales(manuales)]);
   }
