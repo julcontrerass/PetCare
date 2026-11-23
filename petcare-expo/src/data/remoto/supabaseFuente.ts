@@ -1,5 +1,6 @@
 import "react-native-url-polyfill/auto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
 import { AlmacenSeguro } from "./almacenSeguro";
 import { ErrorConMensaje } from "../../util/errores";
 import type {
@@ -17,7 +18,11 @@ import type { FuenteDatos, ResultadoRegistro } from "./fuenteDatos";
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "https://ffzgeywirlcihcdqbeiz.supabase.co";
 const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_KEY ?? "sb_publishable_J2W3mg3jhbnGsQwVMB-Zaw_ZFN9tHC9";
 
-export const ENLACE_DE_RECUPERACION = "petcare://recuperar";
+/** Adonde vuelve el correo de recuperación: la app (esquema `petcare`) o, en la web, la propia página. */
+export function enlaceDeRecuperacion(): string {
+  if (Platform.OS === "web" && typeof window !== "undefined") return `${window.location.origin}/auth/recuperar`;
+  return "petcare://recuperar";
+}
 
 const PERFIL_COMPLETO = "*,veterinarios(*,sedes(*)),perfiles_privados(dni)";
 /** Lo que muestra el panel del administrador: sin las preferencias ni el encuadre de la foto. */
@@ -135,8 +140,8 @@ export class SupabaseFuente implements FuenteDatos {
   }
 
   async recuperarPassword(email: string): Promise<void> {
-    // El correo vuelve a la app con este enlace (hay que declararlo en las URL permitidas de Supabase)
-    const { error } = await this.cliente.auth.resetPasswordForEmail(email, { redirectTo: ENLACE_DE_RECUPERACION });
+    // El correo vuelve a la app (o a la web) con este enlace: hay que declararlo en las URL permitidas de Supabase
+    const { error } = await this.cliente.auth.resetPasswordForEmail(email, { redirectTo: enlaceDeRecuperacion() });
     if (error) throw error;
   }
 

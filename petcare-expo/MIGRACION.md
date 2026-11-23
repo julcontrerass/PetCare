@@ -126,6 +126,38 @@ Dev: jest, jest-expo, @testing-library/react-native, react-test-renderer, @types
 
 Si hace falta algo más, no se instala: se anota en el informe final.
 
+## Web
+
+La app tiene que funcionar **igual de bien en la web** (Expo con react-native-web, `npx expo start --web` y
+`npx expo export --platform web`, salida `single`/SPA). Reglas para todo el código:
+
+- Una sola base de código: nada de archivos `.android`/`.ios` salvo que sea imprescindible; las diferencias se
+  resuelven con `Platform.OS === "web"` o con archivos `.web.ts(x)` y siempre con un comportamiento equivalente.
+- Cada módulo nativo tiene que tener su camino web:
+  - `expo-secure-store` no existe en la web: `data/remoto/almacenSeguro.ts` ya usa el almacenamiento del navegador.
+  - `expo-notifications`: las notificaciones locales programadas no existen en la web. Ahí `AvisosDelSistema` no
+    programa nada y los avisos se ven dentro de la app (campana y banners); si el navegador lo permite se puede
+    usar la API `Notification` solo mientras la pestaña está abierta. Ninguna función puede fallar por esto.
+  - `expo-file-system`: en la web no hay caché de archivos; las imágenes y archivos se muestran con una URL
+    firmada de Supabase o con `URL.createObjectURL` de los bytes bajados (devolver esa uri desde `Imagenes`).
+  - `expo-print`/`expo-sharing`: en la web `printToFileAsync` no está disponible; los PDF se arman con el mismo
+    HTML y se abren con `Print.printAsync({ html })` (diálogo de impresión/guardar como PDF) o se descargan;
+    compartir usa `navigator.share` si existe y si no descarga/copia.
+  - `expo-image-picker` y `expo-document-picker` funcionan en la web (devuelven `blob:`/`data:` URI).
+  - `Linking.openURL` abre WhatsApp (`https://wa.me/...`), `mailto:` y `tel:` también en la web.
+  - Los selectores de fecha y hora son los propios del kit (no `@react-native-community/datetimepicker`, que no
+    tiene web).
+  - `expo-haptics` en la web no hace nada: ya es seguro llamarlo.
+- Diseño responsivo: en pantallas anchas (web de escritorio) el contenido de las pantallas se centra en una
+  columna de máximo ~480 px de ancho sobre el fondo `loginBg` (la app es de formato teléfono), salvo el panel del
+  administrador, que puede usar hasta ~1100 px. Nada puede quedar cortado ni mal alineado en 360 px, 768 px ni
+  1280 px de ancho.
+- Entradas con teclado y mouse: todo lo táctil tiene que poder usarse con mouse (`Pressable` ya funciona), con
+  foco visible y con Enter para enviar formularios (`onSubmitEditing`). Los modales cierran con Escape.
+- Rutas con enlaces profundos reales en la web (`/auth/recuperar?code=...`, `/dueno/mascota/123`): al recargar la
+  página la sesión se restaura sola y la ruta se mantiene.
+- `Alert` de React Native no hace nada en la web: usar siempre `Avisos.*`, nunca `Alert.alert`.
+
 ## Verificación
 
 ```bash
@@ -133,4 +165,5 @@ npx tsc --noEmit          # tipos
 npx jest                  # pruebas
 npx expo lint             # estilo
 npx expo export --platform android   # arma el bundle de Android (comprueba que todo se resuelve)
+npx expo export --platform web       # arma el sitio web (comprueba lo mismo para la web)
 ```

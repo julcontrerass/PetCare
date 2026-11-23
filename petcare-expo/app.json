@@ -52,6 +52,16 @@
     "ios": {
       "bundleIdentifier": "frgp.utn.edu.petcare",
       "supportsTablet": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "name": "PetCare",
+      "shortName": "PetCare",
+      "backgroundColor": "#F7F6F1",
+      "themeColor": "#02797A",
+      "lang": "es"
     }
   }
 }

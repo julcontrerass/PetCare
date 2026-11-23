@@ -1,8 +1,11 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 /**
- * Guarda la sesión de Supabase en el almacén cifrado del teléfono (Keystore en Android). SecureStore limita cada
- * valor a unos 2 KB y la sesión es más larga, así que se parte en pedazos.
+ * Guarda la sesión de Supabase. En el teléfono va al almacén cifrado (Keystore en Android, Keychain en iOS);
+ * SecureStore limita cada valor a unos 2 KB y la sesión es más larga, así que se parte en pedazos. En la web
+ * no existe un almacén cifrado: se usa el almacenamiento del navegador (localStorage), que es lo que usa Supabase.
  */
 const TAMANO = 1800;
 const opciones = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK };
@@ -13,8 +16,11 @@ const claveCantidad = (clave: string) => `${clave}.n`;
 // SecureStore solo acepta letras, números, ".", "-" y "_" en las claves
 const limpia = (clave: string) => clave.replace(/[^A-Za-z0-9._-]/g, "_");
 
+const enWeb = Platform.OS === "web";
+
 export const AlmacenSeguro = {
   async getItem(clave: string): Promise<string | null> {
+    if (enWeb) return AsyncStorage.getItem(clave);
     const k = limpia(clave);
     const cantidad = Number((await SecureStore.getItemAsync(claveCantidad(k), opciones)) ?? "0");
     if (!cantidad) return null;
@@ -28,6 +34,7 @@ export const AlmacenSeguro = {
   },
 
   async setItem(clave: string, valor: string): Promise<void> {
+    if (enWeb) return AsyncStorage.setItem(clave, valor);
     const k = limpia(clave);
     await AlmacenSeguro.removeItem(clave);
     const pedazos = valor.match(new RegExp(`[\\s\\S]{1,${TAMANO}}`, "g")) ?? [];
@@ -38,6 +45,7 @@ export const AlmacenSeguro = {
   },
 
   async removeItem(clave: string): Promise<void> {
+    if (enWeb) return AsyncStorage.removeItem(clave);
     const k = limpia(clave);
     const cantidad = Number((await SecureStore.getItemAsync(claveCantidad(k), opciones)) ?? "0");
     for (let i = 0; i < cantidad; i++) await SecureStore.deleteItemAsync(clavePedazo(k, i), opciones);
