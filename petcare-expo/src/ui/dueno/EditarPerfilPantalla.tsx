@@ -10,6 +10,7 @@ import { Boton } from "../common/Boton";
 import { Campo } from "../common/Campo";
 import { PantallaBase } from "../common/PantallaBase";
 import { useSesionRequerida } from "../common/useSesionRequerida";
+import type { EntradaTexto } from "../auth/tipos";
 import { NavDueno } from "./navegacionDueno";
 
 export default function EditarPerfilPantalla() {
@@ -18,8 +19,8 @@ export default function EditarPerfilPantalla() {
   const [nombre, setNombre] = useState(perfil.nombre);
   const [telefono, setTelefono] = useState(perfil.telefono);
   const [direccion, setDireccion] = useState(perfil.direccion);
-  const refTelefono = useRef<import("react-native").TextInput>(null);
-  const refDireccion = useRef<import("react-native").TextInput>(null);
+  const refTelefono = useRef<EntradaTexto>(null);
+  const refDireccion = useRef<EntradaTexto>(null);
 
   const guardar = () => {
     const nombreLimpio = nombre.trim();

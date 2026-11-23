@@ -14,7 +14,6 @@ import type { EstudioTurnoDto } from "../../data/remoto/dtos";
 import { Servicios } from "../../data/servicios";
 import { signosTexto } from "../../model/clinica";
 import { textoLugarSede } from "../../model/modelos";
-import { TiposMascota } from "../../model/tiposMascota";
 import { Fechas } from "../../util/fechas";
 import { ArchivosUi } from "../common/ArchivosUi";
 import { Avatar } from "../common/Avatar";
@@ -189,7 +188,7 @@ export default function DetalleEventoVetPantalla() {
         <View>
           <SeccionTitulo texto="Estudios previos del dueño" />
           <View style={[estilos.tarjetaDatos, { marginTop: 10, padding: 14, paddingTop: 0 }]}>
-            {estudios.map((e, i) => (
+            {estudios.map((e) => (
               <FilaTurnoDetalle
                 key={e.id} icono="documento" titulo={`${e.tipo} · ${e.extension.toUpperCase()}`} valor={e.nombre} accion="Ver"
                 primera={false}

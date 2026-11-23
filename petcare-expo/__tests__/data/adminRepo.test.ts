@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../AdminRepoTest.kt. */
+import "../soporte/pruebaBase";
 import { AdminRepo } from "../../src/data/repositorio/adminRepo";
 import { Escenario, type FuenteEnMemoria } from "../soporte/fuenteEnMemoria";
 import { asentar } from "../soporte/asentar";

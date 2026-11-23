@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../NuevasFuncionesTest.kt (las partes de pantallas de NuevasPantallasTest.kt van en __tests__/ui). */
+import "../soporte/pruebaBase";
 import { Recordatorios } from "../../src/data/avisos/recordatorios";
 import { DuenoRepo } from "../../src/data/repositorio/duenoRepo";
 import { InformesRepo, informeEditable } from "../../src/data/repositorio/informesRepo";

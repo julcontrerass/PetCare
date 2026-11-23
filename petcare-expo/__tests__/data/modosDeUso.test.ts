@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../ModosDeUsoTest.kt. */
+import "../soporte/pruebaBase";
 import { AgendaRepo } from "../../src/data/repositorio/agendaRepo";
 import { DuenoRepo } from "../../src/data/repositorio/duenoRepo";
 import { PerfilVetRepo } from "../../src/data/repositorio/perfilVetRepo";

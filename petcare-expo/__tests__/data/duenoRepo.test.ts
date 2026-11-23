@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../DuenoRepoTest.kt. */
+import "../soporte/pruebaBase";
 import { DuenoRepo } from "../../src/data/repositorio/duenoRepo";
 import { SaludRepo } from "../../src/data/repositorio/saludRepo";
 import { posologia, signosTexto } from "../../src/model/clinica";

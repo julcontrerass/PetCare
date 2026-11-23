@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../RegistroTest.kt. */
+import "../soporte/pruebaBase";
 import { crearDatosRegistroVeterinario } from "../../src/data/datosRegistro";
 import { Registro } from "../../src/data/registro";
 import { crearSede } from "../../src/model/modelos";

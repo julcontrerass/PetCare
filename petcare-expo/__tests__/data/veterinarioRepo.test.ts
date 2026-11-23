@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../VeterinarioRepoTest.kt. */
+import "../soporte/pruebaBase";
 import { ArchivosRepo } from "../../src/data/repositorio/archivosRepo";
 import { AgendaRepo } from "../../src/data/repositorio/agendaRepo";
 import { DisponibilidadVet } from "../../src/data/repositorio/disponibilidadVet";

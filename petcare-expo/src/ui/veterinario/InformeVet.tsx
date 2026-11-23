@@ -29,7 +29,7 @@ import { SelectorFecha } from "../common/SelectorFecha";
 import { Texto } from "../common/Texto";
 import { Colores } from "../common/tema";
 import { useDatos } from "../common/useDatos";
-import { BannerInfo, CajaForm, CampoTocable, EtiquetaForm, FilaTurnoDetalle, SeccionTitulo } from "./ElementosVet";
+import { BannerInfo, CajaForm, CampoTocable, FilaTurnoDetalle, SeccionTitulo } from "./ElementosVet";
 
 const ENTERO = /^[+-]?\d+$/;
 const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)$/;
