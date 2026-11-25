@@ -1,4 +1,4 @@
--- Pruebas de seguridad del rol recepcionista (migración 20261125120000_recepcionistas.sql).
+-- Pruebas de seguridad del rol recepcionista (migración 20261125194332_recepcionistas.sql).
 --
 -- Se corren en una transacción que nunca se confirma: arman cuentas y datos de prueba, prueban como cada usuario
 -- y al final lanzan un error con el resultado, que deshace todo. Para correrlas: begin; <migración>; <este archivo>.
