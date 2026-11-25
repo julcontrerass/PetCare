@@ -16,6 +16,26 @@ export interface DialogoCentralProps {
   children?: ReactNode;
 }
 
+/**
+ * Une [relleno] con los márgenes internos de [estilo] lado por lado: cada lado toma el más específico que haya
+ * (paddingTop, después paddingVertical, después padding) y si no hay ninguno, [relleno]. En la web, un `padding`
+ * general junto a `paddingTop` o `paddingHorizontal` en otro estilo hacía que ganara el general y se perdieran los
+ * márgenes del cartel.
+ */
+function estiloConRelleno(estilo: StyleProp<ViewStyle>, relleno: number): ViewStyle {
+  const { padding, paddingVertical, paddingHorizontal, paddingTop, paddingBottom, paddingLeft, paddingRight, ...resto } =
+    StyleSheet.flatten(estilo) ?? {};
+  const vertical = paddingVertical ?? padding ?? relleno;
+  const horizontal = paddingHorizontal ?? padding ?? relleno;
+  return {
+    ...resto,
+    paddingTop: paddingTop ?? vertical,
+    paddingBottom: paddingBottom ?? vertical,
+    paddingLeft: paddingLeft ?? horizontal,
+    paddingRight: paddingRight ?? horizontal,
+  };
+}
+
 /** Ventana centrada sobre fondo oscuro (el AlertDialog de Android): base de los carteles y los selectores. */
 export function DialogoCentral({ visible, alCerrar, cancelable = true, anchoMaximo = 420, relleno = 20, estilo, children }: DialogoCentralProps) {
   const cerrar = () => {
@@ -26,7 +46,7 @@ export function DialogoCentral({ visible, alCerrar, cancelable = true, anchoMaxi
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={cerrar}>
       <View style={estilos.centro}>
         <Pressable accessibilityLabel="Cerrar" accessible={false} style={estilos.fondo} onPress={cerrar} />
-        <View style={[estilos.caja, { maxWidth: anchoMaximo, padding: relleno }, estilo]} accessibilityViewIsModal>
+        <View style={[estilos.caja, { maxWidth: anchoMaximo }, estiloConRelleno(estilo, relleno)]} accessibilityViewIsModal>
           {children}
         </View>
       </View>

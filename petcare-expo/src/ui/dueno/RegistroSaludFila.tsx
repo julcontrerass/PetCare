@@ -46,35 +46,38 @@ export interface RegistroSaludFilaProps {
 export function RegistroSaludFila({ registro: r, alTocar, alMantener }: RegistroSaludFilaProps) {
   const foco = useFoco();
   const e = ESTILO_TIPO[r.tipo];
+  // La fila y la papelera son botones hermanos: en la web un botón no puede ir dentro de otro
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${r.titulo}, ${r.mascota}`}
-      onPress={() => {
-        if (r.archivoPath != null) alTocar(r);
-      }}
-      onLongPress={() => alMantener(r)}
-      {...foco.props}
-      style={[estilos.fila, cursorTocable, estiloFoco(foco.enfocado)]}
-    >
-      <View style={[estilos.icono, { backgroundColor: e.fondo }]}>
-        <Icono nombre={ICONO_TIPO_REGISTRO[r.tipo]} tamano={22} color={e.color} />
-      </View>
-      <View style={estilos.textos}>
-        <View style={estilos.titulo}>
-          <Texto variante="titulo" tamano={16} style={{ flex: 1 }}>{r.titulo}</Texto>
-          {r.estado != null ? <Chip texto={r.estado} tono={tonoDeEstado(r.estado)} estilo={{ marginLeft: 8 }} /> : null}
+    <View style={[estilos.fila, estiloFoco(foco.enfocado)]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${r.titulo}, ${r.mascota}`}
+        onPress={() => {
+          if (r.archivoPath != null) alTocar(r);
+        }}
+        onLongPress={() => alMantener(r)}
+        {...foco.props}
+        style={[estilos.principal, cursorTocable]}
+      >
+        <View style={[estilos.icono, { backgroundColor: e.fondo }]}>
+          <Icono nombre={ICONO_TIPO_REGISTRO[r.tipo]} tamano={22} color={e.color} />
         </View>
-        <Texto variante="etiqueta" tamano={13.5} color={Colores.tealDark} style={{ marginTop: 2 }}>{`${r.mascota} · ${r.fecha}`}</Texto>
-        <Texto variante="chico" tamano={13} style={{ marginTop: 2 }}>{r.detalle}</Texto>
-      </View>
+        <View style={estilos.textos}>
+          <View style={estilos.titulo}>
+            <Texto variante="titulo" tamano={16} style={{ flex: 1 }}>{r.titulo}</Texto>
+            {r.estado != null ? <Chip texto={r.estado} tono={tonoDeEstado(r.estado)} estilo={{ marginLeft: 8 }} /> : null}
+          </View>
+          <Texto variante="etiqueta" tamano={13.5} color={Colores.tealDark} style={{ marginTop: 2 }}>{`${r.mascota} · ${r.fecha}`}</Texto>
+          <Texto variante="chico" tamano={13} style={{ marginTop: 2 }}>{r.detalle}</Texto>
+        </View>
+      </Pressable>
       <Pressable
         accessibilityRole="button" accessibilityLabel={`Eliminar ${r.titulo}`} hitSlop={8}
         onPress={() => alMantener(r)} style={[estilos.borrar, cursorTocable]}
       >
         <Icono nombre="borrar" tamano={20} color={Colores.textGray} />
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
 
@@ -83,6 +86,7 @@ const estilos = StyleSheet.create({
     flexDirection: "row", alignItems: "center", marginTop: 10, marginBottom: 2, padding: 14, borderRadius: 18,
     backgroundColor: Colores.white, ...sombra(1),
   },
+  principal: { flex: 1, flexDirection: "row", alignItems: "center", minWidth: 0 },
   icono: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   textos: { flex: 1, marginLeft: 14, minWidth: 0 },
   titulo: { flexDirection: "row", alignItems: "center" },
