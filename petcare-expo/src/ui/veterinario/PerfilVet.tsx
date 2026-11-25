@@ -203,6 +203,13 @@ export function PerfilVet() {
             <Fila icono="perro" titulo="Pasar al modo dueño de mascotas" chevron onPress={() => void ModoDeUso.cambiar("DUENO")} />
           </>
         ) : null}
+        {/* Un veterinario también puede trabajar en la recepción de otro */}
+        {Sesion.rolesDisponibles.includes("RECEPCIONISTA") ? (
+          <>
+            <Divisor />
+            <Fila icono="calendario" titulo="Pasar al modo recepción" chevron onPress={() => void ModoDeUso.cambiar("RECEPCIONISTA")} />
+          </>
+        ) : null}
         <Divisor />
         <Fila icono="llave" titulo="Cambiar contraseña" chevron onPress={() => setDialogo({ tipo: "password" })} />
         <Divisor />

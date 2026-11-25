@@ -10,13 +10,21 @@ import { Avisos } from "../common/Avisos";
 import { HojaLista } from "../common/HojaLista";
 
 /** La ruta del panel de cada modo (las crean los grupos de dueño, veterinario y administrador). */
-export function rutaDelRol(rol: Rol): "/dueno" | "/vet" | "/admin" {
+export function rutaDelRol(rol: Rol): "/dueno" | "/vet" | "/recepcion" | "/admin" {
   switch (rol) {
     case "DUENO": return "/dueno";
     case "VETERINARIO": return "/vet";
+    case "RECEPCIONISTA": return "/recepcion";
     case "ADMIN": return "/admin";
   }
 }
+
+/** Cómo se presenta cada modo en "¿Cómo querés ingresar?". */
+const OPCION_DE_MODO: Record<"DUENO" | "VETERINARIO" | "RECEPCIONISTA", { titulo: string; subtitulo: string; icono: "srvEstetoscopio" | "perro" | "calendario" }> = {
+  DUENO: { titulo: "Como dueño de mascotas", subtitulo: "Tus mascotas, sus vacunas y sus turnos", icono: "perro" },
+  VETERINARIO: { titulo: "Como veterinario", subtitulo: "Tu agenda, tus pacientes y tus turnos", icono: "srvEstetoscopio" },
+  RECEPCIONISTA: { titulo: "En la recepción", subtitulo: "La agenda de los veterinarios para los que trabajás", icono: "calendario" },
+};
 
 export interface AtencionDeCuenta {
   /** Lleva al panel que corresponde, muestra el motivo del bloqueo o pregunta el modo de ingreso. */
@@ -60,15 +68,10 @@ export function useAtenderCuenta(): AtencionDeCuenta {
       visible
       alCerrar={() => setRoles(null)}
       titulo="¿Cómo querés ingresar?"
-      subtitulo="Tu cuenta es de dueño y de veterinario. Después podés cambiar de modo desde tu perfil."
-      filas={roles.map((rol) => {
-        const veterinario = rol === "VETERINARIO";
-        return {
-          titulo: veterinario ? "Como veterinario" : "Como dueño de mascotas",
-          subtitulo: veterinario ? "Tu agenda, tus pacientes y tus turnos" : "Tus mascotas, sus vacunas y sus turnos",
-          icono: veterinario ? ("srvEstetoscopio" as const) : ("perro" as const),
-          alTocar: () => void entrarComo(rol),
-        };
+      subtitulo="Tu cuenta se puede usar de más de una forma. Después podés cambiar de modo desde tu perfil."
+      filas={roles.filter((rol) => rol !== "ADMIN").map((rol) => {
+        const opcion = OPCION_DE_MODO[rol as keyof typeof OPCION_DE_MODO];
+        return { ...opcion, alTocar: () => void entrarComo(rol) };
       })}
     />
   ) : null;

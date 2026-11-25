@@ -5,7 +5,7 @@
  */
 
 /** Modos en los que se puede usar una cuenta. */
-export type Rol = "DUENO" | "VETERINARIO" | "ADMIN";
+export type Rol = "DUENO" | "VETERINARIO" | "RECEPCIONISTA" | "ADMIN";
 
 class CuentaActualImpl {
   usuarioId: string | null = null;

@@ -12,6 +12,7 @@ import { NotificacionesVet } from "./repositorio/notificacionesVet";
 import { PacientesRepo } from "./repositorio/pacientesRepo";
 import { PerfilVetRepo } from "./repositorio/perfilVetRepo";
 import { PrescripcionesRepo } from "./repositorio/prescripcionesRepo";
+import { RecepcionAgendaRepo } from "./repositorio/recepcionAgendaRepo";
 import { RecepcionRepo } from "./repositorio/recepcionRepo";
 import { RecordatoriosRepo } from "./repositorio/recordatoriosRepo";
 import { SaludRepo } from "./repositorio/saludRepo";
@@ -137,9 +138,16 @@ class SesionImpl {
     return this._perfil;
   }
 
-  /** Modos en los que se puede usar la cuenta (dueño, veterinario o los dos). */
+  /**
+   * Modos en los que se puede usar la cuenta (dueño, veterinario, recepción). La recepción se suma también si
+   * la cuenta acepta o pide un vínculo después de ingresar.
+   */
   get rolesDisponibles(): Rol[] {
-    return this._rolesDisponibles;
+    const roles = this._rolesDisponibles;
+    if (roles.length > 0 && !roles.includes("ADMIN") && !roles.includes("RECEPCIONISTA") && RecepcionRepo.misVeterinarios.length > 0) {
+      return [...roles, "RECEPCIONISTA"];
+    }
+    return roles;
   }
 
   get activa(): boolean {
@@ -199,11 +207,19 @@ class SesionImpl {
       this._perfil = datos;
     }
     const roles = rolesDe(datos);
+    if (datos.rol !== "admin") {
+      // Quien trabaja (o pidió trabajar) en la recepción de un veterinario suma ese modo
+      await RecepcionRepo.cargar();
+      if (RecepcionRepo.misVeterinarios.length > 0) roles.push("RECEPCIONISTA");
+    }
     this._rolesDisponibles = roles;
     // Con dos modos posibles se pregunta cómo ingresar antes de cargar los datos de uno de ellos. A un veterinario
     // solo se le pregunta si ya tiene mascotas propias; si no, entra directo (desde su perfil puede pasar a dueño).
-    const preguntar = roles.length > 1 && (datos.rol !== "veterinario" || (await this.tieneMascotas()));
-    if (preguntar) return { tipo: "elegir", roles };
+    // Lo mismo con la recepción: quien solo es dueño y recepcionista, sin mascotas propias, entra a la recepción.
+    const sinMascotas = roles.length > 1 && !(await this.tieneMascotas());
+    if (sinMascotas && datos.rol === "veterinario" && !roles.includes("RECEPCIONISTA")) return this.entrarComo("VETERINARIO");
+    if (sinMascotas && roles.length === 2 && roles.includes("RECEPCIONISTA")) return this.entrarComo("RECEPCIONISTA");
+    if (roles.length > 1) return { tipo: "elegir", roles };
     return this.entrarComo(roles[0]);
   }
 
@@ -219,7 +235,7 @@ class SesionImpl {
   async entrarComo(rolElegido: Rol): Promise<ResultadoListo> {
     const datos = this._perfil;
     if (!datos) throw new Error("No hay una sesión abierta");
-    if (!this._rolesDisponibles.includes(rolElegido)) {
+    if (!this.rolesDisponibles.includes(rolElegido)) {
       throw new Error(`La cuenta no puede ingresar como ${rolElegido}`);
     }
     switch (rolElegido) {
@@ -230,11 +246,16 @@ class SesionImpl {
         await PerfilVetRepo.cargar(datos);
         await this.recargarVeterinario(true);
         break;
+      case "RECEPCIONISTA":
+        // La agenda sale de los vínculos: primero se piden ellos
+        await RecepcionRepo.cargar();
+        await RecepcionAgendaRepo.cargar();
+        break;
       case "ADMIN":
         await AdminRepo.cargar();
         break;
     }
-    if (rolElegido !== "ADMIN") await RecepcionRepo.cargar();
+    if (rolElegido === "DUENO" || rolElegido === "VETERINARIO") await RecepcionRepo.cargar();
     CuentaActual.rol = rolElegido;
     this.escucharCambios(rolElegido);
     Recordatorios.vigilarAvisos();
@@ -244,7 +265,10 @@ class SesionImpl {
 
   /** Pasa de un modo al otro sin cerrar la sesión: se descartan los datos del anterior y se cargan los nuevos. */
   async cambiarModo(nuevo: Rol): Promise<ResultadoListo> {
-    if (!this._rolesDisponibles.includes(nuevo)) throw new Error(`La cuenta no puede ingresar como ${nuevo}`);
+    const roles = this.rolesDisponibles;
+    if (!roles.includes(nuevo)) throw new Error(`La cuenta no puede ingresar como ${nuevo}`);
+    // Se fijan antes de descartar los datos: la recepción sale de los vínculos, que también se descartan
+    this._rolesDisponibles = roles;
     this.descartarDatosDelModo();
     return this.entrarComo(nuevo);
   }
@@ -269,6 +293,7 @@ class SesionImpl {
       case "VETERINARIO":
         cantidad = NotificacionesVet.sinLeer;
         break;
+      case "RECEPCIONISTA":
       case "ADMIN":
         cantidad = 0;
         break;
@@ -314,6 +339,10 @@ class SesionImpl {
               case "VETERINARIO":
                 await this.recargarVeterinario();
                 await RecepcionRepo.cargar();
+                break;
+              case "RECEPCIONISTA":
+                await RecepcionRepo.cargar();
+                await RecepcionAgendaRepo.cargar();
                 break;
               case "ADMIN":
                 await AdminRepo.cargar();
@@ -450,6 +479,7 @@ class SesionImpl {
     CuentaActual.rol = null;
     DuenoRepo.limpiar();
     RecepcionRepo.limpiar();
+    RecepcionAgendaRepo.limpiar();
     PerfilVetRepo.limpiar();
     PacientesRepo.limpiar();
     AgendaRepo.limpiar();

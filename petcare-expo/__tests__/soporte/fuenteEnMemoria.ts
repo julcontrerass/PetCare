@@ -396,8 +396,13 @@ export class FuenteEnMemoria extends FuenteBase {
     return { usuario_id: id, email: datos.email, password_temporal: "Temp#1234" };
   }
 
+  /** Como la consulta real (MASCOTA_CON_DUENO): cada mascota trae el contacto de su dueño si tiene cuenta. */
   override async mascotasDelVeterinario(): Promise<MascotaDto[]> {
-    return this.mascotas.filter((m) => m.activa);
+    const todos = [...this.perfiles, this.yo];
+    return this.mascotas.filter((m) => m.activa).map((m) => {
+      const d = m.dueno_id ? todos.find((p) => p.id === m.dueno_id) : undefined;
+      return d && m.dueno == null ? { ...m, dueno: { nombre: d.nombre, email: d.email, telefono: d.telefono ?? null } } : m;
+    });
   }
 
   override async mascotasAdmin(): Promise<MascotaDto[]> {
@@ -462,6 +467,7 @@ export class FuenteEnMemoria extends FuenteBase {
     if ("veterinario_id" in cambios) t = { ...t, veterinario_id: texto(cambios, "veterinario_id") };
     if ("sede_id" in cambios) t = { ...t, sede_id: texto(cambios, "sede_id") };
     if ("notas" in cambios) t = { ...t, notas: texto(cambios, "notas") };
+    if ("llegada" in cambios) t = { ...t, llegada: texto(cambios, "llegada") as TurnoDto["llegada"] };
     this.turnosGuardados[i] = t;
   }
 

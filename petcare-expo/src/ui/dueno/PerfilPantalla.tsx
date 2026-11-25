@@ -324,6 +324,9 @@ export default function PerfilPantalla() {
         <FilaCuenta icono="candado" texto="Cambiar contraseña" alTocar={abrirPassword} divisor />
         <FilaCuenta icono="medico" texto="Veterinarios con acceso" alTocar={() => NavDueno.irAVeterinarios()} divisor />
         <FilaCuenta icono="personas" texto="Trabajo en recepción" alTocar={() => setHojaRecepcion(true)} divisor />
+        {Sesion.rolesDisponibles.includes("RECEPCIONISTA") ? (
+          <FilaCuenta icono="calendario" texto="Pasar al modo recepción" alTocar={() => void ModoDeUso.cambiar("RECEPCIONISTA")} divisor />
+        ) : null}
       </Tarjeta>
 
       <Boton

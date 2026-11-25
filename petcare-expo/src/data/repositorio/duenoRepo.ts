@@ -507,7 +507,8 @@ class DuenoRepoImpl {
     return e.veterinarios.get(id)?.nombre ?? "";
   }
 
-  private aVeterinario(p: PerfilDto, estadoAcceso: EstadoAcceso, mascotas: Iterable<string>): VeterinarioAcceso {
+  /** Arma el veterinario (lugares, horarios, duraciones y animales) a partir de su perfil; también lo usa la recepción. */
+  aVeterinario(p: PerfilDto, estadoAcceso: EstadoAcceso, mascotas: Iterable<string>): VeterinarioAcceso {
     const datos = p.veterinarios ?? null;
     const sedes: SedeVet[] = (datos ? lugaresDe(datos) : []).map((it) => ({
       id: it.id,

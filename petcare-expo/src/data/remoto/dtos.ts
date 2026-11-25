@@ -280,6 +280,11 @@ export interface TurnoDto {
   duracion_min: number;
   /** Lugar de atención donde es el turno. */
   sede_id?: string | null;
+  /** Lo marca el veterinario o su recepción el día del turno: "en_espera" (llegó) o "no_vino". */
+  llegada?: "en_espera" | "no_vino" | null;
+  llegada_at?: string | null;
+  /** Cuenta que hizo el último cambio del turno (el dueño, el veterinario o alguien de su recepción). */
+  gestionado_por?: string | null;
 }
 
 export interface AccesoDto {
