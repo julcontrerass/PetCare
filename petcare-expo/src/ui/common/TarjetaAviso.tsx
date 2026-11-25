@@ -3,13 +3,14 @@
  * veterinario: ícono según el tipo, título, mensaje y hora.
  */
 import { useRef, useState } from "react";
-import { Animated, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import type { TipoNotificacion } from "../../model/modelos";
 import { LocalDateTime } from "../../util/tiempo";
 import { BotonIcono } from "./BotonIcono";
 import { Icono, type NombreIcono } from "./Icono";
 import { Colores } from "./tema";
 import { Texto } from "./Texto";
+import { cursorTocable, estiloFoco, useFoco } from "./Web";
 
 /** Cómo se dibuja el círculo del ícono de cada tipo de aviso: fondo, color del ícono y el ícono. */
 export interface EstiloAviso {
@@ -47,13 +48,16 @@ export interface TarjetaAvisoProps {
   sinLeer?: boolean;
   /** Se llama cuando se toca la cruz, después de la animación de salida; sin esto la cruz no se muestra. */
   alBorrar?: () => void;
+  /** Se llama al tocar el aviso: lleva a lo que avisa (el turno, la mascota, la solicitud). */
+  alAbrir?: () => void;
   estilo?: StyleProp<ViewStyle>;
 }
 
-function TarjetaAvisoComponente({ tipo, titulo, mensaje, creada, sinLeer = false, alBorrar, estilo: estiloExterno }: TarjetaAvisoProps) {
+function TarjetaAvisoComponente({ tipo, titulo, mensaje, creada, sinLeer = false, alBorrar, alAbrir, estilo: estiloExterno }: TarjetaAvisoProps) {
   const e = estilo(tipo);
   const progreso = useRef(new Animated.Value(0)).current;
   const [saliendo, setSaliendo] = useState(false);
+  const foco = useFoco();
 
   const borrar = () => {
     if (saliendo) return;
@@ -74,17 +78,27 @@ function TarjetaAvisoComponente({ tipo, titulo, mensaje, creada, sinLeer = false
         estiloExterno,
       ]}
     >
-      <View style={[estilos.circulo, { backgroundColor: e.fondo }]}>
-        <Icono nombre={e.icono} tamano={22} color={e.color} />
-      </View>
-      <View style={estilos.texto}>
-        <View style={estilos.filaTitulo}>
-          <Texto variante="etiqueta" tamano={15} style={estilos.titulo}>{titulo}</Texto>
-          {sinLeer ? <View accessible accessibilityLabel="Sin leer" style={estilos.punto} /> : null}
+      <Pressable
+        disabled={!alAbrir}
+        accessibilityRole={alAbrir ? "button" : undefined}
+        accessibilityLabel={alAbrir ? `${titulo}. ${mensaje}` : undefined}
+        accessibilityHint={alAbrir ? "Abre lo que avisa" : undefined}
+        onPress={alAbrir}
+        {...foco.props}
+        style={[estilos.contenido, alAbrir ? cursorTocable : null, estiloFoco(foco.enfocado)]}
+      >
+        <View style={[estilos.circulo, { backgroundColor: e.fondo }]}>
+          <Icono nombre={e.icono} tamano={22} color={e.color} />
         </View>
-        <Texto variante="subtitulo" tamano={14} color={Colores.textAviso} style={estilos.mensaje}>{mensaje}</Texto>
-        <Texto variante="chico" tamano={12} color={Colores.textGray} style={estilos.hora}>{tiempo(creada)}</Texto>
-      </View>
+        <View style={estilos.texto}>
+          <View style={estilos.filaTitulo}>
+            <Texto variante="etiqueta" tamano={15} style={estilos.titulo}>{titulo}</Texto>
+            {sinLeer ? <View accessible accessibilityLabel="Sin leer" style={estilos.punto} /> : null}
+          </View>
+          <Texto variante="subtitulo" tamano={14} color={Colores.textAviso} style={estilos.mensaje}>{mensaje}</Texto>
+          <Texto variante="chico" tamano={12} color={Colores.textGray} style={estilos.hora}>{tiempo(creada)}</Texto>
+        </View>
+      </Pressable>
       {alBorrar ? (
         <BotonIcono icono="cancelar" fondo="ninguno" color={Colores.textGray} tamano={16} accessibilityLabel="Borrar la notificación" onPress={borrar} />
       ) : (
@@ -101,6 +115,7 @@ const estilos = StyleSheet.create({
   tarjeta: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10, paddingLeft: 14, paddingTop: 14, paddingBottom: 14, paddingRight: 4, borderRadius: 16, borderWidth: 1 },
   leida: { backgroundColor: Colores.white, borderColor: Colores.loginFieldStroke },
   sinLeer: { backgroundColor: Colores.lightTealSoft, borderColor: Colores.primaryTeal },
+  contenido: { flex: 1, flexDirection: "row", alignItems: "flex-start", borderRadius: 12 },
   circulo: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   texto: { flex: 1, marginLeft: 12 },
   filaTitulo: { flexDirection: "row", alignItems: "center" },

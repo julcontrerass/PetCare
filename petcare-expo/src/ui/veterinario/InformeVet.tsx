@@ -14,7 +14,7 @@ import { comoDocumento, type Paciente } from "../../data/repositorio/pacientesRe
 import { PerfilVetRepo } from "../../data/repositorio/perfilVetRepo";
 import { PrescripcionesRepo } from "../../data/repositorio/prescripcionesRepo";
 import { SaludRepo } from "../../data/repositorio/saludRepo";
-import { LIMITES_SIGNOS, numeroTexto, posologia, type SignosVitales } from "../../model/clinica";
+import { LIMITES_SIGNOS, numeroTexto, posologia, type Prescripcion, type SignosVitales } from "../../model/clinica";
 import { Errores } from "../../util/errores";
 import { Fechas } from "../../util/fechas";
 import { LocalDate } from "../../util/tiempo";
@@ -30,6 +30,14 @@ import { Texto } from "../common/Texto";
 import { Colores } from "../common/tema";
 import { useDatos } from "../common/useDatos";
 import { BannerInfo, CajaForm, CampoTocable, FilaTurnoDetalle, SeccionTitulo } from "./ElementosVet";
+
+/** "Tomas dadas: 3 de 5 hasta ahora (14 en total)" con lo que el dueño fue tildando; vacío si la receta no tiene frecuencia. */
+function textoTomas(m: Prescripcion): string {
+  const c = PrescripcionesRepo.cumplimientoDe(m);
+  if (!c) return "";
+  if (c.debidas === 0) return `\nTodavía no empezó: son ${c.total} ${c.total === 1 ? "toma" : "tomas"}`;
+  return `\nTomas dadas: ${c.dadas} de ${c.debidas} hasta ahora (${c.total} en total)`;
+}
 
 const ENTERO = /^[+-]?\d+$/;
 const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)$/;
@@ -266,7 +274,7 @@ export function InformeVet({ paciente, turnoId, alTerminar }: InformeVetProps) {
           medicamentos.map((m) => (
             <FilaTurnoDetalle
               key={m.id} icono="vacuna" titulo={m.medicamento}
-              valor={(posologia(m).trim() === "" ? "Sin dosis indicada" : posologia(m)) + (m.indicaciones.trim() !== "" ? `\n${m.indicaciones}` : "")}
+              valor={(posologia(m).trim() === "" ? "Sin dosis indicada" : posologia(m)) + (m.indicaciones.trim() !== "" ? `\n${m.indicaciones}` : "") + textoTomas(m)}
               accion="Quitar" colorAccion={Colores.dangerRed}
               alAccion={() => {
                 PrescripcionesRepo.eliminar(m);

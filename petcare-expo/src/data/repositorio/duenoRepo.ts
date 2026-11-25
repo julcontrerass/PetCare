@@ -3,11 +3,12 @@ import { CatalogoMedico } from "../catalogoMedico";
 import { AvisosDelSistema } from "../avisos/avisosDelSistema";
 import { Recordatorios } from "../avisos/recordatorios";
 import {
-  AccesoDto, atiendeComoVeterinario, HoraOcupadaDto, Json, lugaresDe, MascotaDto, NotificacionDto,
-  PerfilDto, PrescripcionDto, RegistroSaludDto, TurnoDto,
+  AccesoDto, atiendeComoVeterinario, DuenoMascotaDto, HoraOcupadaDto, InvitacionCoduenoDto, Json, lugaresDe, MascotaDto,
+  NotificacionDto, PerfilDto, PrescripcionDto, RegistroSaludDto, TomaDto, TurnoDto,
 } from "../remoto/dtos";
+import { claveDeToma, tomasDelDia as tomasDeLaReceta } from "../../model/tomas";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 import { prescripcionDeDto, signosVacios } from "../../model/clinica";
 import type { Prescripcion, SignosVitales } from "../../model/clinica";
 import {
@@ -39,7 +40,21 @@ class EstadoDueno {
     public salud: RegistroSaludDto[] = [],
     public recetas: PrescripcionDto[] = [],
     public ultimaCargaSalud: number = 0,
+    /** Invitaciones a ser co-dueño de una mascota que todavía no se respondieron. */
+    public invitaciones: InvitacionCoduenoDto[] = [],
+    /** Tomas de medicación ya tildadas. */
+    public tomas: TomaDto[] = [],
   ) {}
+}
+
+/** Una toma de medicación del día, lista para tildar. */
+export interface TomaDelDia {
+  /** Hora programada como la guarda la base ("2026-11-24T08:00:00"). */
+  clave: string;
+  receta: Prescripcion;
+  mascota: Mascota;
+  momento: LocalDateTime;
+  dada: boolean;
 }
 
 /** Un estudio anterior (ya guardado en la ficha) que el dueño adjunta a un turno. */
@@ -230,6 +245,7 @@ class DuenoRepoImpl {
   get notificaciones(): NotificacionDueno[] { return this.estado.notificaciones; }
   get hayNotificacionesSinLeer(): boolean { return this.estado.notificaciones.some((n) => !n.leida); }
   get notificacionesSinLeer(): number { return this.estado.notificaciones.filter((n) => !n.leida).length; }
+  get invitaciones(): InvitacionCoduenoDto[] { return this.estado.invitaciones; }
 
   // ---------- Carga ----------
 
@@ -254,6 +270,7 @@ class DuenoRepoImpl {
         .map((t) => this.aEvento(t, nuevo)),
     );
     nuevo.notificaciones.push(...avisosDelServidor.map((n) => this.aNotificacion(n)));
+    nuevo.invitaciones = await this.pedirInvitaciones([]);
     this.reconstruirVeterinarios(nuevo);
     this.estado = nuevo;
     try {
@@ -284,11 +301,40 @@ class DuenoRepoImpl {
     }
   }
 
+  /**
+   * Suma o saca las mascotas que cambiaron de dueños en el servidor (otra persona aceptó o dejó de compartirla, o te
+   * quitaron como co-dueño). Las que siguen se dejan como están para no pisar cambios pendientes de guardar.
+   */
+  private sincronizarCompartidas(e: EstadoDueno, desdeElServidor: MascotaDto[]): void {
+    // Solo las compartidas: una propia recién creada puede no haber llegado todavía al servidor
+    const ids = new Set(desdeElServidor.map((m) => m.id));
+    quitarSi(e.mascotas, (m) => m.compartida && !ids.has(m.id));
+    for (const dto of desdeElServidor) {
+      const nueva = this.aMascota(dto);
+      if (nueva.compartida && !e.mascotas.some((m) => m.id === dto.id)) e.mascotas.push(nueva);
+    }
+  }
+
+  /** Invitaciones sin responder; si falla el pedido se quedan las que había. */
+  private async pedirInvitaciones(anteriores: InvitacionCoduenoDto[]): Promise<InvitacionCoduenoDto[]> {
+    try {
+      return await Servicios.fuente.misInvitacionesCodueno();
+    } catch {
+      return anteriores;
+    }
+  }
+
   /** Vacunas y recetas cambian poco: se piden al iniciar y después cada [INTERVALO_SALUD_MS]. */
   private async cargarSalud(e: EstadoDueno, forzar: boolean): Promise<void> {
     const ahora = Date.now();
-    if (!forzar && ahora - e.ultimaCargaSalud < INTERVALO_SALUD_MS) return;
     const f = Servicios.fuente;
+    // Las tomas se piden siempre: las puede tildar otro dueño de la mascota
+    try {
+      e.tomas = await f.tomas();
+    } catch {
+      // se quedan las que había
+    }
+    if (!forzar && ahora - e.ultimaCargaSalud < INTERVALO_SALUD_MS) return;
     try {
       e.salud = await f.registrosSalud();
     } catch {
@@ -361,10 +407,13 @@ class DuenoRepoImpl {
     actual.veterinarios = new Map(catalogo.map((p) => [p.id, p]));
     // El veterinario actualiza el peso (y las alertas) de la mascota al guardar un informe
     try {
-      this.actualizarDatosClinicos(actual, await f.misMascotas());
+      const desdeElServidor = await f.misMascotas();
+      this.sincronizarCompartidas(actual, desdeElServidor);
+      this.actualizarDatosClinicos(actual, desdeElServidor);
     } catch {
       // se queda lo que había
     }
+    actual.invitaciones = await this.pedirInvitaciones(actual.invitaciones);
     this.reconstruirVeterinarios(actual);
     actual.eventos.length = 0;
     actual.eventos.push(
@@ -431,6 +480,7 @@ class DuenoRepoImpl {
       estado: (m.estado === "inactiva" || m.estado === "fallecida" || m.estado === "activa"
         ? m.estado.toUpperCase()
         : "ACTIVA") as EstadoMascota,
+      compartida: m.dueno_id != null && CuentaActual.usuarioId != null && m.dueno_id !== CuentaActual.usuarioId,
     });
   }
 
@@ -598,7 +648,7 @@ class DuenoRepoImpl {
     const anterior = p.fotoPath;
     p.fotoUri = uri;
     void Servicios.escribir(async () => {
-      const usuario = Sesion.usuarioId;
+      const usuario = CuentaActual.usuarioId;
       if (!usuario) return;
       const ruta = await Imagenes.subirFoto(await Imagenes.prepararFoto(uri), usuario);
       await Servicios.fuente.actualizarPerfil({
@@ -619,7 +669,7 @@ class DuenoRepoImpl {
   agregarMascota(mascota: Mascota): void {
     this.mascotas.push(mascota);
     void Servicios.escribir({ alFallar: this.recargarSiFalla, alTerminar: this.recargarAlTerminar }, async () => {
-      const usuario = Sesion.usuarioId;
+      const usuario = CuentaActual.usuarioId;
       if (!usuario) throw new Error("No hay una sesión iniciada");
       const ruta = mascota.fotoUri != null ? await Imagenes.subirFoto(await Imagenes.prepararFoto(mascota.fotoUri), usuario) : null;
       mascota.fotoPath = ruta ?? mascota.fotoPath;
@@ -666,7 +716,7 @@ class DuenoRepoImpl {
     const anterior = m.fotoPath;
     m.fotoUri = uri;
     void Servicios.escribir(async () => {
-      const usuario = Sesion.usuarioId;
+      const usuario = CuentaActual.usuarioId;
       if (!usuario) return;
       const ruta = await Imagenes.subirFoto(await Imagenes.prepararFoto(uri), usuario);
       await Servicios.fuente.actualizarMascota(m.id, { foto_path: ruta });
@@ -710,6 +760,75 @@ class DuenoRepoImpl {
       });
       await Imagenes.borrarFoto(mascota.fotoPath);
     });
+  }
+
+  // ---------- Tomas de medicación ----------
+
+  /** Las tomas de [dia] de las recetas en curso de las mascotas activas, por hora. */
+  tomasDelDia(dia: LocalDate = LocalDate.now()): TomaDelDia[] {
+    const dadas = new Set(this.estado.tomas.map((t) => `${t.prescripcion_id}|${t.programada.replace(" ", "T").slice(0, 19)}`));
+    const lista: TomaDelDia[] = [];
+    for (const dto of this.estado.recetas) {
+      const mascota = this.mascotas.find((m) => m.id === dto.mascota_id && m.estado === "ACTIVA");
+      if (!mascota) continue;
+      const receta = prescripcionDeDto(dto);
+      for (const momento of tomasDeLaReceta(receta, dia)) {
+        const clave = claveDeToma(momento);
+        lista.push({ clave, receta, mascota, momento, dada: dadas.has(`${receta.id}|${clave}`) });
+      }
+    }
+    return lista.sort((a, b) => a.momento.compareTo(b.momento) || a.mascota.nombre.localeCompare(b.mascota.nombre));
+  }
+
+  /** Tilda (o destilda) una toma: se ve al instante y se guarda en segundo plano. */
+  marcarToma(toma: TomaDelDia, dada: boolean): void {
+    const e = this.estado;
+    const esta = (t: TomaDto) => t.prescripcion_id === toma.receta.id && t.programada.replace(" ", "T").slice(0, 19) === toma.clave;
+    if (dada && !e.tomas.some(esta)) {
+      e.tomas.push({
+        id: `local-${toma.receta.id}-${toma.clave}`, prescripcion_id: toma.receta.id, mascota_id: toma.mascota.id,
+        programada: toma.clave, dada_at: new Date().toISOString(), registrada_por: CuentaActual.usuarioId,
+      });
+    } else if (!dada) {
+      quitarSi(e.tomas, esta);
+    }
+    void Servicios.escribir({ alFallar: this.recargarSiFalla }, async () => {
+      if (dada) await Servicios.fuente.registrarToma(toma.receta.id, toma.clave);
+      else await Servicios.fuente.quitarToma(toma.receta.id, toma.clave);
+    });
+  }
+
+  // ---------- Co-dueños ----------
+
+  /** Invita a otra cuenta, por DNI o correo, a ser co-dueña de [mascota]. Devuelve el nombre de quien recibe la invitación. */
+  async invitarCodueno(mascota: Mascota, dniOCorreo: string): Promise<string> {
+    return Servicios.fuente.invitarCodueno(mascota.id, dniOCorreo.trim());
+  }
+
+  /** Dueños de la mascota (el original primero) e invitaciones que todavía no se respondieron. */
+  async duenosDe(mascota: Mascota): Promise<DuenoMascotaDto[]> {
+    return Servicios.fuente.duenosDeMascota(mascota.id);
+  }
+
+  /** El dueño original quita a un co-dueño, o quien invitó cancela una invitación pendiente. */
+  async quitarCodueno(coduenoId: string): Promise<void> {
+    await Servicios.fuente.quitarCodueno(coduenoId);
+  }
+
+  /** La cuenta deja de ser co-dueña de [mascota]: deja de verla. */
+  async dejarDeSerDueno(mascota: Mascota, coduenoId: string): Promise<void> {
+    await Servicios.fuente.quitarCodueno(coduenoId);
+    quitar(this.mascotas, mascota);
+    quitarSi(this.eventos, (e) => e.mascotaId === mascota.id);
+    Servicios.avisarCambio();
+  }
+
+  /** Acepta o rechaza una invitación; al aceptar se vuelve a pedir todo para traer la mascota con su historial. */
+  async responderInvitacion(invitacion: InvitacionCoduenoDto, aceptar: boolean): Promise<void> {
+    await Servicios.fuente.responderInvitacionCodueno(invitacion.id, aceptar);
+    quitarSi(this.estado.invitaciones, (i) => i.id === invitacion.id);
+    if (aceptar) await this.recargarTodo();
+    else Servicios.avisarCambio();
   }
 
   /** Estado de salud que se muestra en las tarjetas: hay una vacuna agendada en los próximos 30 días. */
@@ -940,7 +1059,7 @@ class DuenoRepoImpl {
     this.eventos.push(evento);
     if (vet && veterinario.length > 0) this.autorizarPorTurno(veterinario, mascota, true);
     void Servicios.escribir({ alFallar: this.recargarSiFalla, alTerminar: this.recargarAlTerminar }, async () => {
-      const usuario = Sesion.usuarioId;
+      const usuario = CuentaActual.usuarioId;
       if (!usuario) throw new Error("No hay una sesión iniciada");
       await Servicios.fuente.crearTurno({
         id: evento.id,
@@ -1082,7 +1201,7 @@ class DuenoRepoImpl {
   /** Quién autorizó, pidió o sacó cada permiso y cuándo (lo más nuevo primero). */
   async historialDePermisos(): Promise<EntradaPermiso[]> {
     const e = this.estado;
-    const yo = Sesion.usuarioId;
+    const yo = CuentaActual.usuarioId;
     const mascotas = new Map(e.mascotas.map((m) => [m.id, m.nombre]));
     const historial = await Servicios.fuente.historialDeAccesos();
     return historial

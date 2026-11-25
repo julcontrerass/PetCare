@@ -144,7 +144,7 @@ export default function NuevoDuenoPantalla() {
     : "";
 
   return (
-    <PantallaBase
+    <PantallaBase formulario
       titulo={existentes.length > 0 ? "Crear cuenta del dueño" : "Nuevo dueño y mascota"}
       subtitulo={existentes.length > 0 ? "Para que vea la ficha desde su casa" : "Cargalos acá, sin necesidad de dar un turno"}
       alVolver={cerrarPantalla}

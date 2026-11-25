@@ -88,6 +88,7 @@ export const Iconos = {
   roedor: "rodent", // ic_tipo_roedor
   conejo: "rabbit",
   caballo: "horse",
+  cerdo: "pig",
   // Salud
   vacuna: "needle", // ic_syringe
   receta: "prescription",

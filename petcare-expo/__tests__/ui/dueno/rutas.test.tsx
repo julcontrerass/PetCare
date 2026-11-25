@@ -53,6 +53,15 @@ describe("rutas del dueño (parte B)", () => {
     expect(screen.getByText(/Turno actual de Rex/)).toBeTruthy();
   });
 
+  it("evento/[id] de un turno completado no abre el editor, aunque se llegue por la dirección", async () => {
+    fuente.turnosGuardados.push(Escenario.turno("t8", "m1", LocalDate.now().plusDays(2).toString(), "10:00:00", Escenario.VET_ID, "completado"));
+    await ingresarComoDueno();
+    fijarRuta({ id: "t8" });
+    await render(<EditarEvento />);
+    expect(screen.getByText("Este turno ya no se puede modificar")).toBeTruthy();
+    expect(screen.queryByText(/Turno actual de Rex/)).toBeNull();
+  });
+
   it("evento/[id] de un turno que no existe lo avisa y ofrece volver al calendario", async () => {
     fijarRuta({ id: "no-existe" });
     await render(<EditarEvento />);

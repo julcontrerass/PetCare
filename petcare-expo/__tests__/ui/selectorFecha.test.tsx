@@ -58,7 +58,10 @@ describe("SelectorFecha", () => {
     beforeEach(() => {
       Platform.OS = "web";
       (globalThis as unknown as { document: unknown }).document = {
-        addEventListener: (_: string, o: (e: { key: string }) => void) => oyentes.push(o),
+        // Solo cuenta el oyente de Escape: los de captura son los de useFoco (teclado o mouse)
+        addEventListener: (_: string, o: (e: { key: string }) => void, captura?: boolean) => {
+          if (!captura) oyentes.push(o);
+        },
         removeEventListener: (_: string, o: (e: { key: string }) => void) => oyentes.splice(oyentes.indexOf(o), 1),
       };
     });

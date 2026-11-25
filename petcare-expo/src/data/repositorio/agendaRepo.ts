@@ -2,7 +2,7 @@ import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
 import type { NuevoTurnoDto, TurnoDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 import { PerfilVetRepo } from "./perfilVetRepo";
 
 export type EstadoEvento = "PENDIENTE" | "COMPLETADO" | "CANCELADO";
@@ -115,7 +115,7 @@ class AgendaRepoImpl {
     sedeId: string | null = null,
   ): EventoVet {
     const id = nuevoId();
-    const vetId = Sesion.usuarioId;
+    const vetId = CuentaActual.usuarioId;
     const idSede = PerfilVetRepo.sede(sedeId)?.id;
     const lugar = idSede && idSede.trim() ? idSede : null;
     const e: EventoVet = {

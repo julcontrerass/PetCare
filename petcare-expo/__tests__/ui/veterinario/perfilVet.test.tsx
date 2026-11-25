@@ -5,6 +5,7 @@ import { fuente, ingresarComoVeterinario, limpiarServicios, prepararServicios, i
 import { Escenario } from "../../soporte/fuenteEnMemoria";
 import { PerfilVet } from "../../../src/ui/veterinario/PerfilVet";
 import { PerfilVetRepo } from "../../../src/data/repositorio/perfilVetRepo";
+import { TiposMascota } from "../../../src/model/tiposMascota";
 import { Sesion } from "../../../src/data/sesion";
 import { Avisos } from "../../../src/ui/common/Avisos";
 import { cargarEscenarioVet } from "./escenarioVet";
@@ -98,7 +99,7 @@ describe("PerfilVet", () => {
     expect(screen.getByText("Animales que atendés")).toBeTruthy();
     for (const t of ["Perros", "Gatos", "Aves", "Reptiles", "Peces", "Roedores", "Otros"]) expect(screen.getByText(t)).toBeTruthy();
     for (const t of PerfilVetRepo.tiposAnimales) {
-      const nombre = ({ Perro: "Perros", Gato: "Gatos", Ave: "Aves", Reptil: "Reptiles", Pez: "Peces", Roedor: "Roedores", Otro: "Otros" } as Record<string, string>)[t];
+      const nombre = TiposMascota.plural(t);
       await fireEvent.press(screen.getByRole("checkbox", { name: nombre }));
     }
     await fireEvent.press(screen.getByText("Guardar"));

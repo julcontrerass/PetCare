@@ -44,6 +44,9 @@ describe("DetalleEventoVetPantalla", () => {
     expect(Avisos.estado.banner?.mensaje).toBe("Turno marcado como completado");
     expect(screen.queryByText("Marcar como completado")).toBeNull();
     expect(screen.queryByText("Iniciar turno")).toBeNull();
+    // Un turno completado ya no se edita ni se cancela
+    expect(screen.queryByRole("button", { name: "Editar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull();
   });
 
   it("se puede cancelar con confirmación", async () => {

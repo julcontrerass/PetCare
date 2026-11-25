@@ -13,6 +13,7 @@ import { pedirPermisoDeNotificaciones } from "../common/permisoNotificaciones";
 import { useActualizarDatosVeterinario } from "../common/useActualizarDatosVeterinario";
 import { useDatos } from "../common/useDatos";
 import { useSesionRequerida } from "../common/useSesionRequerida";
+import { useEscritorio } from "../common/Web";
 import { BarraVet } from "./BarraVet";
 import { EstadoCascaron } from "./estadoCascaronVet";
 import { NavVet } from "./navegacionVet";
@@ -38,6 +39,8 @@ export function CascaronVet() {
   useDatos();
   useActualizarDatosVeterinario();
   const [avisos, setAvisos] = useState(false);
+  // En escritorio las solapas están en el menú lateral (MarcoConMenu en src/app/vet/_layout.tsx)
+  const escritorio = useEscritorio();
 
   useEffect(() => {
     EstadoCascaron.manejadorAvisos = () => setAvisos(true);
@@ -59,7 +62,7 @@ export function CascaronVet() {
       <Tabs
         backBehavior="firstRoute"
         screenOptions={{ headerShown: false }}
-        tabBar={(props) => <BarraDePestanas {...props} />}
+        tabBar={(props) => (escritorio ? null : <BarraDePestanas {...props} />)}
       >
         <Tabs.Screen name="index" options={{ title: "Inicio" }} />
         <Tabs.Screen name="pacientes" options={{ title: "Pacientes" }} />

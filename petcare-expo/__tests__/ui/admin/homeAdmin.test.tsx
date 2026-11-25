@@ -372,7 +372,10 @@ describe("HomeAdmin: pantalla ancha", () => {
     expect(screen.getByText("Para revisar")).toBeTruthy();
     expect(screen.getByText("Actividad reciente")).toBeTruthy();
 
-    await irA("Veterinarios");
+    // En escritorio las secciones están en el menú lateral, no en la barra inferior
+    expect(screen.queryByRole("tab", { name: "Veterinarios" })).toBeNull();
+    expect(screen.getByTestId("menu-lateral")).toBeTruthy();
+    await fireEvent.press(screen.getByRole("link", { name: "Veterinarios" }));
     await fireEvent.press(screen.getByText("Todos (2)"));
     expect(screen.getByText("Dr. Pendiente")).toBeTruthy();
     expect(screen.getByText("Dra. Activa")).toBeTruthy();

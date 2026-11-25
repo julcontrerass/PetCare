@@ -8,8 +8,10 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Colores, sombra } from "../common/tema";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { useMargenes } from "../common/Margenes";
+import { MenuLateral } from "../common/MenuLateral";
 import { Texto } from "../common/Texto";
 import { ANCHO_COLUMNA, cursorTocable, estiloFoco, useFoco } from "../common/Web";
+import { NavVet } from "./navegacionVet";
 import type { SeccionVet } from "./SeccionVet";
 
 const SOLAPAS: { seccion: SeccionVet; titulo: string; icono: NombreIcono }[] = [
@@ -72,6 +74,39 @@ export function BarraVet({ seleccionada, alElegir, alAgregar }: BarraVetProps) {
         </Pressable>
       </View>
     </View>
+  );
+}
+
+/** Solapa del menú lateral para una ruta del veterinario (`/vet/paciente/1` marca Pacientes). */
+export function seccionLateralVet(ruta: string): string {
+  const primero = ruta.replace(/^\/vet\/?/, "").split("/")[0] ?? "";
+  if (primero === "" || primero === "index") return "inicio";
+  if (primero === "paciente" || primero === "dueno-nuevo") return "pacientes";
+  if (primero === "evento") return "agenda";
+  return primero;
+}
+
+/** El formato de escritorio: las cuatro solapas y el botón "Agregar consulta" en el menú lateral. */
+export function MenuLateralVet({ ruta }: { ruta: string }) {
+  const actual = seccionLateralVet(ruta);
+  const ir: Record<SeccionVet, () => void> = {
+    inicio: () => NavVet.irAInicio(),
+    pacientes: () => NavVet.irAPacientes(),
+    agenda: () => NavVet.irAAgenda(),
+    perfil: () => NavVet.irAPerfil(),
+  };
+  return (
+    <MenuLateral
+      principal={{ texto: "Agregar consulta", icono: "mas", alTocar: () => NavVet.agregarConsulta() }}
+      secciones={SOLAPAS.map((s) => ({
+        clave: s.seccion,
+        texto: s.titulo,
+        icono: s.seccion === "perfil" ? "persona" : s.icono,
+        activo: actual === s.seccion,
+        alTocar: ir[s.seccion],
+      }))}
+      alCerrarSesion={() => NavVet.cerrarSesion()}
+    />
   );
 }
 

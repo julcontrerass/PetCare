@@ -105,9 +105,10 @@ export default function DetalleEventoVetPantalla() {
               />
             </>
           ) : null}
+          {/* Un turno completado o cancelado ya no se modifica (la base también lo rechaza) */}
+          {pendiente ? (
           <View style={{ flexDirection: "row", marginTop: 6 }}>
             <Boton titulo="Editar" variante="secundario" alto={46} estilo={{ flex: 1 }} onPress={() => setEditando(true)} />
-            {pendiente ? (
               <Boton
                 titulo="Cancelar" variante="peligro" alto={46} estilo={{ flex: 1, marginLeft: 8 }}
                 onPress={() =>
@@ -125,8 +126,8 @@ export default function DetalleEventoVetPantalla() {
                   })
                 }
               />
-            ) : null}
           </View>
+          ) : null}
         </View>
       }
     >
@@ -215,7 +216,7 @@ export default function DetalleEventoVetPantalla() {
       <View style={{ height: 8 }} />
 
       <EditorTurnoVet
-        visible={editando} evento={evento} alCerrar={() => setEditando(false)}
+        visible={editando && pendiente} evento={evento} alCerrar={() => setEditando(false)}
         alGuardar={() => {
           Avisos.mostrar("Turno actualizado");
           redibujar((n) => n + 1);

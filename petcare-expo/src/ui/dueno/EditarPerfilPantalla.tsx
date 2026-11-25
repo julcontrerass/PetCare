@@ -34,7 +34,7 @@ export default function EditarPerfilPantalla() {
   };
 
   return (
-    <PantallaBase
+    <PantallaBase formulario
       titulo="Editar perfil"
       subtitulo="Actualizá tus datos de contacto"
       alVolver={() => NavDueno.irAPerfil()}

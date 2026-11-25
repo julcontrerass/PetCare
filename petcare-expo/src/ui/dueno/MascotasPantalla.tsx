@@ -11,6 +11,7 @@ import { Fechas } from "../../util/fechas";
 import { ChipEstadoMascota, EstadoVacio } from "../common/ComponentesDueno";
 import { Icono } from "../common/Icono";
 import { ImagenRemota } from "../common/ImagenRemota";
+import { Grilla } from "../common/Grilla";
 import { PantallaBase } from "../common/PantallaBase";
 import { Colores, sombra } from "../common/tema";
 import { Texto } from "../common/Texto";
@@ -82,6 +83,7 @@ function TarjetaMascota({ mascota }: { mascota: Mascota }) {
             <MiniChip texto={mascota.edadTexto()} />
             <MiniChip texto={mascota.tienePesoValido ? mascota.peso : null} />
             <MiniChip texto={mascota.sexo} />
+            <MiniChip texto={mascota.compartida ? "Compartida" : null} />
           </View>
         </View>
         <Icono nombre="chevronDerecha" tamano={22} color={Colores.textGray} />
@@ -135,7 +137,7 @@ export default function MascotasPantalla() {
         {FILTROS.map((f) => <Pildora key={f.clave} texto={f.texto} activa={f.clave === filtro} alTocar={() => setFiltro(f.clave)} />)}
       </ScrollView>
       <View style={{ marginTop: 8 }}>
-        {visibles.map((m) => <TarjetaMascota key={m.id} mascota={m} />)}
+        <Grilla columnas={2}>{visibles.map((m) => <TarjetaMascota key={m.id} mascota={m} />)}</Grilla>
         {visibles.length === 0 ? (
           <EstadoVacio
             icono="perro"

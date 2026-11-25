@@ -186,6 +186,42 @@ export interface MascotaDto {
   dueno?: DuenoResumenDto | null;
 }
 
+/** Una toma de medicación ya dada (tabla tomas_medicacion). */
+export interface TomaDto {
+  id: string;
+  prescripcion_id: string;
+  mascota_id: string;
+  /** Hora a la que tocaba la toma, local y sin zona ("2026-11-24T08:00:00"). */
+  programada: string;
+  /** Cuándo se tildó. */
+  dada_at: string;
+  registrada_por?: string | null;
+}
+
+/** Invitación a ser co-dueño de una mascota que recibió la cuenta (rpc mis_invitaciones_codueno). */
+export interface InvitacionCoduenoDto {
+  id: string;
+  mascota_id: string;
+  mascota_nombre: string;
+  mascota_tipo: string;
+  mascota_foto_path?: string | null;
+  invitado_por_nombre?: string | null;
+  created_at: string;
+}
+
+/** Dueño de una mascota (o invitación pendiente), de la rpc duenos_de_mascota. */
+export interface DuenoMascotaDto {
+  /** Fila de coduenos_mascota; null para el dueño original. */
+  codueno_id: string | null;
+  usuario_id: string;
+  nombre: string;
+  email: string;
+  foto_path?: string | null;
+  /** activo o pendiente (invitación sin responder). */
+  estado: string;
+  es_original: boolean;
+}
+
 export interface TurnoDto {
   id: string;
   mascota_id: string;

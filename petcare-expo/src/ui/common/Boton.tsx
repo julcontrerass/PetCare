@@ -5,12 +5,14 @@ import { Icono, type NombreIcono } from "./Icono";
 import { Texto } from "./Texto";
 import { cursorTocable, estiloFoco, useFoco } from "./Web";
 
-export type VarianteBoton = "primario" | "secundario" | "peligro" | "suave" | "texto";
+export type VarianteBoton = "primario" | "secundario" | "peligro" | "peligroContorno" | "suave" | "texto";
 
 const ESTILOS: Record<VarianteBoton, { fondo: string; texto: string; borde?: string }> = {
   primario: { fondo: Colores.primaryTeal, texto: Colores.white },
   secundario: { fondo: Colores.white, texto: Colores.brandNavy, borde: Colores.loginFieldStroke }, // OutlinedButton
   peligro: { fondo: Colores.dangerRed, texto: Colores.white },
+  /** Blanco con texto y borde rojos (Cerrar sesión del perfil). */
+  peligroContorno: { fondo: Colores.white, texto: Colores.dangerRed, borde: Colores.dangerRed },
   suave: { fondo: Colores.lightTeal, texto: Colores.primaryTeal },
   texto: { fondo: "transparent", texto: Colores.primaryTeal }, // TextButton
 };

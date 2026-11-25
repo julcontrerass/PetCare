@@ -7,6 +7,8 @@ import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { DuenoRepo } from "../../data/repositorio/duenoRepo";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { useMargenes } from "../common/Margenes";
+import { MenuLateral } from "../common/MenuLateral";
+import { useDatos } from "../common/useDatos";
 import { Colores, sombra } from "../common/tema";
 import { Texto } from "../common/Texto";
 import { ANCHO_COLUMNA, cursorTocable, estiloFoco, useFoco, useTeclaEscape } from "../common/Web";
@@ -170,6 +172,44 @@ export function MenuMasOverlay() {
         </View>
       </View>
     </View>
+  );
+}
+
+/** Sección del menú lateral que se marca para una ruta del dueño (`/dueno/mascota/123` marca Mascotas). */
+export function seccionLateralDeRuta(ruta: string): string {
+  const primero = ruta.replace(/^\/dueno\/?/, "").split("/")[0] ?? "";
+  if (primero === "" || primero === "index") return "inicio";
+  if (primero === "mascota" || primero === "mascota-nueva") return "mascotas";
+  if (primero === "perfil-editar") return "perfil";
+  if (primero === "evento" || primero === "evento-nuevo") return "calendario";
+  if (primero === "carnet") return "salud";
+  return primero;
+}
+
+/** El formato de escritorio: las tres pestañas, el "+" y las opciones del menú "Más" quedan a la vista al costado. */
+export function MenuLateralDueno({ ruta }: { ruta: string }) {
+  useDatos(); // el punto de notificaciones sin leer
+  const actual = seccionLateralDeRuta(ruta);
+  return (
+    <MenuLateral
+      principal={{
+        texto: "Agendar evento",
+        icono: "mas",
+        alTocar: () => NavDueno.irANuevoEvento(EstadoDueno.diaSeleccionado),
+      }}
+      secciones={PESTANAS.map((p) => ({
+        clave: p.clave, texto: p.texto === "Home" ? "Inicio" : p.texto, icono: p.icono, activo: actual === p.clave, alTocar: p.ir,
+      }))}
+      otras={OPCIONES.map((o) => ({
+        clave: o.clave,
+        texto: o.texto,
+        icono: o.icono,
+        activo: actual === o.clave,
+        punto: o.clave === "notificaciones" && DuenoRepo.hayNotificacionesSinLeer,
+        alTocar: o.accion,
+      }))}
+      alCerrarSesion={() => NavDueno.cerrarSesion()}
+    />
   );
 }
 

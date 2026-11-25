@@ -53,7 +53,7 @@ export function PasosRegistro({
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [clavePaso]);
   return (
-    <PantallaBase
+    <PantallaBase formulario
       titulo={titulo}
       subtitulo={textoPaso}
       alVolver={alVolver}

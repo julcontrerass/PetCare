@@ -51,11 +51,16 @@ export function TarjetaPermiso({ estilo }: TarjetaPermisoProps) {
     revisar();
   };
 
+  const web = Platform.OS === "web";
   return (
     <View style={[estilos.tarjeta, estilo]} accessibilityRole="alert">
-      <Texto variante="etiqueta" tamano={14.5}>Las notificaciones del teléfono están desactivadas</Texto>
+      <Texto variante="etiqueta" tamano={14.5}>
+        {web ? "Las notificaciones del navegador están desactivadas" : "Las notificaciones del teléfono están desactivadas"}
+      </Texto>
       <Texto variante="subtitulo" tamano={13} color={Colores.textGray} style={estilos.mensaje}>
-        Activalas para que te avisemos de tus turnos aunque la app esté cerrada.
+        {web
+          ? "Activalas para que te avisemos de tus turnos mientras tengas PetCare abierto."
+          : "Activalas para que te avisemos de tus turnos aunque la app esté cerrada."}
       </Texto>
       <Boton titulo="Activar" alto={40} onPress={() => void activar()} estilo={estilos.boton} />
     </View>

@@ -64,7 +64,7 @@ test("pacientes_filtraPorEspecieYBusqueda", async () => {
 });
 
 test("pacientes_unAnimalSinTipoPropioCuentaComoOtro", async () => {
-  fuente.mascotas.push(Escenario.mascota("m5", "Bola", Escenario.DUENO_ID, "Conejo"));
+  fuente.mascotas.push(Escenario.mascota("m5", "Bola", Escenario.DUENO_ID, "Erizo"));
   fuente.accesosGuardados.push(accesoDto("a5", "m5", Escenario.VET_ID, "activo", "dueno"));
   await ingresarComoVeterinario();
 
@@ -72,9 +72,19 @@ test("pacientes_unAnimalSinTipoPropioCuentaComoOtro", async () => {
 });
 
 test("tiposDeMascota_incluyenAvesReptilesPecesYRoedores", () => {
-  expect(TiposMascota.TODOS).toEqual(["Perro", "Gato", "Ave", "Reptil", "Pez", "Roedor", "Otro"]);
+  expect(TiposMascota.TODOS).toEqual([
+    "Perro", "Gato", "Ave", "Reptil", "Pez", "Roedor", "Conejo", "Hurón", "Caballo", "Cerdo", "Otro",
+  ]);
   expect(TiposMascota.plural("Pez")).toBe("Peces");
-  expect(TiposMascota.plural("Conejo")).toBe("Otros");
+  expect(TiposMascota.plural("Hurón")).toBe("Hurones");
+  expect(TiposMascota.plural("Erizo")).toBe("Otros");
+});
+
+test("tiposDeMascota_comparanSinTildesNiMayusculas", () => {
+  expect(TiposMascota.normalizar("huron")).toBe("Hurón");
+  expect(TiposMascota.normalizar(" CONEJO ")).toBe("Conejo");
+  expect(TiposMascota.normalizar("Erizo")).toBe("Otro");
+  expect(TiposMascota.esConocido("hurón")).toBe(true);
 });
 
 test("pacientes_traenLosDatosDelDuenoYLaMascota", async () => {
@@ -265,7 +275,7 @@ test("perfil_cargaYGuardaLosTiposDeAnimalYLasDuraciones", async () => {
   expect(PerfilVetRepo.atiende("Gato")).toBe(true);
   expect(PerfilVetRepo.atiende("Perro")).toBe(false);
   // Un animal sin nombre propio cuenta como "Otro"
-  expect(PerfilVetRepo.atiende("Conejo")).toBe(false);
+  expect(PerfilVetRepo.atiende("Erizo")).toBe(false);
 
   PerfilVetRepo.tiposAnimales.add("Otro");
   PerfilVetRepo.guardarTiposAnimales();
@@ -273,7 +283,7 @@ test("perfil_cargaYGuardaLosTiposDeAnimalYLasDuraciones", async () => {
   PerfilVetRepo.guardarDuraciones();
   await asentar();
 
-  expect(PerfilVetRepo.atiende("Conejo")).toBe(true);
+  expect(PerfilVetRepo.atiende("Erizo")).toBe(true);
   expect(fuente.llamadas).toContain("veterinario:tipos_animales");
   expect(fuente.llamadas).toContain("veterinario:duraciones");
   expect(PerfilVetRepo.duracionDe("Cirugía 24hs")).toBe(150);

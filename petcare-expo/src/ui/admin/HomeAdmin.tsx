@@ -28,7 +28,8 @@ import { Colores, sombra } from "../common/tema";
 import { useDatos } from "../common/useDatos";
 import { useMargenes } from "../common/Margenes";
 import { useSesionRequerida } from "../common/useSesionRequerida";
-import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
+import { MarcoConMenu, MenuLateral } from "../common/MenuLateral";
+import { ANCHO_MENU_LATERAL, cursorTocable, estiloFoco, useEscritorio, useFoco } from "../common/Web";
 import { AdminUi } from "./AdminUi";
 import { DialogoCredencial } from "./DialogoCredencial";
 import { DialogoMotivo, type PedidoMotivo } from "./DialogoMotivo";
@@ -74,9 +75,12 @@ export function HomeAdmin() {
   const haySesion = useSesionRequerida();
   useDatos();
   const { width } = useWindowDimensions();
+  const escritorio = useEscritorio();
   const ancha = width >= ANCHO_DOS_COLUMNAS;
   const columnas = ancha ? 2 : 1;
-  const anchoColumna = ancha ? (Math.min(width, ANCHO_PANEL) - 2 * MARGEN - SEPARACION) / 2 : undefined;
+  // En escritorio el menú lateral ocupa su parte de la ventana
+  const anchoUtil = escritorio ? width - ANCHO_MENU_LATERAL : width;
+  const anchoColumna = ancha ? (Math.min(anchoUtil, ANCHO_PANEL) - 2 * MARGEN - SEPARACION) / 2 : undefined;
 
   const [panel, setPanel] = useState<Panel>("inicio");
   const [filtroVets, setFiltroVets] = useState<string | null>(AdminRepo.PENDIENTE);
@@ -515,13 +519,28 @@ export function HomeAdmin() {
     </View>
   );
 
+  const menuLateral = (
+    <MenuLateral
+      secciones={ITEMS_NAVEGACION.map((item) => ({
+        clave: item.panel,
+        texto: item.titulo,
+        icono: item.icono,
+        activo: panel === item.panel,
+        insignia: item.panel === "vets" ? pendientes : 0,
+        alTocar: () => setPanel(item.panel),
+      }))}
+      otras={[{ clave: "cuenta", texto: "Mi cuenta", icono: "persona", alTocar: () => setCuentaAbierta(true) }]}
+    />
+  );
+
   return (
+    <MarcoConMenu menu={menuLateral}>
     <PantallaBase scroll={false} margen={0} anchoMaximo={ANCHO_PANEL} bordes={["top"]}>
       <View style={estilos.raiz}>
         <View style={estilos.raiz}>
           {panel === "inicio" ? inicio : panel === "vets" ? panelVets : panel === "duenos" ? panelDuenos : panelActividad}
         </View>
-        <BarraNavegacion panel={panel} alElegir={setPanel} pendientes={pendientes} />
+        {escritorio ? null : <BarraNavegacion panel={panel} alElegir={setPanel} pendientes={pendientes} />}
       </View>
 
       <HojaVetAdmin
@@ -551,6 +570,7 @@ export function HomeAdmin() {
         alCerrar={cerrarCredencial}
       />
     </PantallaBase>
+    </MarcoConMenu>
   );
 }
 

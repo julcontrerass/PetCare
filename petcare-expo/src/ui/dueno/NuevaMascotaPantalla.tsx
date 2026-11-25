@@ -71,7 +71,7 @@ export default function NuevaMascotaPantalla() {
   };
 
   return (
-    <PantallaBase
+    <PantallaBase formulario
       bordes={["top"]} fondo={Colores.white} titulo="Agregar mascota" alVolver={() => NavDueno.irAMascotas()} margen={24}
       pie={<Boton titulo="Guardar" alto={48} onPress={guardar} />}
     >

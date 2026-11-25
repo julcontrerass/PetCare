@@ -16,10 +16,13 @@ import { Insignia } from "../common/Insignia";
 import { PantallaBase } from "../common/PantallaBase";
 import { Colores, sombra } from "../common/tema";
 import { Texto } from "../common/Texto";
-import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
+import { Grilla } from "../common/Grilla";
+import { cursorTocable, estiloFoco, useEscritorio, useFoco } from "../common/Web";
 import { useDatos } from "../common/useDatos";
 import { useSesionRequerida } from "../common/useSesionRequerida";
 import { FilaEvento, FotoVetEvento, iconoDeTipo, TituloSeccion } from "./ComponentesHome";
+import { InvitacionesCodueno } from "./InvitacionesCodueno";
+import { RemediosDeHoy } from "./RemediosDeHoy";
 import { NavDueno } from "./navegacionDueno";
 
 function Acceso({ icono, color, texto, alTocar }: { icono: NombreIcono; color: string; texto: string; alTocar: () => void }) {
@@ -104,6 +107,7 @@ export default function HomePantalla() {
   const proximos = DuenoRepo.eventosOrdenados(true).slice(0, 3);
   const reciente = DuenoRepo.actividadReciente().slice(0, 5);
   const focoAgregar = useFoco();
+  const escritorio = useEscritorio();
 
   return (
     <PantallaBase bordes={["top"]} estiloContenido={estilos.contenido}>
@@ -125,7 +129,11 @@ export default function HomePantalla() {
         </Pressable>
       </View>
 
+      <InvitacionesCodueno />
+
       <TarjetaPrincipal />
+
+      <RemediosDeHoy />
 
       <View style={estilos.accesos}>
         <Acceso icono="calendarioMas" color={Colores.primaryTeal} texto="Nuevo evento" alTocar={() => NavDueno.irANuevoEvento(LocalDate.now())} />
@@ -148,6 +156,8 @@ export default function HomePantalla() {
         </Pressable>
       </ScrollView>
 
+      <Grilla columnas={2}>
+      <View>
       <TituloSeccion titulo="Próximos recordatorios" accion="Ver todas" alAccion={() => NavDueno.irARecordatorios()} estilo={{ marginTop: 16 }} />
       <View style={{ marginTop: 2 }}>
         {proximos.map((e) => {
@@ -173,8 +183,10 @@ export default function HomePantalla() {
           />
         ) : null}
       </View>
+      </View>
 
-      <TituloSeccion titulo="Actividad reciente" accion="Ver historial" alAccion={() => NavDueno.irAMascotas()} estilo={{ marginTop: 18 }} />
+      <View>
+      <TituloSeccion titulo="Actividad reciente" accion="Ver historial" alAccion={() => NavDueno.irAMascotas()} estilo={{ marginTop: escritorio ? 16 : 18 }} />
       <View style={{ marginTop: 2, marginBottom: 12 }}>
         {reciente.map((e) => (
           <FilaEvento
@@ -191,6 +203,8 @@ export default function HomePantalla() {
           <EstadoVacio icono="historial" titulo="Sin actividad en los últimos 30 días" mensaje="Acá vas a ver consultas, vacunas y tratamientos" />
         ) : null}
       </View>
+      </View>
+      </Grilla>
     </PantallaBase>
   );
 }
@@ -209,7 +223,8 @@ const estilos = StyleSheet.create({
   accesos: { flexDirection: "row", marginTop: 16 },
   acceso: { flex: 1, marginHorizontal: 5, alignItems: "center" },
   accesoCaja: { width: "100%", height: 56, borderRadius: 18, backgroundColor: Colores.white, alignItems: "center", justifyContent: "center", marginBottom: 6, ...sombra(1) },
-  fila: { marginHorizontal: -20 },
+  // flexGrow 0: en la web el ScrollView horizontal crece para llenar el alto sobrante
+  fila: { marginHorizontal: -20, flexGrow: 0 },
   filaContenido: { paddingHorizontal: 20, paddingVertical: 6, alignItems: "stretch" },
   tarjetaMascota: { width: 128, marginRight: 12, padding: 8, backgroundColor: Colores.white, borderRadius: 18, ...sombra(1) },
   fotoMascota: { width: "100%", height: 96, borderRadius: 12, backgroundColor: Colores.lightTeal },

@@ -14,6 +14,7 @@ import { NotificacionesDuenoPanel } from "../common/NotificacionesDuenoPanel";
 import { pedirPermisoDeNotificaciones } from "../common/permisoNotificaciones";
 import { useDatos } from "../common/useDatos";
 import { useSesionRequerida } from "../common/useSesionRequerida";
+import { useEscritorio } from "../common/Web";
 import { BarraInferior, MenuMasOverlay, useCerrarMenuAlCambiar } from "./BarraInferior";
 import { PanelNotificacionesDueno } from "./estadoDueno";
 import { accionAtras, MenuMas } from "./menuMas";
@@ -68,6 +69,7 @@ export default function LayoutTabsDueno() {
   const ruta = usePathname();
   const segmentos = useSegments() as string[];
   const panel = usePanelNotificaciones();
+  const escritorio = useEscritorio();
   const [primerCerrado, setPrimerCerrado] = useState(false);
   const enInicio = ruta === "/dueno" || ruta === "/dueno/" || ruta === "/dueno/index";
   const enTabs = segmentos.length === 0 || segmentos.includes("(tabs)");
@@ -83,9 +85,10 @@ export default function LayoutTabsDueno() {
     <View style={estilos.raiz}>
       <Tabs
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: Colores.loginBg } }}
-        tabBar={({ state }: { state: { index: number; routes: { name: string }[] } }) => (
-          <BarraInferior ruta={state.routes[state.index]?.name} />
-        )}
+        tabBar={({ state }: { state: { index: number; routes: { name: string }[] } }) =>
+          // En escritorio las secciones están en el menú lateral (MarcoDueno)
+          escritorio ? null : <BarraInferior ruta={state.routes[state.index]?.name} />
+        }
       >
         <Tabs.Screen name="index" />
         <Tabs.Screen name="mascotas" />
@@ -94,7 +97,7 @@ export default function LayoutTabsDueno() {
           <Tabs.Screen key={n} name={n} />
         ))}
       </Tabs>
-      <MenuMasOverlay />
+      {escritorio ? null : <MenuMasOverlay />}
       <NotificacionesDuenoPanel visible={panel} alCerrar={() => PanelNotificacionesDueno.ocultar()} />
       <PrimerIngresoDialogo
         visible={hay && DuenoRepo.perfil.debeCambiarPassword && !primerCerrado}

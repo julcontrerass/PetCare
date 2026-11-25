@@ -18,9 +18,10 @@ import { BotonIcono } from "../common/BotonIcono";
 import { Campo } from "../common/Campo";
 import { PantallaBase } from "../common/PantallaBase";
 import { Texto } from "../common/Texto";
-import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
+import { cursorTocable, estiloFoco, useEscritorio, useFoco } from "../common/Web";
 import { EstadoAuth, type RegistroTerminado } from "./estadoAuth";
 import { FondoLogin } from "./FondoLogin";
+import { MarcoIngreso } from "./MarcoIngreso";
 import { useAtenderCuenta } from "./useAtenderCuenta";
 import { esCorreoValido } from "./validaciones";
 import type { EntradaTexto } from "./tipos";
@@ -53,6 +54,7 @@ function Enlace({ texto, alTocar, negrita, tamano = 14 }: { texto: string; alToc
 
 function BienvenidaVista({ alIngresar, alRegistrarse }: { alIngresar: () => void; alRegistrarse: () => void }) {
   // Las imágenes llevan el alto calculado: en la web `aspectRatio` junto con `width: "100%"` deja la imagen con su alto natural
+  // Solo en formato teléfono: en escritorio el ingreso va directo al formulario (MarcoIngreso)
   const { width: anchoVentana } = useWindowDimensions();
   const columna = Math.min(anchoVentana, 480);
   const anchoLogo = Math.min(360, columna);
@@ -95,6 +97,7 @@ function LoginVista({
   const [errorPassword, setErrorPassword] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const refPassword = useRef<EntradaTexto>(null);
+  const escritorio = useEscritorio();
 
   const intentarIngresar = async () => {
     if (cargando) return;
@@ -117,8 +120,50 @@ function LoginVista({
     }
   };
 
+  if (escritorio) {
+    return (
+      <PantallaBase pantallaCompleta scroll={false} margen={0} bordes={[]}>
+        <MarcoIngreso>
+          <Texto tamano={30} peso="extrabold" color={Colores.brandNavy} accessibilityRole="header">Ingresá a PetCare</Texto>
+          <Texto variante="subtitulo" tamano={15} style={{ marginTop: 6 }}>Usá el correo y la contraseña de tu cuenta.</Texto>
+          <Campo
+            etiqueta="Correo electrónico" icono="correo" placeholder="nombre@correo.com" estilo={{ marginTop: 28 }}
+            value={email}
+            onChangeText={(t) => {
+              setEmail(t);
+              setErrorEmail(null);
+            }}
+            error={errorEmail}
+            keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress"
+            returnKeyType="next" onSubmitEditing={() => refPassword.current?.focus()}
+          />
+          <Campo
+            ref={refPassword} etiqueta="Contraseña" icono="candado" placeholder="Tu contraseña" estilo={{ marginTop: 16 }}
+            value={password}
+            onChangeText={(t) => {
+              setPassword(t);
+              setErrorPassword(null);
+            }}
+            error={errorPassword}
+            contrasena autoComplete="current-password" textContentType="password" returnKeyType="go" onSubmitEditing={() => void intentarIngresar()}
+          />
+          <View style={estilos.olvido}>
+            <Enlace texto="¿Olvidaste tu contraseña?" alTocar={alOlvido} />
+          </View>
+          <Boton titulo="Iniciar sesión" alto={52} estilo={{ marginTop: 14 }} cargando={cargando} onPress={() => void intentarIngresar()} />
+          <View style={estilos.registrarseEscritorio}>
+            <Texto variante="cuerpo" color={Colores.textGray}>¿Todavía no tenés cuenta?</Texto>
+            <View style={{ marginLeft: 4 }}>
+              <Enlace texto="Crear una cuenta" alTocar={alRegistrarse} negrita tamano={15} />
+            </View>
+          </View>
+        </MarcoIngreso>
+      </PantallaBase>
+    );
+  }
+
   return (
-    <PantallaBase scroll={false} margen={0}>
+    <PantallaBase formulario scroll={false} margen={0}>
       <View style={estilos.loginRaiz}>
         <FondoLogin />
         <ScrollView contentContainerStyle={estilos.loginContenido} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -191,9 +236,9 @@ function SelectorRol({ texto, elegido, alTocar }: { texto: string; elegido: bool
 
 function RegistroVista({ alVolver }: { alVolver: () => void }) {
   const [veterinario, setVeterinario] = useState(false);
-  return (
-    <PantallaBase scroll={false} margen={0}>
-      <ScrollView contentContainerStyle={estilos.registroContenido} showsVerticalScrollIndicator={false}>
+  const escritorio = useEscritorio();
+  const contenido = (
+    <>
         <BotonIcono icono="volver" accessibilityLabel="Volver atrás" onPress={alVolver} />
         <Texto variante="titulo" tamano={28} style={{ marginTop: 18 }} accessibilityRole="header">Crear cuenta</Texto>
         <Texto variante="subtitulo" tamano={14} style={{ marginTop: 2 }}>Elegí cómo vas a usar PetCare</Texto>
@@ -224,6 +269,19 @@ function RegistroVista({ alVolver }: { alVolver: () => void }) {
             <Boton titulo="Comenzar" alto={56} estilo={{ marginTop: 18 }} onPress={() => router.push("/auth/registro-dueno")} />
           </View>
         )}
+    </>
+  );
+  if (escritorio) {
+    return (
+      <PantallaBase pantallaCompleta scroll={false} margen={0} bordes={[]}>
+        <MarcoIngreso>{contenido}</MarcoIngreso>
+      </PantallaBase>
+    );
+  }
+  return (
+    <PantallaBase formulario scroll={false} margen={0}>
+      <ScrollView contentContainerStyle={estilos.registroContenido} showsVerticalScrollIndicator={false}>
+        {contenido}
       </ScrollView>
     </PantallaBase>
   );
@@ -236,6 +294,7 @@ function RecuperarVista({ alVolver }: { alVolver: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const escritorio = useEscritorio();
 
   const enviar = async () => {
     if (cargando) return;
@@ -257,8 +316,39 @@ function RecuperarVista({ alVolver }: { alVolver: () => void }) {
     }
   };
 
+  if (escritorio) {
+    return (
+      <PantallaBase pantallaCompleta scroll={false} margen={0} bordes={[]}>
+        <MarcoIngreso>
+          <Texto tamano={30} peso="extrabold" color={Colores.brandNavy} accessibilityRole="header">Recuperar contraseña</Texto>
+          <Texto variante="subtitulo" tamano={15} style={{ marginTop: 6 }}>
+            Ingresá tu correo y te enviamos un enlace para elegir una contraseña nueva.
+          </Texto>
+          <Campo
+            etiqueta="Correo electrónico" icono="correo" placeholder="nombre@correo.com" estilo={{ marginTop: 28 }} value={email}
+            onChangeText={(t) => {
+              setEmail(t);
+              setError(null);
+            }}
+            error={error} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress"
+            returnKeyType="send" onSubmitEditing={() => void enviar()}
+          />
+          {enviado ? (
+            <Texto variante="cuerpo" color={Colores.successGreen} style={{ marginTop: 16 }} accessibilityLiveRegion="polite">
+              Si el correo está registrado, vas a recibir un enlace en unos minutos.
+            </Texto>
+          ) : null}
+          <Boton titulo="Enviar enlace" alto={52} estilo={{ marginTop: 22 }} cargando={cargando} onPress={() => void enviar()} />
+          <View style={estilos.registrarseEscritorio}>
+            <Enlace texto="Volver a iniciar sesión" alTocar={alVolver} negrita tamano={15} />
+          </View>
+        </MarcoIngreso>
+      </PantallaBase>
+    );
+  }
+
   return (
-    <PantallaBase titulo="Recuperar contraseña" alVolver={alVolver} fondo={Colores.white} margen={24}>
+    <PantallaBase formulario titulo="Recuperar contraseña" alVolver={alVolver} fondo={Colores.white} margen={24}>
       <Texto variante="subtitulo" style={{ marginTop: 8 }}>Ingresá tu correo y te enviaremos un enlace para restablecerla.</Texto>
       <Campo
         estilo={{ marginTop: 24 }} placeholder="ejemplo@correo.com" accessibilityLabel="Correo electrónico" value={email}
@@ -287,6 +377,9 @@ export default function AuthPantalla() {
   const [vista, setVista] = useState<Vista>(vistaInicial === "login" ? "login" : "inicio");
   const [emailInicial, setEmailInicial] = useState("");
   const { atender, hojaModo } = useAtenderCuenta();
+  // En escritorio no hay paso de bienvenida: el formulario de ingreso ya ocupa la pantalla con la marca al costado
+  const escritorio = useEscritorio();
+  const vistaVisible: Vista = escritorio && vista === "inicio" ? "login" : vista;
 
   const irALogin = useCallback((email = "") => {
     setEmailInicial(email);
@@ -350,12 +443,12 @@ export default function AuthPantalla() {
 
   return (
     <>
-      {vista === "inicio" ? <BienvenidaVista alIngresar={() => irALogin()} alRegistrarse={() => setVista("registro")} /> : null}
-      {vista === "login" ? (
+      {vistaVisible === "inicio" ? <BienvenidaVista alIngresar={() => irALogin()} alRegistrarse={() => setVista("registro")} /> : null}
+      {vistaVisible === "login" ? (
         <LoginVista emailInicial={emailInicial} alOlvido={() => setVista("recuperar")} alRegistrarse={() => setVista("registro")} atender={atender} />
       ) : null}
-      {vista === "registro" ? <RegistroVista alVolver={() => setVista("inicio")} /> : null}
-      {vista === "recuperar" ? <RecuperarVista alVolver={() => irALogin()} /> : null}
+      {vistaVisible === "registro" ? <RegistroVista alVolver={() => setVista("inicio")} /> : null}
+      {vistaVisible === "recuperar" ? <RecuperarVista alVolver={() => irALogin()} /> : null}
       {hojaModo}
     </>
   );
@@ -385,6 +478,7 @@ const estilos = StyleSheet.create({
   },
   olvido: { alignItems: "flex-end", marginTop: 8 },
   registrarse: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 22 },
+  registrarseEscritorio: { flexDirection: "row", alignItems: "center", marginTop: 24 },
   registroContenido: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 },
   roles: { flexDirection: "row", gap: 8, marginTop: 20 },
   rol: { flex: 1, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },

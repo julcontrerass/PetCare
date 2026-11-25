@@ -1,10 +1,10 @@
 /* Migrado de app/src/test/.../FuenteEnMemoria.kt. */
 import type {
-  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, EstudioTurnoDto,
-  HoraOcupadaDto, InformeDto, Json, JsonObject, MascotaCreadaDto, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto,
+  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, DuenoMascotaDto,
+  EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, Json, JsonObject, MascotaCreadaDto, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto,
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
-  RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TurnoDto, VeterinarioDto,
+  RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
 import { FuenteBase, type ResultadoRegistro } from "../../src/data/remoto/fuenteDatos";
@@ -232,7 +232,71 @@ export class FuenteEnMemoria extends FuenteBase {
   // ---------- Mascotas ----------
 
   override async misMascotas(): Promise<MascotaDto[]> {
-    return this.mascotas.filter((m) => m.dueno_id === this.yo.id && m.activa);
+    return this.mascotas.filter((m) => this.esDuena(m.id, this.yo.id) && m.activa);
+  }
+
+  // ---------- Co-dueños ----------
+
+  coduenos: { id: string; mascota_id: string; usuario_id: string; invitado_por: string; estado: "pendiente" | "activo" }[] = [];
+
+  private esDuena(mascotaId: string, cuenta: string): boolean {
+    return this.mascotas.some((m) => m.id === mascotaId && m.dueno_id === cuenta) ||
+      this.coduenos.some((c) => c.mascota_id === mascotaId && c.usuario_id === cuenta && c.estado === "activo");
+  }
+
+  override async invitarCodueno(mascotaId: string, dniOCorreo: string): Promise<string> {
+    this.llamadas.push(`invitarCodueno:${mascotaId}:${dniOCorreo}`);
+    if (!this.esDuena(mascotaId, this.yo.id)) throw new Error("Solo un dueño de la mascota puede invitar a otra persona");
+    const dato = dniOCorreo.trim().toLowerCase();
+    const invitado = this.perfiles.find((p) => p.email.toLowerCase() === dato || p.perfiles_privados?.dni === dato);
+    if (!invitado) throw new Error("No encontramos una cuenta con ese DNI o correo. La otra persona tiene que registrarse primero en PetCare.");
+    if (invitado.id === this.yo.id) throw new Error("No podés invitarte a vos mismo");
+    if (this.esDuena(mascotaId, invitado.id)) throw new Error(`${invitado.nombre} ya es dueño/a`);
+    if (!this.coduenos.some((c) => c.mascota_id === mascotaId && c.usuario_id === invitado.id)) {
+      this.coduenos.push({ id: `cod-${this.coduenos.length + 1}`, mascota_id: mascotaId, usuario_id: invitado.id, invitado_por: this.yo.id, estado: "pendiente" });
+    }
+    return invitado.nombre;
+  }
+
+  override async misInvitacionesCodueno(): Promise<InvitacionCoduenoDto[]> {
+    return this.coduenos
+      .filter((c) => c.usuario_id === this.yo.id && c.estado === "pendiente")
+      .map((c) => {
+        const m = this.mascotas.find((x) => x.id === c.mascota_id)!;
+        const quien = [...this.perfiles, this.yo].find((p) => p.id === c.invitado_por);
+        return {
+          id: c.id, mascota_id: m.id, mascota_nombre: m.nombre, mascota_tipo: m.tipo, mascota_foto_path: m.foto_path ?? null,
+          invitado_por_nombre: quien?.nombre ?? null, created_at: "2026-11-23T12:00:00Z",
+        };
+      });
+  }
+
+  override async responderInvitacionCodueno(invitacionId: string, aceptar: boolean): Promise<void> {
+    this.llamadas.push(`responderInvitacion:${invitacionId}=${aceptar}`);
+    const c = this.coduenos.find((x) => x.id === invitacionId && x.usuario_id === this.yo.id && x.estado === "pendiente");
+    if (!c) throw new Error("La invitación ya no está disponible");
+    if (aceptar) c.estado = "activo";
+    else this.coduenos = this.coduenos.filter((x) => x !== c);
+  }
+
+  override async duenosDeMascota(mascotaId: string): Promise<DuenoMascotaDto[]> {
+    if (!this.esDuena(mascotaId, this.yo.id)) return [];
+    const todos = [...this.perfiles, this.yo];
+    const perfil = (id: string) => todos.find((p) => p.id === id);
+    const m = this.mascotas.find((x) => x.id === mascotaId)!;
+    const original = perfil(m.dueno_id!);
+    return [
+      ...(original ? [{ codueno_id: null, usuario_id: original.id, nombre: original.nombre, email: original.email, foto_path: null, estado: "activo", es_original: true }] : []),
+      ...this.coduenos.filter((c) => c.mascota_id === mascotaId).map((c) => {
+        const p = perfil(c.usuario_id)!;
+        return { codueno_id: c.id, usuario_id: p.id, nombre: p.nombre, email: p.email, foto_path: null, estado: c.estado as string, es_original: false };
+      }),
+    ];
+  }
+
+  override async quitarCodueno(coduenoId: string): Promise<void> {
+    this.llamadas.push(`quitarCodueno:${coduenoId}`);
+    this.coduenos = this.coduenos.filter((c) => c.id !== coduenoId);
   }
 
   override async mascotasDelVeterinario(): Promise<MascotaDto[]> {
@@ -485,6 +549,28 @@ export class FuenteEnMemoria extends FuenteBase {
   override async eliminarPrescripcion(id: string): Promise<void> {
     this.llamadas.push(`eliminarPrescripcion:${id}`);
     this.recetas = this.recetas.filter((r) => r.id !== id);
+  }
+
+  tomasGuardadas: TomaDto[] = [];
+
+  override async tomas(mascotaId?: string | null): Promise<TomaDto[]> {
+    return this.tomasGuardadas.filter((t) => mascotaId == null || t.mascota_id === mascotaId);
+  }
+
+  override async registrarToma(prescripcionId: string, programada: string): Promise<void> {
+    this.llamadas.push(`registrarToma:${prescripcionId}:${programada}`);
+    const receta = this.recetas.find((r) => r.id === prescripcionId);
+    if (!receta) throw new Error("La receta no existe");
+    if (this.tomasGuardadas.some((t) => t.prescripcion_id === prescripcionId && t.programada === programada)) return;
+    this.tomasGuardadas.push({
+      id: `toma-${this.tomasGuardadas.length + 1}`, prescripcion_id: prescripcionId, mascota_id: receta.mascota_id, programada,
+      dada_at: "2026-11-24T08:05:00+00:00", registrada_por: this.yo.id,
+    });
+  }
+
+  override async quitarToma(prescripcionId: string, programada: string): Promise<void> {
+    this.llamadas.push(`quitarToma:${prescripcionId}:${programada}`);
+    this.tomasGuardadas = this.tomasGuardadas.filter((t) => !(t.prescripcion_id === prescripcionId && t.programada === programada));
   }
 
   override async guardarAlertas(mascotaId: string, alertas: string): Promise<void> {

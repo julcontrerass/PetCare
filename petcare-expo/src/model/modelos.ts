@@ -43,6 +43,8 @@ export class Mascota {
   /** Alergias, carácter y condiciones a tener en cuenta; los veterinarios lo ven destacado. */
   alertas: string;
   estado: EstadoMascota;
+  /** La cuenta es co-dueña: la mascota es de otra persona que la invitó (no puede eliminarla ni quitar dueños). */
+  compartida: boolean;
 
   constructor(
     nombre: string,
@@ -63,6 +65,7 @@ export class Mascota {
     this.observaciones = opciones.observaciones ?? "Sin observaciones";
     this.alertas = opciones.alertas ?? "";
     this.estado = opciones.estado ?? "ACTIVA";
+    this.compartida = opciones.compartida ?? false;
   }
 
   /** "Perro - Golden Retriever", o solo el tipo si no se cargó la raza. */

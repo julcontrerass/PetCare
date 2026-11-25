@@ -1,9 +1,9 @@
 import type {
-  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, EstudioTurnoDto,
-  HoraOcupadaDto, InformeDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
+  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, DuenoMascotaDto,
+  EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
-  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TurnoDto,
+  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
 } from "./dtos";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
@@ -57,8 +57,17 @@ export interface FuenteDatos {
   actualizarDni(dni: string): Promise<void>;
 
   // ---------- Mascotas ----------
-  /** Mascotas activas del dueño en sesión. */
+  /** Mascotas activas del dueño en sesión: las suyas y las que comparte como co-dueño. */
   misMascotas(): Promise<MascotaDto[]>;
+  /** Invita a otra cuenta (por DNI o correo) a ser co-dueña de la mascota. Devuelve el nombre de la persona invitada. */
+  invitarCodueno(mascotaId: string, dniOCorreo: string): Promise<string>;
+  /** Invitaciones a ser co-dueño que recibió la cuenta y todavía no respondió. */
+  misInvitacionesCodueno(): Promise<InvitacionCoduenoDto[]>;
+  responderInvitacionCodueno(invitacionId: string, aceptar: boolean): Promise<void>;
+  /** Dueños de la mascota (el original primero) e invitaciones pendientes. */
+  duenosDeMascota(mascotaId: string): Promise<DuenoMascotaDto[]>;
+  /** Quita a un co-dueño o una invitación; con la fila propia, la cuenta deja de ser dueña. */
+  quitarCodueno(coduenoId: string): Promise<void>;
   /** Mascotas que el veterinario puede ver, con los datos de su dueño. */
   mascotasDelVeterinario(): Promise<MascotaDto[]>;
   /** Todas las mascotas activas (solo el administrador). */
@@ -117,6 +126,11 @@ export interface FuenteDatos {
   prescripciones(mascotaId?: string | null): Promise<PrescripcionDto[]>;
   crearPrescripcion(prescripcion: NuevaPrescripcionDto): Promise<void>;
   eliminarPrescripcion(id: string): Promise<void>;
+  /** Tomas de medicación ya dadas de las mascotas que el usuario puede ver; con [mascotaId], solo de esa mascota. */
+  tomas(mascotaId?: string | null): Promise<TomaDto[]>;
+  /** Tilda una toma: [programada] es la hora a la que tocaba ("2026-11-24T08:00:00"). */
+  registrarToma(prescripcionId: string, programada: string): Promise<void>;
+  quitarToma(prescripcionId: string, programada: string): Promise<void>;
   /** Guarda las alertas clínicas de la mascota (las pueden cambiar el dueño y los veterinarios con acceso). */
   guardarAlertas(mascotaId: string, alertas: string): Promise<void>;
   archivosDe(mascotaId: string): Promise<ArchivoDto[]>;
@@ -183,6 +197,13 @@ export class FuenteBase implements FuenteDatos {
   async actualizarDni(_dni: string): Promise<void> {}
 
   async misMascotas(): Promise<MascotaDto[]> { return []; }
+  async invitarCodueno(_mascotaId: string, _dniOCorreo: string): Promise<string> {
+    throw new Error("Operación no disponible: invitarCodueno");
+  }
+  async misInvitacionesCodueno(): Promise<InvitacionCoduenoDto[]> { return []; }
+  async responderInvitacionCodueno(_invitacionId: string, _aceptar: boolean): Promise<void> {}
+  async duenosDeMascota(_mascotaId: string): Promise<DuenoMascotaDto[]> { return []; }
+  async quitarCodueno(_coduenoId: string): Promise<void> {}
   async mascotasDelVeterinario(): Promise<MascotaDto[]> { return []; }
   async mascotasAdmin(): Promise<MascotaDto[]> { return []; }
   async crearMascota(_mascota: NuevaMascotaDto): Promise<void> {}
@@ -225,6 +246,9 @@ export class FuenteBase implements FuenteDatos {
   async prescripciones(_mascotaId?: string | null): Promise<PrescripcionDto[]> { return []; }
   async crearPrescripcion(_prescripcion: NuevaPrescripcionDto): Promise<void> {}
   async eliminarPrescripcion(_id: string): Promise<void> {}
+  async tomas(_mascotaId?: string | null): Promise<TomaDto[]> { return []; }
+  async registrarToma(_prescripcionId: string, _programada: string): Promise<void> {}
+  async quitarToma(_prescripcionId: string, _programada: string): Promise<void> {}
   async guardarAlertas(_mascotaId: string, _alertas: string): Promise<void> {}
   async archivosDe(_mascotaId: string): Promise<ArchivoDto[]> { return []; }
   async crearArchivo(_archivo: NuevoArchivoDto): Promise<void> {}

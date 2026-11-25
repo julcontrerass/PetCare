@@ -3,7 +3,7 @@ import { nuevoId } from "../../util/uuid";
 import type { ArchivoDto, NuevoArchivoDto } from "../remoto/dtos";
 import { Imagenes } from "../imagenes";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 
 export interface ArchivoItem {
   readonly id: string;
@@ -81,7 +81,7 @@ class ArchivosRepoImpl {
     tipoMime: string,
     turnoId: string | null = null,
   ): Promise<ArchivoItem> {
-    const usuario = Sesion.usuarioId;
+    const usuario = CuentaActual.usuarioId;
     if (!usuario) throw new Error("No hay una sesión iniciada");
     const id = nuevoId();
     const ruta = `${pacienteId}/${id}.${extension.toLowerCase()}`;

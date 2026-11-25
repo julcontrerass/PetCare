@@ -5,7 +5,7 @@ import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
 import type { InformeDto, NuevoInformeDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 import { PacientesRepo } from "./pacientesRepo";
 
 /**
@@ -103,7 +103,7 @@ class InformesRepoImpl {
 
   /** Trae del servidor el informe propio de ese turno (o el general del paciente si no hay turno). */
   async cargar(pacienteId: string, turnoId: string | null = null): Promise<InformeData> {
-    const miId = Sesion.usuarioId;
+    const miId = CuentaActual.usuarioId;
     const propio = (await Servicios.fuente.informesDe(pacienteId)).find(
       (i) => (i.veterinario_id ?? null) === miId && (i.turno_id ?? null) === turnoId,
     );
@@ -176,7 +176,7 @@ class InformesRepoImpl {
             frecuencia_respiratoria: signos.frecuenciaRespiratoria ?? null,
           });
         } else {
-          const veterinarioId = Sesion.usuarioId;
+          const veterinarioId = CuentaActual.usuarioId;
           if (!veterinarioId) throw new Error("No hay una sesión iniciada");
           const dto: NuevoInformeDto = {
             id,

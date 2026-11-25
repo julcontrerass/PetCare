@@ -132,7 +132,7 @@ export default function NuevaPasswordPantalla() {
 
   if (estado === "validando") {
     return (
-      <PantallaBase fondo={Colores.white} margen={24} scroll={false}>
+      <PantallaBase formulario fondo={Colores.white} margen={24} scroll={false}>
         <View style={estilos.espera} accessibilityLiveRegion="polite">
           <ActivityIndicator color={Colores.primaryTeal} size="large" />
           <Texto variante="subtitulo" centrado style={{ marginTop: 16 }}>Validando el enlace...</Texto>
@@ -142,7 +142,7 @@ export default function NuevaPasswordPantalla() {
   }
 
   return (
-    <PantallaBase fondo={Colores.white} margen={24}>
+    <PantallaBase formulario fondo={Colores.white} margen={24}>
       <Texto variante="titulo" color={Colores.black} style={{ marginTop: 48 }} accessibilityRole="header">Elegí tu nueva contraseña</Texto>
       <Texto variante="subtitulo" style={{ marginTop: 8 }}>
         Confirmamos tu correo. Escribí la contraseña que vas a usar de ahora en más.

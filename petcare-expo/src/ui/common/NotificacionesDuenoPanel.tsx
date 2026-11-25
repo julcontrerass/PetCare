@@ -7,6 +7,7 @@ import { Servicios } from "../../data/servicios";
 import type { NotificacionDueno } from "../../model/modelos";
 import { Avisos } from "./Avisos";
 import { PanelAvisos, type ItemAviso } from "./PanelAvisos";
+import { destinoAvisoDueno, irADestinoDueno } from "../dueno/destinoAviso";
 
 export interface NotificacionesDuenoPanelProps {
   visible: boolean;
@@ -56,6 +57,7 @@ export function NotificacionesDuenoPanel({ visible, alCerrar, alCambiar }: Notif
         alCambiar?.();
         Avisos.mostrar("Notificaciones borradas");
       }}
+      alAbrir={(item) => irADestinoDueno(destinoAvisoDueno(item, DuenoRepo.mascotas))}
     />
   );
 }

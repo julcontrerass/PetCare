@@ -6,10 +6,10 @@
  * Desvíos: los `AlertDialog` (vencimiento, historial, autorizar) son hojas inferiores del kit y el
  * `DatePickerDialog` de "Elegir una fecha…" es el `SelectorFecha`.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { DuenoRepo, type EntradaPermiso } from "../../data/repositorio/duenoRepo";
-import type { EstadoAcceso, VeterinarioAcceso } from "../../model/modelos";
+import { textoLugarSede, type EstadoAcceso, type VeterinarioAcceso } from "../../model/modelos";
 import { Fechas } from "../../util/fechas";
 import { LocalDate } from "../../util/tiempo";
 import { Avatar } from "../common/Avatar";
@@ -18,8 +18,11 @@ import { Boton } from "../common/Boton";
 import { BotonIcono } from "../common/BotonIcono";
 import { Campo } from "../common/Campo";
 import { Chip } from "../common/Chip";
+import { Contacto } from "../common/Contacto";
+import { EstadoVacio } from "../common/EstadoVacio";
+import { Grilla } from "../common/Grilla";
 import { HojaInferior } from "../common/HojaInferior";
-import { Icono } from "../common/Icono";
+import { Icono, type NombreIcono } from "../common/Icono";
 import { PantallaBase } from "../common/PantallaBase";
 import { SelectorFecha } from "../common/SelectorFecha";
 import { Tarjeta } from "../common/Tarjeta";
@@ -62,19 +65,19 @@ function ChipFiltro({ texto, activo, alTocar }: { texto: string; activo: boolean
   );
 }
 
-function Accion({ texto, color, alTocar }: { texto: string; color: string; alTocar: () => void }) {
-  const foco = useFoco();
+/** Una línea de la tarjeta: ícono y texto (y lo que haga falta al lado, como las mascotas). */
+function Dato({ icono, children }: { icono: NombreIcono; children: ReactNode }) {
   return (
-    <Pressable
-      accessibilityRole="button" accessibilityLabel={texto} onPress={alTocar} {...foco.props}
-      style={[{ paddingVertical: 8, alignSelf: "flex-start" }, cursorTocable, estiloFoco(foco.enfocado)]}
-    >
-      <Texto variante="cuerpo" tamano={14} negrita color={color}>{texto}</Texto>
-    </Pressable>
+    <View style={estilos.dato}>
+      <View style={estilos.iconoDato}>
+        <Icono nombre={icono} tamano={16} color={Colores.primaryTeal} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+    </View>
   );
 }
 
-/** Tarjeta de un veterinario con acceso (item_veterinario.xml). */
+/** Tarjeta de un veterinario con acceso (item_veterinario.xml): quién es, dónde atiende, qué ve, contacto y permiso. */
 function TarjetaVeterinario({ vet, alRevocar, alRestablecer, alVencimiento }: {
   vet: VeterinarioAcceso; alRevocar: () => void; alRestablecer: () => void; alVencimiento: () => void;
 }) {
@@ -82,50 +85,80 @@ function TarjetaVeterinario({ vet, alRevocar, alRestablecer, alVencimiento }: {
   const turnos = DuenoRepo.turnosDeVeterinario(vet);
   const proximo = DuenoRepo.proximoTurnoDeVeterinario(vet);
   const mascotas = [...vet.mascotas];
+  const telefono = DuenoRepo.perfilDeVeterinario(vet.id)?.telefono?.trim() ?? "";
+  const sede = vet.sedes[0] ?? null;
   const textoEstado =
     activo && vet.venceEl != null ? `Con acceso hasta ${Fechas.corta(vet.venceEl)}`
     : activo ? "Con acceso"
     : vet.vencido && vet.venceEl != null ? `Venció el ${Fechas.corta(vet.venceEl)}`
     : "Sin acceso";
   return (
-    <Tarjeta estilo={{ marginTop: 12, marginBottom: 2 }}>
+    <Tarjeta relleno={18} estilo={{ marginTop: 12, marginBottom: 2 }}>
       <View style={estilos.fila}>
-        <Avatar nombre={vet.nombre.replace(/^Dra?\.\s*/, "")} fotoPath={vet.fotoPath} tamano={46} />
-        <View style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
-          <Texto variante="titulo" tamano={16} numberOfLines={1}>{vet.nombre}</Texto>
-          <Texto variante="chico" numberOfLines={1}>
-            {`${vet.especialidad} · ${vet.matricula} · ${turnos === 1 ? "1 turno" : `${turnos} turnos`}`}
-          </Texto>
+        <Avatar nombre={vet.nombre.replace(/^Dra?\.\s*/, "")} fotoPath={vet.fotoPath} tamano={52} />
+        <View style={{ flex: 1, marginLeft: 14, minWidth: 0 }}>
+          <Texto variante="titulo" tamano={17} numberOfLines={1}>{vet.nombre}</Texto>
+          <Texto variante="chico" tamano={13} numberOfLines={1}>{vet.especialidad}</Texto>
+          <Chip texto={textoEstado} tono={activo ? "ok" : "peligro"} icono={activo ? "checkCirculo" : "candado"} estilo={estilos.estado} />
         </View>
-        <Chip texto={textoEstado} tono={activo ? "ok" : "peligro"} estilo={{ marginLeft: 8 }} />
       </View>
-      {mascotas.length > 0 ? (
-        <>
-          <Texto variante="chico" tamano={12} style={{ marginTop: 14 }}>Puede ver la ficha de</Texto>
-          <View style={estilos.mascotas}>
-            {mascotas.map((n) => (
-              <View key={n} style={estilos.chipMascota}>
-                <Texto variante="etiqueta" tamano={12} color={Colores.tealDark}>{n}</Texto>
-              </View>
-            ))}
-          </View>
-        </>
-      ) : null}
-      <View style={[estilos.fila, { marginTop: 12 }]}>
-        <Icono nombre="calendario" tamano={18} color={Colores.primaryTeal} />
-        <Texto variante="cuerpo" tamano={13} color={Colores.tealDark} style={{ marginLeft: 8, flex: 1 }}>
-          {proximo
-            ? `Próximo turno: ${proximo.categoria} de ${proximo.mascota} · ${proximo.fecha.dayOfMonth} ${Fechas.mesCorto(proximo.fecha.monthValue)}, ${proximo.hora}`
-            : "Sin turnos próximos"}
-        </Texto>
+
+      <View style={estilos.datos}>
+        {sede ? (
+          <Dato icono="ubicacion">
+            <Texto variante="cuerpo" tamano={13.5} numberOfLines={2}>{textoLugarSede(sede)}</Texto>
+            {vet.sedes.length > 1 ? (
+              <Texto variante="chico" tamano={12}>{vet.sedes.length === 2 ? "Atiende en 1 lugar más" : `Atiende en ${vet.sedes.length - 1} lugares más`}</Texto>
+            ) : null}
+          </Dato>
+        ) : null}
+        {mascotas.length > 0 ? (
+          <Dato icono="mascotas">
+            <Texto variante="chico" tamano={12}>Puede ver la ficha de</Texto>
+            <View style={estilos.mascotas}>
+              {mascotas.map((n) => (
+                <View key={n} style={estilos.chipMascota}>
+                  <Texto variante="etiqueta" tamano={12} color={Colores.tealDark}>{n}</Texto>
+                </View>
+              ))}
+            </View>
+          </Dato>
+        ) : null}
+        <Dato icono="calendario">
+          <Texto variante="cuerpo" tamano={13.5} color={proximo ? Colores.tealDark : Colores.textGray}>
+            {proximo
+              ? `Próximo turno: ${proximo.categoria} de ${proximo.mascota}, ${proximo.fecha.dayOfMonth} ${Fechas.mesCorto(proximo.fecha.monthValue)} a las ${proximo.hora}`
+              : "Sin turnos próximos"}
+          </Texto>
+          <Texto variante="chico" tamano={12}>
+            {`Matrícula ${vet.matricula}. ${turnos === 1 ? "1 turno con vos" : `${turnos} turnos con vos`}`}
+          </Texto>
+        </Dato>
       </View>
-      <View style={estilos.divisor} />
-      {activo ? (
-        <Accion texto="Revocar acceso" color={Colores.dangerRed} alTocar={alRevocar} />
-      ) : (
-        <Accion texto="Restablecer acceso" color={Colores.primaryTeal} alTocar={alRestablecer} />
-      )}
-      {activo ? <Accion texto="Cambiar vencimiento" color={Colores.primaryTeal} alTocar={alVencimiento} /> : null}
+
+      <View style={estilos.acciones}>
+        {telefono ? (
+          <>
+            <Boton
+              titulo="Llamar" variante="suave" icono="telefono" alto={40} estilo={estilos.accion}
+              onPress={() => void Contacto.abrir(Contacto.llamar(telefono), "El veterinario no cargó un teléfono")}
+            />
+            <Boton
+              titulo="WhatsApp" variante="suave" icono="whatsapp" alto={40} estilo={estilos.accion}
+              onPress={() => void Contacto.abrir(Contacto.whatsApp(telefono, `Hola ${vet.nombre}, te escribo por PetCare.`), "El veterinario no cargó un teléfono")}
+            />
+          </>
+        ) : null}
+        <View style={{ flexGrow: 1 }} />
+        {activo ? (
+          <>
+            <Boton titulo="Cambiar vencimiento" variante="secundario" alto={40} estilo={estilos.accion} onPress={alVencimiento} />
+            <Boton titulo="Revocar acceso" variante="peligroContorno" alto={40} estilo={estilos.accion} onPress={alRevocar} />
+          </>
+        ) : (
+          <Boton titulo="Restablecer acceso" alto={40} estilo={estilos.accion} onPress={alRestablecer} />
+        )}
+      </View>
     </Tarjeta>
   );
 }
@@ -235,13 +268,6 @@ export default function VeterinariosPantalla() {
         />
       }
     >
-      <Pressable
-        accessibilityRole="button" accessibilityLabel="Historial de permisos" onPress={() => setHistorial(true)}
-        style={[{ alignSelf: "flex-start", paddingVertical: 6 }, cursorTocable]}
-      >
-        <Texto variante="etiqueta" tamano={13} color={Colores.primaryTeal}>Historial de permisos</Texto>
-      </Pressable>
-
       <View style={[estilos.fila, estilos.aviso]}>
         <Icono nombre="info" tamano={22} color={Colores.primaryTeal} />
         <Texto variante="cuerpo" tamano={13.5} color={Colores.tealDark} style={{ flex: 1, marginLeft: 12 }}>
@@ -249,28 +275,47 @@ export default function VeterinariosPantalla() {
         </Texto>
       </View>
 
-      <Campo
-        estilo={{ marginTop: 14 }} icono="buscar" placeholder="Buscar por nombre, usuario, mail o matrícula…" value={consulta}
-        onChangeText={setConsulta} returnKeyType="search" autoCorrect={false}
-      />
+      <Pressable
+        accessibilityRole="button" accessibilityLabel="Historial de permisos" onPress={() => setHistorial(true)}
+        style={[estilos.enlaceHistorial, cursorTocable]}
+      >
+        <Icono nombre="historial" tamano={18} color={Colores.primaryTeal} />
+        <Texto variante="etiqueta" tamano={13} color={Colores.primaryTeal} style={{ marginLeft: 6 }}>Historial de permisos</Texto>
+      </Pressable>
 
-      <View style={[estilos.fila, { marginTop: 12, gap: 10 }]}>
-        {FILTROS.map((f) => (
-          <ChipFiltro key={f.filtro} texto={f.texto} activo={f.filtro === filtro} alTocar={() => setFiltro(f.filtro)} />
-        ))}
-      </View>
-
-      <View>
-        {filtrados.map((vet) => (
-          <TarjetaVeterinario
-            key={vet.id || vet.usuario || vet.nombre} vet={vet}
-            alRevocar={() => revocar(vet)} alRestablecer={() => restablecer(vet)} alVencimiento={() => cambiarVencimiento(vet)}
+      {DuenoRepo.autorizados.length === 0 ? (
+        <EstadoVacio
+          icono="veterinario" titulo="Todavía no hay veterinarios"
+          mensaje="Cuando saques un turno, el veterinario aparece acá. También podés autorizar a uno para que vea la ficha de tus mascotas."
+          textoBoton="Autorizar veterinario" alBoton={() => { setBuscador(""); setAutorizando(true); }}
+          estilo={{ marginTop: 16 }}
+        />
+      ) : (
+        <>
+          <Campo
+            estilo={{ marginTop: 14 }} icono="buscar" placeholder="Buscar por nombre, usuario, mail o matrícula…" value={consulta}
+            onChangeText={setConsulta} returnKeyType="search" autoCorrect={false}
           />
-        ))}
-      </View>
-      {filtrados.length === 0 ? (
-        <Texto variante="subtitulo" tamano={14} centrado style={{ paddingVertical: 24 }}>No se encontraron veterinarios</Texto>
-      ) : null}
+
+          <View style={[estilos.fila, { marginTop: 12, gap: 10, flexWrap: "wrap" }]}>
+            {FILTROS.map((f) => (
+              <ChipFiltro key={f.filtro} texto={f.texto} activo={f.filtro === filtro} alTocar={() => setFiltro(f.filtro)} />
+            ))}
+          </View>
+
+          <Grilla columnas={2}>
+            {filtrados.map((vet) => (
+              <TarjetaVeterinario
+                key={vet.id || vet.usuario || vet.nombre} vet={vet}
+                alRevocar={() => revocar(vet)} alRestablecer={() => restablecer(vet)} alVencimiento={() => cambiarVencimiento(vet)}
+              />
+            ))}
+          </Grilla>
+          {filtrados.length === 0 ? (
+            <Texto variante="subtitulo" tamano={14} centrado style={{ paddingVertical: 24 }}>No se encontraron veterinarios</Texto>
+          ) : null}
+        </>
+      )}
 
       <HojaInferior visible={vencimiento != null} alCerrar={() => setVencimiento(null)}>
         <Texto variante="titulo" tamano={20} accessibilityRole="header">{vencimiento?.titulo ?? ""}</Texto>
@@ -353,7 +398,13 @@ const estilos = StyleSheet.create({
   filtroActivo: { backgroundColor: Colores.primaryTeal },
   mascotas: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
   chipMascota: { backgroundColor: "#EEF2F1", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  divisor: { height: 1, backgroundColor: Colores.dividerLight, marginTop: 12, marginBottom: 4 },
+  estado: { alignSelf: "flex-start", marginTop: 6 },
+  datos: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: Colores.dividerLight, gap: 12 },
+  dato: { flexDirection: "row", alignItems: "flex-start" },
+  iconoDato: { width: 28, height: 28, borderRadius: 9, backgroundColor: Colores.lightTeal, alignItems: "center", justifyContent: "center", marginRight: 10 },
+  acciones: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 16 },
+  accion: { alignSelf: "auto", paddingHorizontal: 14 },
+  enlaceHistorial: { flexDirection: "row", alignItems: "center", alignSelf: "flex-end", paddingVertical: 8, marginTop: 4 },
   opcion: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colores.dividerLight },
   candidato: { flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colores.lightGray },
 });

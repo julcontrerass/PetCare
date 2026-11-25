@@ -1,8 +1,8 @@
 # PetCare (Expo / React Native)
 
-Migración completa de la app Android de PetCare (Kotlin) a **React Native con Expo**, con la misma funcionalidad, los
-mismos textos y el mismo backend (Supabase). Funciona en **Android, iOS y la web** desde una sola base de código.
-La app Android original sigue en `../app/` como referencia. Cómo se tradujo cada parte: [`MIGRACION.md`](MIGRACION.md) y
+App de PetCare hecha con **React Native y Expo**, con el backend en Supabase. Funciona en **Android, iOS y la web**
+desde una sola base de código. Viene de la migración de la app Android original (Kotlin), que ya no está en el
+repositorio pero sigue en el historial de git (rama `main`). Cómo se tradujo cada parte: [`MIGRACION.md`](MIGRACION.md) y
 [`GUIA_PANTALLAS.md`](GUIA_PANTALLAS.md).
 
 ## Requisitos
@@ -23,7 +23,8 @@ En el panel de Supabase, en **Authentication > URL Configuration > Redirect URLs
 - `petcare://recuperar` (recuperar contraseña desde la app);
 - `https://TU-DOMINIO/auth/recuperar` (recuperar contraseña desde la web).
 
-Las funciones de servidor (`crear-cuenta-dueno`, `avisar-veterinario`) son las mismas que usaba la versión Android.
+Las funciones de servidor (`crear-cuenta-dueno`, `avisar-veterinario`, `enviar-correos`) están en
+[`../supabase/functions`](../supabase/functions) y la configuración del backend en el [README de la raíz](../README.md).
 
 ## Verificación
 ```bash

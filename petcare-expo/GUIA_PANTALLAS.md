@@ -1,5 +1,8 @@
 # Guía para portar pantallas (Kotlin + XML -> React Native)
 
+Complemento de `MIGRACION.md`. La app Kotlin que se menciona acá ya no está en el repositorio: se puede consultar en
+el historial de git (rama `main`, carpeta `app/`).
+
 Complemento de `MIGRACION.md`. Vale para todo lo que está en `ui/<rol>/` de la app Kotlin.
 
 ## Qué se porta y de dónde sale cada cosa

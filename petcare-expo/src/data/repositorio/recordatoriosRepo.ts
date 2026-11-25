@@ -4,7 +4,7 @@ import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
 import type { RecordatorioDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 
 /** Un recordatorio hecho a mano. [creadoPor] distingue los propios de los que dejó el veterinario. */
 export class RecordatorioManual {
@@ -21,7 +21,7 @@ export class RecordatorioManual {
   ) {}
 
   get esMio(): boolean {
-    return this.creadoPor === Sesion.usuarioId;
+    return this.creadoPor === CuentaActual.usuarioId;
   }
 }
 
@@ -73,7 +73,7 @@ class RecordatoriosRepoImpl {
 
   crear(mascotaId: string, titulo: string, tipo: string, fecha: LocalDate, hora: string | null, nota: string): RecordatorioManual {
     const id = nuevoId();
-    const usuario = Sesion.usuarioId;
+    const usuario = CuentaActual.usuarioId;
     if (!usuario) throw new Error("No hay una sesión iniciada");
     const nuevo = new RecordatorioManual(id, mascotaId, titulo, tipo, fecha, hora, nota, usuario);
     this.items.push(nuevo);

@@ -44,6 +44,9 @@ function iconoDeEspecie(especie: string): NombreIcono {
     case "snake": return "reptil";
     case "fish": return "pez";
     case "rodent": return "roedor";
+    case "rabbit": return "conejo";
+    case "horse": return "caballo";
+    case "pig": return "cerdo";
     default: return "mascotas";
   }
 }

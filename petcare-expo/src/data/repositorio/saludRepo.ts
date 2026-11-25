@@ -4,7 +4,7 @@ import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
 import type { RegistroSaludDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 import { DuenoRepo } from "./duenoRepo";
 import { PacientesRepo } from "./pacientesRepo";
 
@@ -270,7 +270,7 @@ class SaludRepoImpl {
         },
       },
       async () => {
-        const usuario = Sesion.usuarioId;
+        const usuario = CuentaActual.usuarioId;
         if (!usuario) throw new Error("No hay una sesión iniciada");
         await Servicios.fuente.crearRegistroSalud({
           id, mascota_id: mascotaId, tipo: TiposRegistro[tipo].clave, titulo, detalle,
@@ -304,7 +304,7 @@ class SaludRepoImpl {
 
   /** Vuelve a pedir el carnet según quién tiene la sesión. */
   private async recargar(): Promise<void> {
-    if (Sesion.rol === "DUENO") await this.cargarComoDueno();
+    if (CuentaActual.rol === "DUENO") await this.cargarComoDueno();
     else await this.cargar();
   }
 }

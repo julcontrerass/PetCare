@@ -1,5 +1,6 @@
 /* Migrado de data/Sesion.kt. */
 import type { PerfilDto } from "./remoto/dtos";
+import { CuentaActual, type Rol } from "./cuentaActual";
 import { AvisosDelSistema } from "./avisos/avisosDelSistema";
 import { Recordatorios, Manual } from "./avisos/recordatorios";
 import { AdminRepo } from "./repositorio/adminRepo";
@@ -20,8 +21,7 @@ import { Servicios } from "./servicios";
 
 const TIEMPO_CIERRE_MS = 4_000;
 
-/** Modos en los que se puede usar una cuenta. */
-export type Rol = "DUENO" | "VETERINARIO" | "ADMIN";
+export type { Rol } from "./cuentaActual";
 
 /** La cuenta puede usar la app y sus datos ya están cargados. */
 export interface ResultadoListo {
@@ -111,8 +111,7 @@ const ESPERA_AVISO_SIN_LEER_MS = 1500;
 
 /** La cuenta que tiene la sesión iniciada y la carga de sus datos desde el servidor. */
 class SesionImpl {
-  private _usuarioId: string | null = null;
-  private _rol: Rol | null = null;
+  // El id y el modo viven en CuentaActual para que los repositorios los lean sin importar Sesion
   private _perfil: PerfilDto | null = null;
   private _rolesDisponibles: Rol[] = [];
 
@@ -128,10 +127,10 @@ class SesionImpl {
   alVolverAlIngreso: (() => void) | null = null;
 
   get usuarioId(): string | null {
-    return this._usuarioId;
+    return CuentaActual.usuarioId;
   }
   get rol(): Rol | null {
-    return this._rol;
+    return CuentaActual.rol;
   }
   get perfil(): PerfilDto | null {
     return this._perfil;
@@ -143,7 +142,7 @@ class SesionImpl {
   }
 
   get activa(): boolean {
-    return this._usuarioId != null;
+    return CuentaActual.usuarioId != null;
   }
 
   /** Id de la sesión abierta en el servidor, aunque todavía no se hayan cargado los datos de la cuenta. */
@@ -175,7 +174,7 @@ class SesionImpl {
 
   private async cargar(id: string): Promise<Resultado> {
     let datos = await Servicios.fuente.miPerfil();
-    this._usuarioId = id;
+    CuentaActual.usuarioId = id;
     this._perfil = datos;
     try {
       await FotosPendientes.subirCredencial(datos.email, id);
@@ -234,7 +233,7 @@ class SesionImpl {
         await AdminRepo.cargar();
         break;
     }
-    this._rol = rolElegido;
+    CuentaActual.rol = rolElegido;
     this.escucharCambios(rolElegido);
     Recordatorios.vigilarAvisos();
     this.avisarSiHayAvisosSinLeer(rolElegido);
@@ -376,8 +375,8 @@ class SesionImpl {
   async recargarPerfil(): Promise<void> {
     const datos = await Servicios.fuente.miPerfil();
     this._perfil = datos;
-    if (this._rol === "VETERINARIO") await PerfilVetRepo.cargar(datos);
-    else if (this._rol === "DUENO") await DuenoRepo.cargar(datos);
+    if (CuentaActual.rol === "VETERINARIO") await PerfilVetRepo.cargar(datos);
+    else if (CuentaActual.rol === "DUENO") await DuenoRepo.cargar(datos);
     Servicios.avisarCambio();
   }
 
@@ -433,7 +432,7 @@ class SesionImpl {
   /** Descarta los datos de la cuenta anterior sin tocar el servidor (la sesión ya se cerró o venció). */
   olvidar(): void {
     this.descartarDatosDelModo();
-    this._usuarioId = null;
+    CuentaActual.usuarioId = null;
     this._perfil = null;
     this._rolesDisponibles = [];
     Imagenes.limpiarCache();
@@ -444,7 +443,7 @@ class SesionImpl {
     void Recordatorios.cancelarTodo();
     void AvisosDelSistema.olvidar();
     this.detenerEscucha();
-    this._rol = null;
+    CuentaActual.rol = null;
     DuenoRepo.limpiar();
     PerfilVetRepo.limpiar();
     PacientesRepo.limpiar();
@@ -461,3 +460,4 @@ class SesionImpl {
 }
 
 export const Sesion = new SesionImpl();
+CuentaActual.recargarPerfil = () => Sesion.recargarPerfil();

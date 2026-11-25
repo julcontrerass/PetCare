@@ -8,7 +8,7 @@ import { Imagenes } from "../imagenes";
 import type { JsonObject, NuevaSedeDto, PerfilDto } from "../remoto/dtos";
 import { lugaresDe, normalizarVeterinario } from "../remoto/dtos";
 import { Servicios } from "../servicios";
-import { Sesion } from "../sesion";
+import { CuentaActual } from "../cuentaActual";
 
 const sinVacio = (s: string): string | null => (s.trim() ? s : null);
 
@@ -62,7 +62,7 @@ class PerfilVetRepoImpl {
   private sedeNueva(id: string, sede: SedeVet): NuevaSedeDto {
     return {
       id,
-      veterinario_id: Sesion.usuarioId ?? "",
+      veterinario_id: CuentaActual.usuarioId ?? "",
       nombre: sede.nombre,
       direccion: sinVacio(sede.direccion),
       dias_atencion: diasOrdenados(sede),
@@ -72,7 +72,7 @@ class PerfilVetRepoImpl {
   }
 
   private readonly recargarAlFallar = async (): Promise<void> => {
-    await Sesion.recargarPerfil();
+    await CuentaActual.recargarPerfil();
   };
 
   agregarSede(sede: SedeVet): SedeVet | null {
@@ -320,7 +320,7 @@ class PerfilVetRepoImpl {
     const anterior = this.fotoPath;
     this.fotoUri = uri;
     void Servicios.escribir(async () => {
-      const usuario = Sesion.usuarioId;
+      const usuario = CuentaActual.usuarioId;
       if (usuario == null) return;
       const ruta = await Imagenes.subirFoto(await Imagenes.prepararFoto(uri), usuario);
       await Servicios.fuente.actualizarPerfil({ foto_path: ruta });

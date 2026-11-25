@@ -649,7 +649,7 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
   const textoSiguiente = edicion ? "Guardar cambios" : paso === 3 ? "Guardar Evento" : "Siguiente";
 
   return (
-    <PantallaBase
+    <PantallaBase formulario
       titulo={titulo}
       subtitulo={subtitulo}
       alVolver={() => NavDueno.irACalendario()}

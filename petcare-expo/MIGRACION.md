@@ -1,12 +1,13 @@
 # PetCare: migración de Android nativo (Kotlin) a React Native con Expo
 
-Este proyecto (`petcare-expo/`) es la migración completa de la app Android que está en `../app/`.
+Este proyecto (`petcare-expo/`) es la migración completa de la app Android que estaba en `app/`.
 Mantiene **las mismas funciones, los mismos textos en español, el mismo backend (Supabase) y la misma
 lógica** que la versión Kotlin; cambian el lenguaje (TypeScript), la interfaz (React Native) y las
 herramientas (Expo SDK 58, expo-router).
 
-La app Android original **no se toca**: sirve de referencia. Cada archivo de `src/` nombra en su comentario
-inicial o en su nombre el archivo Kotlin del que viene.
+La app Android original ya no está en el repositorio: quedó en el historial de git (rama `main`). Cada archivo de
+`src/` nombra en su comentario inicial o en su nombre el archivo Kotlin del que viene, para poder seguir el rastro
+en ese historial.
 
 ## Estructura
 

@@ -18,6 +18,7 @@ import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
 import { useDatos } from "../common/useDatos";
 import { useSesionRequerida } from "../common/useSesionRequerida";
 import { BajaMascotaDialogo, CambiarEstadoHoja, EditarMascotaHoja } from "./DialogosMascota";
+import { DuenosMascotaHoja } from "./DuenosMascotaHoja";
 import { EstadoDueno } from "./estadoDueno";
 import { HistorialMascota } from "./HistorialMascota";
 import { InfoMascota } from "./InfoMascota";
@@ -47,7 +48,7 @@ function FilaOpcion({ icono, texto, color, alTocar }: { icono: NombreIcono; text
   );
 }
 
-type Dialogo = "menu" | "editar" | "estado" | "baja" | null;
+type Dialogo = "menu" | "editar" | "estado" | "baja" | "duenos" | null;
 
 export function DetalleMascotaPantalla({ mascota }: { mascota: Mascota }) {
   useSesionRequerida();
@@ -106,8 +107,17 @@ export function DetalleMascotaPantalla({ mascota }: { mascota: Mascota }) {
           <FilaOpcion icono="camara" texto="Cambiar foto" alTocar={() => elegirOpcion(() => { void elegirFoto(); })} />
           <FilaOpcion icono="calendarioMas" texto="Agendar turno" alTocar={() => elegirOpcion(() => NavDueno.irANuevoEvento(EstadoDueno.diaSeleccionado, m.nombre))} />
           <FilaOpcion icono="mascotas" texto="Cambiar estado" alTocar={() => elegirOpcion(() => setDialogo("estado"))} />
-          <FilaOpcion icono="borrar" texto="Eliminar mascota" color={Colores.dangerRed} alTocar={() => elegirOpcion(() => setDialogo("baja"))} />
+          <FilaOpcion icono="personas" texto="Dueños de la mascota" alTocar={() => elegirOpcion(() => setDialogo("duenos"))} />
+          {m.compartida ? null : (
+            <FilaOpcion icono="borrar" texto="Eliminar mascota" color={Colores.dangerRed} alTocar={() => elegirOpcion(() => setDialogo("baja"))} />
+          )}
         </HojaInferior>
+      ) : null}
+      {dialogo === "duenos" ? (
+        <DuenosMascotaHoja
+          mascota={m} alCerrar={() => setDialogo(null)}
+          alSalir={() => { EstadoDueno.mascotaActual = null; setDialogo(null); NavDueno.irAMascotas(); }}
+        />
       ) : null}
       {dialogo === "editar" ? <EditarMascotaHoja mascota={m} alCerrar={() => setDialogo(null)} alGuardar={refrescar} /> : null}
       {dialogo === "estado" ? <CambiarEstadoHoja mascota={m} alCerrar={() => setDialogo(null)} alAplicar={aplicarEstado} /> : null}

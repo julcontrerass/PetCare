@@ -258,7 +258,7 @@ export default function AgregarConsultaPantalla() {
   };
 
   return (
-    <PantallaBase
+    <PantallaBase formulario
       titulo="Nuevo turno" subtitulo="Otorgá un turno o registrá una consulta" alVolver={cerrarPantalla}
       pie={<Boton titulo="Guardar consulta" alto={56} cargando={guardando} onPress={() => void guardar()} />}
     >

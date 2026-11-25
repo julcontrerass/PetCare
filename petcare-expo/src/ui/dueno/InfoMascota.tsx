@@ -129,9 +129,12 @@ export function InfoMascota({ mascota: m, alCambiarFoto, alEditar, alCambiarEsta
 
       <Boton titulo="Editar información" icono="editar" alto={54} estilo={{ marginTop: 20 }} onPress={alEditar} />
       <Boton titulo="Cambiar estado: activa, inactiva o fallecida" variante="secundario" alto={52} estilo={{ marginTop: 10 }} onPress={alCambiarEstado} />
-      <Boton
-        titulo="Dar de baja a la mascota" variante="texto" alto={48} estilo={{ marginTop: 6 }} onPress={alDarDeBaja}
-      />
+      {/* Solo el dueño original puede dar de baja a la mascota */}
+      {m.compartida ? null : (
+        <Boton
+          titulo="Dar de baja a la mascota" variante="texto" alto={48} estilo={{ marginTop: 6 }} onPress={alDarDeBaja}
+        />
+      )}
     </ScrollView>
   );
 }

@@ -15,6 +15,7 @@ import { LocalDate } from "../../util/tiempo";
 import { EstadoVacio } from "../common/EstadoVacio";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { Insignia } from "../common/Insignia";
+import { Grilla } from "../common/Grilla";
 import { PantallaBase } from "../common/PantallaBase";
 import { Tarjeta } from "../common/Tarjeta";
 import { Texto } from "../common/Texto";
@@ -165,9 +166,11 @@ export function InicioVet() {
       {items.length === 0 ? (
         <EstadoVacio icono="calendario" titulo="Sin consultas para hoy" mensaje="Cuando agenden un turno con vos aparece acá" estilo={{ marginTop: 12 }} />
       ) : (
-        items.map((item) => (
-          <FilaHomeVet key={item.eventoId ?? item.title} item={item} alTocar={(i) => i.type === "CONSULTA" && i.eventoId && NavVet.detalleEvento(i.eventoId)} />
-        ))
+        <Grilla columnas={2}>
+          {items.map((item) => (
+            <FilaHomeVet key={item.eventoId ?? item.title} item={item} alTocar={(i) => i.type === "CONSULTA" && i.eventoId && NavVet.detalleEvento(i.eventoId)} />
+          ))}
+        </Grilla>
       )}
     </PantallaBase>
   );

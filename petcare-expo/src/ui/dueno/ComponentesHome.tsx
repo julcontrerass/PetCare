@@ -107,6 +107,9 @@ export function iconoDeTipo(tipo: string | null | undefined): NombreIcono {
     case "Reptil": return "reptil";
     case "Pez": return "pez";
     case "Roedor": return "roedor";
+    case "Conejo": return "conejo";
+    case "Caballo": return "caballo";
+    case "Cerdo": return "cerdo";
     default: return "mascotas";
   }
 }

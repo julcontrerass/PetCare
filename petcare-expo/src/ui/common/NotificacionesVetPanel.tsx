@@ -12,6 +12,7 @@ import { Errores } from "../../util/errores";
 import { Fechas } from "../../util/fechas";
 import { Avisos } from "./Avisos";
 import { PanelAvisos, type ItemAviso } from "./PanelAvisos";
+import { destinoAvisoVet, irADestinoVet } from "../veterinario/destinoAviso";
 
 export interface NotificacionesVetPanelProps {
   visible: boolean;
@@ -77,6 +78,7 @@ export function NotificacionesVetPanel({ visible, alCerrar, alCambiar }: Notific
         alCambiar?.();
         Avisos.exito("Notificaciones borradas");
       }}
+      alAbrir={(item) => irADestinoVet(destinoAvisoVet(item))}
     />
   );
 }

@@ -4,11 +4,11 @@ import { Platform } from "react-native";
 import { AlmacenSeguro } from "./almacenSeguro";
 import { ErrorConMensaje } from "../../util/errores";
 import type {
-  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, EstudioTurnoDto,
-  HoraOcupadaDto, InformeDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
+  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, DuenoMascotaDto,
+  EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
-  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TurnoDto,
+  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -34,7 +34,7 @@ const MASCOTA_CON_DUENO = "*,dueno:profiles!mascotas_dueno_id_fkey(nombre,email,
 
 const TABLAS_ESCUCHADAS = [
   "turnos", "accesos_mascota", "notificaciones", "mascotas", "informes_clinicos", "archivos_mascota",
-  "registros_salud", "prescripciones", "sedes", "recordatorios",
+  "registros_salud", "prescripciones", "sedes", "recordatorios", "coduenos_mascota", "tomas_medicacion",
 ];
 
 /** Lanza el error de Supabase si lo hay; si no, devuelve los datos. */
@@ -262,9 +262,35 @@ export class SupabaseFuente implements FuenteDatos {
   // ---------- Mascotas ----------
 
   async misMascotas(): Promise<MascotaDto[]> {
+    const yo = await this.miId();
+    // Las que comparte como co-dueño (no alcanza con dueno_id: una cuenta de veterinario además ve sus pacientes)
+    const compartidas = (ok(
+      await this.cliente.from("coduenos_mascota").select("mascota_id").eq("usuario_id", yo).eq("estado", "activo"),
+    ) as { mascota_id: string }[]).map((c) => c.mascota_id);
+    const filtro = compartidas.length > 0 ? `dueno_id.eq.${yo},id.in.(${compartidas.join(",")})` : `dueno_id.eq.${yo}`;
     return ok(
-      await this.cliente.from("mascotas").select("*").eq("dueno_id", await this.miId()).eq("activa", true).order("nombre", { ascending: true }),
+      await this.cliente.from("mascotas").select("*").or(filtro).eq("activa", true).order("nombre", { ascending: true }),
     ) as MascotaDto[];
+  }
+
+  async invitarCodueno(mascotaId: string, dniOCorreo: string): Promise<string> {
+    return ok(await this.cliente.rpc("invitar_codueno", { p_mascota: mascotaId, p_dato: dniOCorreo })) as string;
+  }
+
+  async misInvitacionesCodueno(): Promise<InvitacionCoduenoDto[]> {
+    return ok(await this.cliente.rpc("mis_invitaciones_codueno")) as InvitacionCoduenoDto[];
+  }
+
+  async responderInvitacionCodueno(invitacionId: string, aceptar: boolean): Promise<void> {
+    vacio(await this.cliente.rpc("responder_invitacion_codueno", { p_invitacion: invitacionId, p_aceptar: aceptar }));
+  }
+
+  async duenosDeMascota(mascotaId: string): Promise<DuenoMascotaDto[]> {
+    return ok(await this.cliente.rpc("duenos_de_mascota", { p_mascota: mascotaId })) as DuenoMascotaDto[];
+  }
+
+  async quitarCodueno(coduenoId: string): Promise<void> {
+    vacio(await this.cliente.rpc("quitar_codueno", { p_codueno: coduenoId }));
   }
 
   async mascotasDelVeterinario(): Promise<MascotaDto[]> {
@@ -441,6 +467,25 @@ export class SupabaseFuente implements FuenteDatos {
 
   async eliminarPrescripcion(id: string): Promise<void> {
     vacio(await this.cliente.from("prescripciones").delete().eq("id", id));
+  }
+
+  async tomas(mascotaId?: string | null): Promise<TomaDto[]> {
+    const consulta = this.cliente.from("tomas_medicacion").select("*").order("programada", { ascending: true });
+    return ok(await (mascotaId ? consulta.eq("mascota_id", mascotaId) : consulta)) as TomaDto[];
+  }
+
+  async registrarToma(prescripcionId: string, programada: string): Promise<void> {
+    // mascota_id lo completa la base a partir de la receta; si ya estaba tildada no pasa nada
+    vacio(
+      await this.cliente.from("tomas_medicacion").upsert(
+        { prescripcion_id: prescripcionId, programada },
+        { onConflict: "prescripcion_id,programada", ignoreDuplicates: true },
+      ),
+    );
+  }
+
+  async quitarToma(prescripcionId: string, programada: string): Promise<void> {
+    vacio(await this.cliente.from("tomas_medicacion").delete().eq("prescripcion_id", prescripcionId).eq("programada", programada));
   }
 
   async guardarAlertas(mascotaId: string, alertas: string): Promise<void> {

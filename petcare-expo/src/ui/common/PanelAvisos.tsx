@@ -53,6 +53,8 @@ export interface PanelAvisosProps {
   alBorrar: (item: ItemAviso) => void;
   /** Se llama cuando se confirma "Borrar todas". */
   alBorrarTodas: () => void;
+  /** Se llama al tocar un aviso, ya con el panel cerrado: lleva a lo que avisa. Sin esto los avisos no se tocan. */
+  alAbrir?: (item: ItemAviso) => void;
 }
 
 function BorrarTodas({ alTocar }: { alTocar: () => void }) {
@@ -70,7 +72,7 @@ function BorrarTodas({ alTocar }: { alTocar: () => void }) {
   );
 }
 
-function PanelAvisosComponente({ visible, alCerrar, avisos, alBorrar, alBorrarTodas }: PanelAvisosProps) {
+function PanelAvisosComponente({ visible, alCerrar, avisos, alBorrar, alBorrarTodas, alAbrir }: PanelAvisosProps) {
   const [restantes, setRestantes] = useState<ItemAviso[]>([]);
   const [confirmando, setConfirmando] = useState(false);
 
@@ -115,13 +117,14 @@ function PanelAvisosComponente({ visible, alCerrar, avisos, alBorrar, alBorrarTo
         key={`a-${i}-${item.creada.toString()}-${item.titulo}`}
         tipo={item.tipo} titulo={item.titulo} mensaje={item.mensaje} creada={item.creada} sinLeer={item.sinLeer}
         alBorrar={() => borrar(item)}
+        alAbrir={alAbrir ? () => { alCerrar(); alAbrir(item); } : undefined}
       />,
     );
   });
 
   return (
     <>
-      <HojaInferior visible={visible} alCerrar={alCerrar} alturaMaxima={0.92}>
+      <HojaInferior visible={visible} alCerrar={alCerrar} alturaMaxima={0.92} lateral>
         <View style={estilos.cabecera}>
           <View style={estilos.titulos}>
             <Texto variante="titulo" accessibilityRole="header">Notificaciones</Texto>

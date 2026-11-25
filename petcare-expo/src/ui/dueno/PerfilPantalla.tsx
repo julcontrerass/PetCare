@@ -267,7 +267,7 @@ export default function PerfilPantalla() {
   const escala = AJUSTE_A_ESCALA[perfil.ajusteFoto];
 
   return (
-    <PantallaBase titulo="Mi Perfil" alVolver={() => NavDueno.irAHome()}>
+    <PantallaBase formulario titulo="Mi Perfil" alVolver={() => NavDueno.irAHome()}>
       <LinearGradient colors={["#02797A", "#17A58F"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={estilos.hero}>
         <Icono nombre="perro" tamano={150} color="#FFFFFF1F" estilo={estilos.marcaAgua} />
         <View style={{ alignItems: "center" }}>
@@ -323,7 +323,7 @@ export default function PerfilPantalla() {
       </Tarjeta>
 
       <Boton
-        titulo="Cerrar sesión" variante="peligro" icono="salir" alto={54} estilo={{ marginTop: 22, backgroundColor: Colores.white, borderWidth: 1.5, borderColor: Colores.dangerRed }}
+        titulo="Cerrar sesión" variante="peligroContorno" icono="salir" alto={54} estilo={{ marginTop: 22, borderWidth: 1.5 }}
         onPress={() => NavDueno.cerrarSesion()}
       />
       <Pressable accessibilityRole="button" accessibilityLabel="Eliminar mi cuenta" onPress={() => BajaDeCuenta.confirmar()} style={[estilos.eliminar, cursorTocable]}>
