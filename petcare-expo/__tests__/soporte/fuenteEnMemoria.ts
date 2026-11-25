@@ -5,6 +5,7 @@ import type {
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
   RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
+  VinculoRecepcionDto, VeterinarioParaRecepcionDto, NuevaCuentaRecepcionDto, CuentaRecepcionCreadaDto,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
 import { FuenteBase, type ResultadoRegistro } from "../../src/data/remoto/fuenteDatos";
@@ -297,6 +298,102 @@ export class FuenteEnMemoria extends FuenteBase {
   override async quitarCodueno(coduenoId: string): Promise<void> {
     this.llamadas.push(`quitarCodueno:${coduenoId}`);
     this.coduenos = this.coduenos.filter((c) => c.id !== coduenoId);
+  }
+
+  // ---------- Recepción ----------
+
+  recepcion: { id: string; veterinario_id: string; recepcionista_id: string; estado: "pendiente" | "activo"; iniciado_por: "veterinario" | "recepcionista" }[] = [];
+
+  private esVetActivo(p: PerfilDto): boolean {
+    return p.rol === "veterinario" || p.veterinarios?.estado_revision === "activo";
+  }
+
+  private cuentaPorDato(dato: string, conMatricula: boolean): PerfilDto | undefined {
+    const d = dato.trim().toLowerCase();
+    return this.perfiles.find((p) =>
+      p.email.toLowerCase() === d || p.perfiles_privados?.dni === d ||
+      (conMatricula && (p.veterinarios?.matricula ?? "").toLowerCase() === d));
+  }
+
+  /** Como private.proponer_vinculo_recepcion: si el otro ya lo había pedido, el vínculo queda activo. */
+  private proponerVinculo(vet: string, recepcionista: string, origen: "veterinario" | "recepcionista"): string {
+    const r = this.recepcion.find((x) => x.veterinario_id === vet && x.recepcionista_id === recepcionista);
+    if (r?.estado === "activo") throw new Error("Ya están vinculados");
+    if (r && r.iniciado_por !== origen) {
+      r.estado = "activo";
+      return "activo";
+    }
+    if (!r) this.recepcion.push({ id: `rec-${this.recepcion.length + 1}`, veterinario_id: vet, recepcionista_id: recepcionista, estado: "pendiente", iniciado_por: origen });
+    return "pendiente";
+  }
+
+  override async invitarRecepcionista(dniOCorreo: string): Promise<string> {
+    this.llamadas.push(`invitarRecepcionista:${dniOCorreo}`);
+    if (!this.esVetActivo(this.yo)) throw new Error("Solo un veterinario activo puede invitar recepcionistas");
+    const cuenta = this.cuentaPorDato(dniOCorreo, false);
+    if (!cuenta) throw new Error("No encontramos una cuenta con ese DNI o correo. La otra persona tiene que registrarse primero en PetCare.");
+    if (cuenta.id === this.yo.id) throw new Error("No podés ser tu propio recepcionista");
+    return this.proponerVinculo(this.yo.id, cuenta.id, "veterinario");
+  }
+
+  override async pedirSerRecepcionista(dato: string): Promise<string> {
+    this.llamadas.push(`pedirSerRecepcionista:${dato}`);
+    const vet = this.cuentaPorDato(dato, true);
+    if (!vet || !this.esVetActivo(vet)) throw new Error("No encontramos un veterinario activo con ese dato");
+    if (vet.id === this.yo.id) throw new Error("No podés ser tu propio recepcionista");
+    return this.proponerVinculo(vet.id, this.yo.id, "recepcionista");
+  }
+
+  override async misVinculosRecepcion(): Promise<VinculoRecepcionDto[]> {
+    const todos = [...this.perfiles, this.yo];
+    return this.recepcion
+      .filter((r) => r.veterinario_id === this.yo.id || r.recepcionista_id === this.yo.id)
+      .map((r) => {
+        const soy = r.veterinario_id === this.yo.id ? "veterinario" : "recepcionista";
+        const otra = todos.find((p) => p.id === (soy === "veterinario" ? r.recepcionista_id : r.veterinario_id))!;
+        return {
+          id: r.id, soy, otra_cuenta_id: otra.id, nombre: otra.nombre, email: otra.email, telefono: otra.telefono ?? null,
+          foto_path: null, clinica: soy === "recepcionista" ? otra.veterinarios?.clinica ?? null : null,
+          estado: r.estado, iniciado_por: r.iniciado_por,
+          me_toca_responder: r.estado === "pendiente" && r.iniciado_por !== soy, created_at: "2026-11-25T12:00:00Z",
+        };
+      });
+  }
+
+  override async responderVinculoRecepcion(vinculoId: string, aceptar: boolean): Promise<void> {
+    this.llamadas.push(`responderVinculoRecepcion:${vinculoId}=${aceptar}`);
+    const r = this.recepcion.find((x) => x.id === vinculoId && x.estado === "pendiente" && (
+      (x.iniciado_por === "veterinario" && x.recepcionista_id === this.yo.id) ||
+      (x.iniciado_por === "recepcionista" && x.veterinario_id === this.yo.id)));
+    if (!r) throw new Error("El pedido ya no está disponible");
+    if (aceptar) r.estado = "activo";
+    else this.recepcion = this.recepcion.filter((x) => x !== r);
+  }
+
+  override async quitarVinculoRecepcion(vinculoId: string): Promise<void> {
+    this.llamadas.push(`quitarVinculoRecepcion:${vinculoId}`);
+    const r = this.recepcion.find((x) => x.id === vinculoId && (x.veterinario_id === this.yo.id || x.recepcionista_id === this.yo.id));
+    if (!r) throw new Error("El vínculo ya no existe");
+    this.recepcion = this.recepcion.filter((x) => x !== r);
+  }
+
+  override async veterinarioParaRecepcion(dato: string): Promise<VeterinarioParaRecepcionDto | null> {
+    const d = dato.trim().toLowerCase();
+    // Sin sesión solo se busca por correo o matrícula (no por DNI)
+    const vet = this.perfiles.find((p) =>
+      this.esVetActivo(p) && (p.email.toLowerCase() === d || (p.veterinarios?.matricula ?? "").toLowerCase() === d));
+    return vet ? { nombre: vet.nombre, clinica: vet.veterinarios?.clinica ?? null } : null;
+  }
+
+  /** Como crear-cuenta-recepcionista: la cuenta nueva queda en la recepción del veterinario al instante. */
+  override async crearCuentaRecepcionista(datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto> {
+    this.llamadas.push(`crearCuentaRecepcionista:${datos.email}`);
+    if (!this.esVetActivo(this.yo)) throw new Error("Solo los veterinarios con la cuenta aprobada pueden crear cuentas de recepción.");
+    if (this.errorAlCrearCuenta != null) throw new Error(this.errorAlCrearCuenta);
+    const id = `recepcion-${this.recepcion.length + 1}`;
+    this.perfiles.push(Escenario.perfil(id, "dueno", datos.nombre, { dni: datos.dni }));
+    this.recepcion.push({ id: `rec-${this.recepcion.length + 1}`, veterinario_id: this.yo.id, recepcionista_id: id, estado: "activo", iniciado_por: "veterinario" });
+    return { usuario_id: id, email: datos.email, password_temporal: "Temp#1234" };
   }
 
   override async mascotasDelVeterinario(): Promise<MascotaDto[]> {

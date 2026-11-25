@@ -8,7 +8,8 @@ import type {
   EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
-  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
+  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VinculoRecepcionDto,
+  CuentaRecepcionCreadaDto, NuevaCuentaRecepcionDto, VeterinarioParaRecepcionDto,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -187,10 +188,21 @@ export class SupabaseFuente implements FuenteDatos {
   }
 
   async crearCuentaDueno(datos: NuevaCuentaDuenoDto): Promise<CuentaDuenoCreadaDto> {
-    const { data, error } = await this.cliente.functions.invoke("crear-cuenta-dueno", { body: datos });
+    return (await this.crearCuentaCon("crear-cuenta-dueno", datos, "No pudimos crear la cuenta del dueño.")) as unknown as CuentaDuenoCreadaDto;
+  }
+
+  async crearCuentaRecepcionista(datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto> {
+    return (await this.crearCuentaCon("crear-cuenta-recepcionista", datos, "No pudimos crear la cuenta.")) as unknown as CuentaRecepcionCreadaDto;
+  }
+
+  /**
+   * Llama a una de las Edge Functions que crean cuentas a pedido del veterinario. Responden { ok: false, mensaje }
+   * con un texto pensado para mostrarle tal cual, también cuando rechazan el pedido.
+   */
+  private async crearCuentaCon(funcion: string, datos: object, falla: string): Promise<Record<string, unknown>> {
+    const { data, error } = await this.cliente.functions.invoke(funcion, { body: datos });
     let cuerpo = data as Record<string, unknown> | string | null;
     if (error) {
-      // La función responde con un mensaje pensado para el veterinario también cuando rechaza el pedido
       let mensaje: string | undefined;
       const respuesta = (error as { context?: Response }).context;
       if (respuesta && typeof respuesta.json === "function") {
@@ -205,14 +217,19 @@ export class SupabaseFuente implements FuenteDatos {
         mensaje ??
           (estado === 404
             ? "La creación de cuentas todavía no está habilitada en el servidor."
-            : "No pudimos crear la cuenta del dueño. Intentá de nuevo en un rato."),
+            : `${falla} Intentá de nuevo en un rato.`),
       );
     }
     if (typeof cuerpo === "string") cuerpo = JSON.parse(cuerpo) as Record<string, unknown>;
     if (!cuerpo || cuerpo.ok !== true) {
-      throw new ErrorConMensaje((cuerpo?.mensaje as string | undefined) ?? "No pudimos crear la cuenta del dueño.");
+      throw new ErrorConMensaje((cuerpo?.mensaje as string | undefined) ?? falla);
     }
-    return cuerpo as unknown as CuentaDuenoCreadaDto;
+    return cuerpo;
+  }
+
+  async veterinarioParaRecepcion(dato: string): Promise<VeterinarioParaRecepcionDto | null> {
+    const filas = ok(await this.cliente.rpc("veterinario_para_recepcion", { p_dato: dato })) as VeterinarioParaRecepcionDto[];
+    return filas[0] ?? null;
   }
 
   async cerrarSesion(): Promise<void> {
@@ -291,6 +308,26 @@ export class SupabaseFuente implements FuenteDatos {
 
   async quitarCodueno(coduenoId: string): Promise<void> {
     vacio(await this.cliente.rpc("quitar_codueno", { p_codueno: coduenoId }));
+  }
+
+  async misVinculosRecepcion(): Promise<VinculoRecepcionDto[]> {
+    return ok(await this.cliente.rpc("mis_vinculos_recepcion")) as VinculoRecepcionDto[];
+  }
+
+  async invitarRecepcionista(dniOCorreo: string): Promise<string> {
+    return ok(await this.cliente.rpc("invitar_recepcionista", { p_dato: dniOCorreo })) as string;
+  }
+
+  async pedirSerRecepcionista(dato: string): Promise<string> {
+    return ok(await this.cliente.rpc("pedir_ser_recepcionista", { p_dato: dato })) as string;
+  }
+
+  async responderVinculoRecepcion(vinculoId: string, aceptar: boolean): Promise<void> {
+    vacio(await this.cliente.rpc("responder_vinculo_recepcion", { p_vinculo: vinculoId, p_aceptar: aceptar }));
+  }
+
+  async quitarVinculoRecepcion(vinculoId: string): Promise<void> {
+    vacio(await this.cliente.rpc("quitar_vinculo_recepcion", { p_vinculo: vinculoId }));
   }
 
   async mascotasDelVeterinario(): Promise<MascotaDto[]> {

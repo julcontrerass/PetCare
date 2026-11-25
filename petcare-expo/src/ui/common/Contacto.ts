@@ -44,6 +44,23 @@ export function whatsApp(telefono: string, mensaje: string): Intencion | null {
  * Mensaje con el que el veterinario le pasa al dueño los datos para ingresar a la cuenta que le creó.
  * [veterinario] y [clinica] son los del que lo envía; [mascotas] son los nombres de lo que va a poder ver.
  */
+/** Como [mensajeDeAcceso], para la cuenta que el veterinario le crea a una persona de su recepción. */
+export function mensajeDeAccesoRecepcion(nombre: string, email: string, password: string, veterinario: string, clinica: string): string {
+  const t = nombre.trim();
+  const primerNombre = t.includes(" ") ? t.slice(0, t.indexOf(" ")) : t;
+  const deQuien =
+    (veterinario.trim() === "" ? "tu veterinario" : veterinario.trim()) +
+    (clinica.trim() !== "" ? ` de ${clinica.trim()}` : "");
+  return (
+    `Hola ${primerNombre}, soy ${deQuien}. Te creé tu cuenta en la app PetCare para que manejes mi agenda: ` +
+    "turnos, sala de espera y pedidos de los dueños.\n\n" +
+    "Para ingresar:\n" +
+    `Correo: ${email}\n` +
+    `Contraseña temporal: ${password}\n\n` +
+    "Al entrar, la app te va a pedir que elijas tu propia contraseña."
+  );
+}
+
 export function mensajeDeAcceso(
   dueno: string, mascotas: string[], email: string, password: string, veterinario: string, clinica: string,
 ): string {
@@ -148,6 +165,7 @@ export const Contacto = {
   numeroWhatsApp,
   whatsApp,
   mensajeDeAcceso,
+  mensajeDeAccesoRecepcion,
   mensajeDeSaludo,
   mensajeDeRevision,
   correo,

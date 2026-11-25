@@ -22,6 +22,7 @@ import { useDatos } from "../common/useDatos";
 import { useSesionRequerida } from "../common/useSesionRequerida";
 import { FilaEvento, FotoVetEvento, iconoDeTipo, TituloSeccion } from "./ComponentesHome";
 import { InvitacionesCodueno } from "./InvitacionesCodueno";
+import { InvitacionesRecepcion } from "./InvitacionesRecepcion";
 import { RemediosDeHoy } from "./RemediosDeHoy";
 import { NavDueno } from "./navegacionDueno";
 
@@ -130,6 +131,7 @@ export default function HomePantalla() {
       </View>
 
       <InvitacionesCodueno />
+      <InvitacionesRecepcion />
 
       <TarjetaPrincipal />
 

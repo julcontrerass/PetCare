@@ -3,7 +3,8 @@ import type {
   EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
-  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
+  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VinculoRecepcionDto,
+  CuentaRecepcionCreadaDto, NuevaCuentaRecepcionDto, VeterinarioParaRecepcionDto,
 } from "./dtos";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
@@ -68,6 +69,21 @@ export interface FuenteDatos {
   duenosDeMascota(mascotaId: string): Promise<DuenoMascotaDto[]>;
   /** Quita a un co-dueño o una invitación; con la fila propia, la cuenta deja de ser dueña. */
   quitarCodueno(coduenoId: string): Promise<void>;
+
+  // ---------- Recepción ----------
+  /** Vínculos de recepción de la cuenta: como veterinario (su recepción) y como recepcionista (sus veterinarios). */
+  misVinculosRecepcion(): Promise<VinculoRecepcionDto[]>;
+  /** El veterinario invita a una cuenta (por DNI o correo). Devuelve "pendiente", o "activo" si ya lo había pedido. */
+  invitarRecepcionista(dniOCorreo: string): Promise<string>;
+  /** La cuenta pide ser recepcionista de un veterinario (por correo, DNI o matrícula). Devuelve como en invitar. */
+  pedirSerRecepcionista(dato: string): Promise<string>;
+  responderVinculoRecepcion(vinculoId: string, aceptar: boolean): Promise<void>;
+  /** Corta un vínculo (activo o pendiente), desde cualquiera de los dos lados. */
+  quitarVinculoRecepcion(vinculoId: string): Promise<void>;
+  /** Busca un veterinario activo por correo o matrícula, sin sesión (registro como recepcionista). */
+  veterinarioParaRecepcion(dato: string): Promise<VeterinarioParaRecepcionDto | null>;
+  /** El veterinario crea la cuenta de una persona de su recepción (Edge Function); queda vinculada al instante. */
+  crearCuentaRecepcionista(datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto>;
   /** Mascotas que el veterinario puede ver, con los datos de su dueño. */
   mascotasDelVeterinario(): Promise<MascotaDto[]>;
   /** Todas las mascotas activas (solo el administrador). */
@@ -204,6 +220,19 @@ export class FuenteBase implements FuenteDatos {
   async responderInvitacionCodueno(_invitacionId: string, _aceptar: boolean): Promise<void> {}
   async duenosDeMascota(_mascotaId: string): Promise<DuenoMascotaDto[]> { return []; }
   async quitarCodueno(_coduenoId: string): Promise<void> {}
+  async misVinculosRecepcion(): Promise<VinculoRecepcionDto[]> { return []; }
+  async invitarRecepcionista(_dniOCorreo: string): Promise<string> {
+    throw new Error("Operación no disponible: invitarRecepcionista");
+  }
+  async pedirSerRecepcionista(_dato: string): Promise<string> {
+    throw new Error("Operación no disponible: pedirSerRecepcionista");
+  }
+  async responderVinculoRecepcion(_vinculoId: string, _aceptar: boolean): Promise<void> {}
+  async quitarVinculoRecepcion(_vinculoId: string): Promise<void> {}
+  async veterinarioParaRecepcion(_dato: string): Promise<VeterinarioParaRecepcionDto | null> { return null; }
+  async crearCuentaRecepcionista(_datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto> {
+    throw new Error("Operación no disponible: crearCuentaRecepcionista");
+  }
   async mascotasDelVeterinario(): Promise<MascotaDto[]> { return []; }
   async mascotasAdmin(): Promise<MascotaDto[]> { return []; }
   async crearMascota(_mascota: NuevaMascotaDto): Promise<void> {}

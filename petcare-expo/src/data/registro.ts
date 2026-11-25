@@ -2,10 +2,22 @@
 import { Fechas } from "../util/fechas";
 import type { DatosRegistroDueno, DatosRegistroVeterinario, MascotaRegistro } from "./datosRegistro";
 import { FotosPendientes } from "./fotosPendientes";
-import type { JsonObject } from "./remoto/dtos";
+import type { JsonObject, VeterinarioParaRecepcionDto } from "./remoto/dtos";
 import { datosDeSedes } from "./remoto/sedesJson";
 import { Servicios } from "./servicios";
 import { Sesion } from "./sesion";
+
+/** Datos del registro como recepcionista. */
+export interface DatosRegistroRecepcionista {
+  nombre: string;
+  dni: string;
+  telefono: string;
+  email: string;
+  password: string;
+  fotoPath: string | null;
+  /** Correo o matrícula del veterinario confirmado en el registro; null si lo pide más tarde. */
+  recepcionDe: string | null;
+}
 
 /** [sesionIniciada] es falso cuando el proyecto pide confirmar el correo antes de dejar entrar. */
 export interface ResultadoRegistroCuenta {
@@ -80,6 +92,31 @@ export const Registro = {
     await FotosPendientes.guardar(d.email, d.fotoPath, conFoto);
     await subirSiHaySesion(d.email, resultado);
     return resultado;
+  },
+
+  /**
+   * Cuenta para trabajar en la recepción de un veterinario: el servidor la crea como cuenta de dueño (sin mascotas)
+   * y, si viene [d.recepcionDe] (correo o matrícula del veterinario), deja pedido el vínculo con él.
+   */
+  async recepcionista(d: DatosRegistroRecepcionista): Promise<ResultadoRegistroCuenta> {
+    const datos: JsonObject = {
+      rol: "dueno",
+      nombre: d.nombre,
+      dni: d.dni,
+      telefono: d.telefono,
+      terminos_version: Registro.VERSION_TERMINOS,
+      mascotas: [],
+    };
+    if (d.recepcionDe) datos.recepcion_de = d.recepcionDe;
+    const resultado = await crear(d.email, d.password, datos);
+    await FotosPendientes.guardar(d.email, d.fotoPath, []);
+    await subirSiHaySesion(d.email, resultado);
+    return resultado;
+  },
+
+  /** Veterinario activo con ese correo o matrícula (para confirmarlo antes de registrarse), o null. */
+  buscarVeterinario(dato: string): Promise<VeterinarioParaRecepcionDto | null> {
+    return Servicios.fuente.veterinarioParaRecepcion(dato.trim());
   },
 
   async veterinario(d: DatosRegistroVeterinario): Promise<ResultadoRegistroCuenta> {

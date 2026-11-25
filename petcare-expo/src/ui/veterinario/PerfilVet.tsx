@@ -1,7 +1,7 @@
 /*
  * Migrado de ui/veterinario/PerfilVetSeccion.kt + seccion_vet_perfil.xml + item_sede_vet.xml: perfil profesional del
  * veterinario (foto, matrícula, contacto, lugares de atención, especialidades, animales que atiende, duración de los
- * turnos, preferencias, cambiar contraseña, modo dueño, cerrar sesión y eliminar la cuenta). Los formularios y hojas
+ * turnos, recepción, preferencias, cambiar contraseña, modo dueño, cerrar sesión y eliminar la cuenta). Los formularios y hojas
  * están en DialogosPerfilVet.tsx y EditorSede.tsx.
  */
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,6 +18,7 @@ import { BajaDeCuenta } from "../common/BajaDeCuenta";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { ModoDeUso } from "../common/ModoDeUso";
 import { PantallaBase } from "../common/PantallaBase";
+import { RecepcionHoja, resumenRecepcion } from "../common/RecepcionHoja";
 import { Tarjeta } from "../common/Tarjeta";
 import { Texto } from "../common/Texto";
 import { Colores, sombra } from "../common/tema";
@@ -38,7 +39,7 @@ type Dialogo =
   | { tipo: "ninguno" }
   | { tipo: "sede"; sede: SedeVet | null }
   | { tipo: "especialidades" } | { tipo: "tipos" } | { tipo: "duraciones" }
-  | { tipo: "perfil" } | { tipo: "password" } | { tipo: "notificaciones" };
+  | { tipo: "perfil" } | { tipo: "password" } | { tipo: "notificaciones" } | { tipo: "recepcion" };
 
 function Seccion({ titulo }: { titulo: string }) {
   return <Texto variante="titulo" tamano={17} style={{ marginTop: 22, marginBottom: 10 }}>{titulo}</Texto>;
@@ -184,6 +185,14 @@ export function PerfilVet() {
         <Fila icono="reloj" etiqueta="Duración de los turnos" valor={PerfilVetRepo.textoDuraciones()} chevron onPress={configurarDuraciones} />
       </Grupo>
 
+      <Seccion titulo="Recepción" />
+      <Grupo>
+        <Fila
+          icono="personas" etiqueta="Personas que manejan tu agenda" valor={resumenRecepcion("veterinario")} chevron
+          onPress={() => setDialogo({ tipo: "recepcion" })}
+        />
+      </Grupo>
+
       <Seccion titulo="Cuenta" />
       <Grupo>
         <Fila icono="editar" titulo="Editar perfil profesional" chevron fondoIcono={Colores.lightTeal} onPress={() => setDialogo({ tipo: "perfil" })} />
@@ -228,6 +237,7 @@ export function PerfilVet() {
       {dialogo.tipo === "duraciones" ? <HojaDuraciones servicios={PerfilVetRepo.serviciosOfrecidos()} alCerrar={cerrar} alGuardado={mostrarPerfil} /> : null}
       {dialogo.tipo === "perfil" ? <DialogoEditarPerfil alCerrar={cerrar} alGuardado={mostrarPerfil} /> : null}
       {dialogo.tipo === "password" ? <DialogoCambiarPassword alCerrar={cerrar} /> : null}
+      {dialogo.tipo === "recepcion" ? <RecepcionHoja lado="veterinario" alCerrar={cerrar} /> : null}
       {dialogo.tipo === "notificaciones" ? (
         <DialogoMultiple
           titulo="Notificaciones" opciones={ETIQUETAS} marcadas={CLAVES.map((c) => PerfilVetRepo.preferencia(c))} alCerrar={cerrar}

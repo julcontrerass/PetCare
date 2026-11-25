@@ -12,6 +12,7 @@ import { NotificacionesVet } from "./repositorio/notificacionesVet";
 import { PacientesRepo } from "./repositorio/pacientesRepo";
 import { PerfilVetRepo } from "./repositorio/perfilVetRepo";
 import { PrescripcionesRepo } from "./repositorio/prescripcionesRepo";
+import { RecepcionRepo } from "./repositorio/recepcionRepo";
 import { RecordatoriosRepo } from "./repositorio/recordatoriosRepo";
 import { SaludRepo } from "./repositorio/saludRepo";
 import { SolicitudesRepo } from "./repositorio/solicitudesRepo";
@@ -233,6 +234,7 @@ class SesionImpl {
         await AdminRepo.cargar();
         break;
     }
+    if (rolElegido !== "ADMIN") await RecepcionRepo.cargar();
     CuentaActual.rol = rolElegido;
     this.escucharCambios(rolElegido);
     Recordatorios.vigilarAvisos();
@@ -307,9 +309,11 @@ class SesionImpl {
             switch (rolCuenta) {
               case "DUENO":
                 await DuenoRepo.recargarDerivados();
+                await RecepcionRepo.cargar();
                 break;
               case "VETERINARIO":
                 await this.recargarVeterinario();
+                await RecepcionRepo.cargar();
                 break;
               case "ADMIN":
                 await AdminRepo.cargar();
@@ -445,6 +449,7 @@ class SesionImpl {
     this.detenerEscucha();
     CuentaActual.rol = null;
     DuenoRepo.limpiar();
+    RecepcionRepo.limpiar();
     PerfilVetRepo.limpiar();
     PacientesRepo.limpiar();
     AgendaRepo.limpiar();

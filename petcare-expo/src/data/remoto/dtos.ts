@@ -209,6 +209,48 @@ export interface InvitacionCoduenoDto {
   created_at: string;
 }
 
+/**
+ * Vínculo de recepción de la cuenta (rpc mis_vinculos_recepcion), visto desde su lado: `soy` dice si la cuenta es el
+ * veterinario (la otra cuenta es su recepcionista) o la recepcionista (la otra cuenta es el veterinario).
+ */
+export interface VinculoRecepcionDto {
+  id: string;
+  soy: "veterinario" | "recepcionista";
+  otra_cuenta_id: string;
+  nombre: string;
+  email: string;
+  telefono?: string | null;
+  foto_path?: string | null;
+  /** Clínica del veterinario (solo cuando la otra cuenta es el veterinario). */
+  clinica?: string | null;
+  estado: "pendiente" | "activo";
+  iniciado_por: "veterinario" | "recepcionista";
+  /** El vínculo está pendiente y lo inició la otra cuenta: esta tiene que aceptarlo o rechazarlo. */
+  me_toca_responder: boolean;
+  created_at: string;
+  respondida_at?: string | null;
+}
+
+/** Veterinario encontrado antes de registrarse como su recepcionista (rpc veterinario_para_recepcion). */
+export interface VeterinarioParaRecepcionDto {
+  nombre: string;
+  clinica?: string | null;
+}
+
+/** Lo que el veterinario carga para crear la cuenta de una persona de su recepción (crear-cuenta-recepcionista). */
+export interface NuevaCuentaRecepcionDto {
+  nombre: string;
+  dni: string;
+  telefono: string;
+  email: string;
+}
+
+export interface CuentaRecepcionCreadaDto {
+  usuario_id: string;
+  email: string;
+  password_temporal: string;
+}
+
 /** Dueño de una mascota (o invitación pendiente), de la rpc duenos_de_mascota. */
 export interface DuenoMascotaDto {
   /** Fila de coduenos_mascota; null para el dueño original. */

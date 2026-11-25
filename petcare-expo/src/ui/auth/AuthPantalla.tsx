@@ -234,8 +234,10 @@ function SelectorRol({ texto, elegido, alTocar }: { texto: string; elegido: bool
   );
 }
 
+type TipoCuenta = "dueno" | "veterinario" | "recepcionista";
+
 function RegistroVista({ alVolver }: { alVolver: () => void }) {
-  const [veterinario, setVeterinario] = useState(false);
+  const [tipo, setTipo] = useState<TipoCuenta>("dueno");
   const escritorio = useEscritorio();
   const contenido = (
     <>
@@ -243,10 +245,22 @@ function RegistroVista({ alVolver }: { alVolver: () => void }) {
         <Texto variante="titulo" tamano={28} style={{ marginTop: 18 }} accessibilityRole="header">Crear cuenta</Texto>
         <Texto variante="subtitulo" tamano={14} style={{ marginTop: 2 }}>Elegí cómo vas a usar PetCare</Texto>
         <View style={estilos.roles}>
-          <SelectorRol texto="Soy dueño" elegido={!veterinario} alTocar={() => setVeterinario(false)} />
-          <SelectorRol texto="Soy veterinario" elegido={veterinario} alTocar={() => setVeterinario(true)} />
+          <SelectorRol texto="Dueño" elegido={tipo === "dueno"} alTocar={() => setTipo("dueno")} />
+          <SelectorRol texto="Veterinario" elegido={tipo === "veterinario"} alTocar={() => setTipo("veterinario")} />
+          <SelectorRol texto="Recepcionista" elegido={tipo === "recepcionista"} alTocar={() => setTipo("recepcionista")} />
         </View>
-        {veterinario ? (
+        {tipo === "recepcionista" ? (
+          <View style={estilos.tarjetaRegistro}>
+            <Texto variante="titulo" tamano={19}>Registro de recepción</Texto>
+            <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>
+              Para manejar la agenda de un veterinario: sus turnos, la sala de espera y los pedidos de acceso. Son 3 pasos.
+            </Texto>
+            <Texto variante="cuerpo" tamano={14} color={Colores.tealDark} style={estilos.pasos}>
+              {"1  ·  Datos personales y foto\n2  ·  El veterinario para el que trabajás\n3  ·  Correo y contraseña"}
+            </Texto>
+            <Boton titulo="Comenzar" alto={56} estilo={{ marginTop: 18 }} onPress={() => router.push("/auth/registro-recepcionista")} />
+          </View>
+        ) : tipo === "veterinario" ? (
           <View style={estilos.tarjetaRegistro}>
             <Texto variante="titulo" tamano={19}>Registro profesional</Texto>
             <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>
@@ -481,7 +495,7 @@ const estilos = StyleSheet.create({
   registrarseEscritorio: { flexDirection: "row", alignItems: "center", marginTop: 24 },
   registroContenido: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 },
   roles: { flexDirection: "row", gap: 8, marginTop: 20 },
-  rol: { flex: 1, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  rol: { flex: 1, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
   tarjetaRegistro: { marginTop: 20, backgroundColor: Colores.white, borderRadius: 18, padding: 18, ...sombra(1) },
   pasos: { marginTop: 14, lineHeight: 26 },
 });

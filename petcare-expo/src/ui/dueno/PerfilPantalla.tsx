@@ -1,6 +1,7 @@
 /*
  * Migrado de PerfilPantalla (ui/dueno/PerfilPantalla.kt) + pantalla_mi_perfil.xml.
- * Mi perfil: foto, datos de la cuenta y accesos a veterinarios, edición, contraseña, cambio de modo y cierre de sesión.
+ * Mi perfil: foto, datos de la cuenta y accesos a veterinarios, edición, contraseña, cambio de modo, trabajo en
+ * recepción y cierre de sesión.
  *
  * Desvíos: el `AlertDialog` de "Cambiar contraseña" y el de "Ajustar posición de la foto" son hojas del kit; el
  * recorte arrastrable es `RecortarFotoDialogo`. Arriba de "Cuenta" se muestra `TarjetaPermiso` (aviso de las
@@ -25,6 +26,7 @@ import { Icono, type NombreIcono } from "../common/Icono";
 import { ImagenRemota } from "../common/ImagenRemota";
 import { ModoDeUso } from "../common/ModoDeUso";
 import { PantallaBase } from "../common/PantallaBase";
+import { RecepcionHoja } from "../common/RecepcionHoja";
 import { Tarjeta } from "../common/Tarjeta";
 import { TarjetaPermiso } from "../common/TarjetaPermiso";
 import { Texto } from "../common/Texto";
@@ -98,6 +100,7 @@ export default function PerfilPantalla() {
 
   const [hojaMascotas, setHojaMascotas] = useState(false);
   const [hojaVets, setHojaVets] = useState(false);
+  const [hojaRecepcion, setHojaRecepcion] = useState(false);
   const [hojaAjuste, setHojaAjuste] = useState(false);
   const [aRecortar, setARecortar] = useState<string | null>(null);
   const [hojaPassword, setHojaPassword] = useState(false);
@@ -320,6 +323,7 @@ export default function PerfilPantalla() {
         {modo ? <FilaCuenta icono="veterinario" texto={modo.texto} alTocar={modo.alTocar} divisor /> : null}
         <FilaCuenta icono="candado" texto="Cambiar contraseña" alTocar={abrirPassword} divisor />
         <FilaCuenta icono="medico" texto="Veterinarios con acceso" alTocar={() => NavDueno.irAVeterinarios()} divisor />
+        <FilaCuenta icono="personas" texto="Trabajo en recepción" alTocar={() => setHojaRecepcion(true)} divisor />
       </Tarjeta>
 
       <Boton
@@ -386,6 +390,8 @@ export default function PerfilPantalla() {
           returnKeyType="go" onSubmitEditing={() => void guardarPassword()}
         />
       </HojaInferior>
+
+      {hojaRecepcion ? <RecepcionHoja lado="recepcionista" alCerrar={() => setHojaRecepcion(false)} /> : null}
 
       <RecortarFotoDialogo uri={aRecortar} alCancelar={() => setARecortar(null)} alGuardar={guardarRecorte} />
     </PantallaBase>

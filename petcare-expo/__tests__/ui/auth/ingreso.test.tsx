@@ -162,10 +162,14 @@ describe("AuthPantalla: recuperar contraseña y registro", () => {
     expect(screen.getByText("Registro de dueño")).toBeTruthy();
     await fireEvent.press(screen.getByText("Comenzar"));
     expect(enrutador.push).toHaveBeenCalledWith("/auth/registro-dueno");
-    await fireEvent.press(screen.getByText("Soy veterinario"));
+    await fireEvent.press(screen.getByText("Veterinario"));
     expect(screen.getByText("Registro profesional")).toBeTruthy();
     await fireEvent.press(screen.getByText("Comenzar"));
     expect(enrutador.push).toHaveBeenCalledWith("/auth/registro-veterinario");
+    await fireEvent.press(screen.getByText("Recepcionista"));
+    expect(screen.getByText("Registro de recepción")).toBeTruthy();
+    await fireEvent.press(screen.getByText("Comenzar"));
+    expect(enrutador.push).toHaveBeenCalledWith("/auth/registro-recepcionista");
   });
 
   it("al volver de un registro con el correo por confirmar, deja el correo en el ingreso y avisa", async () => {
