@@ -241,6 +241,7 @@ export function PerfilVet() {
       {dialogo.tipo === "especialidades" ? (
         <DialogoMultiple
           titulo="Especialidades y prácticas que realizás" opciones={PerfilVetRepo.todasLasEspecialidades}
+          buscador="Buscar especialidad o práctica"
           marcadas={PerfilVetRepo.especialidadesSeleccionadas} alCerrar={cerrar}
           alGuardar={(m) => {
             m.forEach((v, i) => { PerfilVetRepo.especialidadesSeleccionadas[i] = v; });

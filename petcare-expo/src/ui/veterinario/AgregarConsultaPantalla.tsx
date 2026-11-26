@@ -298,7 +298,7 @@ export default function AgregarConsultaPantalla() {
       <SeccionTitulo texto="Detalles del turno" />
       <CajaForm>
         <EtiquetaForm texto="Tipo de evento" primera />
-        <CampoSeleccion titulo="Tipo de evento" opciones={tipos} indice={tipoIdx} alElegir={(i) => {
+        <CampoSeleccion titulo="Tipo de evento" opciones={tipos} indice={tipoIdx} buscador="Buscar tipo de evento" alElegir={(i) => {
           setTipoIdx(i);
         }} />
         {sedes.length > 0 ? (

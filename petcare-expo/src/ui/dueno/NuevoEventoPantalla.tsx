@@ -7,6 +7,7 @@
  * (`SelectorFecha` / `SelectorHora`); los días y horarios que no se pueden elegir salen bloqueados/tachados y
  * avisan por qué al tocarlos, igual que los toasts del Kotlin.
  */
+import { sinAcentos } from "../common/Buscador";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View , Animated } from "react-native";
@@ -50,10 +51,6 @@ const SUBTITULOS_PASO = [
 
 const ETIQUETAS_PASO = ["Tipo", "Detalles", "Resumen"];
 
-/** Texto sin acentos y en minúsculas, para el buscador de servicios. */
-export function sinAcentos(texto: string): string {
-  return texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-}
 
 function textoEstadoVeterinario(estado: VeterinarioAcceso["estado"]): string {
   switch (estado) {

@@ -87,7 +87,7 @@ export function EditorTurnoVet({ visible, evento, alCerrar, alGuardar }: EditorT
     <HojaInferior visible={visible} alCerrar={alCerrar}>
       <Texto variante="titulo" tamano={21} accessibilityRole="header">Editar turno</Texto>
       <EtiquetaForm texto="Tipo de evento" />
-      <CampoSeleccion titulo="Tipo de evento" opciones={tipos} indice={tipoIdx} alElegir={setTipoIdx} />
+      <CampoSeleccion titulo="Tipo de evento" opciones={tipos} indice={tipoIdx} alElegir={setTipoIdx} buscador="Buscar tipo de evento" />
       {sedes.length > 0 ? (
         <View>
           <EtiquetaForm texto="Lugar de atención" />

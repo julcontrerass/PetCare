@@ -2,6 +2,7 @@
  * Piezas chicas de las pantallas del veterinario que en Android eran estilos de themes.xml (EventoSeccion,
  * VetFormLabel, PetInfoRow...) o widgets del sistema (Spinner). Genéricos de esta carpeta: no se agregaron al kit.
  */
+import { CampoBuscador, coincide, SinResultados } from "../common/Buscador";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Colores } from "../common/tema";
@@ -69,30 +70,41 @@ export function CampoTocable({
   );
 }
 
-/** Reemplazo del `Spinner`: un campo que abre una hoja con las opciones. */
+/**
+ * Reemplazo del `Spinner`: un campo que abre una hoja con las opciones. Con [buscador] (el texto de ayuda del campo)
+ * la hoja suma arriba un buscador que filtra las opciones (tipos de evento, servicios, especialidades).
+ */
 export function CampoSeleccion({
-  opciones, indice, alElegir, titulo, accesibilidad,
+  opciones, indice, alElegir, titulo, accesibilidad, buscador,
 }: {
-  opciones: string[]; indice: number; alElegir: (i: number) => void; titulo: string; accesibilidad?: string;
+  opciones: string[]; indice: number; alElegir: (i: number) => void; titulo: string; accesibilidad?: string; buscador?: string;
 }) {
   const [abierta, setAbierta] = useState(false);
+  const [buscado, setBuscado] = useState("");
+  const visibles = opciones.map((o, i) => ({ o, i })).filter(({ o }) => !buscador || coincide(o, buscado));
+  const cerrar = () => {
+    setAbierta(false);
+    setBuscado("");
+  };
   return (
     <>
       <CampoTocable
         valor={opciones[indice] ?? ""} marcador="Elegir" accesibilidad={accesibilidad ?? titulo}
         alTocar={() => setAbierta(true)} deshabilitado={opciones.length === 0}
       />
-      <HojaInferior visible={abierta} alCerrar={() => setAbierta(false)}>
+      <HojaInferior visible={abierta} alCerrar={cerrar}>
         <Texto variante="titulo" tamano={20} accessibilityRole="header" style={{ marginBottom: 8 }}>{titulo}</Texto>
-        {opciones.map((o, i) => (
+        {buscador ? <CampoBuscador valor={buscado} alCambiar={setBuscado} placeholder={buscador} estilo={{ marginBottom: 8 }} /> : null}
+        {visibles.map(({ o, i }) => (
           <FilaOpcion
             key={`${i}-${o}`} texto={o} elegida={i === indice}
             alTocar={() => {
               alElegir(i);
-              setAbierta(false);
+              cerrar();
             }}
           />
         ))}
+        {visibles.length === 0 ? <SinResultados /> : null}
       </HojaInferior>
     </>
   );

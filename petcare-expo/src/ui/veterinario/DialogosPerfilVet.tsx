@@ -3,6 +3,7 @@
  * notificaciones), editar perfil, cambiar contraseña, animales que atiende (sheet_tipos_animales.xml) y duración de los
  * turnos (sheet_duraciones.xml + item_duracion.xml). Componentes propios de la carpeta del veterinario.
  */
+import { CampoBuscador, coincide, SinResultados } from "../common/Buscador";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { CatalogoMedico } from "../../data/catalogoMedico";
@@ -45,18 +46,26 @@ function FilaMarca({ texto, marcada, alCambiar }: { texto: string; marcada: bool
   );
 }
 
-/** AlertDialog con `setMultiChoiceItems`: devuelve los valores marcados al guardar. */
-export function DialogoMultiple({ titulo, opciones, marcadas, alGuardar, alCerrar }: {
+/**
+ * AlertDialog con `setMultiChoiceItems`: devuelve los valores marcados al guardar. Con [buscador] (el texto de ayuda
+ * del campo) suma arriba un buscador; lo ya marcado se conserva aunque quede fuera de lo filtrado.
+ */
+export function DialogoMultiple({ titulo, opciones, marcadas, alGuardar, alCerrar, buscador }: {
   titulo: string; opciones: string[]; marcadas: boolean[]; alGuardar: (marcadas: boolean[]) => void; alCerrar: () => void;
+  buscador?: string;
 }) {
   const [valores, setValores] = useState<boolean[]>([...marcadas]);
+  const [buscado, setBuscado] = useState("");
+  const visibles = opciones.map((o, i) => ({ o, i })).filter(({ o }) => !buscador || coincide(o, buscado));
   return (
     <DialogoCentral visible alCerrar={alCerrar}>
       <Texto variante="titulo" tamano={20} accessibilityRole="header">{titulo}</Texto>
-      <ScrollView style={{ maxHeight: 380, marginTop: 8 }}>
-        {opciones.map((o, i) => (
+      {buscador ? <CampoBuscador valor={buscado} alCambiar={setBuscado} placeholder={buscador} estilo={{ marginTop: 10 }} /> : null}
+      <ScrollView style={{ maxHeight: 380, marginTop: 8 }} keyboardShouldPersistTaps="handled">
+        {visibles.map(({ o, i }) => (
           <FilaMarca key={o} texto={o} marcada={valores[i]} alCambiar={() => setValores((v) => v.map((x, j) => (j === i ? !x : x)))} />
         ))}
+        {visibles.length === 0 ? <SinResultados /> : null}
       </ScrollView>
       <Botones alCerrar={alCerrar} alGuardar={() => { alGuardar(valores); alCerrar(); }} />
     </DialogoCentral>

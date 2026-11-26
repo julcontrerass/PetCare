@@ -116,7 +116,7 @@ function FormularioTurno({ turno, vetInicial, mascotaInicial, alListo, alCancela
 
       <EtiquetaForm texto="Servicio" />
       <CampoSeleccion
-        titulo="Servicio" opciones={tipos} indice={tipoIdx}
+        titulo="Servicio" opciones={tipos} indice={tipoIdx} buscador="Buscar servicio o especialidad"
         alElegir={(i) => { setTipoIdx(i); revisarHora(fecha, vet.duracionDe(tipos[i]), sede?.id ?? null); }}
       />
 

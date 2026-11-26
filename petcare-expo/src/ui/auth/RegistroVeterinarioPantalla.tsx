@@ -27,6 +27,7 @@ import { ImagenRemota } from "../common/ImagenRemota";
 import { Texto } from "../common/Texto";
 import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
 import { ChipRegistro, GrupoChips } from "./ChipRegistro";
+import { CampoBuscador, coincide, SinResultados } from "../common/Buscador";
 import { HojaTitulo } from "../common/TitulosEspecialidades";
 import { CatalogoMedico } from "../../data/catalogoMedico";
 import { enviarCertificado, type CertificadoElegido } from "../../data/repositorio/especialidadesRepo";
@@ -141,6 +142,7 @@ export default function RegistroVeterinarioPantalla() {
   const t = (s: string) => s.trim();
 
   const especialidadesElegidas = () => PerfilVetRepo.todasLasEspecialidades.filter((_, i) => especialidades[i]);
+  const [buscarEsp, setBuscarEsp] = useState("");
   // Títulos de especialidades adjuntados en el registro (opcionales: también se suben después desde el perfil)
   const [certificados, setCertificados] = useState<Record<string, CertificadoElegido>>({});
   const [editandoTitulo, setEditandoTitulo] = useState<string | null>(null);
@@ -511,8 +513,11 @@ export default function RegistroVeterinarioPantalla() {
                 return total === 0 ? "Ninguna seleccionada" : total === 1 ? "1 seleccionada" : `${total} seleccionadas`;
               })()}
             </Texto>
+            <CampoBuscador
+              valor={buscarEsp} alCambiar={setBuscarEsp} placeholder="Buscar especialidad o práctica" estilo={{ marginTop: 10 }}
+            />
             <GrupoChips estilo={{ marginTop: 10 }} espacioVertical={4}>
-              {PerfilVetRepo.todasLasEspecialidades.map((nombreEsp, i) => (
+              {PerfilVetRepo.todasLasEspecialidades.map((nombreEsp, i) => (coincide(nombreEsp, buscarEsp) ? (
                 <ChipRegistro
                   key={nombreEsp} texto={nombreEsp} marcado={especialidades[i]}
                   alCambiar={(m) => {
@@ -520,8 +525,11 @@ export default function RegistroVeterinarioPantalla() {
                     if (m) setErrorEsp(false);
                   }}
                 />
-              ))}
+              ) : null))}
             </GrupoChips>
+            {!PerfilVetRepo.todasLasEspecialidades.some((e) => coincide(e, buscarEsp)) ? (
+              <SinResultados texto="No encontramos ninguna especialidad con ese nombre." />
+            ) : null}
             {errorEsp ? <Texto variante="chico" tamano={13} color={Colores.dangerRed} style={{ marginTop: 8 }}>Elegí al menos una especialidad</Texto> : null}
 
             {conTitulo().length > 0 ? (
