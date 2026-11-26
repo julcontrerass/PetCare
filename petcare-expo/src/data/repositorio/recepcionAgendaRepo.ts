@@ -6,6 +6,7 @@
  * A diferencia de la agenda del veterinario, cada cambio espera la respuesta del servidor: así un horario que se
  * ocupó mientras tanto o un turno que ya no se puede tocar se avisa en el momento.
  */
+import { CatalogoMedico } from "../catalogoMedico";
 import type { VeterinarioAcceso } from "../../model/modelos";
 import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
@@ -57,8 +58,6 @@ export interface DatosTurno {
   notas: string;
 }
 
-/** Turno general cuando el veterinario no cargó servicios propios. */
-const TIPOS_GENERALES = ["Consulta", "Control", "Vacuna", "Desparasitación", "Tratamiento", "Cirugía", "Otro"];
 
 function orden(a: TurnoRecepcion, b: TurnoRecepcion): number {
   const porFecha = a.fecha.compareTo(b.fecha);
@@ -140,8 +139,7 @@ class RecepcionAgendaRepoImpl {
 
   /** Servicios que se pueden elegir con ese veterinario: los suyos y los generales. */
   tipos(vet: VeterinarioAcceso, actual: string | null = null): string[] {
-    const extra = actual && actual.trim() ? [actual] : [];
-    return [...new Set([...vet.especialidades, ...TIPOS_GENERALES, ...extra])];
+    return CatalogoMedico.tiposDeEvento(vet.especialidades, actual);
   }
 
   /**

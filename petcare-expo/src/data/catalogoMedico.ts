@@ -46,6 +46,22 @@ export const CatalogoMedico = {
     return this.ESPECIALIDADES.some((s) => s.toLowerCase() === nombre.toLowerCase());
   },
 
+  /** Tipos generales para cargar cualquier atención, además de los servicios del veterinario. */
+  TIPOS_GENERALES: ["Consulta", "Control", "Vacuna", "Desparasitación", "Tratamiento", "Cirugía", "Otro"],
+
+  /**
+   * Tipos de evento para elegir: los servicios que ofrece el veterinario y los generales, sin repetir. Un tipo general
+   * que ya está cubierto por un servicio no se muestra aparte (con "Cirugía 24hs" no aparece también "Cirugía").
+   * [actual] es el tipo de un turno que se está editando: siempre está.
+   */
+  tiposDeEvento(ofrecidos: readonly string[], actual: string | null = null): string[] {
+    const normal = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+    const cubierto = (g: string) => ofrecidos.some((o) => normal(o) !== normal(g) && normal(o).startsWith(`${normal(g)} `));
+    const generales = this.TIPOS_GENERALES.filter((g) => !cubierto(g));
+    const extra = actual && actual.trim() ? [actual] : [];
+    return [...new Set([...ofrecidos, ...generales, ...extra])];
+  },
+
   /** Lo que el veterinario ofrece a los dueños: sus servicios y las especialidades con el título aprobado. */
   ofrecidas(elegidas: readonly string[], aprobadas: readonly string[] | null | undefined): string[] {
     const ok = new Set((aprobadas ?? []).map((a) => a.toLowerCase()));

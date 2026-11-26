@@ -1,3 +1,4 @@
+import { CatalogoMedico } from "../catalogoMedico";
 import { LocalDate } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
 import type { NuevoTurnoDto, TurnoDto } from "../remoto/dtos";
@@ -58,15 +59,12 @@ function nombreEstado(estado: EstadoEvento): string {
 
 /** Turnos y consultas del veterinario en sesión. */
 class AgendaRepoImpl {
-  private readonly TIPOS_GENERALES = ["Consulta", "Control", "Vacuna", "Desparasitación", "Tratamiento", "Cirugía", "Otro"];
-
   /**
    * Tipos que se pueden elegir al cargar un turno propio: los servicios que ofrece el veterinario (cada uno con
    * su duración) y los generales. [actual] es el tipo que ya tiene un turno que se está editando.
    */
   tipos(actual: string | null = null): string[] {
-    const extra = actual && actual.trim() ? [actual] : [];
-    return [...new Set([...PerfilVetRepo.serviciosOfrecidos(), ...this.TIPOS_GENERALES, ...extra])];
+    return CatalogoMedico.tiposDeEvento(PerfilVetRepo.serviciosOfrecidos(), actual);
   }
 
   readonly eventos: EventoVet[] = [];
