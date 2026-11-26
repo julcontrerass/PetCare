@@ -202,6 +202,11 @@ class SesionImpl {
     } catch {
       subieron = false;
     }
+    try {
+      await FotosPendientes.subirLogo(datos.email, id);
+    } catch {
+      // se vuelve a intentar en el próximo ingreso
+    }
     if (subieron) {
       datos = await Servicios.fuente.miPerfil();
       this._perfil = datos;

@@ -5,14 +5,17 @@
  */
 import { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
+import { ClinicasRepo } from "../../data/repositorio/clinicasRepo";
 import { RecepcionAgendaRepo, type TurnoRecepcion } from "../../data/repositorio/recepcionAgendaRepo";
 import { Fechas } from "../../util/fechas";
 import { LocalDate } from "../../util/tiempo";
 import { EstadoVacio } from "../common/EstadoVacio";
+import { LogoVeterinaria } from "../common/LogoVeterinaria";
 import { PantallaBase } from "../common/PantallaBase";
 import { Colores } from "../common/tema";
 import { Texto } from "../common/Texto";
 import { useDatos } from "../common/useDatos";
+import { useEscritorio } from "../common/Web";
 import { FiltroVeterinarios, SinVeterinarios, TarjetaTurno, TurnoHoja } from "./ElementosRecepcion";
 import { NavRecepcion } from "./navegacionRecepcion";
 import { EditorTurnoRecepcion } from "./EditorTurnoRecepcion";
@@ -28,6 +31,7 @@ function Resumen({ valor, etiqueta, color }: { valor: number; etiqueta: string; 
 
 export function HoyRecepcion() {
   useDatos();
+  const escritorio = useEscritorio();
   const [vet, setVet] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [moviendo, setMoviendo] = useState<TurnoRecepcion | null>(null);
@@ -39,8 +43,13 @@ export function HoyRecepcion() {
   const hoy = LocalDate.now();
   const fecha = `${Fechas.diaSemana(hoy)} ${hoy.dayOfMonth} de ${Fechas.nombreMes(hoy.monthValue).toLowerCase()}`;
 
+  // En el teléfono el encabezado lleva el logo y el nombre de la veterinaria (en escritorio están en el menú)
+  const clinica = escritorio ? null : ClinicasRepo.principal;
   return (
-    <PantallaBase titulo="Hoy" subtitulo={fecha} scroll={false} bordes={["top"]}>
+    <PantallaBase
+      titulo="Hoy" subtitulo={clinica ? `${clinica.nombre} · ${fecha}` : fecha} scroll={false} bordes={["top"]}
+      derecha={clinica ? <LogoVeterinaria logoPath={clinica.logo_path} nombre={clinica.nombre} tamano={44} /> : undefined}
+    >
       {sinVets ? (
         <SinVeterinarios />
       ) : (

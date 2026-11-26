@@ -345,6 +345,10 @@ export class SupabaseFuente implements FuenteDatos {
     vacio(await this.cliente.rpc("revisar_clinica", { p_clinica: clinicaId, p_aprobar: aprobar, p_motivo: motivo }));
   }
 
+  async cambiarLogoClinica(clinicaId: string, logoPath: string | null): Promise<void> {
+    vacio(await this.cliente.rpc("cambiar_logo_clinica", { p_clinica: clinicaId, p_path: logoPath }));
+  }
+
   async mascotasDelVeterinario(): Promise<MascotaDto[]> {
     return ok(
       await this.cliente.from("mascotas").select(MASCOTA_CON_DUENO).eq("activa", true).order("nombre", { ascending: true }),

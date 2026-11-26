@@ -9,7 +9,7 @@ import type { ClinicaDto } from "../../data/remoto/dtos";
 import { Errores } from "../../util/errores";
 import { Avisos } from "../common/Avisos";
 import { Boton } from "../common/Boton";
-import { Icono } from "../common/Icono";
+import { LogoVeterinaria } from "../common/LogoVeterinaria";
 import { Tarjeta } from "../common/Tarjeta";
 import { Colores } from "../common/tema";
 import { Texto } from "../common/Texto";
@@ -36,7 +36,7 @@ function Invitacion({ clinica: c }: { clinica: ClinicaDto }) {
   return (
     <Tarjeta estilo={estilos.tarjeta} accessibilityLabel={`Invitación para sumarte a ${c.nombre}`}>
       <View style={estilos.fila}>
-        <View style={estilos.icono}><Icono nombre="sede" tamano={26} color={Colores.primaryTeal} /></View>
+        <LogoVeterinaria logoPath={c.logo_path} nombre={c.nombre} tamano={56} />
         <View style={estilos.textos}>
           <Texto variante="etiqueta" tamano={11} color={Colores.primaryTeal} style={estilos.etiqueta}>Veterinaria</Texto>
           <Texto tamano={15} negrita>{`${c.invitado_por_nombre ?? "Te"} te invitó a ${c.nombre} como ${roles}`}</Texto>
@@ -70,7 +70,6 @@ export function InvitacionesRecepcion() {
 const estilos = StyleSheet.create({
   tarjeta: { marginBottom: 10, borderWidth: 1.5, borderColor: Colores.primaryTeal },
   fila: { flexDirection: "row", alignItems: "center" },
-  icono: { width: 56, height: 56, borderRadius: 16, backgroundColor: Colores.lightTeal, alignItems: "center", justifyContent: "center" },
   textos: { flex: 1, minWidth: 0, marginLeft: 12 },
   etiqueta: { textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 2 },
   botones: { flexDirection: "row", gap: 10, marginTop: 12 },

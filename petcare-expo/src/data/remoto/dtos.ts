@@ -229,6 +229,8 @@ export interface ClinicaDto {
   /** La que registra alguien que no es veterinario espera que el administrador la verifique. */
   revision?: RevisionClinica;
   motivo_revision?: string | null;
+  /** Ruta del logo en el bucket `fotos`. */
+  logo_path?: string | null;
 }
 
 export type RevisionClinica = "pendiente" | "aprobada" | "rechazada";
@@ -245,6 +247,7 @@ export interface ClinicaParaRevisarDto {
   titular_email?: string | null;
   titular_telefono?: string | null;
   titular_dni?: string | null;
+  logo_path?: string | null;
 }
 
 /** Una persona del equipo de una veterinaria (rpc equipo_clinica). */

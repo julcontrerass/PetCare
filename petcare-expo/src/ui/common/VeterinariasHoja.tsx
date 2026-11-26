@@ -24,6 +24,7 @@ import { Campo } from "./Campo";
 import { Chip } from "./Chip";
 import { Contacto } from "./Contacto";
 import { HojaInferior } from "./HojaInferior";
+import { LogoVeterinaria } from "./LogoVeterinaria";
 import { Icono } from "./Icono";
 import { Colores } from "./tema";
 import { Texto } from "./Texto";
@@ -85,7 +86,7 @@ function FilaClinica({ clinica: c, alTocar }: { clinica: ClinicaDto; alTocar: ()
       accessibilityRole="button" accessibilityLabel={`${c.nombre}, ${c.roles.map((r) => NOMBRE_ROL[r]).join(", ")}`}
       onPress={alTocar} {...foco.props} style={[estilos.fila, cursorTocable, estiloFoco(foco.enfocado)]}
     >
-      <View style={estilos.icono}><Icono nombre="sede" tamano={22} color={Colores.primaryTeal} /></View>
+      <LogoVeterinaria logoPath={c.logo_path} nombre={c.nombre} tamano={42} />
       <View style={estilos.textos}>
         <Texto tamano={15} negrita numberOfLines={1}>{c.nombre}</Texto>
         <Texto variante="chico" tamano={12} numberOfLines={1}>
@@ -114,7 +115,7 @@ function FilaInvitacion({ clinica: c }: { clinica: ClinicaDto }) {
   };
   return (
     <View style={estilos.fila}>
-      <View style={estilos.icono}><Icono nombre="sede" tamano={22} color={Colores.primaryTeal} /></View>
+      <LogoVeterinaria logoPath={c.logo_path} nombre={c.nombre} tamano={42} />
       <View style={estilos.textos}>
         <Texto tamano={15} negrita numberOfLines={1}>{c.nombre}</Texto>
         <Texto variante="chico" tamano={12}>{`${c.invitado_por_nombre ?? "Alguien"} te invitó como ${c.roles.map((r) => NOMBRE_ROL[r].toLowerCase()).join(" y ")}`}</Texto>
@@ -132,6 +133,13 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
   const [telefono, setTelefono] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
+  const [logo, setLogo] = useState<string | null>(null);
+  const elegirLogo = async () => {
+    const uri = await elegirFoto({ recortar: true, prefijo: "logo_veterinaria" });
+    if (!uri) return;
+    descartarFoto(logo);
+    setLogo(uri);
+  };
   const crear = async () => {
     if (nombre.trim().length < 2) {
       setError("Ingresá el nombre de la veterinaria");
@@ -144,7 +152,15 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
     }
     setCreando(true);
     try {
-      await ClinicasRepo.crearClinica(nombre, direccion, telefono);
+      const id = await ClinicasRepo.crearClinica(nombre, direccion, telefono);
+      if (logo) {
+        try {
+          await ClinicasRepo.cambiarLogo(id, logo);
+        } catch {
+          Avisos.mostrar("La veterinaria quedó registrada, pero no pudimos subir el logo. Probá de nuevo desde su equipo.");
+        }
+        descartarFoto(logo);
+      }
       Avisos.mostrar(
         esVet ? `Creaste ${nombre.trim()}. Ya podés sumar a tu equipo` : `Registraste ${nombre.trim()}. Te avisamos cuando la aprobemos`,
         "exito",
@@ -163,6 +179,10 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
           ? "Quedás como titular y veterinario/a. Después sumás a tu equipo: otros veterinarios, recepción y administración."
           : "Quedás como titular. El administrador de PetCare verifica que exista y, cuando la aprueba, sumás a tus veterinarios y a tu equipo."}
       </Texto>
+      <View style={estilos.logoForm}>
+        <LogoVeterinaria uri={logo} tamano={88} alTocar={() => void elegirLogo()} />
+        <Texto variante="chico" tamano={12} style={{ marginTop: 8 }}>Logo (opcional)</Texto>
+      </View>
       <Campo
         estilo={{ marginTop: 14 }} etiqueta="Nombre" placeholder="Ej: Veterinaria San Roque" value={nombre}
         onChangeText={(t) => { setNombre(t); setError(null); }} error={error} autoCapitalize="words"
@@ -385,6 +405,23 @@ function Equipo({ clinica, alVolver, alCrearCuenta }: { clinica: ClinicaDto; alV
   const [enviando, setEnviando] = useState(false);
   const administra = ClinicasRepo.administra(clinica.id);
   const esTitular = ClinicasRepo.esTitular(clinica.id);
+  // El logo lo cambia el titular o la administración, aunque la veterinaria esté en revisión
+  const editaLogo = clinica.roles.some((r) => r === "titular" || r === "administrador");
+  const [subiendoLogo, setSubiendoLogo] = useState(false);
+  const cambiarLogo = async () => {
+    const uri = await elegirFoto({ recortar: true, prefijo: "logo_veterinaria" });
+    if (!uri) return;
+    setSubiendoLogo(true);
+    try {
+      await ClinicasRepo.cambiarLogo(clinica.id, uri);
+      Avisos.mostrar("Logo actualizado", "exito");
+    } catch (e) {
+      Avisos.error(Errores.mensaje(e));
+    } finally {
+      descartarFoto(uri);
+      setSubiendoLogo(false);
+    }
+  };
 
   const cargar = () => {
     ClinicasRepo.equipo(clinica.id).then(setEquipo).catch((e: unknown) => {
@@ -422,8 +459,19 @@ function Equipo({ clinica, alVolver, alCrearCuenta }: { clinica: ClinicaDto; alV
         <Icono nombre="volver" tamano={18} color={Colores.primaryTeal} />
         <Texto tamano={13} negrita color={Colores.primaryTeal}>Mis veterinarias</Texto>
       </Pressable>
-      <Texto tamano={20} negrita accessibilityRole="header">{clinica.nombre}</Texto>
-      <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>
+      <View style={estilos.cabeceraEquipo}>
+        <LogoVeterinaria
+          logoPath={clinica.logo_path} nombre={clinica.nombre} tamano={64}
+          alTocar={editaLogo && !subiendoLogo ? () => void cambiarLogo() : undefined}
+        />
+        <View style={estilos.textos}>
+          <Texto tamano={20} negrita accessibilityRole="header">{clinica.nombre}</Texto>
+          {editaLogo ? (
+            <Texto variante="chico" tamano={12.5}>{subiendoLogo ? "Subiendo el logo..." : "Tocá el logo para cambiarlo"}</Texto>
+          ) : null}
+        </View>
+      </View>
+      <Texto variante="chico" tamano={13} style={{ marginTop: 10 }}>
         La recepción y la administración manejan la agenda de todos los veterinarios de acá. La historia clínica la ven solo los veterinarios.
       </Texto>
       {clinica.revision === "pendiente" ? (
@@ -571,6 +619,8 @@ const estilos = StyleSheet.create({
   botonesFila: { flexDirection: "row", gap: 10, marginTop: 10 },
   volver: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginBottom: 8 },
   aviso: { flexDirection: "row", alignItems: "flex-start", gap: 10, borderRadius: 14, padding: 12, marginTop: 12 },
+  cabeceraEquipo: { flexDirection: "row", alignItems: "center" },
+  logoForm: { alignItems: "center", marginTop: 16 },
   avisoTexto: { flex: 1, minWidth: 0 },
   credenciales: {
     backgroundColor: Colores.white, borderRadius: 16, borderWidth: 1, borderColor: Colores.loginFieldStroke, padding: 14, marginTop: 16,

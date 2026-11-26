@@ -20,6 +20,8 @@ export interface DatosRegistroVeterinaria {
   email: string;
   password: string;
   veterinaria: { nombre: string; direccion: string; telefono: string };
+  /** Logo elegido (uri en el teléfono); opcional. */
+  logoPath?: string | null;
 }
 
 export class CorreoYaRegistrado extends Error {
@@ -106,7 +108,19 @@ export const Registro = {
       mascotas: [],
       veterinaria: { nombre: d.veterinaria.nombre, direccion: d.veterinaria.direccion, telefono: d.veterinaria.telefono },
     };
-    return crear(d.email, d.password, datos);
+    const resultado = await crear(d.email, d.password, datos);
+    if (d.logoPath) {
+      await FotosPendientes.guardarLogo(d.email, d.logoPath);
+      if (resultado.sesionIniciada) {
+        try {
+          const usuario = await Sesion.usuarioIdActual();
+          if (usuario) await FotosPendientes.subirLogo(d.email, usuario);
+        } catch {
+          // se sube en el primer ingreso
+        }
+      }
+    }
+    return resultado;
   },
 
   async veterinario(d: DatosRegistroVeterinario): Promise<ResultadoRegistroCuenta> {

@@ -94,6 +94,8 @@ export interface FuenteDatos {
   clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]>;
   /** El administrador aprueba o rechaza (con motivo) una veterinaria. */
   revisarClinica(clinicaId: string, aprobar: boolean, motivo: string | null): Promise<void>;
+  /** Titular o administración cambian (o quitan, con null) el logo; la ruta tiene que estar en su carpeta de `fotos`. */
+  cambiarLogoClinica(clinicaId: string, logoPath: string | null): Promise<void>;
   /** Mascotas que el veterinario puede ver, con los datos de su dueño. */
   mascotasDelVeterinario(): Promise<MascotaDto[]>;
   /** Todas las mascotas activas (solo el administrador). */
@@ -247,6 +249,7 @@ export class FuenteBase implements FuenteDatos {
   }
   async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> { return []; }
   async revisarClinica(_clinicaId: string, _aprobar: boolean, _motivo: string | null): Promise<void> {}
+  async cambiarLogoClinica(_clinicaId: string, _logoPath: string | null): Promise<void> {}
   async mascotasDelVeterinario(): Promise<MascotaDto[]> { return []; }
   async mascotasAdmin(): Promise<MascotaDto[]> { return []; }
   async crearMascota(_mascota: NuevaMascotaDto): Promise<void> {}

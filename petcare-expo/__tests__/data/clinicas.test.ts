@@ -193,6 +193,25 @@ describe("Veterinarias", () => {
     })).rejects.toThrow("Ese DNI ya tiene una cuenta");
   });
 
+  it("la vista de la veterinaria muestra la que la cuenta lleva, con su logo", async () => {
+    fuente.agregarClinica("cli-p", "Panda", [[LAURA.id, ["titular"]]]);
+    fuente.agregarClinica("cli-a", "Centro", [[VET.id, ["titular", "veterinario"]], [LAURA.id, ["veterinario"]]]);
+    await ingresarComo(LAURA);
+    expect(ClinicasRepo.principal?.nombre).toBe("Panda");
+    await fuente.cambiarLogoClinica("cli-p", `${LAURA.id}/logo.jpg`);
+    await ClinicasRepo.cargar();
+    expect(ClinicasRepo.principal?.logo_path).toBe(`${LAURA.id}/logo.jpg`);
+  });
+
+  it("el logo lo cambian el titular o la administración (aunque esté en revisión), con la imagen en su carpeta", async () => {
+    await ingresarComo(LAURA);
+    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    await expect(fuente.cambiarLogoClinica(id, "otra-cuenta/logo.jpg")).rejects.toThrow("tu carpeta");
+    await fuente.cambiarLogoClinica(id, `${LAURA.id}/logo.jpg`);
+    fuente.agregarClinica("cli-a", "Centro", [[VET.id, ["titular", "veterinario"]], [LAURA.id, ["recepcion"]]]);
+    await expect(fuente.cambiarLogoClinica("cli-a", `${LAURA.id}/logo.jpg`)).rejects.toThrow("titular o la administración");
+  });
+
   it("al cerrar la sesión se olvidan las veterinarias", async () => {
     fuente.agregarClinica("cli-a", "Centro", [[VET.id, ["titular", "veterinario"]]]);
     await ingresarComo(VET);

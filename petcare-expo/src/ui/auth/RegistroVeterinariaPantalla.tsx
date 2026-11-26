@@ -1,6 +1,6 @@
 /*
  * Registro "Mi veterinaria": para quien lleva una veterinaria sin ser veterinario (el dueño del negocio). En tres
- * pasos (como el registro de dueño): sus datos, los de la veterinaria y la cuenta. Queda como titular y la
+ * pasos (como el registro de dueño): sus datos, los de la veterinaria (con su logo, opcional) y la cuenta. Queda como titular y la
  * veterinaria espera que el administrador verifique que existe; después suma a sus veterinarios y a su equipo.
  */
 import { useRef, useState } from "react";
@@ -10,8 +10,10 @@ import { Errores } from "../../util/errores";
 import { Colores, sombra } from "../common/tema";
 import { Avisos } from "../common/Avisos";
 import { Campo } from "../common/Campo";
+import { LogoVeterinaria } from "../common/LogoVeterinaria";
 import { Texto } from "../common/Texto";
 import { CajaInfo, Casilla } from "./ElementosRegistro";
+import { descartarFoto, elegirFoto } from "./elegirFoto";
 import { cerrarPantalla, EstadoAuth } from "./estadoAuth";
 import { CabeceraPaso, PasosRegistro } from "./PasosRegistro";
 import { contarDigitos, esCorreoValido, soloNumeros } from "./validaciones";
@@ -34,6 +36,7 @@ export default function RegistroVeterinariaPantalla() {
   const [vetNombre, setVetNombre] = useState("");
   const [vetDireccion, setVetDireccion] = useState("");
   const [vetTelefono, setVetTelefono] = useState("");
+  const [logo, setLogo] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -65,6 +68,13 @@ export default function RegistroVeterinariaPantalla() {
     }
   };
   useAtras(irAlPasoAnterior);
+
+  const elegirLogo = async () => {
+    const uri = await elegirFoto({ recortar: true, prefijo: "logo_veterinaria" });
+    if (!uri) return;
+    descartarFoto(logo);
+    setLogo(uri);
+  };
 
   const mostrarErrores = (nuevos: ErroresCampos, orden: NombreCampo[]): boolean => {
     setErrores(nuevos);
@@ -113,6 +123,7 @@ export default function RegistroVeterinariaPantalla() {
       const resultado = await Registro.veterinaria({
         nombre: t(nombre), dni: t(dni), telefono: t(telefono), email: correo, password,
         veterinaria: { nombre: t(vetNombre), direccion: t(vetDireccion), telefono: t(vetTelefono) },
+        logoPath: logo,
       });
       EstadoAuth.terminarRegistro({ email: correo, confirmarCorreo: !resultado.sesionIniciada, esVeterinario: false });
       cerrarPantalla();
@@ -166,6 +177,11 @@ export default function RegistroVeterinariaPantalla() {
       {paso === 1 ? (
         <View>
           <CabeceraPaso icono="sede" titulo="Tu veterinaria" subtitulo="Con estos datos el administrador de PetCare verifica que exista." />
+          <View style={estilos.logo}>
+            <LogoVeterinaria uri={logo} nombre={t(vetNombre) || undefined} tamano={104} alTocar={() => void elegirLogo()} />
+            <Texto variante="chico" centrado style={{ marginTop: 8 }}>Logo de la veterinaria (opcional)</Texto>
+            <Texto variante="chico" tamano={12} centrado>Lo ve tu equipo en la app, junto al nombre de la veterinaria.</Texto>
+          </View>
           <Campo
             ref={ref("vetNombre")} estilo={estilos.campoPrimero} etiqueta="Nombre de la veterinaria" placeholder="Ej: Veterinaria Panda"
             value={vetNombre} onChangeText={editar("vetNombre", setVetNombre)} error={errores.vetNombre} autoCapitalize="words"
@@ -211,6 +227,7 @@ export default function RegistroVeterinariaPantalla() {
 
 const estilos = StyleSheet.create({
   campoPrimero: { marginTop: 18 },
+  logo: { alignItems: "center", marginTop: 20 },
   campo: { marginTop: 14 },
   resumen: { marginTop: 18, backgroundColor: Colores.white, borderRadius: 18, padding: 16, ...sombra(1) },
 });

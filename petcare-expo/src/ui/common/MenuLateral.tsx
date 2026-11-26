@@ -27,6 +27,8 @@ export interface ItemMenuLateral {
 }
 
 export interface MenuLateralProps {
+  /** Lo que va arriba en lugar del logo de PetCare (la vista de una veterinaria muestra su logo y su nombre). */
+  marca?: ReactNode;
   /** Botón destacado debajo del logo (Agendar evento, Agregar consulta). */
   principal?: { texto: string; icono: NombreIcono; alTocar: () => void };
   /** Las secciones (equivalen a las pestañas del teléfono). */
@@ -88,7 +90,7 @@ function BotonPrincipal({ texto, icono, alTocar }: NonNullable<MenuLateralProps[
   );
 }
 
-export function MenuLateral({ principal, secciones, otras, alCerrarSesion }: MenuLateralProps) {
+export function MenuLateral({ marca, principal, secciones, otras, alCerrarSesion }: MenuLateralProps) {
   const margenes = useMargenes();
   return (
     <View
@@ -96,7 +98,11 @@ export function MenuLateral({ principal, secciones, otras, alCerrarSesion }: Men
       testID="menu-lateral"
       style={[estilos.menu, { paddingTop: 24 + margenes.top, paddingBottom: 16 + margenes.bottom }]}
     >
-      <Image source={LOGO} resizeMode="contain" accessibilityLabel="Logo de PetCare" style={estilos.logo} />
+      {marca ? (
+        <View style={estilos.marca}>{marca}</View>
+      ) : (
+        <Image source={LOGO} resizeMode="contain" accessibilityLabel="Logo de PetCare" style={estilos.logo} />
+      )}
       {principal ? <BotonPrincipal {...principal} /> : null}
       <ScrollView style={estilos.lista} contentContainerStyle={estilos.listaContenido} showsVerticalScrollIndicator={false}>
         {secciones.map((s) => (
@@ -146,6 +152,7 @@ const estilos = StyleSheet.create({
   },
   // Alto explícito: en la web `aspectRatio` con `width` deja la imagen con su alto natural
   logo: { width: 130, height: (130 * 648) / 840, alignSelf: "center", marginBottom: 20 },
+  marca: { marginBottom: 20, paddingHorizontal: 4 },
   principal: {
     flexDirection: "row",
     alignItems: "center",

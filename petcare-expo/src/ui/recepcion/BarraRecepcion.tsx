@@ -6,6 +6,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { useMargenes } from "../common/Margenes";
+import { MarcaVeterinaria } from "../common/LogoVeterinaria";
 import { MenuLateral } from "../common/MenuLateral";
 import { Colores, sombra } from "../common/tema";
 import { Texto } from "../common/Texto";
@@ -90,6 +91,7 @@ export function MenuLateralRecepcion({ ruta }: { ruta: string }) {
   };
   return (
     <MenuLateral
+      marca={<MarcaVeterinaria />}
       principal={{ texto: "Nuevo turno", icono: "mas", alTocar: () => NavRecepcion.nuevoTurno() }}
       secciones={SOLAPAS.map((s) => ({
         clave: s.seccion, texto: s.titulo, icono: s.seccion === "perfil" ? "persona" : s.icono,

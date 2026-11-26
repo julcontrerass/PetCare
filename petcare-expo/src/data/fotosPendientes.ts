@@ -10,6 +10,7 @@ const ARCHIVO = "petcare_pendientes:";
 
 const clavePerfil = (email: string) => ARCHIVO + email.toLowerCase();
 const claveCredencial = (email: string) => ARCHIVO + email.toLowerCase() + "#credencial";
+const claveLogo = (email: string) => ARCHIVO + email.toLowerCase() + "#logo";
 
 async function leer(clave: string): Promise<string | null> {
   try {
@@ -79,6 +80,36 @@ export const FotosPendientes = {
       borrarArchivoLocal(ruta);
       await quitar(clave);
       return true;
+    } catch {
+      return false;
+    }
+  },
+
+  /** El logo elegido en el registro "Mi veterinaria": se sube en el primer ingreso (o ya, si hay sesión). */
+  async guardarLogo(email: string, ruta: string): Promise<void> {
+    await escribir(claveLogo(email), ruta);
+  },
+
+  /** Sube el logo pendiente de [email] y lo pone en la veterinaria que registró. Devuelve true si quedó cargado. */
+  async subirLogo(email: string, usuarioId: string): Promise<boolean> {
+    const clave = claveLogo(email);
+    const ruta = await leer(clave);
+    if (ruta == null) return false;
+    if (!(await existeArchivoLocal(ruta))) {
+      await quitar(clave);
+      return false;
+    }
+    try {
+      const clinica = (await Servicios.fuente.misClinicas()).find((c) => c.estado === "activo" && c.roles.includes("titular") && !c.logo_path);
+      if (clinica) {
+        const preparada = await Imagenes.prepararFoto(ruta);
+        const logo = await Imagenes.subirFoto(preparada, usuarioId);
+        await Servicios.fuente.cambiarLogoClinica(clinica.id, logo);
+        borrarArchivoLocal(preparada);
+      }
+      borrarArchivoLocal(ruta);
+      await quitar(clave);
+      return clinica != null;
     } catch {
       return false;
     }

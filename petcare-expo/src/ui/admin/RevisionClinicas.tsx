@@ -12,7 +12,7 @@ import { Errores } from "../../util/errores";
 import { LocalDate } from "../../util/tiempo";
 import { Avisos } from "../common/Avisos";
 import { Boton } from "../common/Boton";
-import { Icono } from "../common/Icono";
+import { LogoVeterinaria } from "../common/LogoVeterinaria";
 import { Tarjeta } from "../common/Tarjeta";
 import { Colores } from "../common/tema";
 import { Texto } from "../common/Texto";
@@ -29,7 +29,7 @@ function FilaClinica({ clinica: c, alAprobar, alRechazar, ocupada }: {
   return (
     <Tarjeta relleno={14} estilo={estilos.tarjeta} accessibilityLabel={`Veterinaria ${c.nombre} para revisar`}>
       <View style={estilos.fila}>
-        <View style={estilos.icono}><Icono nombre="sede" tamano={22} color={Colores.primaryTeal} /></View>
+        <LogoVeterinaria logoPath={c.logo_path} nombre={c.nombre} tamano={52} />
         <View style={estilos.textos}>
           <Texto variante="titulo" tamano={15.5} numberOfLines={1}>{c.nombre}</Texto>
           <Texto variante="subtitulo" tamano={13}>{[c.direccion, c.telefono].filter(Boolean).join(" · ") || "Sin dirección ni teléfono"}</Texto>
@@ -118,7 +118,6 @@ export function RevisionClinicas({ encabezado }: { encabezado: (cantidad: number
 const estilos = StyleSheet.create({
   tarjeta: { marginTop: 10 },
   fila: { flexDirection: "row", alignItems: "center" },
-  icono: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colores.lightTeal, alignItems: "center", justifyContent: "center" },
   textos: { flex: 1, minWidth: 0, marginLeft: 12 },
   titular: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colores.dividerLight },
   botones: { flexDirection: "row", gap: 10, marginTop: 12 },

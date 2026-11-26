@@ -304,7 +304,7 @@ export class FuenteEnMemoria extends FuenteBase {
 
   clinicas: {
     id: string; nombre: string; direccion: string | null; telefono: string | null; creada_por: string | null;
-    revision: RevisionClinica; motivo_revision: string | null;
+    revision: RevisionClinica; motivo_revision: string | null; logo_path?: string | null;
   }[] = [];
   miembros: {
     id: string; clinica_id: string; cuenta_id: string; roles: RolClinica[]; estado: "pendiente" | "activo"; invitado_por: string | null;
@@ -362,7 +362,7 @@ export class FuenteEnMemoria extends FuenteBase {
         id: c.id, nombre: c.nombre, direccion: c.direccion, telefono: c.telefono, miembro_id: m.id, roles: m.roles, estado: m.estado,
         invitado_por_nombre: todos.find((p) => p.id === m.invitado_por)?.nombre ?? null,
         veterinarios: this.miembros.filter((x) => x.clinica_id === c.id && x.estado === "activo" && x.roles.includes("veterinario")).length,
-        created_at: "2026-11-25T12:00:00Z", revision: c.revision, motivo_revision: c.motivo_revision,
+        created_at: "2026-11-25T12:00:00Z", revision: c.revision, motivo_revision: c.motivo_revision, logo_path: c.logo_path ?? null,
       };
     });
   }
@@ -420,6 +420,17 @@ export class FuenteEnMemoria extends FuenteBase {
         titular_id: t?.id ?? null, titular_nombre: t?.nombre ?? null, titular_email: t?.email ?? null,
       };
     });
+  }
+
+  /** Como cambiar_logo_clinica: titular o administración (aunque esté en revisión), con la imagen en su carpeta. */
+  override async cambiarLogoClinica(clinicaId: string, logoPath: string | null): Promise<void> {
+    this.llamadas.push(`cambiarLogoClinica:${clinicaId}=${logoPath}`);
+    const yo = this.miFila(clinicaId);
+    if (!yo || !yo.roles.some((r) => r === "titular" || r === "administrador")) {
+      throw new Error("Solo el titular o la administración pueden cambiar el logo");
+    }
+    if (logoPath != null && !logoPath.startsWith(`${this.yo.id}/`)) throw new Error("El logo tiene que estar en tu carpeta");
+    this.clinicas.find((c) => c.id === clinicaId)!.logo_path = logoPath;
   }
 
   override async revisarClinica(clinicaId: string, aprobar: boolean, motivo: string | null): Promise<void> {

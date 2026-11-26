@@ -6,6 +6,8 @@
 import type {
   AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "../remoto/dtos";
+import { CuentaActual } from "../cuentaActual";
+import { borrarArchivoLocal, Imagenes } from "../imagenes";
 import { Servicios } from "../servicios";
 
 /** Cómo se llama cada rol en pantalla. */
@@ -40,6 +42,15 @@ class ClinicasRepoImpl {
     return this._agendas.length > 0 || this.activas.some(
       (c) => c.roles.some((r) => r === "titular" || r === "administrador") && !c.roles.includes("veterinario"),
     );
+  }
+
+  /**
+   * La veterinaria que se muestra en la vista de la veterinaria (su logo y su nombre): la que la cuenta lleva o donde
+   * maneja agendas, primero las aprobadas.
+   */
+  get principal(): ClinicaDto | null {
+    const propias = this.activas.filter((c) => c.roles.some((r) => r !== "veterinario"));
+    return propias.find((c) => c.revision !== "pendiente" && c.revision !== "rechazada") ?? propias[0] ?? null;
   }
 
   clinica(id: string | null | undefined): ClinicaDto | null {
@@ -116,6 +127,19 @@ class ClinicasRepoImpl {
     });
     await this.recargar();
     return creada;
+  }
+
+  /** Sube la imagen elegida como logo de la veterinaria (titular o administración) y borra la anterior si era propia. */
+  async cambiarLogo(clinicaId: string, uri: string): Promise<void> {
+    const yo = CuentaActual.usuarioId;
+    if (!yo) throw new Error("No hay una sesión iniciada");
+    const anterior = this.clinica(clinicaId)?.logo_path ?? null;
+    const preparada = await Imagenes.prepararFoto(uri);
+    const ruta = await Imagenes.subirFoto(preparada, yo);
+    borrarArchivoLocal(preparada);
+    await Servicios.fuente.cambiarLogoClinica(clinicaId, ruta);
+    if (anterior && anterior.startsWith(`${yo}/`)) await Imagenes.borrarFoto(anterior);
+    await this.recargar();
   }
 
   limpiar(): void {
