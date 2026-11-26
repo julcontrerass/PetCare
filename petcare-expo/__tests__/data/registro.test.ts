@@ -69,12 +69,17 @@ test("veterinario_sinLugaresExtraManda_unaListaVacia", async () => {
 test("veterinaria_mandaLosDatosDeQuienLaLlevaYDeLaVeterinaria", async () => {
   await Registro.veterinaria({
     nombre: "Ana Panda", dni: "30111222", telefono: "1144445555", email: "ana@panda.test", password: "123456",
-    veterinaria: { nombre: "Panda", direccion: "Av. Siempreviva 742", telefono: "1155556666" },
+    veterinaria: { nombre: "Panda", direccion: "Av. Siempreviva 742", telefono: "1155556666", cuit: "20-12345678-6" },
+    director: { nombre: "Dra. Ana Gómez", dni: "27111222", matricula: "MP-777" },
+    habilitaciones: { comercial: { uri: "file:///c.pdf", nombre: "c.pdf" }, sanitaria: { uri: "file:///s.pdf", nombre: "s.pdf" } },
   });
 
   expect(fuente.llamadas).toContain("registrar:ana@panda.test");
   expect(fuente.ultimosDatosDeRegistro).toMatchObject({
     rol: "dueno", nombre: "Ana Panda", dni: "30111222", mascotas: [],
-    veterinaria: { nombre: "Panda", direccion: "Av. Siempreviva 742", telefono: "1155556666" },
+    veterinaria: {
+      nombre: "Panda", direccion: "Av. Siempreviva 742", telefono: "1155556666", cuit: "20123456786",
+      director: { nombre: "Dra. Ana Gómez", dni: "27111222", matricula: "MP-777" },
+    },
   });
 });

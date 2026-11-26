@@ -2,6 +2,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { JsonObject } from "./remoto/dtos";
 import { CredencialVet } from "./credencialVet";
+import { subirHabilitacion, type ArchivoHabilitacion } from "./habilitaciones";
 import { borrarArchivoLocal, existeArchivoLocal, Imagenes } from "./imagenes";
 import { Servicios } from "./servicios";
 
@@ -11,6 +12,7 @@ const ARCHIVO = "petcare_pendientes:";
 const clavePerfil = (email: string) => ARCHIVO + email.toLowerCase();
 const claveCredencial = (email: string) => ARCHIVO + email.toLowerCase() + "#credencial";
 const claveLogo = (email: string) => ARCHIVO + email.toLowerCase() + "#logo";
+const claveHabilitaciones = (email: string) => ARCHIVO + email.toLowerCase() + "#habilitaciones";
 
 async function leer(clave: string): Promise<string | null> {
   try {
@@ -110,6 +112,47 @@ export const FotosPendientes = {
       borrarArchivoLocal(ruta);
       await quitar(clave);
       return clinica != null;
+    } catch {
+      return false;
+    }
+  },
+
+  /** Las habilitaciones elegidas en el registro "Mi veterinaria" (archivos en el teléfono), para subir con la sesión. */
+  async guardarHabilitaciones(email: string, archivos: { comercial: ArchivoHabilitacion; sanitaria: ArchivoHabilitacion }): Promise<void> {
+    await escribir(claveHabilitaciones(email), JSON.stringify(archivos));
+  },
+
+  /**
+   * Sube las habilitaciones pendientes de [email] a la veterinaria que registró (las que todavía le falten). Devuelve
+   * true si quedaron todas cargadas; si falla alguna queda pendiente para el próximo ingreso.
+   */
+  async subirHabilitaciones(email: string, usuarioId: string): Promise<boolean> {
+    const clave = claveHabilitaciones(email);
+    const texto = await leer(clave);
+    if (texto == null) return false;
+    let archivos: Partial<Record<"comercial" | "sanitaria", ArchivoHabilitacion>> = {};
+    try {
+      archivos = JSON.parse(texto) as typeof archivos;
+    } catch {
+      await quitar(clave);
+      return false;
+    }
+    try {
+      const clinica = (await Servicios.fuente.misClinicas()).find((c) => c.estado === "activo" && c.roles.includes("titular"));
+      if (!clinica) {
+        await quitar(clave);
+        return false;
+      }
+      for (const tipo of ["comercial", "sanitaria"] as const) {
+        const archivo = archivos[tipo];
+        const falta = tipo === "comercial" ? clinica.falta_habilitacion_comercial : clinica.falta_habilitacion_sanitaria;
+        if (!archivo || falta === false) continue;
+        if (!(await existeArchivoLocal(archivo.uri))) continue;
+        const ruta = await subirHabilitacion(archivo, usuarioId);
+        await Servicios.fuente.cargarHabilitacionClinica(clinica.id, tipo, ruta);
+      }
+      await quitar(clave);
+      return true;
     } catch {
       return false;
     }

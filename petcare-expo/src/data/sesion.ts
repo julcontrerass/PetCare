@@ -203,6 +203,7 @@ class SesionImpl {
       subieron = false;
     }
     try {
+      await FotosPendientes.subirHabilitaciones(datos.email, id);
       await FotosPendientes.subirLogo(datos.email, id);
     } catch {
       // se vuelve a intentar en el próximo ingreso

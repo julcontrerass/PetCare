@@ -5,7 +5,7 @@ import type {
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
   RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, RevisionClinica, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
 import { FuenteBase, type ResultadoRegistro } from "../../src/data/remoto/fuenteDatos";
@@ -305,6 +305,8 @@ export class FuenteEnMemoria extends FuenteBase {
   clinicas: {
     id: string; nombre: string; direccion: string | null; telefono: string | null; creada_por: string | null;
     revision: RevisionClinica; motivo_revision: string | null; logo_path?: string | null;
+    cuit?: string | null; director?: { nombre: string; dni: string; matricula: string } | null; director_id?: string | null;
+    habilitacion_comercial_path?: string | null; habilitacion_sanitaria_path?: string | null;
   }[] = [];
   miembros: {
     id: string; clinica_id: string; cuenta_id: string; roles: RolClinica[]; estado: "pendiente" | "activo"; invitado_por: string | null;
@@ -363,6 +365,8 @@ export class FuenteEnMemoria extends FuenteBase {
         invitado_por_nombre: todos.find((p) => p.id === m.invitado_por)?.nombre ?? null,
         veterinarios: this.miembros.filter((x) => x.clinica_id === c.id && x.estado === "activo" && x.roles.includes("veterinario")).length,
         created_at: "2026-11-25T12:00:00Z", revision: c.revision, motivo_revision: c.motivo_revision, logo_path: c.logo_path ?? null,
+        director_nombre: c.director?.nombre ?? null,
+        falta_habilitacion_comercial: !c.habilitacion_comercial_path, falta_habilitacion_sanitaria: !c.habilitacion_sanitaria_path,
       };
     });
   }
@@ -397,18 +401,55 @@ export class FuenteEnMemoria extends FuenteBase {
   }
 
   /** Como nueva_clinica: un veterinario aprobado la tiene aprobada (y atiende ahí); cualquier otra cuenta, pendiente. */
-  override async crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string> {
-    this.llamadas.push(`crearClinica:${nombre}`);
-    if (nombre.trim().length < 2) throw new Error("Ingresá el nombre de la veterinaria");
+  /**
+   * Como nueva_clinica: toda veterinaria nueva queda en revisión, con su CUIT y su director técnico. Si el director es un
+   * veterinario aprobado (por matrícula o DNI), se lo vincula y se lo invita al equipo.
+   */
+  override async crearClinica(d: NuevaClinicaDto): Promise<string> {
+    this.llamadas.push(`crearClinica:${d.nombre}`);
+    if (d.nombre.trim().length < 2) throw new Error("Ingresá el nombre de la veterinaria");
+    if (d.direccion.trim().length < 5) throw new Error("Ingresá la dirección de la veterinaria");
+    if (!/^[0-9]{11}$/.test(d.cuit)) throw new Error("El CUIT no es válido");
+    if (d.director.nombre.trim().length < 3 || !/^[0-9]{7,8}$/.test(d.director.dni) || d.director.matricula.trim().length < 2) {
+      throw new Error("Completá el nombre, el DNI y la matrícula del director técnico");
+    }
     const vet = this.esVetActivo(this.yo);
+    const director = [...this.perfiles, this.yo].find((p) => this.esVetActivo(p) && (
+      (p.veterinarios?.matricula ?? "").toLowerCase() === d.director.matricula.toLowerCase() || p.perfiles_privados?.dni === d.director.dni));
     const id = `cli-${this.clinicas.length + 1}`;
-    this.clinicas.push({ id, nombre, direccion, telefono, creada_por: this.yo.id, revision: vet ? "aprobada" : "pendiente", motivo_revision: null });
+    this.clinicas.push({
+      id, nombre: d.nombre, direccion: d.direccion, telefono: d.telefono, creada_por: this.yo.id, revision: "pendiente",
+      motivo_revision: null, cuit: d.cuit, director: d.director, director_id: director?.id ?? null,
+    });
     this.miembros.push({
       id: `mie-${this.miembros.length + 1}`, clinica_id: id, cuenta_id: this.yo.id,
       roles: vet ? ["titular", "veterinario"] : ["titular"], estado: "activo", invitado_por: null,
     });
+    if (director && director.id !== this.yo.id) {
+      this.miembros.push({
+        id: `mie-${this.miembros.length + 1}`, clinica_id: id, cuenta_id: director.id, roles: ["veterinario"], estado: "pendiente",
+        invitado_por: this.yo.id,
+      });
+    }
     return id;
   }
+
+  override async cargarHabilitacionClinica(clinicaId: string, tipo: TipoHabilitacion, ruta: string): Promise<void> {
+    this.llamadas.push(`cargarHabilitacionClinica:${clinicaId}:${tipo}`);
+    const yo = this.miFila(clinicaId);
+    if (!yo || !yo.roles.some((r) => r === "titular" || r === "administrador")) {
+      throw new Error("Solo el titular o la administración pueden cargar las habilitaciones");
+    }
+    if (!ruta.startsWith(`${this.yo.id}/`)) throw new Error("La habilitación tiene que estar en tu carpeta");
+    const c = this.clinicas.find((x) => x.id === clinicaId)!;
+    if (tipo === "comercial") c.habilitacion_comercial_path = ruta;
+    else c.habilitacion_sanitaria_path = ruta;
+    if (c.revision === "rechazada") {
+      c.revision = "pendiente";
+      c.motivo_revision = null;
+    }
+  }
+
 
   override async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> {
     if (this.yo.rol !== "admin") return [];
@@ -418,6 +459,9 @@ export class FuenteEnMemoria extends FuenteBase {
       return {
         id: c.id, nombre: c.nombre, direccion: c.direccion, telefono: c.telefono, created_at: "2026-11-26T12:00:00Z",
         titular_id: t?.id ?? null, titular_nombre: t?.nombre ?? null, titular_email: t?.email ?? null,
+        cuit: c.cuit ?? null, director_nombre: c.director?.nombre ?? null, director_dni: c.director?.dni ?? null,
+        director_matricula: c.director?.matricula ?? null, director_en_petcare: c.director_id != null,
+        habilitacion_comercial_path: c.habilitacion_comercial_path ?? null, habilitacion_sanitaria_path: c.habilitacion_sanitaria_path ?? null,
       };
     });
   }
@@ -439,6 +483,9 @@ export class FuenteEnMemoria extends FuenteBase {
     const c = this.clinicas.find((x) => x.id === clinicaId);
     if (!c) throw new Error("La veterinaria ya no existe");
     if (!aprobar && !motivo?.trim()) throw new Error("Escribí el motivo del rechazo");
+    if (aprobar && (!c.cuit || !c.director || !c.habilitacion_comercial_path || !c.habilitacion_sanitaria_path)) {
+      throw new Error("Faltan datos para aprobarla: el CUIT, el director técnico o alguna habilitación");
+    }
     c.revision = aprobar ? "aprobada" : "rechazada";
     c.motivo_revision = aprobar ? null : motivo;
   }

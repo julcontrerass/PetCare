@@ -259,7 +259,7 @@ function RegistroVista({ alVolver }: { alVolver: () => void }) {
               Para quien lleva una veterinaria. Quedás como titular y sumás a tus veterinarios y a tu equipo de recepción.
             </Texto>
             <Texto variante="cuerpo" tamano={14} color={Colores.tealDark} style={estilos.pasos}>
-              {"1  ·  Tus datos\n2  ·  Datos de la veterinaria\n3  ·  Correo y contraseña"}
+              {"1  ·  Tus datos\n2  ·  La veterinaria y su CUIT\n3  ·  Director técnico (veterinario matriculado)\n4  ·  Habilitaciones comercial y sanitaria\n5  ·  Correo y contraseña"}
             </Texto>
             <Texto variante="chico" tamano={13} style={{ marginTop: 10 }}>
               {"Si sos veterinario y atendés solo, elegí \"Veterinario\": tu consultorio se arma solo."}

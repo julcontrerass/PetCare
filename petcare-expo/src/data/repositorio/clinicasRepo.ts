@@ -4,9 +4,11 @@
  * y se vuelven a pedir con cada cambio del servidor, así una invitación nueva aparece sola en el Inicio.
  */
 import type {
-  AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  TipoHabilitacion,
 } from "../remoto/dtos";
 import { CuentaActual } from "../cuentaActual";
+import { subirHabilitacion, type ArchivoHabilitacion } from "../habilitaciones";
 import { borrarArchivoLocal, Imagenes } from "../imagenes";
 import { Servicios } from "../servicios";
 
@@ -90,8 +92,17 @@ class ClinicasRepoImpl {
     return Servicios.fuente.equipoClinica(clinicaId);
   }
 
-  async crearClinica(nombre: string, direccion: string, telefono: string): Promise<string> {
-    const id = await Servicios.fuente.crearClinica(nombre.trim(), direccion.trim() || null, telefono.trim() || null);
+  /** Registra la veterinaria (queda en revisión) y sube sus dos habilitaciones. */
+  async crearClinica(
+    datos: NuevaClinicaDto, habilitaciones: Record<TipoHabilitacion, ArchivoHabilitacion>,
+  ): Promise<string> {
+    const id = await Servicios.fuente.crearClinica({
+      nombre: datos.nombre.trim(), direccion: datos.direccion.trim(), telefono: datos.telefono.trim(),
+      cuit: datos.cuit.replace(/\D/g, ""),
+      director: { nombre: datos.director.nombre.trim(), dni: datos.director.dni.trim(), matricula: datos.director.matricula.trim() },
+    });
+    // Recién registrada, la veterinaria ya existe: si una habilitación no sube, se puede volver a subir desde el equipo
+    for (const tipo of ["comercial", "sanitaria"] as const) await this.subirHabilitacion(id, tipo, habilitaciones[tipo]);
     await this.recargar();
     return id;
   }
@@ -127,6 +138,19 @@ class ClinicasRepoImpl {
     });
     await this.recargar();
     return creada;
+  }
+
+  /** Sube (o reemplaza) una habilitación de la veterinaria: titular o administración. */
+  async cargarHabilitacion(clinicaId: string, tipo: TipoHabilitacion, archivo: ArchivoHabilitacion): Promise<void> {
+    await this.subirHabilitacion(clinicaId, tipo, archivo);
+    await this.recargar();
+  }
+
+  private async subirHabilitacion(clinicaId: string, tipo: TipoHabilitacion, archivo: ArchivoHabilitacion): Promise<void> {
+    const yo = CuentaActual.usuarioId;
+    if (!yo) throw new Error("No hay una sesión iniciada");
+    const ruta = await subirHabilitacion(archivo, yo);
+    await Servicios.fuente.cargarHabilitacionClinica(clinicaId, tipo, ruta);
   }
 
   /** Sube la imagen elegida como logo de la veterinaria (titular o administración) y borra la anterior si era propia. */

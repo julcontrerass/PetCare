@@ -9,7 +9,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -317,8 +317,15 @@ export class SupabaseFuente implements FuenteDatos {
     return ok(await this.cliente.rpc("agendas_que_manejo")) as AgendaManejadaDto[];
   }
 
-  async crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string> {
-    return ok(await this.cliente.rpc("crear_clinica", { p_nombre: nombre, p_direccion: direccion, p_telefono: telefono })) as string;
+  async crearClinica(d: NuevaClinicaDto): Promise<string> {
+    return ok(await this.cliente.rpc("crear_clinica", {
+      p_nombre: d.nombre, p_direccion: d.direccion, p_telefono: d.telefono, p_cuit: d.cuit,
+      p_director_nombre: d.director.nombre, p_director_dni: d.director.dni, p_director_matricula: d.director.matricula,
+    })) as string;
+  }
+
+  async cargarHabilitacionClinica(clinicaId: string, tipo: TipoHabilitacion, ruta: string): Promise<void> {
+    vacio(await this.cliente.rpc("cargar_habilitacion_clinica", { p_clinica: clinicaId, p_tipo: tipo, p_path: ruta }));
   }
 
   async invitarAClinica(clinicaId: string, dniOCorreo: string, roles: RolClinica[]): Promise<string> {

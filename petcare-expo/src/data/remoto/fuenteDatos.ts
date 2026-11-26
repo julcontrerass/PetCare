@@ -4,7 +4,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, TipoHabilitacion, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
@@ -81,7 +81,9 @@ export interface FuenteDatos {
    * Registra una veterinaria y la cuenta queda como titular; devuelve su id. Si no la registra un veterinario aprobado,
    * queda pendiente hasta que el administrador la verifica.
    */
-  crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string>;
+  crearClinica(datos: NuevaClinicaDto): Promise<string>;
+  /** Titular o administración cargan una habilitación ya subida a su carpeta del bucket `credenciales`. */
+  cargarHabilitacionClinica(clinicaId: string, tipo: TipoHabilitacion, ruta: string): Promise<void>;
   /** Invita a una cuenta (por DNI o correo) con esos roles; devuelve el nombre de la persona. */
   invitarAClinica(clinicaId: string, dniOCorreo: string, roles: RolClinica[]): Promise<string>;
   responderInvitacionClinica(miembroId: string, aceptar: boolean): Promise<void>;
@@ -235,9 +237,10 @@ export class FuenteBase implements FuenteDatos {
   async misClinicas(): Promise<ClinicaDto[]> { return []; }
   async equipoClinica(_clinicaId: string): Promise<MiembroClinicaDto[]> { return []; }
   async agendasQueManejo(): Promise<AgendaManejadaDto[]> { return []; }
-  async crearClinica(_nombre: string, _direccion: string | null, _telefono: string | null): Promise<string> {
+  async crearClinica(_datos: NuevaClinicaDto): Promise<string> {
     throw new Error("Operación no disponible: crearClinica");
   }
+  async cargarHabilitacionClinica(_clinicaId: string, _tipo: TipoHabilitacion, _ruta: string): Promise<void> {}
   async invitarAClinica(_clinicaId: string, _dniOCorreo: string, _roles: RolClinica[]): Promise<string> {
     throw new Error("Operación no disponible: invitarAClinica");
   }

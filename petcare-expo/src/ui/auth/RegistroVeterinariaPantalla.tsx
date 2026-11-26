@@ -1,29 +1,43 @@
 /*
- * Registro "Mi veterinaria": para quien lleva una veterinaria sin ser veterinario (el dueño del negocio). En tres
- * pasos (como el registro de dueño): sus datos, los de la veterinaria (con su logo, opcional) y la cuenta. Queda como titular y la
- * veterinaria espera que el administrador verifique que existe; después suma a sus veterinarios y a su equipo.
+ * Registro "Mi veterinaria": para quien lleva una veterinaria sin ser veterinario (el dueño del negocio). En cinco
+ * pasos (como el registro de dueño): sus datos; los de la veterinaria (con su logo, opcional, y su CUIT); el director
+ * técnico (el veterinario matriculado responsable); las habilitaciones comercial y sanitaria; y la cuenta. Queda como
+ * titular y la veterinaria espera que el administrador verifique todo; después suma a sus veterinarios y a su equipo.
  */
 import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import type { ArchivoHabilitacion } from "../../data/habilitaciones";
 import { Registro } from "../../data/registro";
 import { Errores } from "../../util/errores";
 import { Colores, sombra } from "../common/tema";
 import { Avisos } from "../common/Avisos";
 import { Campo } from "../common/Campo";
 import { LogoVeterinaria } from "../common/LogoVeterinaria";
+import { SelectorHabilitacion } from "../common/SelectorHabilitacion";
 import { Texto } from "../common/Texto";
 import { CajaInfo, Casilla } from "./ElementosRegistro";
 import { descartarFoto, elegirFoto } from "./elegirFoto";
 import { cerrarPantalla, EstadoAuth } from "./estadoAuth";
 import { CabeceraPaso, PasosRegistro } from "./PasosRegistro";
-import { contarDigitos, esCorreoValido, soloNumeros } from "./validaciones";
+import { contarDigitos, errorDeCuit, esCorreoValido, esCuitValido, soloNumeros } from "./validaciones";
 import { useAtras } from "./useAtras";
 import type { EntradaTexto } from "./tipos";
 
-const TITULOS = ["Tus datos", "La veterinaria", "Tu cuenta"];
+const TITULOS = ["Tus datos", "La veterinaria", "Director técnico", "Habilitaciones", "Tu cuenta"];
+const PASO_CUENTA = TITULOS.length - 1;
 
-type NombreCampo = "nombre" | "dni" | "telefono" | "vetNombre" | "vetDireccion" | "vetTelefono" | "email" | "password" | "password2";
+type NombreCampo =
+  | "nombre" | "dni" | "telefono" | "vetNombre" | "vetDireccion" | "vetTelefono" | "cuit"
+  | "dirNombre" | "dirDni" | "dirMatricula" | "comercial" | "sanitaria" | "email" | "password" | "password2";
 type ErroresCampos = Partial<Record<NombreCampo, string>>;
+
+/** "20-12345678-6" mientras se escribe. */
+function formatoCuit(texto: string): string {
+  const d = soloNumeros(texto).slice(0, 11);
+  if (d.length <= 2) return d;
+  if (d.length <= 10) return `${d.slice(0, 2)}-${d.slice(2)}`;
+  return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`;
+}
 
 export default function RegistroVeterinariaPantalla() {
   const [paso, setPaso] = useState(0);
@@ -36,7 +50,13 @@ export default function RegistroVeterinariaPantalla() {
   const [vetNombre, setVetNombre] = useState("");
   const [vetDireccion, setVetDireccion] = useState("");
   const [vetTelefono, setVetTelefono] = useState("");
+  const [cuit, setCuit] = useState("");
   const [logo, setLogo] = useState<string | null>(null);
+  const [dirNombre, setDirNombre] = useState("");
+  const [dirDni, setDirDni] = useState("");
+  const [dirMatricula, setDirMatricula] = useState("");
+  const [comercial, setComercial] = useState<ArchivoHabilitacion | null>(null);
+  const [sanitaria, setSanitaria] = useState<ArchivoHabilitacion | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -95,7 +115,18 @@ export default function RegistroVeterinariaPantalla() {
         if (t(vetNombre).length < 2) e.vetNombre = "Ingresá el nombre de la veterinaria";
         if (t(vetDireccion).length < 5) e.vetDireccion = "Ingresá la dirección: la usamos para verificarla";
         if (contarDigitos(t(vetTelefono)) < 8) e.vetTelefono = "Ingresá el teléfono de la veterinaria";
-        return mostrarErrores(e, ["vetNombre", "vetDireccion", "vetTelefono"]);
+        if (!esCuitValido(cuit)) e.cuit = errorDeCuit(cuit);
+        return mostrarErrores(e, ["vetNombre", "vetDireccion", "vetTelefono", "cuit"]);
+      case 2:
+        if (t(dirNombre).length < 3 || !t(dirNombre).includes(" ")) e.dirNombre = "Ingresá el nombre y el apellido del director técnico";
+        if (t(dirDni).length < 7 || t(dirDni).length > 8) e.dirDni = "El DNI debe tener 7 u 8 números";
+        if (t(dirMatricula).length < 2) e.dirMatricula = "Ingresá su matrícula";
+        return mostrarErrores(e, ["dirNombre", "dirDni", "dirMatricula"]);
+      case 3:
+        if (!comercial) e.comercial = "Sumá la habilitación comercial";
+        if (!sanitaria) e.sanitaria = "Sumá la habilitación sanitaria";
+        setErrores(e);
+        return Object.keys(e).length === 0;
       default: {
         let ok = true;
         if (!terminos) {
@@ -112,17 +143,20 @@ export default function RegistroVeterinariaPantalla() {
 
   const avanzar = () => {
     if (enviando || !validarPasoActual()) return;
-    if (paso < TITULOS.length - 1) setPaso(paso + 1);
+    if (paso < PASO_CUENTA) setPaso(paso + 1);
     else void crearCuenta();
   };
 
   const crearCuenta = async () => {
+    if (!comercial || !sanitaria) return;
     const correo = t(email).toLowerCase();
     setEnviando(true);
     try {
       const resultado = await Registro.veterinaria({
         nombre: t(nombre), dni: t(dni), telefono: t(telefono), email: correo, password,
-        veterinaria: { nombre: t(vetNombre), direccion: t(vetDireccion), telefono: t(vetTelefono) },
+        veterinaria: { nombre: t(vetNombre), direccion: t(vetDireccion), telefono: t(vetTelefono), cuit },
+        director: { nombre: t(dirNombre), dni: t(dirDni), matricula: t(dirMatricula) },
+        habilitaciones: { comercial, sanitaria },
         logoPath: logo,
       });
       EstadoAuth.terminarRegistro({ email: correo, confirmarCorreo: !resultado.sesionIniciada, esVeterinario: false });
@@ -130,7 +164,7 @@ export default function RegistroVeterinariaPantalla() {
     } catch (e) {
       setEnviando(false);
       if (e instanceof Registro.CorreoYaRegistrado) {
-        setPaso(2);
+        setPaso(PASO_CUENTA);
         mostrarErrores({ email: "Ese correo ya está registrado" }, ["email"]);
       } else {
         Avisos.error(Errores.mensaje(e));
@@ -139,7 +173,13 @@ export default function RegistroVeterinariaPantalla() {
   };
 
   const resumen = () =>
-    [`${t(nombre)} · DNI ${t(dni)}`, `${t(vetNombre)} · ${t(vetDireccion)}`, `Teléfono de la veterinaria: ${t(vetTelefono)}`].join("\n");
+    [
+      `${t(nombre)} · DNI ${t(dni)}`,
+      `${t(vetNombre)} · CUIT ${formatoCuit(cuit)}`,
+      t(vetDireccion),
+      `Director técnico: ${t(dirNombre)} · Matrícula ${t(dirMatricula)}`,
+      "Habilitaciones comercial y sanitaria cargadas",
+    ].join("\n");
 
   return (
     <PasosRegistro
@@ -149,7 +189,7 @@ export default function RegistroVeterinariaPantalla() {
       encendidos={paso + 1}
       clavePaso={paso}
       mostrarAtras={paso > 0}
-      textoSiguiente={enviando ? "Creando cuenta..." : paso === TITULOS.length - 1 ? "Crear cuenta" : "Continuar"}
+      textoSiguiente={enviando ? "Creando cuenta..." : paso === PASO_CUENTA ? "Crear cuenta" : "Continuar"}
       enviando={enviando}
       alVolver={irAlPasoAnterior}
       alAtras={irAlPasoAnterior}
@@ -193,13 +233,54 @@ export default function RegistroVeterinariaPantalla() {
           <Campo
             ref={ref("vetTelefono")} estilo={estilos.campo} etiqueta="Teléfono de la veterinaria" placeholder="Ej: 11 4444-5555"
             value={vetTelefono} onChangeText={editar("vetTelefono", setVetTelefono)} error={errores.vetTelefono} keyboardType="phone-pad"
-            onSubmitEditing={avanzar}
           />
-          <CajaInfo texto="Mientras la revisamos podés entrar a la app. Cuando esté aprobada vas a poder sumar a tus veterinarios y a tu equipo." />
+          <Campo
+            ref={ref("cuit")} estilo={estilos.campo} etiqueta="CUIT" placeholder="Ej: 30-12345678-9" value={cuit}
+            onChangeText={editar("cuit", setCuit, formatoCuit)} error={errores.cuit} keyboardType="number-pad" onSubmitEditing={avanzar}
+          />
         </View>
       ) : null}
 
       {paso === 2 ? (
+        <View>
+          <CabeceraPaso
+            icono="veterinario" titulo="Director técnico"
+            subtitulo="Toda veterinaria necesita un veterinario matriculado que sea su director técnico (o asesor técnico)."
+          />
+          <Campo
+            ref={ref("dirNombre")} estilo={estilos.campoPrimero} etiqueta="Nombre y apellido" placeholder="Ej: Dra. Ana Gómez"
+            value={dirNombre} onChangeText={editar("dirNombre", setDirNombre)} error={errores.dirNombre} autoCapitalize="words"
+          />
+          <Campo
+            ref={ref("dirDni")} estilo={estilos.campo} etiqueta="DNI" placeholder="Sin puntos" value={dirDni}
+            onChangeText={editar("dirDni", setDirDni, soloNumeros)} error={errores.dirDni} keyboardType="number-pad"
+          />
+          <Campo
+            ref={ref("dirMatricula")} estilo={estilos.campo} etiqueta="Matrícula" placeholder="Ej: MP 12345" value={dirMatricula}
+            onChangeText={editar("dirMatricula", setDirMatricula)} error={errores.dirMatricula} autoCapitalize="characters" onSubmitEditing={avanzar}
+          />
+          <CajaInfo texto="Si ya usa PetCare como veterinario lo reconocemos por su matrícula o su DNI y le llega una invitación para sumarse a tu equipo." />
+        </View>
+      ) : null}
+
+      {paso === 3 ? (
+        <View>
+          <CabeceraPaso icono="documento" titulo="Habilitaciones" subtitulo="Subí un PDF o una foto de cada una. Solo las ve el administrador de PetCare." />
+          <View style={{ marginTop: 8 }}>
+            <SelectorHabilitacion
+              tipo="comercial" archivo={comercial} error={errores.comercial}
+              alElegir={(a) => { setComercial(a); setErrores((x) => ({ ...x, comercial: undefined })); }}
+            />
+            <SelectorHabilitacion
+              tipo="sanitaria" archivo={sanitaria} error={errores.sanitaria}
+              alElegir={(a) => { setSanitaria(a); setErrores((x) => ({ ...x, sanitaria: undefined })); }}
+            />
+          </View>
+          <CajaInfo texto="Mientras revisamos todo podés entrar a la app. Cuando esté aprobada vas a poder sumar a tus veterinarios y a tu equipo." />
+        </View>
+      ) : null}
+
+      {paso === PASO_CUENTA ? (
         <View>
           <CabeceraPaso icono="candado" titulo="Creá tu cuenta" subtitulo="Con estos datos vas a iniciar sesión." />
           <Campo

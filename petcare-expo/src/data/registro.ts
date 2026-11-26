@@ -2,6 +2,7 @@
 import { Fechas } from "../util/fechas";
 import type { DatosRegistroDueno, DatosRegistroVeterinario, MascotaRegistro } from "./datosRegistro";
 import { FotosPendientes } from "./fotosPendientes";
+import type { ArchivoHabilitacion } from "./habilitaciones";
 import type { JsonObject } from "./remoto/dtos";
 import { datosDeSedes } from "./remoto/sedesJson";
 import { Servicios } from "./servicios";
@@ -19,7 +20,11 @@ export interface DatosRegistroVeterinaria {
   telefono: string;
   email: string;
   password: string;
-  veterinaria: { nombre: string; direccion: string; telefono: string };
+  veterinaria: { nombre: string; direccion: string; telefono: string; cuit: string };
+  /** El director técnico: un veterinario matriculado (puede no usar PetCare). */
+  director: { nombre: string; dni: string; matricula: string };
+  /** Las habilitaciones comercial y sanitaria (PDF o imagen en el teléfono). */
+  habilitaciones: { comercial: ArchivoHabilitacion; sanitaria: ArchivoHabilitacion };
   /** Logo elegido (uri en el teléfono); opcional. */
   logoPath?: string | null;
 }
@@ -106,18 +111,25 @@ export const Registro = {
       telefono: d.telefono,
       terminos_version: Registro.VERSION_TERMINOS,
       mascotas: [],
-      veterinaria: { nombre: d.veterinaria.nombre, direccion: d.veterinaria.direccion, telefono: d.veterinaria.telefono },
+      veterinaria: {
+        nombre: d.veterinaria.nombre, direccion: d.veterinaria.direccion, telefono: d.veterinaria.telefono,
+        cuit: d.veterinaria.cuit.replace(/\D/g, ""),
+        director: { nombre: d.director.nombre, dni: d.director.dni, matricula: d.director.matricula },
+      },
     };
     const resultado = await crear(d.email, d.password, datos);
-    if (d.logoPath) {
-      await FotosPendientes.guardarLogo(d.email, d.logoPath);
-      if (resultado.sesionIniciada) {
-        try {
-          const usuario = await Sesion.usuarioIdActual();
-          if (usuario) await FotosPendientes.subirLogo(d.email, usuario);
-        } catch {
-          // se sube en el primer ingreso
+    // Los archivos se suben con la sesión: ya, si el alta la dejó abierta; si no, en el primer ingreso
+    await FotosPendientes.guardarHabilitaciones(d.email, d.habilitaciones);
+    if (d.logoPath) await FotosPendientes.guardarLogo(d.email, d.logoPath);
+    if (resultado.sesionIniciada) {
+      try {
+        const usuario = await Sesion.usuarioIdActual();
+        if (usuario) {
+          await FotosPendientes.subirHabilitaciones(d.email, usuario);
+          if (d.logoPath) await FotosPendientes.subirLogo(d.email, usuario);
         }
+      } catch {
+        // se suben en el primer ingreso
       }
     }
     return resultado;

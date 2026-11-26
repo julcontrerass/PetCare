@@ -1,6 +1,7 @@
--- Pruebas de 20261126134535_veterinarias_con_revision.sql. Usan la cuenta de prueba del veterinario (V) y crean dentro
--- de la transacción a la dueña de un negocio (P, no es veterinaria), un administrador de la plataforma (A) y una
--- cuenta cualquiera (X). Todo se deshace al final (el error con el resultado).
+-- Pruebas de 20261126134535_veterinarias_con_revision.sql y 20261126225205_veterinarias_requisitos.sql (CUIT, director
+-- técnico y habilitaciones). Usan la cuenta de prueba del veterinario (V) y crean dentro de la transacción a la dueña
+-- de un negocio (P, no es veterinaria), un administrador de la plataforma (A) y una cuenta cualquiera (X). Todo se
+-- deshace al final (el error con el resultado).
 create temp table res (n serial, prueba text, ok boolean);
 grant all on res to authenticated;
 grant usage on sequence res_n_seq to authenticated;
@@ -20,7 +21,7 @@ grant all on clin to authenticated;
 -- P se registra con "Mi veterinaria"; A es administrador de la plataforma; X es una cuenta cualquiera
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data) values
   (pg_temp.id('P'), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'prueba.panda@ejemplo.invalid',
-   '{"nombre":"Prueba Panda","rol":"dueno","veterinaria":{"nombre":"Panda","direccion":"Calle Falsa 742","telefono":"1144445555"}}'),
+   '{"nombre":"Prueba Panda","rol":"dueno","veterinaria":{"nombre":"Panda","direccion":"Calle Falsa 742","telefono":"1144445555","cuit":"20-12345678-6","director":{"nombre":"Prueba Directora","dni":"90000097","matricula":"PRUEBA-DIR"}}}'),
   (pg_temp.id('A'), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'prueba.admin2@ejemplo.invalid', '{"nombre":"Prueba Admin"}'),
   (pg_temp.id('X'), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'prueba.x2@ejemplo.invalid', '{"nombre":"Prueba X"}');
 set local petcare.sistema = 'on';
@@ -59,6 +60,30 @@ do $$ begin
   perform public.revisar_clinica((select id from clin where clave = 'P'), false, '  ');
   insert into res (prueba, ok) values ('rechazar pide motivo', false);
 exception when others then insert into res (prueba, ok) values ('rechazar pide motivo', true); end $$;
+insert into res (prueba, ok) values
+  ('A ve el CUIT y el director técnico', (select cuit || ' ' || director_matricula from public.clinicas_para_revisar() where nombre = 'Panda') = '20123456786 PRUEBA-DIR'),
+  ('el director no usa PetCare', (select not director_en_petcare from public.clinicas_para_revisar() where nombre = 'Panda'));
+do $$ begin
+  perform public.revisar_clinica((select id from clin where clave = 'P'), true, null);
+  insert into res (prueba, ok) values ('A NO aprueba sin las habilitaciones', false);
+exception when others then insert into res (prueba, ok) values ('A NO aprueba sin las habilitaciones', true); end $$;
+
+-- P sube las habilitaciones (a su carpeta); otra cuenta no puede
+reset role; select pg_temp.como('X'); set role authenticated;
+do $$ begin
+  perform public.cargar_habilitacion_clinica((select id from clin where clave = 'P'), 'comercial', 'd1000000-0000-4000-8000-0000000000a3/h.pdf');
+  insert into res (prueba, ok) values ('X NO carga habilitaciones de Panda', false);
+exception when others then insert into res (prueba, ok) values ('X NO carga habilitaciones de Panda', true); end $$;
+reset role; select pg_temp.como('P'); set role authenticated;
+do $$ begin
+  perform public.cargar_habilitacion_clinica((select id from clin where clave = 'P'), 'comercial', 'otra-carpeta/h.pdf');
+  insert into res (prueba, ok) values ('NO con un archivo de otra carpeta', false);
+exception when others then insert into res (prueba, ok) values ('NO con un archivo de otra carpeta', true); end $$;
+select public.cargar_habilitacion_clinica((select id from clin where clave = 'P'), 'comercial', 'd1000000-0000-4000-8000-0000000000a1/comercial.pdf');
+select public.cargar_habilitacion_clinica((select id from clin where clave = 'P'), 'sanitaria', 'd1000000-0000-4000-8000-0000000000a1/sanitaria.jpg');
+insert into res (prueba, ok) values
+  ('P ve que ya no falta nada', (select not falta_habilitacion_comercial and not falta_habilitacion_sanitaria from public.mis_clinicas()));
+reset role; select pg_temp.como('A'); set role authenticated;
 select public.revisar_clinica((select id from clin where clave = 'P'), true, null);
 reset role;
 insert into res (prueba, ok) values
@@ -76,10 +101,26 @@ insert into res (prueba, ok) values
   ('P ve los turnos de V', (select count(*) from public.turnos where veterinario_id = pg_temp.id('V')) > 0),
   ('P NO ve historia clínica', (select count(*) from public.informes_clinicos) = 0);
 
--- Una veterinaria creada por un veterinario aprobado queda aprobada al instante
+-- Una veterinaria que registra un veterinario aprobado también pasa por revisión; si él es el director, queda vinculado
 reset role; select pg_temp.como('V'); set role authenticated;
-insert into clin values ('V2', public.crear_clinica('Otra de V'));
-insert into res (prueba, ok) values ('la de un veterinario aprobado no pasa por revisión', (select revision from public.clinicas where id = (select id from clin where clave = 'V2')) = 'aprobada');
+insert into clin values ('V2', public.crear_clinica('Otra de V', 'Calle Falsa 100', '1144445555', '20123456786', 'Dra. Prueba Vet', '90000001', 'PRUEBA-0001'));
+do $$ begin
+  perform public.crear_clinica('Mala', 'Calle Falsa 100', '1144445555', '20123456785', 'Dra. Prueba Vet', '90000001', 'PRUEBA-0001');
+  insert into res (prueba, ok) values ('NO con un CUIT inválido', false);
+exception when others then insert into res (prueba, ok) values ('NO con un CUIT inválido', true); end $$;
+reset role;
+insert into res (prueba, ok) values
+  ('la de un veterinario también pasa por revisión', (select revision from public.clinicas where id = (select id from clin where clave = 'V2')) = 'pendiente'),
+  ('y él queda como director vinculado', (select director_id from public.clinicas where id = (select id from clin where clave = 'V2')) = pg_temp.id('V'));
+
+-- Si el director técnico usa PetCare (por su matrícula) le llega la invitación
+select pg_temp.como('X'); set role authenticated;
+insert into clin values ('X1', public.crear_clinica('De X', 'Calle Falsa 200', '1144445555', '20123456786', 'Otro nombre', '11111111', 'prueba-0001'));
+reset role;
+insert into res (prueba, ok) values
+  ('director con cuenta: queda vinculado', (select director_id from public.clinicas where id = (select id from clin where clave = 'X1')) = pg_temp.id('V')),
+  ('y le llega la invitación como veterinario', exists (select 1 from public.clinica_miembros where clinica_id = (select id from clin where clave = 'X1') and cuenta_id = pg_temp.id('V') and estado = 'pendiente' and roles = '{veterinario}'));
+select pg_temp.como('V'); set role authenticated;
 
 -- Cuenta de veterinario creada por la veterinaria: en revisión, miembro y con un lugar en Panda
 reset role;

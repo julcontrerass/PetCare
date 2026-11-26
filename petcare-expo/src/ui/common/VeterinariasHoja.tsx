@@ -10,13 +10,14 @@ import * as Clipboard from "expo-clipboard";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { ClinicasRepo, NOMBRE_ROL } from "../../data/repositorio/clinicasRepo";
-import type { ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, RolClinica } from "../../data/remoto/dtos";
+import type { ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, RolClinica, TipoHabilitacion } from "../../data/remoto/dtos";
 import { Sesion } from "../../data/sesion";
+import type { ArchivoHabilitacion } from "../../data/habilitaciones";
 import { Imagenes } from "../../data/imagenes";
 import { aBase64 } from "../../util/base64";
 import { Errores } from "../../util/errores";
 import { descartarFoto, elegirFoto } from "../auth/elegirFoto";
-import { contarDigitos, esCorreoValido, soloNumeros } from "../auth/validaciones";
+import { contarDigitos, errorDeCuit, esCorreoValido, esCuitValido, soloNumeros } from "../auth/validaciones";
 import { Avatar } from "./Avatar";
 import { Avisos } from "./Avisos";
 import { Boton } from "./Boton";
@@ -25,6 +26,7 @@ import { Chip } from "./Chip";
 import { Contacto } from "./Contacto";
 import { HojaInferior } from "./HojaInferior";
 import { LogoVeterinaria } from "./LogoVeterinaria";
+import { NOMBRE_HABILITACION, SelectorHabilitacion } from "./SelectorHabilitacion";
 import { Icono } from "./Icono";
 import { Colores } from "./tema";
 import { Texto } from "./Texto";
@@ -127,13 +129,25 @@ function FilaInvitacion({ clinica: c }: { clinica: ClinicaDto }) {
 }
 
 function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: () => void }) {
+  const perfil = Sesion.perfil;
   const esVet = Sesion.rolesDisponibles.includes("VETERINARIO");
-  const [nombre, setNombre] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // Un veterinario suele ser el director técnico de su propia veterinaria: sus datos vienen cargados
+  const [datos, setDatos] = useState({
+    nombre: "", direccion: "", telefono: "", cuit: "",
+    dirNombre: esVet ? (perfil?.nombre ?? "") : "",
+    dirDni: esVet ? (perfil?.perfiles_privados?.dni ?? "") : "",
+    dirMatricula: esVet ? (perfil?.veterinarios?.matricula ?? "") : "",
+  });
+  const [comercial, setComercial] = useState<ArchivoHabilitacion | null>(null);
+  const [sanitaria, setSanitaria] = useState<ArchivoHabilitacion | null>(null);
+  type Clave = keyof typeof datos | "comercial" | "sanitaria";
+  const [errores, setErrores] = useState<Partial<Record<Clave, string>>>({});
   const [creando, setCreando] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
+  const cambiar = (c: keyof typeof datos, filtro?: (t: string) => string) => (texto: string) => {
+    setDatos((d) => ({ ...d, [c]: filtro ? filtro(texto) : texto }));
+    if (errores[c]) setErrores((e) => ({ ...e, [c]: undefined }));
+  };
   const elegirLogo = async () => {
     const uri = await elegirFoto({ recortar: true, prefijo: "logo_veterinaria" });
     if (!uri) return;
@@ -141,18 +155,27 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
     setLogo(uri);
   };
   const crear = async () => {
-    if (nombre.trim().length < 2) {
-      setError("Ingresá el nombre de la veterinaria");
-      return;
-    }
-    // Sin ser veterinario, la dirección y el teléfono son los que usa el administrador para verificarla
-    if (!esVet && (direccion.trim().length < 5 || contarDigitos(telefono) < 8)) {
-      setError("Cargá la dirección y el teléfono: los usamos para verificarla");
-      return;
-    }
+    const e: typeof errores = {};
+    if (datos.nombre.trim().length < 2) e.nombre = "Ingresá el nombre de la veterinaria";
+    if (datos.direccion.trim().length < 5) e.direccion = "Ingresá la dirección";
+    if (contarDigitos(datos.telefono) < 8) e.telefono = "Ingresá el teléfono de la veterinaria";
+    if (!esCuitValido(datos.cuit)) e.cuit = errorDeCuit(datos.cuit);
+    if (datos.dirNombre.trim().length < 3) e.dirNombre = "Ingresá el nombre del director técnico";
+    if (datos.dirDni.trim().length < 7 || datos.dirDni.trim().length > 8) e.dirDni = "El DNI debe tener 7 u 8 números";
+    if (datos.dirMatricula.trim().length < 2) e.dirMatricula = "Ingresá su matrícula";
+    if (!comercial) e.comercial = "Sumá la habilitación comercial";
+    if (!sanitaria) e.sanitaria = "Sumá la habilitación sanitaria";
+    setErrores(e);
+    if (Object.keys(e).length > 0 || !comercial || !sanitaria) return;
     setCreando(true);
     try {
-      const id = await ClinicasRepo.crearClinica(nombre, direccion, telefono);
+      const id = await ClinicasRepo.crearClinica(
+        {
+          nombre: datos.nombre, direccion: datos.direccion, telefono: datos.telefono, cuit: datos.cuit,
+          director: { nombre: datos.dirNombre, dni: datos.dirDni, matricula: datos.dirMatricula },
+        },
+        { comercial, sanitaria },
+      );
       if (logo) {
         try {
           await ClinicasRepo.cambiarLogo(id, logo);
@@ -161,13 +184,12 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
         }
         descartarFoto(logo);
       }
-      Avisos.mostrar(
-        esVet ? `Creaste ${nombre.trim()}. Ya podés sumar a tu equipo` : `Registraste ${nombre.trim()}. Te avisamos cuando la aprobemos`,
-        "exito",
-      );
+      Avisos.mostrar(`Registraste ${datos.nombre.trim()}. Te avisamos cuando la aprobemos`, "exito");
       alListo();
-    } catch (e) {
-      Avisos.error(Errores.mensaje(e));
+    } catch (err) {
+      // Si la veterinaria se creó pero una habilitación no subió, se ve en su equipo para volver a subirla
+      await ClinicasRepo.cargar();
+      Avisos.error(Errores.mensaje(err));
       setCreando(false);
     }
   };
@@ -176,21 +198,69 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
       <Texto tamano={20} negrita accessibilityRole="header">Registrar una veterinaria</Texto>
       <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>
         {esVet
-          ? "Quedás como titular y veterinario/a. Después sumás a tu equipo: otros veterinarios, recepción y administración."
-          : "Quedás como titular. El administrador de PetCare verifica que exista y, cuando la aprueba, sumás a tus veterinarios y a tu equipo."}
+          ? "Quedás como titular y veterinario/a. El administrador de PetCare verifica el CUIT, el director técnico y las habilitaciones; cuando la aprueba, sumás a tu equipo."
+          : "Quedás como titular. El administrador de PetCare verifica el CUIT, el director técnico y las habilitaciones; cuando la aprueba, sumás a tus veterinarios y a tu equipo."}
       </Texto>
       <View style={estilos.logoForm}>
         <LogoVeterinaria uri={logo} tamano={88} alTocar={() => void elegirLogo()} />
         <Texto variante="chico" tamano={12} style={{ marginTop: 8 }}>Logo (opcional)</Texto>
       </View>
       <Campo
-        estilo={{ marginTop: 14 }} etiqueta="Nombre" placeholder="Ej: Veterinaria San Roque" value={nombre}
-        onChangeText={(t) => { setNombre(t); setError(null); }} error={error} autoCapitalize="words"
+        estilo={{ marginTop: 14 }} etiqueta="Nombre" placeholder="Ej: Veterinaria San Roque" value={datos.nombre}
+        onChangeText={cambiar("nombre")} error={errores.nombre} autoCapitalize="words"
       />
-      <Campo estilo={{ marginTop: 12 }} etiqueta={esVet ? "Dirección (opcional)" : "Dirección"} placeholder="Calle, número y localidad" value={direccion} onChangeText={setDireccion} autoCapitalize="words" />
-      <Campo estilo={{ marginTop: 12 }} etiqueta={esVet ? "Teléfono (opcional)" : "Teléfono"} placeholder="Ej: 11 4444-5555" value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
-      <Boton titulo={esVet ? "Crear veterinaria" : "Registrar veterinaria"} icono="mas" alto={50} estilo={{ marginTop: 16 }} cargando={creando} onPress={() => void crear()} />
+      <Campo estilo={{ marginTop: 12 }} etiqueta="Dirección" placeholder="Calle, número y localidad" value={datos.direccion} onChangeText={cambiar("direccion")} error={errores.direccion} autoCapitalize="words" />
+      <Campo estilo={{ marginTop: 12 }} etiqueta="Teléfono" placeholder="Ej: 11 4444-5555" value={datos.telefono} onChangeText={cambiar("telefono")} error={errores.telefono} keyboardType="phone-pad" />
+      <Campo estilo={{ marginTop: 12 }} etiqueta="CUIT" placeholder="Ej: 30-12345678-9" value={datos.cuit} onChangeText={cambiar("cuit")} error={errores.cuit} keyboardType="number-pad" />
+
+      <Texto tamano={15} negrita style={{ marginTop: 18 }}>Director técnico</Texto>
+      <Texto variante="chico" tamano={12.5} style={{ marginTop: 2 }}>El veterinario matriculado responsable de la veterinaria.</Texto>
+      <Campo estilo={{ marginTop: 10 }} etiqueta="Nombre y apellido" placeholder="Ej: Dra. Ana Gómez" value={datos.dirNombre} onChangeText={cambiar("dirNombre")} error={errores.dirNombre} autoCapitalize="words" />
+      <Campo estilo={{ marginTop: 12 }} etiqueta="DNI" placeholder="Sin puntos" value={datos.dirDni} onChangeText={cambiar("dirDni", soloNumeros)} error={errores.dirDni} keyboardType="number-pad" />
+      <Campo estilo={{ marginTop: 12 }} etiqueta="Matrícula" placeholder="Ej: MP 12345" value={datos.dirMatricula} onChangeText={cambiar("dirMatricula")} error={errores.dirMatricula} autoCapitalize="characters" />
+
+      <Texto tamano={15} negrita style={{ marginTop: 18 }}>Habilitaciones</Texto>
+      <Texto variante="chico" tamano={12.5} style={{ marginTop: 2 }}>Un PDF o una foto de cada una. Solo las ve el administrador de PetCare.</Texto>
+      <SelectorHabilitacion
+        tipo="comercial" archivo={comercial} error={errores.comercial}
+        alElegir={(a) => { setComercial(a); setErrores((x) => ({ ...x, comercial: undefined })); }}
+      />
+      <SelectorHabilitacion
+        tipo="sanitaria" archivo={sanitaria} error={errores.sanitaria}
+        alElegir={(a) => { setSanitaria(a); setErrores((x) => ({ ...x, sanitaria: undefined })); }}
+      />
+
+      <Boton titulo="Registrar veterinaria" icono="mas" alto={50} estilo={{ marginTop: 18 }} cargando={creando} onPress={() => void crear()} />
       <Boton titulo="Volver" variante="texto" alto={46} estilo={{ marginTop: 4 }} deshabilitado={creando} onPress={alVolver} />
+    </View>
+  );
+}
+
+/** Titular o administración vuelven a subir una habilitación que falta (o que el administrador pidió corregir). */
+function HabilitacionesPendientes({ clinica }: { clinica: ClinicaDto }) {
+  const [subiendo, setSubiendo] = useState<TipoHabilitacion | null>(null);
+  const subir = async (tipo: TipoHabilitacion, archivo: ArchivoHabilitacion) => {
+    setSubiendo(tipo);
+    try {
+      await ClinicasRepo.cargarHabilitacion(clinica.id, tipo, archivo);
+      Avisos.mostrar(`${NOMBRE_HABILITACION[tipo]} cargada`, "exito");
+    } catch (e) {
+      Avisos.error(Errores.mensaje(e));
+    } finally {
+      setSubiendo(null);
+    }
+  };
+  return (
+    <View style={{ marginTop: 6 }}>
+      <Texto tamano={15} negrita style={{ marginTop: 10 }}>Habilitaciones</Texto>
+      <SelectorHabilitacion
+        tipo="comercial" archivo={null} yaCargada={clinica.falta_habilitacion_comercial === false}
+        ocupado={subiendo === "comercial"} alElegir={(a) => void subir("comercial", a)}
+      />
+      <SelectorHabilitacion
+        tipo="sanitaria" archivo={null} yaCargada={clinica.falta_habilitacion_sanitaria === false}
+        ocupado={subiendo === "sanitaria"} alElegir={(a) => void subir("sanitaria", a)}
+      />
     </View>
   );
 }
@@ -486,9 +556,12 @@ function Equipo({ clinica, alVolver, alCrearCuenta }: { clinica: ClinicaDto; alV
         <View style={[estilos.aviso, { backgroundColor: Colores.lightRed }]}>
           <Icono nombre="advertencia" tamano={20} color={Colores.dangerRed} />
           <Texto variante="cuerpo" tamano={13.5} style={estilos.avisoTexto}>
-            {`No pudimos verificar la veterinaria${clinica.motivo_revision ? `: ${clinica.motivo_revision}` : "."}`}
+            {`No pudimos verificar la veterinaria${clinica.motivo_revision ? `: ${clinica.motivo_revision}. Volvé a subir lo que haga falta y la revisamos de nuevo.` : "."}`}
           </Texto>
         </View>
+      ) : null}
+      {editaLogo && (clinica.revision === "pendiente" || clinica.revision === "rechazada") ? (
+        <HabilitacionesPendientes clinica={clinica} />
       ) : null}
       <View style={{ marginTop: 10 }}>
         {equipo == null ? (

@@ -231,6 +231,21 @@ export interface ClinicaDto {
   motivo_revision?: string | null;
   /** Ruta del logo en el bucket `fotos`. */
   logo_path?: string | null;
+  director_nombre?: string | null;
+  /** Habilitaciones que todavía no se subieron (las necesita el administrador para aprobarla). */
+  falta_habilitacion_comercial?: boolean;
+  falta_habilitacion_sanitaria?: boolean;
+}
+
+export type TipoHabilitacion = "comercial" | "sanitaria";
+
+/** Lo que se carga para registrar una veterinaria: también su CUIT y su director técnico (un veterinario matriculado). */
+export interface NuevaClinicaDto {
+  nombre: string;
+  direccion: string;
+  telefono: string;
+  cuit: string;
+  director: { nombre: string; dni: string; matricula: string };
 }
 
 export type RevisionClinica = "pendiente" | "aprobada" | "rechazada";
@@ -248,6 +263,15 @@ export interface ClinicaParaRevisarDto {
   titular_telefono?: string | null;
   titular_dni?: string | null;
   logo_path?: string | null;
+  cuit?: string | null;
+  director_nombre?: string | null;
+  director_dni?: string | null;
+  director_matricula?: string | null;
+  /** El director técnico es un veterinario aprobado en PetCare (con esa matrícula o ese DNI). */
+  director_en_petcare?: boolean;
+  /** Rutas en el bucket `credenciales`; null si todavía no se subieron. */
+  habilitacion_comercial_path?: string | null;
+  habilitacion_sanitaria_path?: string | null;
 }
 
 /** Una persona del equipo de una veterinaria (rpc equipo_clinica). */

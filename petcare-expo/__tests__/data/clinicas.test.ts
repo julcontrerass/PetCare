@@ -1,13 +1,32 @@
 /*
- * Veterinarias: un veterinario aprobado crea la suya, quien la administra invita por DNI o correo con los roles que
- * elige (o crea la cuenta de quien no usa PetCare), la otra persona acepta o rechaza, y cualquiera puede salir.
- * Un veterinario puede estar en varias veterinarias.
+ * Veterinarias: se registran con su CUIT, su director técnico y sus habilitaciones y pasan por la revisión del
+ * administrador; quien la administra invita por DNI o correo con los roles que elige (o crea la cuenta de quien no
+ * usa PetCare), la otra persona acepta o rechaza, y cualquiera puede salir. Un veterinario puede estar en varias.
  */
 import { Escenario, type FuenteEnMemoria } from "../soporte/fuenteEnMemoria";
 import { ingresarComo, limpiarServicios, prepararServicios } from "../soporte/pruebaBase";
 import { ClinicasRepo } from "../../src/data/repositorio/clinicasRepo";
 import { Sesion } from "../../src/data/sesion";
 import { resumenVeterinarias } from "../../src/ui/common/VeterinariasHoja";
+import type { NuevaClinicaDto } from "../../src/data/remoto/dtos";
+
+// Las habilitaciones "se suben" sin leer archivos: queda la ruta en la carpeta de quien las sube
+jest.mock("../../src/data/habilitaciones", () => ({
+  ...jest.requireActual("../../src/data/habilitaciones"),
+  subirHabilitacion: jest.fn(async (a: { nombre: string }, usuario: string) => `${usuario}/habilitacion-${a.nombre}`),
+}));
+
+const HABILITACIONES = {
+  comercial: { uri: "file:///comercial.pdf", nombre: "comercial.pdf" },
+  sanitaria: { uri: "file:///sanitaria.jpg", nombre: "sanitaria.jpg" },
+};
+const DIRECTORA = { nombre: "Dra. Ana Gómez", dni: "27111222", matricula: "MP-777" };
+
+function datos(nombre: string, director = DIRECTORA): NuevaClinicaDto {
+  return { nombre, direccion: "Av. Siempreviva 742", telefono: "1144445555", cuit: "20-12345678-6", director };
+}
+
+const registrar = (nombre: string, director = DIRECTORA) => ClinicasRepo.crearClinica(datos(nombre, director), HABILITACIONES);
 
 const VET = Escenario.veterinario();
 const OTRO = Escenario.veterinario("vet-2", "Dra. Paz");
@@ -26,18 +45,59 @@ async function cambiarA(perfil: typeof VET) {
 }
 
 describe("Veterinarias", () => {
-  it("un veterinario crea una veterinaria y queda como titular y veterinario", async () => {
+  it("un veterinario registra otra veterinaria: titular y veterinario, también en revisión, y puede ser su director", async () => {
     await ingresarComo(VET);
-    const id = await ClinicasRepo.crearClinica("  San Roque ", "", "");
+    const id = await registrar("  San Roque ", { nombre: "Dr. Vera", dni: "28999888", matricula: "MP-100" });
     expect(fuente.llamadas).toContain("crearClinica:San Roque");
+    expect(fuente.llamadas).toEqual(expect.arrayContaining([`cargarHabilitacionClinica:${id}:comercial`, `cargarHabilitacionClinica:${id}:sanitaria`]));
     expect(ClinicasRepo.clinica(id)?.roles).toEqual(["titular", "veterinario"]);
-    expect(ClinicasRepo.administra(id)).toBe(true);
+    expect(ClinicasRepo.enRevision(id)).toBe(true);
+    expect(ClinicasRepo.administra(id)).toBe(false);
     expect(resumenVeterinarias()).toBe("San Roque");
+    // Él es el director: no se invita a sí mismo
+    expect(fuente.miembros.filter((m) => m.clinica_id === id)).toHaveLength(1);
+  });
+
+  it("si el director técnico usa PetCare, se lo reconoce por su matrícula y queda invitado al equipo", async () => {
+    await ingresarComo(LAURA);
+    const id = await registrar("Panda", { nombre: "Dr. Vera", dni: "11111111", matricula: "mp-100" });
+    await cambiarA(VET);
+    expect(ClinicasRepo.invitaciones.map((c) => [c.nombre, c.roles])).toEqual([["Panda", ["veterinario"]]]);
+    await cambiarA(Escenario.admin());
+    expect((await fuente.clinicasParaRevisar()).find((c) => c.id === id)?.director_en_petcare).toBe(true);
+  });
+
+  it("no se registra sin CUIT válido ni director técnico completo", async () => {
+    await ingresarComo(LAURA);
+    await expect(ClinicasRepo.crearClinica({ ...datos("Panda"), cuit: "123" }, HABILITACIONES)).rejects.toThrow("CUIT");
+    await expect(ClinicasRepo.crearClinica(datos("Panda", { nombre: "Ana", dni: "1", matricula: "" }), HABILITACIONES))
+      .rejects.toThrow("director técnico");
+  });
+
+  it("el administrador no aprueba si faltan las habilitaciones", async () => {
+    await ingresarComo(LAURA);
+    const id = await fuente.crearClinica({ ...datos("Panda"), cuit: "20123456786" });
+    await cambiarA(Escenario.admin());
+    const revisar = (await fuente.clinicasParaRevisar())[0];
+    expect([revisar.cuit, revisar.director_matricula, revisar.habilitacion_comercial_path]).toEqual(["20123456786", "MP-777", null]);
+    await expect(fuente.revisarClinica(id, true, null)).rejects.toThrow("Faltan datos");
+  });
+
+  it("si la rechazan, al volver a subir una habilitación vuelve a revisión", async () => {
+    await ingresarComo(LAURA);
+    const id = await registrar("Panda");
+    await cambiarA(Escenario.admin());
+    await fuente.revisarClinica(id, false, "La habilitación sanitaria está vencida");
+    await cambiarA(LAURA);
+    expect(ClinicasRepo.clinica(id)?.revision).toBe("rechazada");
+    await ClinicasRepo.cargarHabilitacion(id, "sanitaria", { uri: "file:///nueva.pdf", nombre: "nueva.pdf" });
+    expect(ClinicasRepo.clinica(id)?.revision).toBe("pendiente");
+    expect(ClinicasRepo.clinica(id)?.falta_habilitacion_sanitaria).toBe(false);
   });
 
   it("quien no es veterinario registra su veterinaria: queda titular y en revisión, sin poder sumar a nadie", async () => {
     await ingresarComo(LAURA);
-    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    const id = await registrar("Panda");
     expect(ClinicasRepo.clinica(id)?.roles).toEqual(["titular"]);
     expect(ClinicasRepo.enRevision(id)).toBe(true);
     expect(ClinicasRepo.administra(id)).toBe(false);
@@ -49,7 +109,7 @@ describe("Veterinarias", () => {
 
   it("el administrador aprueba la veterinaria y ahí la titular suma a su veterinario y ve su agenda", async () => {
     await ingresarComo(LAURA);
-    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    const id = await registrar("Panda");
     await cambiarA(Escenario.admin());
     expect((await fuente.clinicasParaRevisar()).map((c) => [c.nombre, c.titular_nombre])).toEqual([["Panda", "Laura Mostrador"]]);
     await expect(fuente.revisarClinica(id, false, "")).rejects.toThrow("motivo");
@@ -67,7 +127,7 @@ describe("Veterinarias", () => {
 
   it("una veterinaria rechazada muestra el motivo", async () => {
     await ingresarComo(LAURA);
-    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    const id = await registrar("Panda");
     await cambiarA(Escenario.admin());
     await fuente.revisarClinica(id, false, "No pudimos verificar que exista");
     await cambiarA(LAURA);
@@ -93,8 +153,9 @@ describe("Veterinarias", () => {
   });
 
   it("la titular invita a recepción y la invitación le aparece a la otra persona al entrar", async () => {
+    fuente.agregarClinica("cli-s", "San Roque", [[VET.id, ["titular", "veterinario"]]]);
     await ingresarComo(VET);
-    const id = await ClinicasRepo.crearClinica("San Roque", "", "");
+    const id = "cli-s";
     expect(await ClinicasRepo.invitar(id, ` ${LAURA.email} `, ["recepcion"])).toBe("Laura Mostrador");
 
     await cambiarA(LAURA);
@@ -205,7 +266,7 @@ describe("Veterinarias", () => {
 
   it("el logo lo cambian el titular o la administración (aunque esté en revisión), con la imagen en su carpeta", async () => {
     await ingresarComo(LAURA);
-    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    const id = await registrar("Panda");
     await expect(fuente.cambiarLogoClinica(id, "otra-cuenta/logo.jpg")).rejects.toThrow("tu carpeta");
     await fuente.cambiarLogoClinica(id, `${LAURA.id}/logo.jpg`);
     fuente.agregarClinica("cli-a", "Centro", [[VET.id, ["titular", "veterinario"]], [LAURA.id, ["recepcion"]]]);

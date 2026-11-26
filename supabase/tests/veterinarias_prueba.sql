@@ -70,7 +70,7 @@ reset role; select pg_temp.como('V2'); set role authenticated;
 select public.responder_invitacion_clinica((select miembro_id from public.mis_clinicas() where id = (select id from clin where clave = 'V')), true);
 insert into res (prueba, ok) values
   ('V2 está en dos veterinarias', (select count(*) from public.mis_clinicas() where estado = 'activo') = 2),
-  ('V2 crea una tercera', public.crear_clinica('Otra de V2') is not null),
+  ('V2 crea una tercera', public.crear_clinica('Otra de V2', 'Calle Falsa 100', '1144445555', '20-12345678-6', 'Prueba V2', '90000098', 'PRUEBA-V2') is not null),
   ('V2 NO maneja la agenda de V (es solo veterinario ahí)', not private.es_recepcion_de(pg_temp.id('V')));
 
 reset role; select pg_temp.como('R'); set role authenticated;
