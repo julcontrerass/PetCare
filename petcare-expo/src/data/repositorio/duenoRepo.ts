@@ -519,7 +519,8 @@ class DuenoRepoImpl {
       cierre: it.hora_cierre.slice(0, 5),
     }));
     const principal = sedes[0] ?? null;
-    const especialidades = datos?.especialidades ?? [];
+    // A los dueños (y a la recepción) solo se les ofrecen los servicios y las especialidades con el título aprobado
+    const especialidades = CatalogoMedico.ofrecidas(datos?.especialidades ?? [], datos?.especialidades_aprobadas);
     return new VeterinarioAcceso(
       p.nombre, "@" + p.email.split("@")[0], p.email, datos?.matricula ?? "",
       especialidades.slice(0, 2).join(", ").trim() === "" ? "Chequeo médico integral" : especialidades.slice(0, 2).join(", "),

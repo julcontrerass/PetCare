@@ -14,6 +14,7 @@ import { PerfilVetRepo } from "./repositorio/perfilVetRepo";
 import { PrescripcionesRepo } from "./repositorio/prescripcionesRepo";
 import { RecepcionAgendaRepo } from "./repositorio/recepcionAgendaRepo";
 import { ClinicasRepo } from "./repositorio/clinicasRepo";
+import { EspecialidadesRepo } from "./repositorio/especialidadesRepo";
 import { RecordatoriosRepo } from "./repositorio/recordatoriosRepo";
 import { SaludRepo } from "./repositorio/saludRepo";
 import { SolicitudesRepo } from "./repositorio/solicitudesRepo";
@@ -187,6 +188,7 @@ class SesionImpl {
     this._perfil = datos;
     try {
       await FotosPendientes.subirCredencial(datos.email, id);
+      await FotosPendientes.subirCertificados(datos.email, id);
     } catch {
       // se vuelve a intentar en el próximo ingreso
     }
@@ -485,6 +487,7 @@ class SesionImpl {
     CuentaActual.rol = null;
     DuenoRepo.limpiar();
     ClinicasRepo.limpiar();
+    EspecialidadesRepo.limpiar();
     RecepcionAgendaRepo.limpiar();
     PerfilVetRepo.limpiar();
     PacientesRepo.limpiar();

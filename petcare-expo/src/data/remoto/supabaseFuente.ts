@@ -9,7 +9,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -354,6 +354,24 @@ export class SupabaseFuente implements FuenteDatos {
 
   async cambiarLogoClinica(clinicaId: string, logoPath: string | null): Promise<void> {
     vacio(await this.cliente.rpc("cambiar_logo_clinica", { p_clinica: clinicaId, p_path: logoPath }));
+  }
+
+  async misEspecialidades(): Promise<EspecialidadVetDto[]> {
+    return ok(await this.cliente.rpc("mis_especialidades")) as EspecialidadVetDto[];
+  }
+
+  async cargarCertificadoEspecialidad(d: NuevoCertificadoDto): Promise<void> {
+    vacio(await this.cliente.rpc("cargar_certificado_especialidad", {
+      p_especialidad: d.especialidad, p_titulo: d.titulo, p_institucion: d.institucion, p_anio: d.anio, p_archivos: d.archivos,
+    }));
+  }
+
+  async especialidadesParaRevisar(): Promise<EspecialidadParaRevisarDto[]> {
+    return ok(await this.cliente.rpc("especialidades_para_revisar")) as EspecialidadParaRevisarDto[];
+  }
+
+  async revisarEspecialidad(id: string, aprobar: boolean, motivo: string | null): Promise<void> {
+    vacio(await this.cliente.rpc("revisar_especialidad", { p_id: id, p_aprobar: aprobar, p_motivo: motivo }));
   }
 
   async mascotasDelVeterinario(): Promise<MascotaDto[]> {

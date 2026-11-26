@@ -5,10 +5,12 @@ import type {
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
   RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion,
+  EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
 import { FuenteBase, type ResultadoRegistro } from "../../src/data/remoto/fuenteDatos";
+import { CatalogoMedico } from "../../src/data/catalogoMedico";
 
 /** Lo que Kotlin leía con `(valor as? JsonPrimitive)?.content`: null si no es un valor simple; JsonNull da "null". */
 function primitivo(valor: Json | undefined): string | null {
@@ -298,6 +300,84 @@ export class FuenteEnMemoria extends FuenteBase {
   override async quitarCodueno(coduenoId: string): Promise<void> {
     this.llamadas.push(`quitarCodueno:${coduenoId}`);
     this.coduenos = this.coduenos.filter((c) => c.id !== coduenoId);
+  }
+
+  // ---------- Títulos de especialidades (como la migración certificados_de_especialidades.sql) ----------
+
+  especialidadesVet: (EspecialidadVetDto & { veterinario_id: string })[] = [];
+
+  private perfilDe(id: string): PerfilDto | undefined {
+    return [...this.perfiles, this.yo].find((p) => p.id === id);
+  }
+
+  /** Como el disparador de veterinarios: cada especialidad elegida tiene su fila (sin certificado al principio). */
+  private sincronizarEspecialidades(vet: PerfilDto): void {
+    for (const e of vet.veterinarios?.especialidades ?? []) {
+      if (!CatalogoMedico.pideTitulo(e)) continue;
+      if (this.especialidadesVet.some((x) => x.veterinario_id === vet.id && x.especialidad === e)) continue;
+      this.especialidadesVet.push({
+        id: `esp-${this.especialidadesVet.length + 1}`, veterinario_id: vet.id, especialidad: e, estado: "sin_certificado", archivos: [],
+      });
+    }
+  }
+
+  override async misEspecialidades(): Promise<EspecialidadVetDto[]> {
+    this.sincronizarEspecialidades(this.yo);
+    const elegidas = this.yo.veterinarios?.especialidades ?? [];
+    return this.especialidadesVet.filter((x) => x.veterinario_id === this.yo.id && elegidas.includes(x.especialidad));
+  }
+
+  override async cargarCertificadoEspecialidad(d: NuevoCertificadoDto): Promise<void> {
+    this.llamadas.push(`cargarCertificadoEspecialidad:${d.especialidad}`);
+    if (!this.yo.veterinarios) throw new Error("Solo un veterinario puede cargar certificados");
+    if (!CatalogoMedico.pideTitulo(d.especialidad)) throw new Error("Esa especialidad no necesita certificado");
+    if (!this.yo.veterinarios.especialidades.includes(d.especialidad)) throw new Error("Primero elegí la especialidad en tu perfil");
+    if (d.archivos.length === 0 || d.archivos.some((a) => !a.startsWith(`${this.yo.id}/`))) throw new Error("Los archivos tienen que estar en tu carpeta");
+    this.sincronizarEspecialidades(this.yo);
+    const fila = this.especialidadesVet.find((x) => x.veterinario_id === this.yo.id && x.especialidad === d.especialidad)!;
+    Object.assign(fila, {
+      estado: "pendiente", titulo: d.titulo, institucion: d.institucion, anio: d.anio, archivos: d.archivos, motivo: null,
+      enviada_at: "2026-11-27T12:00:00Z",
+    });
+    this.recalcularAprobadas(this.yo.id);
+  }
+
+  override async especialidadesParaRevisar(): Promise<EspecialidadParaRevisarDto[]> {
+    if (this.yo.rol !== "admin") return [];
+    return this.especialidadesVet.filter((x) => x.estado === "pendiente").map((x) => {
+      const v = this.perfilDe(x.veterinario_id)!;
+      return {
+        id: x.id, veterinario_id: v.id, veterinario_nombre: v.nombre, veterinario_email: v.email,
+        matricula: v.veterinarios?.matricula ?? "", cuenta_aprobada: this.esVetActivo(v), especialidad: x.especialidad,
+        titulo: x.titulo ?? "", institucion: x.institucion ?? "", anio: x.anio ?? 0, archivos: x.archivos,
+        enviada_at: x.enviada_at ?? "",
+      };
+    });
+  }
+
+  override async revisarEspecialidad(id: string, aprobar: boolean, motivo: string | null): Promise<void> {
+    this.llamadas.push(`revisarEspecialidad:${id}=${aprobar}`);
+    if (this.yo.rol !== "admin") throw new Error("Solo un administrador puede revisar especialidades");
+    const x = this.especialidadesVet.find((e) => e.id === id && e.estado === "pendiente");
+    if (!x) throw new Error("Ese certificado ya no está para revisar");
+    if (!aprobar && !motivo?.trim()) throw new Error("Escribí el motivo del rechazo");
+    x.estado = aprobar ? "aprobada" : "rechazada";
+    x.motivo = aprobar ? null : motivo;
+    this.recalcularAprobadas(x.veterinario_id);
+  }
+
+  /** Como veterinarios.especialidades_aprobadas (la mantiene la base). */
+  private recalcularAprobadas(vetId: string): void {
+    const v = this.perfilDe(vetId);
+    if (!v?.veterinarios) return;
+    v.veterinarios.especialidades_aprobadas = this.especialidadesVet
+      .filter((x) => x.veterinario_id === vetId && x.estado === "aprobada").map((x) => x.especialidad);
+  }
+
+  /** Para preparar escenarios: deja aprobadas las especialidades de [vet] que piden título. */
+  aprobarEspecialidades(vet: PerfilDto): void {
+    if (!vet.veterinarios) return;
+    vet.veterinarios.especialidades_aprobadas = vet.veterinarios.especialidades.filter((e) => CatalogoMedico.pideTitulo(e));
   }
 
   // ---------- Veterinarias (como la migración veterinarias.sql) ----------

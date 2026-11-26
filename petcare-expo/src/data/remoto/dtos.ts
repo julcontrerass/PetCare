@@ -34,6 +34,8 @@ export interface VeterinarioDto {
   hora_apertura: string;
   hora_cierre: string;
   especialidades: string[];
+  /** Especialidades con el título aprobado por el administrador (las que se ofrecen a los dueños). */
+  especialidades_aprobadas?: string[];
   /** Tipos de mascota que atiende; si el servidor no lo informa se asume que atiende todos. */
   tipos_animales: string[];
   /** Minutos que dura cada servicio o especialidad para este veterinario. */
@@ -79,6 +81,7 @@ export function normalizarVeterinario(v: Partial<VeterinarioDto> | null | undefi
     hora_apertura: v.hora_apertura ?? "09:00:00",
     hora_cierre: v.hora_cierre ?? "18:00:00",
     especialidades: v.especialidades ?? [],
+    especialidades_aprobadas: v.especialidades_aprobadas ?? [],
     tipos_animales: v.tipos_animales ?? [...TiposMascota.TODOS],
     duraciones: v.duraciones ?? {},
     credencial_path: v.credencial_path ?? null,
@@ -238,6 +241,48 @@ export interface ClinicaDto {
 }
 
 export type TipoHabilitacion = "comercial" | "sanitaria";
+
+export type EstadoEspecialidad = "sin_certificado" | "pendiente" | "aprobada" | "rechazada";
+
+/** Una especialidad elegida por el veterinario y el estado de su título (rpc mis_especialidades). */
+export interface EspecialidadVetDto {
+  id: string;
+  especialidad: string;
+  estado: EstadoEspecialidad;
+  titulo?: string | null;
+  institucion?: string | null;
+  anio?: number | null;
+  archivos: string[];
+  /** Motivo del rechazo. */
+  motivo?: string | null;
+  enviada_at?: string | null;
+}
+
+/** El título de una especialidad: qué es, quién lo otorgó, cuándo, y los archivos ya subidos a `credenciales`. */
+export interface NuevoCertificadoDto {
+  especialidad: string;
+  titulo: string;
+  institucion: string;
+  anio: number;
+  archivos: string[];
+}
+
+/** Un título para revisar (rpc especialidades_para_revisar). */
+export interface EspecialidadParaRevisarDto {
+  id: string;
+  veterinario_id: string;
+  veterinario_nombre: string;
+  veterinario_email: string;
+  matricula: string;
+  /** La cuenta del veterinario ya está aprobada (su matrícula). */
+  cuenta_aprobada: boolean;
+  especialidad: string;
+  titulo: string;
+  institucion: string;
+  anio: number;
+  archivos: string[];
+  enviada_at: string;
+}
 
 /** Lo que se carga para registrar una veterinaria: también su CUIT y su director técnico (un veterinario matriculado). */
 export interface NuevaClinicaDto {

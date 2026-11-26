@@ -37,14 +37,22 @@ export function problemaConHabilitacion(nombre: string, tamano: number | null): 
   return null;
 }
 
-/** Sube el archivo a la carpeta de [usuarioId] y devuelve su ruta en el bucket. */
-export async function subirHabilitacion(archivo: ArchivoHabilitacion, usuarioId: string): Promise<string> {
+/** Sube una habilitación a la carpeta de [usuarioId] y devuelve su ruta en el bucket. */
+export function subirHabilitacion(archivo: ArchivoHabilitacion, usuarioId: string): Promise<string> {
+  return subirDocumentoPrivado(archivo, usuarioId, "habilitacion");
+}
+
+/**
+ * Sube un documento (PDF o imagen) al bucket privado `credenciales`, en la carpeta de [usuarioId]: habilitaciones,
+ * títulos de especialidades. Devuelve su ruta.
+ */
+export async function subirDocumentoPrivado(archivo: ArchivoHabilitacion, usuarioId: string, prefijo: string): Promise<string> {
   const extension = extensionDe(archivo.nombre);
   const mime = TIPOS_HABILITACION[extension];
   if (!mime) throw new Error("Subí un PDF o una foto (JPG, PNG o WEBP)");
   const bytes = await Imagenes.bytesDe(archivo.uri);
   if (bytes.length > TAMANO_MAXIMO_HABILITACION) throw new Error("El archivo supera los 10 MB");
-  const ruta = `${usuarioId}/habilitacion-${nuevoId()}.${extension === "jpeg" ? "jpg" : extension}`;
+  const ruta = `${usuarioId}/${prefijo}-${nuevoId()}.${extension === "jpeg" ? "jpg" : extension}`;
   await Servicios.fuente.subir(BUCKET_HABILITACIONES, ruta, bytes, mime);
   return ruta;
 }

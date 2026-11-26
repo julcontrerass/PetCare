@@ -41,6 +41,17 @@ export const CatalogoMedico = {
     return this.SERVICIOS.some((s) => s.toLowerCase() === nombre.toLowerCase());
   },
 
+  /** Las especialidades piden título aprobado para ofrecerse; los servicios, no. */
+  pideTitulo(nombre: string): boolean {
+    return this.ESPECIALIDADES.some((s) => s.toLowerCase() === nombre.toLowerCase());
+  },
+
+  /** Lo que el veterinario ofrece a los dueños: sus servicios y las especialidades con el título aprobado. */
+  ofrecidas(elegidas: readonly string[], aprobadas: readonly string[] | null | undefined): string[] {
+    const ok = new Set((aprobadas ?? []).map((a) => a.toLowerCase()));
+    return elegidas.filter((e) => !this.pideTitulo(e) || ok.has(e.toLowerCase()));
+  },
+
   /** Vacunas que más se aplican, para sugerirlas al cargar una (se puede escribir cualquier otra). */
   vacunasHabituales(tipoMascota: string | null | undefined): string[] {
     switch (tipoMascota?.trim().toLowerCase()) {

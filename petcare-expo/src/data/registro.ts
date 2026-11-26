@@ -158,12 +158,16 @@ export const Registro = {
     const resultado = await crear(d.email, d.password, datos);
     await FotosPendientes.guardar(d.email, d.fotoPath, []);
     if (d.credencialPath) await FotosPendientes.guardarCredencial(d.email, d.credencialPath);
+    await FotosPendientes.guardarCertificados(d.email, d.certificados);
     // El carnet se sube ya (si hay sesión) porque el administrador lo necesita para revisar la cuenta; las demás
     // fotos esperan a que lo aprueben
     if (resultado.sesionIniciada) {
       try {
         const usuario = await Sesion.usuarioIdActual();
-        if (usuario) await FotosPendientes.subirCredencial(d.email, usuario);
+        if (usuario) {
+          await FotosPendientes.subirCredencial(d.email, usuario);
+          await FotosPendientes.subirCertificados(d.email, usuario);
+        }
       } catch {
         // se sube en el primer ingreso
       }

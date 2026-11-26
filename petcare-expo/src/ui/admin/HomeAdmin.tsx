@@ -39,6 +39,7 @@ import { HojaDuenoAdmin } from "./HojaDuenoAdmin";
 import { HojaVetAdmin } from "./HojaVetAdmin";
 import { imagenEnMemoria, type ImagenEnMemoria } from "./credencial";
 import { RevisionClinicas } from "./RevisionClinicas";
+import { RevisionEspecialidades } from "./RevisionEspecialidades";
 
 type Panel = "inicio" | "vets" | "duenos" | "actividad";
 
@@ -364,6 +365,13 @@ export function HomeAdmin() {
       <RevisionClinicas
         encabezado={(n) => (
           <CabeceraSeccion titulo={n === 1 ? "Veterinaria para revisar" : `${n} veterinarias para revisar`} accion="" visible={false} alAccion={() => {}} />
+        )}
+      />
+
+      {/* Títulos de especialidades que mandaron los veterinarios: solo aparece si hay alguno */}
+      <RevisionEspecialidades
+        encabezado={(n) => (
+          <CabeceraSeccion titulo={n === 1 ? "Título de especialidad para revisar" : `${n} títulos de especialidades para revisar`} accion="" visible={false} alAccion={() => {}} />
         )}
       />
 

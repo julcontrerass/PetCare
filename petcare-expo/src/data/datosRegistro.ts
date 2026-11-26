@@ -2,6 +2,7 @@
  * Migrado de data/DatosRegistro.kt. En Android viajaban entre pantallas como Serializable; acá son objetos
  * comunes que las pantallas del registro se pasan por un módulo de estado.
  */
+import type { CertificadoElegido } from "./repositorio/especialidadesRepo";
 import type { SedeVet } from "../model/modelos";
 
 /** Mascota cargada durante el registro del dueño. */
@@ -77,6 +78,8 @@ export interface DatosRegistroVeterinario {
   credencialPath: string | null;
   /** Otros lugares donde atiende, además del primero (que es la clínica, la dirección, los días y el horario de arriba). */
   sedesExtra: SedeVet[];
+  /** Títulos de especialidades que adjuntó al registrarse (opcional: también los puede subir después). */
+  certificados: CertificadoElegido[];
 }
 
 export function crearDatosRegistroVeterinario(
@@ -92,5 +95,6 @@ export function crearDatosRegistroVeterinario(
     fotoPath: d.fotoPath ?? null,
     credencialPath: d.credencialPath ?? null,
     sedesExtra: d.sedesExtra ?? [],
+    certificados: d.certificados ?? [],
   };
 }

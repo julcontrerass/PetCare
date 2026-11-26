@@ -5,9 +5,10 @@
  * están en DialogosPerfilVet.tsx y EditorSede.tsx.
  */
 import { LinearGradient } from "expo-linear-gradient";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AgendaRepo } from "../../data/repositorio/agendaRepo";
+import { EspecialidadesRepo } from "../../data/repositorio/especialidadesRepo";
 import { PerfilVetRepo } from "../../data/repositorio/perfilVetRepo";
 import { Servicios } from "../../data/servicios";
 import { Sesion } from "../../data/sesion";
@@ -20,6 +21,7 @@ import { ModoDeUso } from "../common/ModoDeUso";
 import { PantallaBase } from "../common/PantallaBase";
 import { VeterinariasHoja, resumenVeterinarias } from "../common/VeterinariasHoja";
 import { Tarjeta } from "../common/Tarjeta";
+import { TitulosEspecialidadesHoja } from "../common/TitulosEspecialidades";
 import { Texto } from "../common/Texto";
 import { Colores, sombra } from "../common/tema";
 import { useDatos } from "../common/useDatos";
@@ -39,7 +41,7 @@ type Dialogo =
   | { tipo: "ninguno" }
   | { tipo: "sede"; sede: SedeVet | null }
   | { tipo: "especialidades" } | { tipo: "tipos" } | { tipo: "duraciones" }
-  | { tipo: "perfil" } | { tipo: "password" } | { tipo: "notificaciones" } | { tipo: "recepcion" };
+  | { tipo: "perfil" } | { tipo: "password" } | { tipo: "notificaciones" } | { tipo: "recepcion" } | { tipo: "titulos" };
 
 function Seccion({ titulo }: { titulo: string }) {
   return <Texto variante="titulo" tamano={17} style={{ marginTop: 22, marginBottom: 10 }}>{titulo}</Texto>;
@@ -88,6 +90,11 @@ function Grupo({ children }: { children: ReactNode }) {
 export function PerfilVet() {
   useDatos();
   const [dialogo, setDialogo] = useState<Dialogo>({ tipo: "ninguno" });
+  const textoEspecialidades = PerfilVetRepo.textoEspecialidades();
+  // Se vuelven a pedir al abrir el perfil y cuando cambian las especialidades elegidas
+  useEffect(() => {
+    void EspecialidadesRepo.cargar().then(() => Servicios.avisarCambio());
+  }, [textoEspecialidades]);
   const cerrar = () => setDialogo({ tipo: "ninguno" });
   /** `mostrarPerfil`: los datos están en el repositorio; se avisa para volver a dibujar. */
   const mostrarPerfil = () => Servicios.avisarCambio();
@@ -180,6 +187,9 @@ export function PerfilVet() {
         ) : null}
         <Fila icono="editar" etiqueta="Especialidades" valor={PerfilVetRepo.textoEspecialidades()} chevron onPress={() => setDialogo({ tipo: "especialidades" })} />
         <Divisor />
+        {/* Las especialidades se ofrecen cuando el administrador aprueba su título */}
+        <Fila icono="documento" etiqueta="Títulos de especialidades" valor={EspecialidadesRepo.resumen()} chevron onPress={() => setDialogo({ tipo: "titulos" })} />
+        <Divisor />
         <Fila icono="perro" etiqueta="Animales que atiendo" valor={PerfilVetRepo.textoTiposAnimales()} chevron onPress={() => setDialogo({ tipo: "tipos" })} />
         <Divisor />
         <Fila icono="reloj" etiqueta="Duración de los turnos" valor={PerfilVetRepo.textoDuraciones()} chevron onPress={configurarDuraciones} />
@@ -245,6 +255,7 @@ export function PerfilVet() {
       {dialogo.tipo === "perfil" ? <DialogoEditarPerfil alCerrar={cerrar} alGuardado={mostrarPerfil} /> : null}
       {dialogo.tipo === "password" ? <DialogoCambiarPassword alCerrar={cerrar} /> : null}
       {dialogo.tipo === "recepcion" ? <VeterinariasHoja alCerrar={cerrar} /> : null}
+      {dialogo.tipo === "titulos" ? <TitulosEspecialidadesHoja alCerrar={cerrar} /> : null}
       {dialogo.tipo === "notificaciones" ? (
         <DialogoMultiple
           titulo="Notificaciones" opciones={ETIQUETAS} marcadas={CLAVES.map((c) => PerfilVetRepo.preferencia(c))} alCerrar={cerrar}

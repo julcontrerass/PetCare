@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { JsonObject } from "./remoto/dtos";
 import { CredencialVet } from "./credencialVet";
 import { subirHabilitacion, type ArchivoHabilitacion } from "./habilitaciones";
+import { enviarCertificado, type CertificadoElegido } from "./repositorio/especialidadesRepo";
 import { borrarArchivoLocal, existeArchivoLocal, Imagenes } from "./imagenes";
 import { Servicios } from "./servicios";
 
@@ -13,6 +14,7 @@ const clavePerfil = (email: string) => ARCHIVO + email.toLowerCase();
 const claveCredencial = (email: string) => ARCHIVO + email.toLowerCase() + "#credencial";
 const claveLogo = (email: string) => ARCHIVO + email.toLowerCase() + "#logo";
 const claveHabilitaciones = (email: string) => ARCHIVO + email.toLowerCase() + "#habilitaciones";
+const claveCertificados = (email: string) => ARCHIVO + email.toLowerCase() + "#certificados";
 
 async function leer(clave: string): Promise<string | null> {
   try {
@@ -156,6 +158,42 @@ export const FotosPendientes = {
     } catch {
       return false;
     }
+  },
+
+  /** Los títulos de especialidades que el veterinario adjuntó al registrarse. */
+  async guardarCertificados(email: string, certificados: CertificadoElegido[]): Promise<void> {
+    if (certificados.length === 0) return;
+    await escribir(claveCertificados(email), JSON.stringify(certificados));
+  },
+
+  /**
+   * Manda los títulos pendientes de [email]. Como el carnet, se pueden mandar aunque la cuenta esté en revisión (el
+   * administrador los revisa junto con la matrícula). Los que no se pudieron mandar quedan para el próximo ingreso.
+   */
+  async subirCertificados(email: string, usuarioId: string): Promise<void> {
+    const clave = claveCertificados(email);
+    const texto = await leer(clave);
+    if (texto == null) return;
+    let lista: CertificadoElegido[] = [];
+    try {
+      lista = JSON.parse(texto) as CertificadoElegido[];
+    } catch {
+      await quitar(clave);
+      return;
+    }
+    const quedan: CertificadoElegido[] = [];
+    for (const c of lista) {
+      const presentes: ArchivoHabilitacion[] = [];
+      for (const a of c.archivos) if (await existeArchivoLocal(a.uri)) presentes.push(a);
+      if (presentes.length === 0) continue;
+      try {
+        await enviarCertificado({ ...c, archivos: presentes }, usuarioId);
+      } catch {
+        quedan.push(c);
+      }
+    }
+    if (quedan.length > 0) await escribir(clave, JSON.stringify(quedan));
+    else await quitar(clave);
   },
 
   /** Sube lo que haya pendiente para [email]. Devuelve true si cambió la foto del perfil. */

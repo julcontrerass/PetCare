@@ -4,7 +4,8 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, TipoHabilitacion, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, TipoHabilitacion,
+  EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
@@ -96,6 +97,14 @@ export interface FuenteDatos {
   clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]>;
   /** El administrador aprueba o rechaza (con motivo) una veterinaria. */
   revisarClinica(clinicaId: string, aprobar: boolean, motivo: string | null): Promise<void>;
+  // ---------- Títulos de especialidades ----------
+  /** Las especialidades que eligió el veterinario y el estado de cada título. */
+  misEspecialidades(): Promise<EspecialidadVetDto[]>;
+  /** El veterinario manda el título de una especialidad (los archivos ya subidos a su carpeta de `credenciales`). */
+  cargarCertificadoEspecialidad(datos: NuevoCertificadoDto): Promise<void>;
+  /** Títulos que esperan la revisión (solo el administrador). */
+  especialidadesParaRevisar(): Promise<EspecialidadParaRevisarDto[]>;
+  revisarEspecialidad(id: string, aprobar: boolean, motivo: string | null): Promise<void>;
   /** Titular o administración cambian (o quitan, con null) el logo; la ruta tiene que estar en su carpeta de `fotos`. */
   cambiarLogoClinica(clinicaId: string, logoPath: string | null): Promise<void>;
   /** Mascotas que el veterinario puede ver, con los datos de su dueño. */
@@ -253,6 +262,10 @@ export class FuenteBase implements FuenteDatos {
   async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> { return []; }
   async revisarClinica(_clinicaId: string, _aprobar: boolean, _motivo: string | null): Promise<void> {}
   async cambiarLogoClinica(_clinicaId: string, _logoPath: string | null): Promise<void> {}
+  async misEspecialidades(): Promise<EspecialidadVetDto[]> { return []; }
+  async cargarCertificadoEspecialidad(_datos: NuevoCertificadoDto): Promise<void> {}
+  async especialidadesParaRevisar(): Promise<EspecialidadParaRevisarDto[]> { return []; }
+  async revisarEspecialidad(_id: string, _aprobar: boolean, _motivo: string | null): Promise<void> {}
   async mascotasDelVeterinario(): Promise<MascotaDto[]> { return []; }
   async mascotasAdmin(): Promise<MascotaDto[]> { return []; }
   async crearMascota(_mascota: NuevaMascotaDto): Promise<void> {}

@@ -1,6 +1,7 @@
 /* Migrado de app/src/test/.../DuenoRepoTest.kt. */
 import "../soporte/pruebaBase";
 import { DuenoRepo } from "../../src/data/repositorio/duenoRepo";
+import { Sesion } from "../../src/data/sesion";
 import { SaludRepo } from "../../src/data/repositorio/saludRepo";
 import { posologia, signosTexto } from "../../src/model/clinica";
 import { Mascota } from "../../src/model/modelos";
@@ -369,8 +370,14 @@ test("veterinariosPara_prefiereLosQueTienenLaEspecialidad", async () => {
       veterinario: { matricula: "MP-9", especialidades: ["Cirugía 24hs"] },
     }),
   );
+  // Cardiología pide título: sin aprobar, el Dr. Vera no la ofrece (sus servicios generales, sí)
   await ingresarComoDueno();
+  expect(DuenoRepo.veterinariosPara("Cardiología")).toHaveLength(0);
+  expect(DuenoRepo.veterinariosPara("chequeo médico integral").map((v) => v.nombre)).toEqual(["Dr. Vera"]);
 
+  Sesion.olvidar();
+  fuente.aprobarEspecialidades(fuente.perfiles.find((p) => p.nombre === "Dr. Vera")!);
+  await ingresarComoDueno();
   expect(DuenoRepo.veterinariosPara("Cirugía 24hs").map((v) => v.nombre)).toEqual(["Dr. Cirujano"]);
   expect(DuenoRepo.veterinariosPara("Cardiología").map((v) => v.nombre)).toEqual(["Dr. Vera"]);
   expect(DuenoRepo.veterinariosPara("chequeo médico integral").map((v) => v.nombre)).toEqual(["Dr. Vera"]);

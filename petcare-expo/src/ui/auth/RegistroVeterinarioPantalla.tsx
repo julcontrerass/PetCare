@@ -27,6 +27,9 @@ import { ImagenRemota } from "../common/ImagenRemota";
 import { Texto } from "../common/Texto";
 import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
 import { ChipRegistro, GrupoChips } from "./ChipRegistro";
+import { HojaTitulo } from "../common/TitulosEspecialidades";
+import { CatalogoMedico } from "../../data/catalogoMedico";
+import { enviarCertificado, type CertificadoElegido } from "../../data/repositorio/especialidadesRepo";
 import { CajaInfo, Casilla } from "./ElementosRegistro";
 import { descartarFoto, elegirFoto } from "./elegirFoto";
 import { detalleSede, EditorSedeRegistro } from "./EditorSedeRegistro";
@@ -138,6 +141,11 @@ export default function RegistroVeterinarioPantalla() {
   const t = (s: string) => s.trim();
 
   const especialidadesElegidas = () => PerfilVetRepo.todasLasEspecialidades.filter((_, i) => especialidades[i]);
+  // Títulos de especialidades adjuntados en el registro (opcionales: también se suben después desde el perfil)
+  const [certificados, setCertificados] = useState<Record<string, CertificadoElegido>>({});
+  const [editandoTitulo, setEditandoTitulo] = useState<string | null>(null);
+  const conTitulo = () => especialidadesElegidas().filter((e) => CatalogoMedico.pideTitulo(e));
+  const certificadosElegidos = () => conTitulo().map((e) => certificados[e]).filter((c): c is CertificadoElegido => c != null);
   const tiposElegidos = () => TiposMascota.TODOS.filter((_, i) => tiposAnimales[i]);
   const diasElegidos = () => dias.map((d, i) => (d ? i + 1 : 0)).filter((d) => d > 0);
 
@@ -322,6 +330,14 @@ export default function RegistroVeterinarioPantalla() {
       });
       borrarArchivoLocal(preparada);
       borrarArchivoLocal(carnet);
+      // Los títulos de especialidades van con la solicitud; si alguno no sube, se puede mandar después desde el perfil
+      for (const c of certificadosElegidos()) {
+        try {
+          await enviarCertificado(c, usuario);
+        } catch {
+          // se sube después
+        }
+      }
       try {
         await Sesion.actualizarRoles();
       } catch {
@@ -354,6 +370,7 @@ export default function RegistroVeterinarioPantalla() {
       nombre: nombreFinal, dni: t(dni), telefono: t(telefono), email: t(email).toLowerCase(), password,
       matricula: t(matricula), clinica: t(clinica), direccionClinica: t(direccion), especialidades: especialidadesElegidas(),
       tiposAnimales: tiposElegidos(), dias: diasElegidos(), apertura, cierre, fotoPath, credencialPath, sedesExtra: [...sedesExtra],
+      certificados: certificadosElegidos(),
     });
     setEnviando(true);
     try {
@@ -507,6 +524,33 @@ export default function RegistroVeterinarioPantalla() {
             </GrupoChips>
             {errorEsp ? <Texto variante="chico" tamano={13} color={Colores.dangerRed} style={{ marginTop: 8 }}>Elegí al menos una especialidad</Texto> : null}
 
+            {conTitulo().length > 0 ? (
+              <View style={{ marginTop: 18 }}>
+                <Texto variante="titulo" tamano={16}>Títulos de tus especialidades</Texto>
+                <Texto variante="subtitulo" tamano={13.5} style={{ marginTop: 4 }}>
+                  Cada especialidad se ofrece a los dueños cuando verificamos su título o certificado. Podés adjuntarlo ahora o
+                  después desde tu perfil. Tus servicios generales se ofrecen con tu matrícula.
+                </Texto>
+                {conTitulo().map((e) => {
+                  const c = certificados[e];
+                  return (
+                    <View key={e} style={estilos.filaTitulo}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Texto tamano={14.5} negrita>{e}</Texto>
+                        <Texto variante="chico" tamano={12.5} numberOfLines={1}>
+                          {c ? `${c.titulo} · ${c.archivos.length === 1 ? "1 archivo" : `${c.archivos.length} archivos`}` : "Sin título adjunto"}
+                        </Texto>
+                      </View>
+                      <Boton
+                        titulo={c ? "Cambiar" : "Adjuntar"} variante={c ? "texto" : "secundario"} alto={38}
+                        onPress={() => setEditandoTitulo(e)}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+
             <Texto variante="titulo" tamano={18} style={{ marginTop: 24 }}>Animales que atendés</Texto>
             <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>
               Los dueños solo van a poder sacarte turno para estos tipos de mascota. Lo podés cambiar después desde tu perfil.
@@ -610,11 +654,22 @@ export default function RegistroVeterinarioPantalla() {
         alElegir={(h) => (eligiendoHora === "cierre" ? setCierre(h) : setApertura(h))}
         alCerrar={() => setEligiendoHora(null)}
       />
+      {editandoTitulo ? (
+        <HojaTitulo
+          especialidad={editandoTitulo} inicial={certificados[editandoTitulo] ?? null}
+          alVolver={() => setEditandoTitulo(null)}
+          alGuardar={(c) => {
+            setCertificados((m) => ({ ...m, [c.especialidad]: c }));
+            setEditandoTitulo(null);
+          }}
+        />
+      ) : null}
     </>
   );
 }
 
 const estilos = StyleSheet.create({
+  filaTitulo: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colores.dividerLight },
   etiqueta: { marginTop: 14, marginBottom: 6 },
   campoPrimero: { marginTop: 22 },
   campo: { marginTop: 14 },
