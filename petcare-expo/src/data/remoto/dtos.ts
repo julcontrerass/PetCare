@@ -226,6 +226,25 @@ export interface ClinicaDto {
   /** Cuántos veterinarios activos tiene. */
   veterinarios: number;
   created_at: string;
+  /** La que registra alguien que no es veterinario espera que el administrador la verifique. */
+  revision?: RevisionClinica;
+  motivo_revision?: string | null;
+}
+
+export type RevisionClinica = "pendiente" | "aprobada" | "rechazada";
+
+/** Veterinaria que espera la revisión del administrador (rpc clinicas_para_revisar). */
+export interface ClinicaParaRevisarDto {
+  id: string;
+  nombre: string;
+  direccion?: string | null;
+  telefono?: string | null;
+  created_at: string;
+  titular_id?: string | null;
+  titular_nombre?: string | null;
+  titular_email?: string | null;
+  titular_telefono?: string | null;
+  titular_dni?: string | null;
 }
 
 /** Una persona del equipo de una veterinaria (rpc equipo_clinica). */
@@ -256,12 +275,17 @@ export interface NuevaCuentaMiembroDto {
   dni: string;
   telefono: string;
   email: string;
+  /** Solo para un veterinario: su matrícula y la foto del carnet (jpeg en base64) para que la verifique el administrador. */
+  matricula?: string;
+  credencial?: string;
 }
 
 export interface CuentaMiembroCreadaDto {
   usuario_id: string;
   email: string;
   password_temporal: string;
+  /** Un veterinario creado por la veterinaria queda en revisión hasta que el administrador aprueba su matrícula. */
+  en_revision?: boolean;
 }
 
 /** Dueño de una mascota (o invitación pendiente), de la rpc duenos_de_mascota. */

@@ -4,7 +4,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
@@ -77,7 +77,10 @@ export interface FuenteDatos {
   equipoClinica(clinicaId: string): Promise<MiembroClinicaDto[]>;
   /** Veterinarios cuya agenda maneja la cuenta (titular, administración o recepción de una veterinaria). */
   agendasQueManejo(): Promise<AgendaManejadaDto[]>;
-  /** Un veterinario aprobado crea otra veterinaria; devuelve su id. */
+  /**
+   * Registra una veterinaria y la cuenta queda como titular; devuelve su id. Si no la registra un veterinario aprobado,
+   * queda pendiente hasta que el administrador la verifica.
+   */
   crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string>;
   /** Invita a una cuenta (por DNI o correo) con esos roles; devuelve el nombre de la persona. */
   invitarAClinica(clinicaId: string, dniOCorreo: string, roles: RolClinica[]): Promise<string>;
@@ -87,6 +90,10 @@ export interface FuenteDatos {
   cambiarRolesClinica(miembroId: string, roles: RolClinica[]): Promise<void>;
   /** Crea la cuenta de una persona del equipo (Edge Function); queda como miembro activo al instante. */
   crearCuentaMiembro(datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto>;
+  /** Veterinarias que esperan la revisión (solo el administrador). */
+  clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]>;
+  /** El administrador aprueba o rechaza (con motivo) una veterinaria. */
+  revisarClinica(clinicaId: string, aprobar: boolean, motivo: string | null): Promise<void>;
   /** Mascotas que el veterinario puede ver, con los datos de su dueño. */
   mascotasDelVeterinario(): Promise<MascotaDto[]>;
   /** Todas las mascotas activas (solo el administrador). */
@@ -238,6 +245,8 @@ export class FuenteBase implements FuenteDatos {
   async crearCuentaMiembro(_datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto> {
     throw new Error("Operación no disponible: crearCuentaMiembro");
   }
+  async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> { return []; }
+  async revisarClinica(_clinicaId: string, _aprobar: boolean, _motivo: string | null): Promise<void> {}
   async mascotasDelVeterinario(): Promise<MascotaDto[]> { return []; }
   async mascotasAdmin(): Promise<MascotaDto[]> { return []; }
   async crearMascota(_mascota: NuevaMascotaDto): Promise<void> {}

@@ -1,8 +1,9 @@
 /*
- * "Mis veterinarias": las veterinarias de la cuenta (con sus roles), las invitaciones para responder y, para un
- * veterinario aprobado, crear otra veterinaria. Tocar una abre su equipo: quien la administra (titular o
- * administración) invita por DNI o correo eligiendo los roles, le crea la cuenta a quien todavía no usa PetCare,
- * cambia roles y saca personas; el resto ve el equipo y puede salir. Mismo formato que la hoja de dueños de una
+ * "Mis veterinarias": las veterinarias de la cuenta (con sus roles), las invitaciones para responder y registrar una
+ * veterinaria (si no la registra un veterinario aprobado, la verifica el administrador antes de poder sumar gente).
+ * Tocar una abre su equipo: quien la administra (titular o administración) invita por DNI o correo eligiendo los
+ * roles, le crea la cuenta a quien todavía no usa PetCare (también a un veterinario, que queda en revisión hasta que
+ * el administrador aprueba su matrícula), cambia roles y saca personas; el resto ve el equipo y puede salir. Mismo formato que la hoja de dueños de una
  * mascota (HojaInferior, filas con avatar, chips y acciones de texto).
  */
 import * as Clipboard from "expo-clipboard";
@@ -11,7 +12,10 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { ClinicasRepo, NOMBRE_ROL } from "../../data/repositorio/clinicasRepo";
 import type { ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, RolClinica } from "../../data/remoto/dtos";
 import { Sesion } from "../../data/sesion";
+import { Imagenes } from "../../data/imagenes";
+import { aBase64 } from "../../util/base64";
 import { Errores } from "../../util/errores";
+import { descartarFoto, elegirFoto } from "../auth/elegirFoto";
 import { contarDigitos, esCorreoValido, soloNumeros } from "../auth/validaciones";
 import { Avatar } from "./Avatar";
 import { Avisos } from "./Avisos";
@@ -27,7 +31,7 @@ import { useDatos } from "./useDatos";
 import { cursorTocable, estiloFoco, useFoco } from "./Web";
 
 const ROLES_INVITAR: RolClinica[] = ["recepcion", "administrador", "veterinario"];
-const ROLES_CUENTA_NUEVA: RolClinica[] = ["recepcion", "administrador"];
+const ROLES_CUENTA_NUEVA: RolClinica[] = ["veterinario", "recepcion", "administrador"];
 
 function AccionFila({ texto, color = Colores.dangerRed, alTocar, deshabilitada }: {
   texto: string; color?: string; alTocar: () => void; deshabilitada?: boolean;
@@ -88,6 +92,8 @@ function FilaClinica({ clinica: c, alTocar }: { clinica: ClinicaDto; alTocar: ()
           {c.veterinarios === 1 ? "1 veterinario" : `${c.veterinarios} veterinarios`}{c.direccion ? ` · ${c.direccion}` : ""}
         </Texto>
         <ChipsRoles roles={c.roles} />
+        {c.revision === "pendiente" ? <Chip texto="En revisión" tono="aviso" estilo={{ marginTop: 6, alignSelf: "flex-start" }} /> : null}
+        {c.revision === "rechazada" ? <Chip texto="Rechazada" tono="peligro" estilo={{ marginTop: 6, alignSelf: "flex-start" }} /> : null}
       </View>
       <Icono nombre="chevronDerecha" tamano={20} color={Colores.textGray} />
     </Pressable>
@@ -120,6 +126,7 @@ function FilaInvitacion({ clinica: c }: { clinica: ClinicaDto }) {
 }
 
 function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: () => void }) {
+  const esVet = Sesion.rolesDisponibles.includes("VETERINARIO");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -130,10 +137,18 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
       setError("Ingresá el nombre de la veterinaria");
       return;
     }
+    // Sin ser veterinario, la dirección y el teléfono son los que usa el administrador para verificarla
+    if (!esVet && (direccion.trim().length < 5 || contarDigitos(telefono) < 8)) {
+      setError("Cargá la dirección y el teléfono: los usamos para verificarla");
+      return;
+    }
     setCreando(true);
     try {
       await ClinicasRepo.crearClinica(nombre, direccion, telefono);
-      Avisos.mostrar(`Creaste ${nombre.trim()}. Ya podés sumar a tu equipo`, "exito");
+      Avisos.mostrar(
+        esVet ? `Creaste ${nombre.trim()}. Ya podés sumar a tu equipo` : `Registraste ${nombre.trim()}. Te avisamos cuando la aprobemos`,
+        "exito",
+      );
       alListo();
     } catch (e) {
       Avisos.error(Errores.mensaje(e));
@@ -142,17 +157,19 @@ function CrearClinica({ alListo, alVolver }: { alListo: () => void; alVolver: ()
   };
   return (
     <View>
-      <Texto tamano={20} negrita accessibilityRole="header">Crear una veterinaria</Texto>
+      <Texto tamano={20} negrita accessibilityRole="header">Registrar una veterinaria</Texto>
       <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>
-        Quedás como titular y veterinario/a. Después sumás a tu equipo: otros veterinarios, recepción y administración.
+        {esVet
+          ? "Quedás como titular y veterinario/a. Después sumás a tu equipo: otros veterinarios, recepción y administración."
+          : "Quedás como titular. El administrador de PetCare verifica que exista y, cuando la aprueba, sumás a tus veterinarios y a tu equipo."}
       </Texto>
       <Campo
         estilo={{ marginTop: 14 }} etiqueta="Nombre" placeholder="Ej: Veterinaria San Roque" value={nombre}
         onChangeText={(t) => { setNombre(t); setError(null); }} error={error} autoCapitalize="words"
       />
-      <Campo estilo={{ marginTop: 12 }} etiqueta="Dirección (opcional)" placeholder="Calle y número" value={direccion} onChangeText={setDireccion} autoCapitalize="words" />
-      <Campo estilo={{ marginTop: 12 }} etiqueta="Teléfono (opcional)" placeholder="Ej: 11 4444-5555" value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
-      <Boton titulo="Crear veterinaria" icono="mas" alto={50} estilo={{ marginTop: 16 }} cargando={creando} onPress={() => void crear()} />
+      <Campo estilo={{ marginTop: 12 }} etiqueta={esVet ? "Dirección (opcional)" : "Dirección"} placeholder="Calle, número y localidad" value={direccion} onChangeText={setDireccion} autoCapitalize="words" />
+      <Campo estilo={{ marginTop: 12 }} etiqueta={esVet ? "Teléfono (opcional)" : "Teléfono"} placeholder="Ej: 11 4444-5555" value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
+      <Boton titulo={esVet ? "Crear veterinaria" : "Registrar veterinaria"} icono="mas" alto={50} estilo={{ marginTop: 16 }} cargando={creando} onPress={() => void crear()} />
       <Boton titulo="Volver" variante="texto" alto={46} estilo={{ marginTop: 4 }} deshabilitado={creando} onPress={alVolver} />
     </View>
   );
@@ -165,9 +182,18 @@ type CuentaCreada = CuentaMiembroCreadaDto & { nombre: string; telefono: string;
 function FormularioCuenta({ clinica, alCreada, alVolver }: {
   clinica: ClinicaDto; alCreada: (c: CuentaCreada) => void; alVolver: () => void;
 }) {
-  const [datos, setDatos] = useState({ nombre: "", dni: "", telefono: "", email: "" });
+  const [datos, setDatos] = useState({ nombre: "", dni: "", telefono: "", email: "", matricula: "" });
   const [roles, setRoles] = useState<RolClinica[]>(["recepcion"]);
-  const [errores, setErrores] = useState<Partial<Record<keyof typeof datos | "roles", string>>>({});
+  const [carnet, setCarnet] = useState<string | null>(null);
+  const [errores, setErrores] = useState<Partial<Record<keyof typeof datos | "roles" | "carnet", string>>>({});
+  const esVet = roles.includes("veterinario");
+  const elegirCarnet = async () => {
+    const uri = await elegirFoto({ prefijo: "carnet_equipo" });
+    if (!uri) return;
+    descartarFoto(carnet);
+    setCarnet(uri);
+    setErrores((e) => ({ ...e, carnet: undefined }));
+  };
   const [creando, setCreando] = useState(false);
   const cambiar = (c: keyof typeof datos, filtro?: (t: string) => string) => (texto: string) => {
     setDatos((d) => ({ ...d, [c]: filtro ? filtro(texto) : texto }));
@@ -181,11 +207,22 @@ function FormularioCuenta({ clinica, alCreada, alVolver }: {
     if (contarDigitos(datos.telefono) < 8) e.telefono = "Ingresá un teléfono válido";
     if (!esCorreoValido(datos.email.trim().toLowerCase())) e.email = "Correo inválido";
     if (roles.length === 0) e.roles = "Elegí al menos un rol";
+    if (esVet && datos.matricula.trim().length < 3) e.matricula = "Ingresá la matrícula";
+    if (esVet && !carnet) e.carnet = "Sumá la foto del carnet o de la matrícula";
     setErrores(e);
     if (Object.keys(e).length > 0) return;
     setCreando(true);
     try {
-      const creada = await ClinicasRepo.crearCuenta({ clinica_id: clinica.id, roles, ...datos });
+      const { matricula, ...resto } = datos;
+      let credencial: string | undefined;
+      if (esVet && carnet) {
+        const preparada = await Imagenes.prepararFoto(carnet);
+        credencial = aBase64(await Imagenes.bytesDe(preparada));
+      }
+      const creada = await ClinicasRepo.crearCuenta({
+        clinica_id: clinica.id, roles, ...resto, ...(esVet ? { matricula, credencial } : {}),
+      });
+      descartarFoto(carnet);
       alCreada({ ...creada, nombre, telefono: datos.telefono.trim(), clinica: clinica.nombre });
     } catch (err) {
       Avisos.error(Errores.mensaje(err));
@@ -196,7 +233,9 @@ function FormularioCuenta({ clinica, alCreada, alVolver }: {
     <View>
       <Texto tamano={20} negrita accessibilityRole="header">Crear su cuenta</Texto>
       <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>
-        {`Para alguien que todavía no usa PetCare. Queda en ${clinica.nombre} al instante, con una contraseña temporal que le pasás por WhatsApp.`}
+        {esVet
+          ? `Para un veterinario que todavía no usa PetCare. Queda en ${clinica.nombre} y en revisión: cuando el administrador verifique su matrícula, va a poder ingresar y su agenda aparece acá.`
+          : `Para alguien que todavía no usa PetCare. Queda en ${clinica.nombre} al instante, con una contraseña temporal que le pasás por WhatsApp.`}
       </Texto>
       <Texto tamano={14} negrita style={{ marginTop: 14 }}>Va a estar en</Texto>
       <SelectorRoles opciones={ROLES_CUENTA_NUEVA} elegidos={roles} alCambiar={(r) => { setRoles(r); setErrores((x) => ({ ...x, roles: undefined })); }} />
@@ -206,10 +245,24 @@ function FormularioCuenta({ clinica, alCreada, alVolver }: {
       <Campo estilo={{ marginTop: 12 }} etiqueta="Teléfono (WhatsApp)" placeholder="Ej: 11 2345 6789" value={datos.telefono} onChangeText={cambiar("telefono")} error={errores.telefono} keyboardType="phone-pad" />
       <Campo
         estilo={{ marginTop: 12 }} etiqueta="Correo electrónico" placeholder="nombre@correo.com" value={datos.email} onChangeText={cambiar("email")}
-        error={errores.email} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} returnKeyType="send" onSubmitEditing={() => void crear()}
+        error={errores.email} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
       />
+      {esVet ? (
+        <>
+          <Campo
+            estilo={{ marginTop: 12 }} etiqueta="Matrícula" placeholder="Ej: MP 12345" value={datos.matricula} onChangeText={cambiar("matricula")}
+            error={errores.matricula} autoCapitalize="characters"
+          />
+          <Boton
+            titulo={carnet ? "Foto del carnet cargada · cambiar" : "Sumar foto del carnet o la matrícula"} icono="camara" variante="secundario"
+            alto={48} estilo={{ marginTop: 12 }} onPress={() => void elegirCarnet()}
+          />
+          {errores.carnet ? <Texto variante="chico" tamano={12} color={Colores.dangerRed} style={{ marginTop: 4 }}>{errores.carnet}</Texto> : null}
+          <Texto variante="chico" tamano={12} style={{ marginTop: 6 }}>Solo la ve el administrador de PetCare, para verificar la matrícula.</Texto>
+        </>
+      ) : null}
       <Boton titulo="Crear cuenta" icono="persona" alto={50} estilo={{ marginTop: 16 }} cargando={creando} onPress={() => void crear()} />
-      <Boton titulo="Volver" variante="texto" alto={46} estilo={{ marginTop: 4 }} deshabilitado={creando} onPress={alVolver} />
+      <Boton titulo="Volver" variante="texto" alto={46} estilo={{ marginTop: 4 }} deshabilitado={creando} onPress={() => { descartarFoto(carnet); alVolver(); }} />
     </View>
   );
 }
@@ -220,11 +273,19 @@ function VistaCuentaCreada({ cuenta, alTerminar }: { cuenta: CuentaCreada; alTer
   const primer = cuenta.nombre.split(" ")[0];
   const mensaje =
     `Hola ${primer}, te sumé al equipo de ${cuenta.clinica} en la app PetCare.\n\nPara ingresar:\n` +
-    `Correo: ${cuenta.email}\nContraseña temporal: ${cuenta.password_temporal}\n\nAl entrar, la app te va a pedir que elijas tu propia contraseña.`;
+    `Correo: ${cuenta.email}\nContraseña temporal: ${cuenta.password_temporal}\n\n` +
+    (cuenta.en_revision
+      ? "PetCare tiene que verificar tu matrícula: te avisamos por correo cuando esté aprobada y ahí ya podés entrar. "
+      : "") +
+    "Al entrar, la app te va a pedir que elijas tu propia contraseña.";
   return (
     <View>
       <Texto variante="titulo" tamano={21} accessibilityRole="header">Cuenta creada</Texto>
-      <Texto variante="subtitulo" tamano={14} style={{ marginTop: 6 }}>{`${cuenta.nombre} ya está en ${cuenta.clinica}. Mandale estos datos para que entre.`}</Texto>
+      <Texto variante="subtitulo" tamano={14} style={{ marginTop: 6 }}>
+        {cuenta.en_revision
+          ? `${cuenta.nombre} ya está en ${cuenta.clinica}, en revisión: el administrador de PetCare verifica su matrícula y, cuando la aprueba, puede ingresar y su agenda aparece acá. Mandale estos datos.`
+          : `${cuenta.nombre} ya está en ${cuenta.clinica}. Mandale estos datos para que entre.`}
+      </Texto>
       <View style={estilos.credenciales}>
         <Texto variante="chico" tamano={12}>Correo</Texto>
         <Texto variante="titulo" tamano={16} selectable>{cuenta.email}</Texto>
@@ -365,6 +426,22 @@ function Equipo({ clinica, alVolver, alCrearCuenta }: { clinica: ClinicaDto; alV
       <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>
         La recepción y la administración manejan la agenda de todos los veterinarios de acá. La historia clínica la ven solo los veterinarios.
       </Texto>
+      {clinica.revision === "pendiente" ? (
+        <View style={[estilos.aviso, { backgroundColor: Colores.lightOrange }]}>
+          <Icono nombre="reloj" tamano={20} color={Colores.accentOrange} />
+          <Texto variante="cuerpo" tamano={13.5} style={estilos.avisoTexto}>
+            Estamos verificando que la veterinaria exista. Cuando el administrador la apruebe vas a poder sumar a tus veterinarios y a tu equipo. Te avisamos.
+          </Texto>
+        </View>
+      ) : null}
+      {clinica.revision === "rechazada" ? (
+        <View style={[estilos.aviso, { backgroundColor: Colores.lightRed }]}>
+          <Icono nombre="advertencia" tamano={20} color={Colores.dangerRed} />
+          <Texto variante="cuerpo" tamano={13.5} style={estilos.avisoTexto}>
+            {`No pudimos verificar la veterinaria${clinica.motivo_revision ? `: ${clinica.motivo_revision}` : "."}`}
+          </Texto>
+        </View>
+      ) : null}
       <View style={{ marginTop: 10 }}>
         {equipo == null ? (
           <ActivityIndicator color={Colores.primaryTeal} style={{ marginVertical: 16 }} />
@@ -408,7 +485,6 @@ export function VeterinariasHoja({ alCerrar, clinicaInicial = null }: { alCerrar
   useDatos();
   const [vista, setVista] = useState<Vista>(clinicaInicial ? { tipo: "equipo", clinicaId: clinicaInicial } : { tipo: "lista" });
   const [cargado, setCargado] = useState(false);
-  const puedeCrear = Sesion.rolesDisponibles.includes("VETERINARIO");
 
   // Se vuelve a pedir al abrir: puede haber llegado una invitación desde la última carga
   useEffect(() => {
@@ -454,13 +530,11 @@ export function VeterinariasHoja({ alCerrar, clinicaInicial = null }: { alCerrar
           {activas.map((c) => <FilaClinica key={c.miembro_id} clinica={c} alTocar={() => setVista({ tipo: "equipo", clinicaId: c.id })} />)}
           {cargado && activas.length === 0 && invitaciones.length === 0 ? (
             <Texto variante="chico" tamano={13} style={{ marginVertical: 8 }}>
-              Todavía no estás en ninguna veterinaria. Cuando te inviten, la invitación aparece acá y en tu Inicio.
+              Todavía no estás en ninguna veterinaria. Cuando te inviten, la invitación aparece acá y en tu Inicio. Si llevás una, registrala.
             </Texto>
           ) : null}
         </View>
-        {puedeCrear ? (
-          <Boton titulo="Crear una veterinaria" icono="mas" variante="secundario" alto={48} estilo={{ marginTop: 14 }} onPress={() => setVista({ tipo: "crearClinica" })} />
-        ) : null}
+        <Boton titulo="Registrar una veterinaria" icono="mas" variante="secundario" alto={48} estilo={{ marginTop: 14 }} onPress={() => setVista({ tipo: "crearClinica" })} />
       </View>
     );
   }
@@ -496,6 +570,8 @@ const estilos = StyleSheet.create({
   editorRoles: { marginTop: 8, marginLeft: 54 },
   botonesFila: { flexDirection: "row", gap: 10, marginTop: 10 },
   volver: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginBottom: 8 },
+  aviso: { flexDirection: "row", alignItems: "flex-start", gap: 10, borderRadius: 14, padding: 12, marginTop: 12 },
+  avisoTexto: { flex: 1, minWidth: 0 },
   credenciales: {
     backgroundColor: Colores.white, borderRadius: 16, borderWidth: 1, borderColor: Colores.loginFieldStroke, padding: 14, marginTop: 16,
   },

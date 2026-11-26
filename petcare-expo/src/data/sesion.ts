@@ -144,7 +144,7 @@ class SesionImpl {
    */
   get rolesDisponibles(): Rol[] {
     const roles = this._rolesDisponibles;
-    if (roles.length > 0 && !roles.includes("ADMIN") && !roles.includes("RECEPCIONISTA") && ClinicasRepo.agendas.length > 0) {
+    if (roles.length > 0 && !roles.includes("ADMIN") && !roles.includes("RECEPCIONISTA") && ClinicasRepo.usaModoVeterinaria) {
       return [...roles, "RECEPCIONISTA"];
     }
     return roles;
@@ -210,7 +210,7 @@ class SesionImpl {
     if (datos.rol !== "admin") {
       // Quien maneja la agenda de algún veterinario (recepción, administración o titular de una veterinaria) suma ese modo
       await ClinicasRepo.cargar();
-      if (ClinicasRepo.agendas.length > 0) roles.push("RECEPCIONISTA");
+      if (ClinicasRepo.usaModoVeterinaria) roles.push("RECEPCIONISTA");
     }
     this._rolesDisponibles = roles;
     // Con dos modos posibles se pregunta cómo ingresar antes de cargar los datos de uno de ellos. A un veterinario

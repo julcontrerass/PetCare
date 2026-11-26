@@ -235,8 +235,9 @@ function SelectorRol({ texto, elegido, alTocar }: { texto: string; elegido: bool
 }
 
 // La recepción y la administración de una veterinaria no se registran acá: las suma la veterinaria (invitación o
-// cuenta creada por ella), así nadie queda como "recepcionista" sin trabajar para nadie.
-type TipoCuenta = "dueno" | "veterinario";
+// cuenta creada por ella), así nadie queda como "recepcionista" sin trabajar para nadie. "Veterinaria" es para quien
+// lleva el negocio sin ser veterinario: queda como titular y la veterinaria la verifica el administrador.
+type TipoCuenta = "dueno" | "veterinario" | "veterinaria";
 
 function RegistroVista({ alVolver }: { alVolver: () => void }) {
   const [tipo, setTipo] = useState<TipoCuenta>("dueno");
@@ -249,8 +250,23 @@ function RegistroVista({ alVolver }: { alVolver: () => void }) {
         <View style={estilos.roles}>
           <SelectorRol texto="Dueño" elegido={tipo === "dueno"} alTocar={() => setTipo("dueno")} />
           <SelectorRol texto="Veterinario" elegido={tipo === "veterinario"} alTocar={() => setTipo("veterinario")} />
+          <SelectorRol texto="Veterinaria" elegido={tipo === "veterinaria"} alTocar={() => setTipo("veterinaria")} />
         </View>
-        {tipo === "veterinario" ? (
+        {tipo === "veterinaria" ? (
+          <View style={estilos.tarjetaRegistro}>
+            <Texto variante="titulo" tamano={19}>Registrar mi veterinaria</Texto>
+            <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>
+              Para quien lleva una veterinaria. Quedás como titular y sumás a tus veterinarios y a tu equipo de recepción.
+            </Texto>
+            <Texto variante="cuerpo" tamano={14} color={Colores.tealDark} style={estilos.pasos}>
+              {"1  ·  Tus datos\n2  ·  Datos de la veterinaria\n3  ·  Correo y contraseña"}
+            </Texto>
+            <Texto variante="chico" tamano={13} style={{ marginTop: 10 }}>
+              {"Si sos veterinario y atendés solo, elegí \"Veterinario\": tu consultorio se arma solo."}
+            </Texto>
+            <Boton titulo="Comenzar" alto={56} estilo={{ marginTop: 18 }} onPress={() => router.push("/auth/registro-veterinaria")} />
+          </View>
+        ) : tipo === "veterinario" ? (
           <View style={estilos.tarjetaRegistro}>
             <Texto variante="titulo" tamano={19}>Registro profesional</Texto>
             <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>

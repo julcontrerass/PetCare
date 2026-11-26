@@ -65,3 +65,16 @@ test("veterinario_sinLugaresExtraManda_unaListaVacia", async () => {
 
   expect(fuente.ultimosDatosDeRegistro!["sedes"] as unknown[]).toHaveLength(0);
 });
+
+test("veterinaria_mandaLosDatosDeQuienLaLlevaYDeLaVeterinaria", async () => {
+  await Registro.veterinaria({
+    nombre: "Ana Panda", dni: "30111222", telefono: "1144445555", email: "ana@panda.test", password: "123456",
+    veterinaria: { nombre: "Panda", direccion: "Av. Siempreviva 742", telefono: "1155556666" },
+  });
+
+  expect(fuente.llamadas).toContain("registrar:ana@panda.test");
+  expect(fuente.ultimosDatosDeRegistro).toMatchObject({
+    rol: "dueno", nombre: "Ana Panda", dni: "30111222", mascotas: [],
+    veterinaria: { nombre: "Panda", direccion: "Av. Siempreviva 742", telefono: "1155556666" },
+  });
+});

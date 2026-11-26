@@ -1,12 +1,14 @@
-// Crea la cuenta de una persona del equipo de una veterinaria (recepción o administración) a pedido del titular o de
-// un administrador de esa veterinaria (Mis veterinarias → equipo → "No tiene cuenta: crearla").
+// Crea la cuenta de una persona del equipo de una veterinaria (veterinario, recepción o administración) a pedido del
+// titular o de un administrador de esa veterinaria (Mis veterinarias → equipo → "No tiene cuenta: crearla").
 //
 // Como crear-cuenta-dueno:
-//   1. comprueba que quien llama es titular o administrador activo de la veterinaria,
+//   1. comprueba que quien llama es titular o administrador activo de la veterinaria (y que esté aprobada),
 //   2. crea el usuario con una contraseña temporal (sin pedir confirmar el correo),
 //   3. lo deja como miembro activo con los roles pedidos y marcado para elegir su contraseña al primer ingreso
-//      (vincular_cuenta_a_clinica). Los veterinarios no se crean así: necesitan su matrícula aprobada.
-// La cuenta es de rol 'dueno': si algún día carga mascotas propias, también las ve desde el modo dueño.
+//      (vincular_cuenta_a_clinica).
+// Recepción y administración: cuenta de rol 'dueno' (si algún día carga mascotas propias, las ve desde el modo dueño).
+// Veterinario: cuenta de rol 'veterinario' con su matrícula y la foto del carnet, en revisión como cualquier
+// veterinario nuevo (no puede ingresar ni aparece su agenda hasta que el administrador la aprueba).
 //
 // Los errores esperables (DNI repetido, correo repetido...) se responden con 200 y { ok: false, error, mensaje }
 // para que la app los muestre tal cual.
@@ -21,7 +23,16 @@ const CORS = {
 
 // Por cuenta que crea (se comparte con las cuentas de dueños que crea el mismo veterinario)
 const MAX_CUENTAS_POR_DIA = 20;
-const ROLES_PERMITIDOS = ["recepcion", "administrador"];
+const ROLES_PERMITIDOS = ["recepcion", "administrador", "veterinario"];
+/** Foto del carnet en base64: hasta ~4 MB. */
+const MAX_CREDENCIAL_B64 = 5_600_000;
+
+function bytesDeBase64(b64: string): Uint8Array {
+  const binario = atob(b64);
+  const bytes = new Uint8Array(binario.length);
+  for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+  return bytes;
+}
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 const SIMBOLOS = "#@*+=?";
 
@@ -77,23 +88,27 @@ Deno.serve(async (req) => {
     (r): r is string => typeof r === "string" && ROLES_PERMITIDOS.includes(r),
   );
   if (!clinicaId) return rechazo("datos", "Falta la veterinaria", 400);
-  if (roles.length === 0) return rechazo("roles", "Elegí si la persona va a estar en recepción o en administración");
+  if (roles.length === 0) return rechazo("roles", "Elegí el rol de la persona en la veterinaria");
+  const esVeterinario = roles.includes("veterinario");
 
   // 2. Que sea titular o administrador activo de esa veterinaria (y que su cuenta esté activa)
   const { data: actor } = await admin.from("profiles").select("id, estado, nombre").eq("id", actorId).maybeSingle();
   const { data: miembro } = await admin
     .from("clinica_miembros")
-    .select("roles, estado, clinicas(nombre, activa)")
+    .select("roles, estado, clinicas(nombre, activa, revision)")
     .eq("clinica_id", clinicaId)
     .eq("cuenta_id", actorId)
     .maybeSingle();
   const rolesActor = (miembro?.roles as string[] | undefined) ?? [];
-  const clinica = miembro?.clinicas as { nombre?: string; activa?: boolean } | null;
+  const clinica = miembro?.clinicas as { nombre?: string; activa?: boolean; revision?: string } | null;
   if (
     !actor || actor.estado !== "activo" || !miembro || miembro.estado !== "activo" || !clinica?.activa ||
     !rolesActor.some((r) => r === "titular" || r === "administrador")
   ) {
     return rechazo("no_autorizado", "Solo el titular o un administrador de la veterinaria puede crear cuentas del equipo.", 403);
+  }
+  if (clinica.revision !== "aprobada") {
+    return rechazo("en_revision", "La veterinaria todavía está en revisión. Cuando el administrador la apruebe vas a poder sumar a tu equipo.", 403);
   }
 
   // 3. Límite diario, para que no se use para crear cuentas en masa
@@ -124,13 +139,27 @@ Deno.serve(async (req) => {
   const { data: correoUsado } = await admin.from("profiles").select("id").eq("email", email).maybeSingle();
   if (correoUsado) return rechazo("correo_en_uso", "Ese correo ya está registrado en PetCare. Invitalo/a con su correo.");
 
-  // 5. Alta del usuario. El trigger de la base arma el perfil y el DNI.
+  // Veterinario: matrícula libre y foto del carnet (el administrador la necesita para aprobarlo)
+  const matricula = texto(cuerpo.matricula, 30);
+  const credencialB64 = typeof cuerpo.credencial === "string" ? cuerpo.credencial : "";
+  if (esVeterinario) {
+    if (matricula.length < 3) return rechazo("matricula", "Ingresá la matrícula del veterinario");
+    const { data: matriculaUsada } = await admin.from("veterinarios").select("profile_id").ilike("matricula", matricula).maybeSingle();
+    if (matriculaUsada) return rechazo("matricula_en_uso", "Esa matrícula ya está registrada. Invitalo/a con su DNI o su correo.");
+    if (!credencialB64) return rechazo("credencial", "Sumá la foto del carnet o de la matrícula");
+    if (credencialB64.length > MAX_CREDENCIAL_B64) return rechazo("credencial", "La foto del carnet es muy pesada");
+  }
+
+  // 5. Alta del usuario. El trigger de la base arma el perfil y el DNI (y, si es veterinario, sus datos en revisión
+  //    y su propia veterinaria).
   const password = passwordTemporal();
   const { data: creado, error: errAlta } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { rol: "dueno", nombre, dni, telefono },
+    user_metadata: esVeterinario
+      ? { rol: "veterinario", nombre, dni, telefono, matricula }
+      : { rol: "dueno", nombre, dni, telefono },
   });
   if (errAlta || !creado?.user) {
     const m = (errAlta?.message ?? "").toLowerCase();
@@ -142,6 +171,27 @@ Deno.serve(async (req) => {
     return rechazo("servidor", "No pudimos crear la cuenta: " + (errAlta?.message ?? "error desconocido"), 500);
   }
   const cuentaId = creado.user.id;
+
+  // El carnet va a la carpeta del veterinario en el bucket privado, como cuando se registra solo
+  if (esVeterinario) {
+    const ruta = `${cuentaId}/${crypto.randomUUID()}.jpg`;
+    let errFoto: string | null = null;
+    try {
+      const { error } = await admin.storage.from("credenciales").upload(ruta, bytesDeBase64(credencialB64), { contentType: "image/jpeg" });
+      if (error) errFoto = error.message;
+      else {
+        const { error: errRuta } = await admin.from("veterinarios").update({ credencial_path: ruta }).eq("profile_id", cuentaId);
+        if (errRuta) errFoto = errRuta.message;
+      }
+    } catch (e) {
+      errFoto = e instanceof Error ? e.message : String(e);
+    }
+    if (errFoto) {
+      console.error("credencial", errFoto);
+      await admin.auth.admin.deleteUser(cuentaId);
+      return rechazo("servidor", "No pudimos guardar la foto del carnet: " + errFoto, 500);
+    }
+  }
 
   // 6. Miembro activo de la veterinaria y contraseña para cambiar (en la base, por los triggers de `private`)
   const { error: errVinculo } = await admin.rpc("vincular_cuenta_a_clinica", {
@@ -155,9 +205,12 @@ Deno.serve(async (req) => {
 
   // 7. Constancia para el administrador de la plataforma (si falla no importa: la cuenta ya está creada)
   await admin.from("actividad_admin").insert({
-    tipo: "registro", texto: `${actor.nombre} creó la cuenta de ${nombre} en ${clinica.nombre ?? "su veterinaria"}`,
+    tipo: "registro",
+    texto: esVeterinario
+      ? `${actor.nombre} dio de alta al veterinario ${nombre} (matrícula ${matricula}) en ${clinica.nombre ?? "su veterinaria"}: falta verificar la matrícula`
+      : `${actor.nombre} creó la cuenta de ${nombre} en ${clinica.nombre ?? "su veterinaria"}`,
     actor_id: actorId, objetivo_id: cuentaId,
   });
 
-  return responder(200, { ok: true, usuario_id: cuentaId, email, password_temporal: password });
+  return responder(200, { ok: true, usuario_id: cuentaId, email, password_temporal: password, en_revision: esVeterinario });
 });

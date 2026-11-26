@@ -32,14 +32,30 @@ class ClinicasRepoImpl {
   /** Ids de los veterinarios cuya agenda maneja (sin repetir aunque estén en dos veterinarias suyas). */
   get veterinariosConAgenda(): string[] { return [...new Set(this._agendas.map((a) => a.veterinario_id))]; }
 
+  /**
+   * La cuenta usa el modo recepción (el de la veterinaria): maneja la agenda de algún veterinario, o lleva una
+   * veterinaria donde no atiende (el dueño del negocio, aunque todavía no tenga veterinarios o esté en revisión).
+   */
+  get usaModoVeterinaria(): boolean {
+    return this._agendas.length > 0 || this.activas.some(
+      (c) => c.roles.some((r) => r === "titular" || r === "administrador") && !c.roles.includes("veterinario"),
+    );
+  }
+
   clinica(id: string | null | undefined): ClinicaDto | null {
     return this._clinicas.find((c) => c.id === id) ?? null;
   }
 
-  /** La cuenta es titular o administra la veterinaria: maneja el equipo. */
+  /** La veterinaria espera que el administrador de la plataforma la verifique (o la rechazó). */
+  enRevision(clinicaId: string): boolean {
+    const r = this.clinica(clinicaId)?.revision;
+    return r === "pendiente" || r === "rechazada";
+  }
+
+  /** La cuenta es titular o administra la veterinaria (ya aprobada): maneja el equipo. */
   administra(clinicaId: string): boolean {
     const c = this.clinica(clinicaId);
-    return c?.estado === "activo" && c.roles.some((r) => r === "titular" || r === "administrador");
+    return c?.estado === "activo" && !this.enRevision(clinicaId) && c.roles.some((r) => r === "titular" || r === "administrador");
   }
 
   esTitular(clinicaId: string): boolean {
@@ -96,7 +112,7 @@ class ClinicasRepoImpl {
   async crearCuenta(datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto> {
     const creada = await Servicios.fuente.crearCuentaMiembro({
       ...datos, nombre: datos.nombre.trim(), dni: datos.dni.trim(), telefono: datos.telefono.trim(),
-      email: datos.email.trim().toLowerCase(),
+      email: datos.email.trim().toLowerCase(), ...(datos.matricula != null ? { matricula: datos.matricula.trim() } : {}),
     });
     await this.recargar();
     return creada;

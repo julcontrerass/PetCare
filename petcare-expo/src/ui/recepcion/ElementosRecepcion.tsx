@@ -193,23 +193,44 @@ export function TurnoHoja({ turnoId, alCerrar, alMover }: { turnoId: string; alC
 }
 
 /**
- * Lo que se ve mientras la cuenta no maneja la agenda de ningún veterinario: si tiene una invitación, de qué
- * veterinaria; si no, que se la pida a quien administra la veterinaria.
+ * Lo que se ve mientras la cuenta no maneja la agenda de ningún veterinario: quien lleva la veterinaria ve si está
+ * en revisión o le falta sumar veterinarios; si no, la invitación que tenga o que se la pida a quien la administra.
  */
 export function SinVeterinarios() {
-  const [hoja, setHoja] = useState(false);
+  const [hoja, setHoja] = useState<{ clinica: string | null } | null>(null);
+  const propia = ClinicasRepo.activas.find((c) => c.roles.some((r) => r === "titular" || r === "administrador"));
   const invitacion = ClinicasRepo.invitaciones[0];
-  const titulo = invitacion ? `Te invitaron a ${invitacion.nombre}` : "Todavía no estás en ninguna veterinaria";
-  const mensaje = invitacion
-    ? "Aceptá la invitación para ver la agenda de sus veterinarios."
-    : "Pedile a quien administra la veterinaria que te sume al equipo con tu DNI o tu correo.";
+  let titulo: string;
+  let mensaje: string;
+  let boton: string;
+  if (propia && propia.revision === "pendiente") {
+    titulo = `${propia.nombre} está en revisión`;
+    mensaje = "Estamos verificando que la veterinaria exista. Cuando la aprobemos vas a poder sumar a tus veterinarios y a tu equipo. Te avisamos.";
+    boton = "Ver mi veterinaria";
+  } else if (propia && propia.revision === "rechazada") {
+    titulo = `No pudimos verificar ${propia.nombre}`;
+    mensaje = propia.motivo_revision ?? "Revisá los datos y volvé a registrarla.";
+    boton = "Ver mi veterinaria";
+  } else if (propia) {
+    titulo = "Sumá a tus veterinarios";
+    mensaje = "Invitalos con su DNI o correo, o creales la cuenta. Cuando estén aprobados, acá vas a ver la agenda de todos.";
+    boton = "Sumar veterinarios";
+  } else if (invitacion) {
+    titulo = `Te invitaron a ${invitacion.nombre}`;
+    mensaje = "Aceptá la invitación para ver la agenda de sus veterinarios.";
+    boton = "Ver invitación";
+  } else {
+    titulo = "Todavía no estás en ninguna veterinaria";
+    mensaje = "Pedile a quien administra la veterinaria que te sume al equipo con tu DNI o tu correo.";
+    boton = "Mis veterinarias";
+  }
   return (
     <>
       <EstadoVacio
-        icono="personas" titulo={titulo} mensaje={mensaje}
-        textoBoton={invitacion ? "Ver invitación" : "Mis veterinarias"} alBoton={() => setHoja(true)}
+        icono={propia ? "sede" : "personas"} titulo={titulo} mensaje={mensaje}
+        textoBoton={boton} alBoton={() => setHoja({ clinica: propia?.id ?? null })}
       />
-      {hoja ? <VeterinariasHoja alCerrar={() => setHoja(false)} /> : null}
+      {hoja ? <VeterinariasHoja clinicaInicial={hoja.clinica} alCerrar={() => setHoja(null)} /> : null}
     </>
   );
 }

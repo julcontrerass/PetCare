@@ -12,6 +12,16 @@ export interface ResultadoRegistroCuenta {
   sesionIniciada: boolean;
 }
 
+/** Registro "Mi veterinaria": los datos de quien la lleva y de la veterinaria. */
+export interface DatosRegistroVeterinaria {
+  nombre: string;
+  dni: string;
+  telefono: string;
+  email: string;
+  password: string;
+  veterinaria: { nombre: string; direccion: string; telefono: string };
+}
+
 export class CorreoYaRegistrado extends Error {
   constructor() {
     super("Ese correo ya está registrado");
@@ -80,6 +90,23 @@ export const Registro = {
     await FotosPendientes.guardar(d.email, d.fotoPath, conFoto);
     await subirSiHaySesion(d.email, resultado);
     return resultado;
+  },
+
+  /**
+   * Quien lleva una veterinaria sin ser veterinario (el dueño del negocio): la cuenta queda activa como titular y la
+   * veterinaria pendiente hasta que el administrador verifica que existe.
+   */
+  async veterinaria(d: DatosRegistroVeterinaria): Promise<ResultadoRegistroCuenta> {
+    const datos: JsonObject = {
+      rol: "dueno",
+      nombre: d.nombre,
+      dni: d.dni,
+      telefono: d.telefono,
+      terminos_version: Registro.VERSION_TERMINOS,
+      mascotas: [],
+      veterinaria: { nombre: d.veterinaria.nombre, direccion: d.veterinaria.direccion, telefono: d.veterinaria.telefono },
+    };
+    return crear(d.email, d.password, datos);
   },
 
   async veterinario(d: DatosRegistroVeterinario): Promise<ResultadoRegistroCuenta> {

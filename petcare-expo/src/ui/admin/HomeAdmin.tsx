@@ -38,6 +38,7 @@ import { HojaCuentaAdmin } from "./HojaCuentaAdmin";
 import { HojaDuenoAdmin } from "./HojaDuenoAdmin";
 import { HojaVetAdmin } from "./HojaVetAdmin";
 import { imagenEnMemoria, type ImagenEnMemoria } from "./credencial";
+import { RevisionClinicas } from "./RevisionClinicas";
 
 type Panel = "inicio" | "vets" | "duenos" | "actividad";
 
@@ -358,6 +359,13 @@ export function HomeAdmin() {
           onPress={() => verVeterinarios(pendientes > 0 ? AdminRepo.PENDIENTE : null)}
         />
       </LinearGradient>
+
+      {/* Veterinarias que registró alguien que no es veterinario: solo aparece si hay alguna */}
+      <RevisionClinicas
+        encabezado={(n) => (
+          <CabeceraSeccion titulo={n === 1 ? "Veterinaria para revisar" : `${n} veterinarias para revisar`} accion="" visible={false} alAccion={() => {}} />
+        )}
+      />
 
       <View style={[estilos.estadisticas, ancha ? estilos.estadisticasAncha : null]}>
         <Estadistica

@@ -324,10 +324,11 @@ export default function PerfilPantalla() {
         {modo ? <FilaCuenta icono="veterinario" texto={modo.texto} alTocar={modo.alTocar} divisor /> : null}
         <FilaCuenta icono="candado" texto="Cambiar contraseña" alTocar={abrirPassword} divisor />
         <FilaCuenta icono="medico" texto="Veterinarios con acceso" alTocar={() => NavDueno.irAVeterinarios()} divisor />
-        {/* Solo para quien trabaja en una veterinaria (o tiene una invitación): un dueño no se suma por su cuenta */}
-        {ClinicasRepo.activas.length > 0 || ClinicasRepo.invitaciones.length > 0 ? (
-          <FilaCuenta icono="sede" texto="Mis veterinarias" alTocar={() => setHojaRecepcion(true)} divisor />
-        ) : null}
+        {/* Las veterinarias donde trabaja (o sus invitaciones); si lleva una, la registra desde acá */}
+        <FilaCuenta
+          icono="sede" texto={ClinicasRepo.activas.length > 0 || ClinicasRepo.invitaciones.length > 0 ? "Mis veterinarias" : "Registrar mi veterinaria"}
+          alTocar={() => setHojaRecepcion(true)} divisor
+        />
         {Sesion.rolesDisponibles.includes("RECEPCIONISTA") ? (
           <FilaCuenta icono="calendario" texto="Pasar al modo recepción" alTocar={() => void ModoDeUso.cambiar("RECEPCIONISTA")} divisor />
         ) : null}

@@ -35,9 +35,61 @@ describe("Veterinarias", () => {
     expect(resumenVeterinarias()).toBe("San Roque");
   });
 
-  it("una cuenta que no es veterinario no puede crear una veterinaria", async () => {
+  it("quien no es veterinario registra su veterinaria: queda titular y en revisión, sin poder sumar a nadie", async () => {
     await ingresarComo(LAURA);
-    await expect(ClinicasRepo.crearClinica("Mía", "", "")).rejects.toThrow("Solo un veterinario con la cuenta aprobada");
+    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    expect(ClinicasRepo.clinica(id)?.roles).toEqual(["titular"]);
+    expect(ClinicasRepo.enRevision(id)).toBe(true);
+    expect(ClinicasRepo.administra(id)).toBe(false);
+    // Lleva la veterinaria: usa el modo de la veterinaria aunque todavía no tenga veterinarios
+    expect(ClinicasRepo.usaModoVeterinaria).toBe(true);
+    expect(Sesion.rolesDisponibles).toContain("RECEPCIONISTA");
+    await expect(ClinicasRepo.invitar(id, VET.email, ["veterinario"])).rejects.toThrow("titularidad o la administración");
+  });
+
+  it("el administrador aprueba la veterinaria y ahí la titular suma a su veterinario y ve su agenda", async () => {
+    await ingresarComo(LAURA);
+    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    await cambiarA(Escenario.admin());
+    expect((await fuente.clinicasParaRevisar()).map((c) => [c.nombre, c.titular_nombre])).toEqual([["Panda", "Laura Mostrador"]]);
+    await expect(fuente.revisarClinica(id, false, "")).rejects.toThrow("motivo");
+    await fuente.revisarClinica(id, true, null);
+    expect(await fuente.clinicasParaRevisar()).toHaveLength(0);
+
+    await cambiarA(LAURA);
+    expect(ClinicasRepo.administra(id)).toBe(true);
+    await ClinicasRepo.invitar(id, VET.email, ["veterinario"]);
+    await cambiarA(VET);
+    await ClinicasRepo.responder(ClinicasRepo.invitaciones[0], true);
+    await cambiarA(LAURA);
+    expect(ClinicasRepo.veterinariosConAgenda).toEqual([VET.id]);
+  });
+
+  it("una veterinaria rechazada muestra el motivo", async () => {
+    await ingresarComo(LAURA);
+    const id = await ClinicasRepo.crearClinica("Panda", "Av. Siempreviva 742", "1144445555");
+    await cambiarA(Escenario.admin());
+    await fuente.revisarClinica(id, false, "No pudimos verificar que exista");
+    await cambiarA(LAURA);
+    expect(ClinicasRepo.clinica(id)?.revision).toBe("rechazada");
+    expect(ClinicasRepo.clinica(id)?.motivo_revision).toBe("No pudimos verificar que exista");
+    expect(ClinicasRepo.administra(id)).toBe(false);
+  });
+
+  it("la veterinaria le crea la cuenta a un veterinario, que queda en revisión y sin agenda hasta que lo aprueben", async () => {
+    fuente.agregarClinica("cli-p", "Panda", [[LAURA.id, ["titular"]]]);
+    await ingresarComo(LAURA);
+    await expect(ClinicasRepo.crearCuenta({
+      clinica_id: "cli-p", roles: ["veterinario"], nombre: "Dra. Nueva", dni: "30111222", telefono: "1144445555", email: "nueva@prueba.test",
+    })).rejects.toThrow("matrícula");
+    const creada = await ClinicasRepo.crearCuenta({
+      clinica_id: "cli-p", roles: ["veterinario"], nombre: " Dra. Nueva ", dni: "30111222", telefono: "1144445555",
+      email: "nueva@prueba.test", matricula: " MP-900 ", credencial: "AAAA",
+    });
+    expect(creada.en_revision).toBe(true);
+    expect(fuente.llamadas).toContain("crearCuentaMiembro:nueva@prueba.test");
+    expect((await ClinicasRepo.equipo("cli-p")).map((m) => [m.nombre, m.roles])).toEqual([["Laura Mostrador", ["titular"]], ["Dra. Nueva", ["veterinario"]]]);
+    expect(ClinicasRepo.veterinariosConAgenda).toEqual([]);
   });
 
   it("la titular invita a recepción y la invitación le aparece a la otra persona al entrar", async () => {
