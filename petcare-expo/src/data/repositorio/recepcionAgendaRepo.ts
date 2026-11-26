@@ -14,7 +14,7 @@ import type { AccesoDto, MascotaDto, TurnoDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
 import type { EstadoEvento } from "./agendaRepo";
 import { DuenoRepo } from "./duenoRepo";
-import { RecepcionRepo } from "./recepcionRepo";
+import { ClinicasRepo } from "./clinicasRepo";
 
 export type Llegada = "en_espera" | "no_vino";
 
@@ -164,7 +164,7 @@ class RecepcionAgendaRepoImpl {
   }
 
   async cargar(): Promise<void> {
-    const ids = new Set(RecepcionRepo.misVeterinarios.filter((v) => v.estado === "activo").map((v) => v.otra_cuenta_id));
+    const ids = new Set(ClinicasRepo.veterinariosConAgenda);
     if (ids.size === 0) {
       this.limpiar();
       return;
@@ -272,6 +272,6 @@ class RecepcionAgendaRepoImpl {
 export const RecepcionAgendaRepo = new RecepcionAgendaRepoImpl();
 
 // En el modo recepción, aceptar o dejar un vínculo cambia qué agenda se ve: se vuelve a pedir en el momento
-RecepcionRepo.alCambiarVinculos = async () => {
+ClinicasRepo.alCambiar = async () => {
   if (CuentaActual.rol === "RECEPCIONISTA") await RecepcionAgendaRepo.cargar();
 };

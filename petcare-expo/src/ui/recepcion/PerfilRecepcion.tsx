@@ -9,7 +9,7 @@ import { Avatar } from "../common/Avatar";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { ModoDeUso } from "../common/ModoDeUso";
 import { PantallaBase } from "../common/PantallaBase";
-import { RecepcionHoja, resumenRecepcion } from "../common/RecepcionHoja";
+import { VeterinariasHoja, resumenVeterinarias } from "../common/VeterinariasHoja";
 import { Tarjeta } from "../common/Tarjeta";
 import { Colores } from "../common/tema";
 import { Texto } from "../common/Texto";
@@ -57,9 +57,9 @@ export function PerfilRecepcion() {
         </View>
       </View>
 
-      <Texto variante="titulo" tamano={17} style={estilos.seccion} accessibilityRole="header">Recepción</Texto>
+      <Texto variante="titulo" tamano={17} style={estilos.seccion} accessibilityRole="header">Trabajo</Texto>
       <Tarjeta relleno={16} estilo={{ paddingVertical: 4 }}>
-        <Fila icono="veterinario" texto="Mis veterinarios" detalle={resumenRecepcion("recepcionista")} alTocar={() => setHoja(true)} />
+        <Fila icono="sede" texto="Mis veterinarias" detalle={resumenVeterinarias()} alTocar={() => setHoja(true)} />
       </Tarjeta>
 
       <Texto variante="titulo" tamano={17} style={estilos.seccion} accessibilityRole="header">Cuenta</Texto>
@@ -73,7 +73,7 @@ export function PerfilRecepcion() {
         <Fila icono="salir" texto="Cerrar sesión" color={Colores.dangerRed} divisor={roles.length > 1} alTocar={NavRecepcion.cerrarSesion} />
       </Tarjeta>
 
-      {hoja ? <RecepcionHoja lado="recepcionista" alCerrar={() => setHoja(false)} /> : null}
+      {hoja ? <VeterinariasHoja alCerrar={() => setHoja(false)} /> : null}
     </PantallaBase>
   );
 }

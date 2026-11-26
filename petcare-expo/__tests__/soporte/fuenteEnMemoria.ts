@@ -5,7 +5,7 @@ import type {
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
   RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
-  VinculoRecepcionDto, VeterinarioParaRecepcionDto, NuevaCuentaRecepcionDto, CuentaRecepcionCreadaDto,
+  AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
 import { FuenteBase, type ResultadoRegistro } from "../../src/data/remoto/fuenteDatos";
@@ -300,99 +300,150 @@ export class FuenteEnMemoria extends FuenteBase {
     this.coduenos = this.coduenos.filter((c) => c.id !== coduenoId);
   }
 
-  // ---------- Recepción ----------
+  // ---------- Veterinarias (como la migración veterinarias.sql) ----------
 
-  recepcion: { id: string; veterinario_id: string; recepcionista_id: string; estado: "pendiente" | "activo"; iniciado_por: "veterinario" | "recepcionista" }[] = [];
+  clinicas: { id: string; nombre: string; direccion: string | null; telefono: string | null }[] = [];
+  miembros: {
+    id: string; clinica_id: string; cuenta_id: string; roles: RolClinica[]; estado: "pendiente" | "activo"; invitado_por: string | null;
+  }[] = [];
 
   private esVetActivo(p: PerfilDto): boolean {
     return p.rol === "veterinario" || p.veterinarios?.estado_revision === "activo";
   }
 
-  private cuentaPorDato(dato: string, conMatricula: boolean): PerfilDto | undefined {
+  private cuentaPorDato(dato: string): PerfilDto | undefined {
     const d = dato.trim().toLowerCase();
-    return this.perfiles.find((p) =>
-      p.email.toLowerCase() === d || p.perfiles_privados?.dni === d ||
-      (conMatricula && (p.veterinarios?.matricula ?? "").toLowerCase() === d));
+    return [...this.perfiles, this.yo].find((p) => p.email.toLowerCase() === d || p.perfiles_privados?.dni === d);
   }
 
-  /** Como private.proponer_vinculo_recepcion: si el otro ya lo había pedido, el vínculo queda activo. */
-  private proponerVinculo(vet: string, recepcionista: string, origen: "veterinario" | "recepcionista"): string {
-    const r = this.recepcion.find((x) => x.veterinario_id === vet && x.recepcionista_id === recepcionista);
-    if (r?.estado === "activo") throw new Error("Ya están vinculados");
-    if (r && r.iniciado_por !== origen) {
-      r.estado = "activo";
-      return "activo";
+  private miFila(clinicaId: string) {
+    return this.miembros.find((m) => m.clinica_id === clinicaId && m.cuenta_id === this.yo.id && m.estado === "activo");
+  }
+
+  private administro(clinicaId: string): boolean {
+    return this.miFila(clinicaId)?.roles.some((r) => r === "titular" || r === "administrador") ?? false;
+  }
+
+  /** Arma una veterinaria con sus miembros (para preparar escenarios). */
+  agregarClinica(id: string, nombre: string, miembros: [cuenta: string, roles: RolClinica[], estado?: "pendiente" | "activo"][]): void {
+    this.clinicas.push({ id, nombre, direccion: null, telefono: null });
+    for (const [cuenta, roles, estado] of miembros) {
+      this.miembros.push({ id: `mie-${this.miembros.length + 1}`, clinica_id: id, cuenta_id: cuenta, roles, estado: estado ?? "activo", invitado_por: null });
     }
-    if (!r) this.recepcion.push({ id: `rec-${this.recepcion.length + 1}`, veterinario_id: vet, recepcionista_id: recepcionista, estado: "pendiente", iniciado_por: origen });
-    return "pendiente";
   }
 
-  override async invitarRecepcionista(dniOCorreo: string): Promise<string> {
-    this.llamadas.push(`invitarRecepcionista:${dniOCorreo}`);
-    if (!this.esVetActivo(this.yo)) throw new Error("Solo un veterinario activo puede invitar recepcionistas");
-    const cuenta = this.cuentaPorDato(dniOCorreo, false);
-    if (!cuenta) throw new Error("No encontramos una cuenta con ese DNI o correo. La otra persona tiene que registrarse primero en PetCare.");
-    if (cuenta.id === this.yo.id) throw new Error("No podés ser tu propio recepcionista");
-    return this.proponerVinculo(this.yo.id, cuenta.id, "veterinario");
+  private validarRoles(clinicaId: string, roles: RolClinica[], cuenta: PerfilDto): void {
+    if (roles.length === 0) throw new Error("Elegí al menos un rol");
+    if (roles.includes("titular") && !this.miFila(clinicaId)?.roles.includes("titular")) throw new Error("Solo un titular puede sumar otro titular");
+    if ((roles.includes("veterinario") || roles.includes("titular")) && !this.esVetActivo(cuenta)) {
+      throw new Error("Solo un veterinario con la cuenta aprobada puede atender o ser titular");
+    }
   }
 
-  override async pedirSerRecepcionista(dato: string): Promise<string> {
-    this.llamadas.push(`pedirSerRecepcionista:${dato}`);
-    const vet = this.cuentaPorDato(dato, true);
-    if (!vet || !this.esVetActivo(vet)) throw new Error("No encontramos un veterinario activo con ese dato");
-    if (vet.id === this.yo.id) throw new Error("No podés ser tu propio recepcionista");
-    return this.proponerVinculo(vet.id, this.yo.id, "recepcionista");
+  private titulares(clinicaId: string) {
+    return this.miembros.filter((x) => x.clinica_id === clinicaId && x.estado === "activo" && x.roles.includes("titular"));
   }
 
-  override async misVinculosRecepcion(): Promise<VinculoRecepcionDto[]> {
+  override async misClinicas(): Promise<ClinicaDto[]> {
     const todos = [...this.perfiles, this.yo];
-    return this.recepcion
-      .filter((r) => r.veterinario_id === this.yo.id || r.recepcionista_id === this.yo.id)
-      .map((r) => {
-        const soy = r.veterinario_id === this.yo.id ? "veterinario" : "recepcionista";
-        const otra = todos.find((p) => p.id === (soy === "veterinario" ? r.recepcionista_id : r.veterinario_id))!;
-        return {
-          id: r.id, soy, otra_cuenta_id: otra.id, nombre: otra.nombre, email: otra.email, telefono: otra.telefono ?? null,
-          foto_path: null, clinica: soy === "recepcionista" ? otra.veterinarios?.clinica ?? null : null,
-          estado: r.estado, iniciado_por: r.iniciado_por,
-          me_toca_responder: r.estado === "pendiente" && r.iniciado_por !== soy, created_at: "2026-11-25T12:00:00Z",
-        };
-      });
+    return this.miembros.filter((m) => m.cuenta_id === this.yo.id).map((m) => {
+      const c = this.clinicas.find((x) => x.id === m.clinica_id)!;
+      return {
+        id: c.id, nombre: c.nombre, direccion: c.direccion, telefono: c.telefono, miembro_id: m.id, roles: m.roles, estado: m.estado,
+        invitado_por_nombre: todos.find((p) => p.id === m.invitado_por)?.nombre ?? null,
+        veterinarios: this.miembros.filter((x) => x.clinica_id === c.id && x.estado === "activo" && x.roles.includes("veterinario")).length,
+        created_at: "2026-11-25T12:00:00Z",
+      };
+    });
   }
 
-  override async responderVinculoRecepcion(vinculoId: string, aceptar: boolean): Promise<void> {
-    this.llamadas.push(`responderVinculoRecepcion:${vinculoId}=${aceptar}`);
-    const r = this.recepcion.find((x) => x.id === vinculoId && x.estado === "pendiente" && (
-      (x.iniciado_por === "veterinario" && x.recepcionista_id === this.yo.id) ||
-      (x.iniciado_por === "recepcionista" && x.veterinario_id === this.yo.id)));
-    if (!r) throw new Error("El pedido ya no está disponible");
-    if (aceptar) r.estado = "activo";
-    else this.recepcion = this.recepcion.filter((x) => x !== r);
+  override async equipoClinica(clinicaId: string): Promise<MiembroClinicaDto[]> {
+    if (!this.miFila(clinicaId)) throw new Error("No sos parte de esta veterinaria");
+    const todos = [...this.perfiles, this.yo];
+    return this.miembros.filter((m) => m.clinica_id === clinicaId).map((m) => {
+      const p = todos.find((x) => x.id === m.cuenta_id)!;
+      return {
+        miembro_id: m.id, cuenta_id: p.id, nombre: p.nombre, email: p.email, telefono: p.telefono ?? null, foto_path: null,
+        roles: m.roles, estado: m.estado, es_yo: p.id === this.yo.id,
+      };
+    });
   }
 
-  override async quitarVinculoRecepcion(vinculoId: string): Promise<void> {
-    this.llamadas.push(`quitarVinculoRecepcion:${vinculoId}`);
-    const r = this.recepcion.find((x) => x.id === vinculoId && (x.veterinario_id === this.yo.id || x.recepcionista_id === this.yo.id));
-    if (!r) throw new Error("El vínculo ya no existe");
-    this.recepcion = this.recepcion.filter((x) => x !== r);
+  /** Como agendas_que_manejo: titular, administración o recepción activos ven la agenda de los veterinarios activos. */
+  override async agendasQueManejo(): Promise<AgendaManejadaDto[]> {
+    const r: AgendaManejadaDto[] = [];
+    for (const yo of this.miembros.filter((m) => m.cuenta_id === this.yo.id && m.estado === "activo")) {
+      if (!yo.roles.some((x) => x === "titular" || x === "administrador" || x === "recepcion")) continue;
+      const c = this.clinicas.find((x) => x.id === yo.clinica_id)!;
+      for (const v of this.miembros.filter((m) => m.clinica_id === c.id && m.estado === "activo" && m.roles.includes("veterinario"))) {
+        if (v.cuenta_id !== this.yo.id) r.push({ clinica_id: c.id, clinica_nombre: c.nombre, veterinario_id: v.cuenta_id });
+      }
+    }
+    return r;
   }
 
-  override async veterinarioParaRecepcion(dato: string): Promise<VeterinarioParaRecepcionDto | null> {
-    const d = dato.trim().toLowerCase();
-    // Sin sesión solo se busca por correo o matrícula (no por DNI)
-    const vet = this.perfiles.find((p) =>
-      this.esVetActivo(p) && (p.email.toLowerCase() === d || (p.veterinarios?.matricula ?? "").toLowerCase() === d));
-    return vet ? { nombre: vet.nombre, clinica: vet.veterinarios?.clinica ?? null } : null;
+  override async crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string> {
+    this.llamadas.push(`crearClinica:${nombre}`);
+    if (!this.esVetActivo(this.yo)) throw new Error("Solo un veterinario con la cuenta aprobada puede crear una veterinaria");
+    const id = `cli-${this.clinicas.length + 1}`;
+    this.clinicas.push({ id, nombre, direccion, telefono });
+    this.miembros.push({ id: `mie-${this.miembros.length + 1}`, clinica_id: id, cuenta_id: this.yo.id, roles: ["titular", "veterinario"], estado: "activo", invitado_por: null });
+    return id;
   }
 
-  /** Como crear-cuenta-recepcionista: la cuenta nueva queda en la recepción del veterinario al instante. */
-  override async crearCuentaRecepcionista(datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto> {
-    this.llamadas.push(`crearCuentaRecepcionista:${datos.email}`);
-    if (!this.esVetActivo(this.yo)) throw new Error("Solo los veterinarios con la cuenta aprobada pueden crear cuentas de recepción.");
+  override async invitarAClinica(clinicaId: string, dniOCorreo: string, roles: RolClinica[]): Promise<string> {
+    this.llamadas.push(`invitarAClinica:${clinicaId}:${dniOCorreo}:${roles.join(",")}`);
+    if (!this.administro(clinicaId)) throw new Error("Solo la titularidad o la administración pueden sumar personas");
+    const cuenta = this.cuentaPorDato(dniOCorreo);
+    if (!cuenta) throw new Error("No encontramos una cuenta con ese DNI o correo. La otra persona tiene que registrarse primero en PetCare.");
+    if (this.miembros.some((m) => m.clinica_id === clinicaId && m.cuenta_id === cuenta.id)) throw new Error("Esa persona ya está en el equipo o tiene una invitación");
+    this.validarRoles(clinicaId, roles, cuenta);
+    this.miembros.push({ id: `mie-${this.miembros.length + 1}`, clinica_id: clinicaId, cuenta_id: cuenta.id, roles, estado: "pendiente", invitado_por: this.yo.id });
+    return cuenta.nombre;
+  }
+
+  override async responderInvitacionClinica(miembroId: string, aceptar: boolean): Promise<void> {
+    this.llamadas.push(`responderInvitacionClinica:${miembroId}=${aceptar}`);
+    const m = this.miembros.find((x) => x.id === miembroId && x.cuenta_id === this.yo.id && x.estado === "pendiente");
+    if (!m) throw new Error("La invitación ya no está disponible");
+    if (aceptar) m.estado = "activo";
+    else this.miembros = this.miembros.filter((x) => x !== m);
+  }
+
+  override async quitarDeClinica(miembroId: string): Promise<void> {
+    this.llamadas.push(`quitarDeClinica:${miembroId}`);
+    const m = this.miembros.find((x) => x.id === miembroId);
+    if (!m) throw new Error("Esa persona ya no está en el equipo");
+    const propio = m.cuenta_id === this.yo.id;
+    if (!propio && !this.administro(m.clinica_id)) throw new Error("Solo la titularidad o la administración pueden sacar personas");
+    if (!propio && m.roles.includes("titular") && !this.miFila(m.clinica_id)?.roles.includes("titular")) throw new Error("Solo un titular puede sacar a otro titular");
+    if (m.roles.includes("titular") && m.estado === "activo" && this.titulares(m.clinica_id).length === 1) {
+      throw new Error("La veterinaria tiene que quedar con al menos un titular");
+    }
+    this.miembros = this.miembros.filter((x) => x !== m);
+  }
+
+  override async cambiarRolesClinica(miembroId: string, roles: RolClinica[]): Promise<void> {
+    this.llamadas.push(`cambiarRolesClinica:${miembroId}:${roles.join(",")}`);
+    const m = this.miembros.find((x) => x.id === miembroId);
+    if (!m || !this.administro(m.clinica_id)) throw new Error("Solo la titularidad o la administración pueden cambiar roles");
+    const cuenta = [...this.perfiles, this.yo].find((p) => p.id === m.cuenta_id)!;
+    this.validarRoles(m.clinica_id, roles, cuenta);
+    if (m.roles.includes("titular") && !roles.includes("titular") && this.titulares(m.clinica_id).length === 1) {
+      throw new Error("La veterinaria tiene que quedar con al menos un titular");
+    }
+    m.roles = roles;
+  }
+
+  /** Como crear-cuenta-miembro: la cuenta nueva queda activa en la veterinaria al instante. */
+  override async crearCuentaMiembro(datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto> {
+    this.llamadas.push(`crearCuentaMiembro:${datos.email}`);
+    if (!this.administro(datos.clinica_id)) throw new Error("Solo la titularidad o la administración pueden crear cuentas del equipo.");
+    if (datos.roles.some((r) => r !== "recepcion" && r !== "administrador")) throw new Error("Desde acá solo se crean cuentas de recepción o administración.");
     if (this.errorAlCrearCuenta != null) throw new Error(this.errorAlCrearCuenta);
-    const id = `recepcion-${this.recepcion.length + 1}`;
+    const id = `miembro-${this.perfiles.length + 1}`;
     this.perfiles.push(Escenario.perfil(id, "dueno", datos.nombre, { dni: datos.dni }));
-    this.recepcion.push({ id: `rec-${this.recepcion.length + 1}`, veterinario_id: this.yo.id, recepcionista_id: id, estado: "activo", iniciado_por: "veterinario" });
+    this.miembros.push({ id: `mie-${this.miembros.length + 1}`, clinica_id: datos.clinica_id, cuenta_id: id, roles: datos.roles, estado: "activo", invitado_por: this.yo.id });
     return { usuario_id: id, email: datos.email, password_temporal: "Temp#1234" };
   }
 

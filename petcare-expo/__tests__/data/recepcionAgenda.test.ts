@@ -1,11 +1,11 @@
 /*
- * Modo recepción: cuándo se ofrece al ingresar, qué agenda ve (solo la de sus veterinarios activos) y qué le manda
+ * Modo recepción: cuándo se ofrece al ingresar, qué agenda ve (solo la de los veterinarios de sus veterinarias) y qué le manda
  * al servidor al sacar, mover y cancelar turnos y al marcar la llegada.
  */
 import { Escenario, type FuenteEnMemoria } from "../soporte/fuenteEnMemoria";
 import { ingresarComo, limpiarServicios, prepararServicios } from "../soporte/pruebaBase";
 import { RecepcionAgendaRepo } from "../../src/data/repositorio/recepcionAgendaRepo";
-import { RecepcionRepo } from "../../src/data/repositorio/recepcionRepo";
+import { ClinicasRepo } from "../../src/data/repositorio/clinicasRepo";
 import { Sesion } from "../../src/data/sesion";
 import { Fechas } from "../../src/util/fechas";
 import { LocalDate } from "../../src/util/tiempo";
@@ -24,10 +24,9 @@ function proximoDiaHabil(): LocalDate {
   return d;
 }
 
+/** Laura en la recepción de la veterinaria de [vet] (cada veterinario con la suya, como queda al migrar). */
 function vincular(vet: string, estado: "activo" | "pendiente" = "activo") {
-  fuente.recepcion.push({
-    id: `rec-${fuente.recepcion.length + 1}`, veterinario_id: vet, recepcionista_id: LAURA.id, estado, iniciado_por: "veterinario",
-  });
+  fuente.agregarClinica(`cli-${vet}`, `Veterinaria de ${vet}`, [[vet, ["titular", "veterinario"]], [LAURA.id, ["recepcion"], estado]]);
 }
 
 beforeEach(() => {
@@ -66,12 +65,28 @@ describe("Modo recepción", () => {
     expect(r).toEqual({ tipo: "listo", rol: "DUENO" });
   });
 
-  it("con un pedido pendiente entra a la recepción, pero sin agenda hasta que el veterinario acepte", async () => {
+  it("con una invitación sin responder entra como dueño y la ve en el Inicio", async () => {
     vincular(VERA.id, "pendiente");
-    await ingresarComo(LAURA);
-    expect(Sesion.rol).toBe("RECEPCIONISTA");
-    expect(RecepcionAgendaRepo.veterinarios).toHaveLength(0);
+    const r = await ingresarComo(LAURA);
+    expect(r).toEqual({ tipo: "listo", rol: "DUENO" });
+    expect(ClinicasRepo.invitaciones.map((c) => c.nombre)).toEqual(["Veterinaria de vet-1"]);
     expect(RecepcionAgendaRepo.proximos()).toHaveLength(0);
+  });
+
+  it("en una veterinaria con varios veterinarios ve la agenda de todos, y un veterinario puede estar en varias", async () => {
+    fuente.agregarClinica("cli-centro", "Centro", [[VERA.id, ["titular", "veterinario"]], [OTRO.id, ["veterinario"]], [LAURA.id, ["recepcion"]]]);
+    // Vera también atiende en otra veterinaria donde Laura no está
+    fuente.agregarClinica("cli-norte", "Norte", [[VERA.id, ["veterinario"]], [AJENO.id, ["titular", "veterinario"]]]);
+    await ingresarComo(LAURA);
+    expect(RecepcionAgendaRepo.veterinarios.map((v) => v.nombre)).toEqual(["Dr. Vera", "Dra. Paz"]);
+    expect(RecepcionAgendaRepo.proximos().map((t) => t.id)).toEqual(["t-vera"]);
+  });
+
+  it("administración también maneja la agenda; un veterinario sin otro rol no ve la de sus colegas", async () => {
+    fuente.agregarClinica("cli-centro", "Centro", [[VERA.id, ["titular", "veterinario"]], [OTRO.id, ["veterinario"]], [LAURA.id, ["administrador"]]]);
+    expect((await ingresarComo(LAURA))).toEqual({ tipo: "listo", rol: "RECEPCIONISTA" });
+    fuente.yo = OTRO;
+    expect(await fuente.agendasQueManejo()).toEqual([]);
   });
 
   it("ve solo los turnos y pacientes de sus veterinarios activos", async () => {
@@ -129,18 +144,19 @@ describe("Modo recepción", () => {
     await ingresarComo(LAURA);
     expect(Sesion.rolesDisponibles).toEqual(["DUENO"]);
     vincular(VERA.id);
-    await RecepcionRepo.cargar();
+    await ClinicasRepo.cargar();
     expect(Sesion.rolesDisponibles).toEqual(["DUENO", "RECEPCIONISTA"]);
     await Sesion.cambiarModo("RECEPCIONISTA");
     expect(RecepcionAgendaRepo.veterinarios.map((v) => v.nombre)).toEqual(["Dr. Vera"]);
   });
 
-  it("en el modo recepción, aceptar una invitación muestra la agenda de ese veterinario en el momento", async () => {
-    fuente.recepcion.push({ id: "rec-inv", veterinario_id: VERA.id, recepcionista_id: LAURA.id, estado: "pendiente", iniciado_por: "veterinario" });
+  it("en el modo recepción, aceptar una invitación muestra la agenda de esa veterinaria en el momento", async () => {
+    vincular(OTRO.id);
+    fuente.agregarClinica("cli-inv", "Otra", [[VERA.id, ["titular", "veterinario"]], [LAURA.id, ["recepcion"], "pendiente"]]);
     await ingresarComo(LAURA);
     expect(Sesion.rol).toBe("RECEPCIONISTA");
     expect(RecepcionAgendaRepo.proximos()).toHaveLength(0);
-    await RecepcionRepo.responder(RecepcionRepo.invitacionesRecibidas[0], true);
+    await ClinicasRepo.responder(ClinicasRepo.invitaciones[0], true);
     expect(RecepcionAgendaRepo.proximos().map((t) => t.id)).toEqual(["t-vera"]);
   });
 

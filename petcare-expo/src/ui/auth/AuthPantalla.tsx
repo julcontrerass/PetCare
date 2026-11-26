@@ -234,7 +234,9 @@ function SelectorRol({ texto, elegido, alTocar }: { texto: string; elegido: bool
   );
 }
 
-type TipoCuenta = "dueno" | "veterinario" | "recepcionista";
+// La recepción y la administración de una veterinaria no se registran acá: las suma la veterinaria (invitación o
+// cuenta creada por ella), así nadie queda como "recepcionista" sin trabajar para nadie.
+type TipoCuenta = "dueno" | "veterinario";
 
 function RegistroVista({ alVolver }: { alVolver: () => void }) {
   const [tipo, setTipo] = useState<TipoCuenta>("dueno");
@@ -247,20 +249,8 @@ function RegistroVista({ alVolver }: { alVolver: () => void }) {
         <View style={estilos.roles}>
           <SelectorRol texto="Dueño" elegido={tipo === "dueno"} alTocar={() => setTipo("dueno")} />
           <SelectorRol texto="Veterinario" elegido={tipo === "veterinario"} alTocar={() => setTipo("veterinario")} />
-          <SelectorRol texto="Recepcionista" elegido={tipo === "recepcionista"} alTocar={() => setTipo("recepcionista")} />
         </View>
-        {tipo === "recepcionista" ? (
-          <View style={estilos.tarjetaRegistro}>
-            <Texto variante="titulo" tamano={19}>Registro de recepción</Texto>
-            <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>
-              Para manejar la agenda de un veterinario: sus turnos, la sala de espera y los pedidos de acceso. Son 3 pasos.
-            </Texto>
-            <Texto variante="cuerpo" tamano={14} color={Colores.tealDark} style={estilos.pasos}>
-              {"1  ·  Datos personales y foto\n2  ·  El veterinario para el que trabajás\n3  ·  Correo y contraseña"}
-            </Texto>
-            <Boton titulo="Comenzar" alto={56} estilo={{ marginTop: 18 }} onPress={() => router.push("/auth/registro-recepcionista")} />
-          </View>
-        ) : tipo === "veterinario" ? (
+        {tipo === "veterinario" ? (
           <View style={estilos.tarjetaRegistro}>
             <Texto variante="titulo" tamano={19}>Registro profesional</Texto>
             <Texto variante="subtitulo" tamano={14} style={{ marginTop: 4 }}>

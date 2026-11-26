@@ -3,8 +3,8 @@ import type {
   EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
-  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VinculoRecepcionDto,
-  CuentaRecepcionCreadaDto, NuevaCuentaRecepcionDto, VeterinarioParaRecepcionDto,
+  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
+  AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
@@ -70,20 +70,23 @@ export interface FuenteDatos {
   /** Quita a un co-dueño o una invitación; con la fila propia, la cuenta deja de ser dueña. */
   quitarCodueno(coduenoId: string): Promise<void>;
 
-  // ---------- Recepción ----------
-  /** Vínculos de recepción de la cuenta: como veterinario (su recepción) y como recepcionista (sus veterinarios). */
-  misVinculosRecepcion(): Promise<VinculoRecepcionDto[]>;
-  /** El veterinario invita a una cuenta (por DNI o correo). Devuelve "pendiente", o "activo" si ya lo había pedido. */
-  invitarRecepcionista(dniOCorreo: string): Promise<string>;
-  /** La cuenta pide ser recepcionista de un veterinario (por correo, DNI o matrícula). Devuelve como en invitar. */
-  pedirSerRecepcionista(dato: string): Promise<string>;
-  responderVinculoRecepcion(vinculoId: string, aceptar: boolean): Promise<void>;
-  /** Corta un vínculo (activo o pendiente), desde cualquiera de los dos lados. */
-  quitarVinculoRecepcion(vinculoId: string): Promise<void>;
-  /** Busca un veterinario activo por correo o matrícula, sin sesión (registro como recepcionista). */
-  veterinarioParaRecepcion(dato: string): Promise<VeterinarioParaRecepcionDto | null>;
-  /** El veterinario crea la cuenta de una persona de su recepción (Edge Function); queda vinculada al instante. */
-  crearCuentaRecepcionista(datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto>;
+  // ---------- Veterinarias ----------
+  /** Veterinarias de la cuenta, también las invitaciones que todavía no respondió. */
+  misClinicas(): Promise<ClinicaDto[]>;
+  /** Equipo de una veterinaria (solo para sus miembros). */
+  equipoClinica(clinicaId: string): Promise<MiembroClinicaDto[]>;
+  /** Veterinarios cuya agenda maneja la cuenta (titular, administración o recepción de una veterinaria). */
+  agendasQueManejo(): Promise<AgendaManejadaDto[]>;
+  /** Un veterinario aprobado crea otra veterinaria; devuelve su id. */
+  crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string>;
+  /** Invita a una cuenta (por DNI o correo) con esos roles; devuelve el nombre de la persona. */
+  invitarAClinica(clinicaId: string, dniOCorreo: string, roles: RolClinica[]): Promise<string>;
+  responderInvitacionClinica(miembroId: string, aceptar: boolean): Promise<void>;
+  /** Saca a alguien del equipo (o la cuenta se va sola). */
+  quitarDeClinica(miembroId: string): Promise<void>;
+  cambiarRolesClinica(miembroId: string, roles: RolClinica[]): Promise<void>;
+  /** Crea la cuenta de una persona del equipo (Edge Function); queda como miembro activo al instante. */
+  crearCuentaMiembro(datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto>;
   /** Mascotas que el veterinario puede ver, con los datos de su dueño. */
   mascotasDelVeterinario(): Promise<MascotaDto[]>;
   /** Todas las mascotas activas (solo el administrador). */
@@ -220,18 +223,20 @@ export class FuenteBase implements FuenteDatos {
   async responderInvitacionCodueno(_invitacionId: string, _aceptar: boolean): Promise<void> {}
   async duenosDeMascota(_mascotaId: string): Promise<DuenoMascotaDto[]> { return []; }
   async quitarCodueno(_coduenoId: string): Promise<void> {}
-  async misVinculosRecepcion(): Promise<VinculoRecepcionDto[]> { return []; }
-  async invitarRecepcionista(_dniOCorreo: string): Promise<string> {
-    throw new Error("Operación no disponible: invitarRecepcionista");
+  async misClinicas(): Promise<ClinicaDto[]> { return []; }
+  async equipoClinica(_clinicaId: string): Promise<MiembroClinicaDto[]> { return []; }
+  async agendasQueManejo(): Promise<AgendaManejadaDto[]> { return []; }
+  async crearClinica(_nombre: string, _direccion: string | null, _telefono: string | null): Promise<string> {
+    throw new Error("Operación no disponible: crearClinica");
   }
-  async pedirSerRecepcionista(_dato: string): Promise<string> {
-    throw new Error("Operación no disponible: pedirSerRecepcionista");
+  async invitarAClinica(_clinicaId: string, _dniOCorreo: string, _roles: RolClinica[]): Promise<string> {
+    throw new Error("Operación no disponible: invitarAClinica");
   }
-  async responderVinculoRecepcion(_vinculoId: string, _aceptar: boolean): Promise<void> {}
-  async quitarVinculoRecepcion(_vinculoId: string): Promise<void> {}
-  async veterinarioParaRecepcion(_dato: string): Promise<VeterinarioParaRecepcionDto | null> { return null; }
-  async crearCuentaRecepcionista(_datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto> {
-    throw new Error("Operación no disponible: crearCuentaRecepcionista");
+  async responderInvitacionClinica(_miembroId: string, _aceptar: boolean): Promise<void> {}
+  async quitarDeClinica(_miembroId: string): Promise<void> {}
+  async cambiarRolesClinica(_miembroId: string, _roles: RolClinica[]): Promise<void> {}
+  async crearCuentaMiembro(_datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto> {
+    throw new Error("Operación no disponible: crearCuentaMiembro");
   }
   async mascotasDelVeterinario(): Promise<MascotaDto[]> { return []; }
   async mascotasAdmin(): Promise<MascotaDto[]> { return []; }

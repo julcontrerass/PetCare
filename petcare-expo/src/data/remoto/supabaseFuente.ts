@@ -8,8 +8,8 @@ import type {
   EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
-  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VinculoRecepcionDto,
-  CuentaRecepcionCreadaDto, NuevaCuentaRecepcionDto, VeterinarioParaRecepcionDto,
+  SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
+  AgendaManejadaDto, ClinicaDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -191,8 +191,8 @@ export class SupabaseFuente implements FuenteDatos {
     return (await this.crearCuentaCon("crear-cuenta-dueno", datos, "No pudimos crear la cuenta del dueño.")) as unknown as CuentaDuenoCreadaDto;
   }
 
-  async crearCuentaRecepcionista(datos: NuevaCuentaRecepcionDto): Promise<CuentaRecepcionCreadaDto> {
-    return (await this.crearCuentaCon("crear-cuenta-recepcionista", datos, "No pudimos crear la cuenta.")) as unknown as CuentaRecepcionCreadaDto;
+  async crearCuentaMiembro(datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto> {
+    return (await this.crearCuentaCon("crear-cuenta-miembro", datos, "No pudimos crear la cuenta.")) as unknown as CuentaMiembroCreadaDto;
   }
 
   /**
@@ -225,11 +225,6 @@ export class SupabaseFuente implements FuenteDatos {
       throw new ErrorConMensaje((cuerpo?.mensaje as string | undefined) ?? falla);
     }
     return cuerpo;
-  }
-
-  async veterinarioParaRecepcion(dato: string): Promise<VeterinarioParaRecepcionDto | null> {
-    const filas = ok(await this.cliente.rpc("veterinario_para_recepcion", { p_dato: dato })) as VeterinarioParaRecepcionDto[];
-    return filas[0] ?? null;
   }
 
   async cerrarSesion(): Promise<void> {
@@ -310,24 +305,36 @@ export class SupabaseFuente implements FuenteDatos {
     vacio(await this.cliente.rpc("quitar_codueno", { p_codueno: coduenoId }));
   }
 
-  async misVinculosRecepcion(): Promise<VinculoRecepcionDto[]> {
-    return ok(await this.cliente.rpc("mis_vinculos_recepcion")) as VinculoRecepcionDto[];
+  async misClinicas(): Promise<ClinicaDto[]> {
+    return ok(await this.cliente.rpc("mis_clinicas")) as ClinicaDto[];
   }
 
-  async invitarRecepcionista(dniOCorreo: string): Promise<string> {
-    return ok(await this.cliente.rpc("invitar_recepcionista", { p_dato: dniOCorreo })) as string;
+  async equipoClinica(clinicaId: string): Promise<MiembroClinicaDto[]> {
+    return ok(await this.cliente.rpc("equipo_clinica", { p_clinica: clinicaId })) as MiembroClinicaDto[];
   }
 
-  async pedirSerRecepcionista(dato: string): Promise<string> {
-    return ok(await this.cliente.rpc("pedir_ser_recepcionista", { p_dato: dato })) as string;
+  async agendasQueManejo(): Promise<AgendaManejadaDto[]> {
+    return ok(await this.cliente.rpc("agendas_que_manejo")) as AgendaManejadaDto[];
   }
 
-  async responderVinculoRecepcion(vinculoId: string, aceptar: boolean): Promise<void> {
-    vacio(await this.cliente.rpc("responder_vinculo_recepcion", { p_vinculo: vinculoId, p_aceptar: aceptar }));
+  async crearClinica(nombre: string, direccion: string | null, telefono: string | null): Promise<string> {
+    return ok(await this.cliente.rpc("crear_clinica", { p_nombre: nombre, p_direccion: direccion, p_telefono: telefono })) as string;
   }
 
-  async quitarVinculoRecepcion(vinculoId: string): Promise<void> {
-    vacio(await this.cliente.rpc("quitar_vinculo_recepcion", { p_vinculo: vinculoId }));
+  async invitarAClinica(clinicaId: string, dniOCorreo: string, roles: RolClinica[]): Promise<string> {
+    return ok(await this.cliente.rpc("invitar_a_clinica", { p_clinica: clinicaId, p_dato: dniOCorreo, p_roles: roles })) as string;
+  }
+
+  async responderInvitacionClinica(miembroId: string, aceptar: boolean): Promise<void> {
+    vacio(await this.cliente.rpc("responder_invitacion_clinica", { p_miembro: miembroId, p_aceptar: aceptar }));
+  }
+
+  async quitarDeClinica(miembroId: string): Promise<void> {
+    vacio(await this.cliente.rpc("quitar_de_clinica", { p_miembro: miembroId }));
+  }
+
+  async cambiarRolesClinica(miembroId: string, roles: RolClinica[]): Promise<void> {
+    vacio(await this.cliente.rpc("cambiar_roles_clinica", { p_miembro: miembroId, p_roles: roles }));
   }
 
   async mascotasDelVeterinario(): Promise<MascotaDto[]> {

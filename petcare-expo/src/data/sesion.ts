@@ -13,7 +13,7 @@ import { PacientesRepo } from "./repositorio/pacientesRepo";
 import { PerfilVetRepo } from "./repositorio/perfilVetRepo";
 import { PrescripcionesRepo } from "./repositorio/prescripcionesRepo";
 import { RecepcionAgendaRepo } from "./repositorio/recepcionAgendaRepo";
-import { RecepcionRepo } from "./repositorio/recepcionRepo";
+import { ClinicasRepo } from "./repositorio/clinicasRepo";
 import { RecordatoriosRepo } from "./repositorio/recordatoriosRepo";
 import { SaludRepo } from "./repositorio/saludRepo";
 import { SolicitudesRepo } from "./repositorio/solicitudesRepo";
@@ -144,7 +144,7 @@ class SesionImpl {
    */
   get rolesDisponibles(): Rol[] {
     const roles = this._rolesDisponibles;
-    if (roles.length > 0 && !roles.includes("ADMIN") && !roles.includes("RECEPCIONISTA") && RecepcionRepo.misVeterinarios.length > 0) {
+    if (roles.length > 0 && !roles.includes("ADMIN") && !roles.includes("RECEPCIONISTA") && ClinicasRepo.agendas.length > 0) {
       return [...roles, "RECEPCIONISTA"];
     }
     return roles;
@@ -208,9 +208,9 @@ class SesionImpl {
     }
     const roles = rolesDe(datos);
     if (datos.rol !== "admin") {
-      // Quien trabaja (o pidió trabajar) en la recepción de un veterinario suma ese modo
-      await RecepcionRepo.cargar();
-      if (RecepcionRepo.misVeterinarios.length > 0) roles.push("RECEPCIONISTA");
+      // Quien maneja la agenda de algún veterinario (recepción, administración o titular de una veterinaria) suma ese modo
+      await ClinicasRepo.cargar();
+      if (ClinicasRepo.agendas.length > 0) roles.push("RECEPCIONISTA");
     }
     this._rolesDisponibles = roles;
     // Con dos modos posibles se pregunta cómo ingresar antes de cargar los datos de uno de ellos. A un veterinario
@@ -248,14 +248,14 @@ class SesionImpl {
         break;
       case "RECEPCIONISTA":
         // La agenda sale de los vínculos: primero se piden ellos
-        await RecepcionRepo.cargar();
+        await ClinicasRepo.cargar();
         await RecepcionAgendaRepo.cargar();
         break;
       case "ADMIN":
         await AdminRepo.cargar();
         break;
     }
-    if (rolElegido === "DUENO" || rolElegido === "VETERINARIO") await RecepcionRepo.cargar();
+    if (rolElegido === "DUENO" || rolElegido === "VETERINARIO") await ClinicasRepo.cargar();
     CuentaActual.rol = rolElegido;
     this.escucharCambios(rolElegido);
     Recordatorios.vigilarAvisos();
@@ -334,14 +334,14 @@ class SesionImpl {
             switch (rolCuenta) {
               case "DUENO":
                 await DuenoRepo.recargarDerivados();
-                await RecepcionRepo.cargar();
+                await ClinicasRepo.cargar();
                 break;
               case "VETERINARIO":
                 await this.recargarVeterinario();
-                await RecepcionRepo.cargar();
+                await ClinicasRepo.cargar();
                 break;
               case "RECEPCIONISTA":
-                await RecepcionRepo.cargar();
+                await ClinicasRepo.cargar();
                 await RecepcionAgendaRepo.cargar();
                 break;
               case "ADMIN":
@@ -478,7 +478,7 @@ class SesionImpl {
     this.detenerEscucha();
     CuentaActual.rol = null;
     DuenoRepo.limpiar();
-    RecepcionRepo.limpiar();
+    ClinicasRepo.limpiar();
     RecepcionAgendaRepo.limpiar();
     PerfilVetRepo.limpiar();
     PacientesRepo.limpiar();

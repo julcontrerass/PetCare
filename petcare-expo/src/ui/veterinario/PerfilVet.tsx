@@ -18,7 +18,7 @@ import { BajaDeCuenta } from "../common/BajaDeCuenta";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { ModoDeUso } from "../common/ModoDeUso";
 import { PantallaBase } from "../common/PantallaBase";
-import { RecepcionHoja, resumenRecepcion } from "../common/RecepcionHoja";
+import { VeterinariasHoja, resumenVeterinarias } from "../common/VeterinariasHoja";
 import { Tarjeta } from "../common/Tarjeta";
 import { Texto } from "../common/Texto";
 import { Colores, sombra } from "../common/tema";
@@ -185,10 +185,10 @@ export function PerfilVet() {
         <Fila icono="reloj" etiqueta="Duración de los turnos" valor={PerfilVetRepo.textoDuraciones()} chevron onPress={configurarDuraciones} />
       </Grupo>
 
-      <Seccion titulo="Recepción" />
+      <Seccion titulo="Veterinarias" />
       <Grupo>
         <Fila
-          icono="personas" etiqueta="Personas que manejan tu agenda" valor={resumenRecepcion("veterinario")} chevron
+          icono="sede" etiqueta="Mis veterinarias y equipo" valor={resumenVeterinarias()} chevron
           onPress={() => setDialogo({ tipo: "recepcion" })}
         />
       </Grupo>
@@ -244,7 +244,7 @@ export function PerfilVet() {
       {dialogo.tipo === "duraciones" ? <HojaDuraciones servicios={PerfilVetRepo.serviciosOfrecidos()} alCerrar={cerrar} alGuardado={mostrarPerfil} /> : null}
       {dialogo.tipo === "perfil" ? <DialogoEditarPerfil alCerrar={cerrar} alGuardado={mostrarPerfil} /> : null}
       {dialogo.tipo === "password" ? <DialogoCambiarPassword alCerrar={cerrar} /> : null}
-      {dialogo.tipo === "recepcion" ? <RecepcionHoja lado="veterinario" alCerrar={cerrar} /> : null}
+      {dialogo.tipo === "recepcion" ? <VeterinariasHoja alCerrar={cerrar} /> : null}
       {dialogo.tipo === "notificaciones" ? (
         <DialogoMultiple
           titulo="Notificaciones" opciones={ETIQUETAS} marcadas={CLAVES.map((c) => PerfilVetRepo.preferencia(c))} alCerrar={cerrar}

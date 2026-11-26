@@ -209,43 +209,56 @@ export interface InvitacionCoduenoDto {
   created_at: string;
 }
 
-/**
- * Vínculo de recepción de la cuenta (rpc mis_vinculos_recepcion), visto desde su lado: `soy` dice si la cuenta es el
- * veterinario (la otra cuenta es su recepcionista) o la recepcionista (la otra cuenta es el veterinario).
- */
-export interface VinculoRecepcionDto {
+/** Rol de una cuenta dentro de una veterinaria. */
+export type RolClinica = "titular" | "administrador" | "veterinario" | "recepcion";
+
+/** Una veterinaria de la cuenta (rpc mis_clinicas): también las invitaciones que todavía no respondió. */
+export interface ClinicaDto {
   id: string;
-  soy: "veterinario" | "recepcionista";
-  otra_cuenta_id: string;
+  nombre: string;
+  direccion?: string | null;
+  telefono?: string | null;
+  /** La fila de la cuenta en el equipo (para aceptar, rechazar o salir). */
+  miembro_id: string;
+  roles: RolClinica[];
+  estado: "pendiente" | "activo";
+  invitado_por_nombre?: string | null;
+  /** Cuántos veterinarios activos tiene. */
+  veterinarios: number;
+  created_at: string;
+}
+
+/** Una persona del equipo de una veterinaria (rpc equipo_clinica). */
+export interface MiembroClinicaDto {
+  miembro_id: string;
+  cuenta_id: string;
   nombre: string;
   email: string;
   telefono?: string | null;
   foto_path?: string | null;
-  /** Clínica del veterinario (solo cuando la otra cuenta es el veterinario). */
-  clinica?: string | null;
+  roles: RolClinica[];
   estado: "pendiente" | "activo";
-  iniciado_por: "veterinario" | "recepcionista";
-  /** El vínculo está pendiente y lo inició la otra cuenta: esta tiene que aceptarlo o rechazarlo. */
-  me_toca_responder: boolean;
-  created_at: string;
-  respondida_at?: string | null;
+  es_yo: boolean;
 }
 
-/** Veterinario encontrado antes de registrarse como su recepcionista (rpc veterinario_para_recepcion). */
-export interface VeterinarioParaRecepcionDto {
-  nombre: string;
-  clinica?: string | null;
+/** Un veterinario cuya agenda maneja la cuenta y la veterinaria por la que la maneja (rpc agendas_que_manejo). */
+export interface AgendaManejadaDto {
+  clinica_id: string;
+  clinica_nombre: string;
+  veterinario_id: string;
 }
 
-/** Lo que el veterinario carga para crear la cuenta de una persona de su recepción (crear-cuenta-recepcionista). */
-export interface NuevaCuentaRecepcionDto {
+/** Lo que se carga para crear la cuenta de una persona del equipo (Edge Function crear-cuenta-miembro). */
+export interface NuevaCuentaMiembroDto {
+  clinica_id: string;
+  roles: RolClinica[];
   nombre: string;
   dni: string;
   telefono: string;
   email: string;
 }
 
-export interface CuentaRecepcionCreadaDto {
+export interface CuentaMiembroCreadaDto {
   usuario_id: string;
   email: string;
   password_temporal: string;

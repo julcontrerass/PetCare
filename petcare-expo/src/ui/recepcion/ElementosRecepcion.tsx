@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { EstadosEvento, type EstadoEvento } from "../../data/repositorio/agendaRepo";
 import { RecepcionAgendaRepo, type Llegada, type TurnoRecepcion } from "../../data/repositorio/recepcionAgendaRepo";
-import { RecepcionRepo } from "../../data/repositorio/recepcionRepo";
+import { ClinicasRepo } from "../../data/repositorio/clinicasRepo";
 import { Errores } from "../../util/errores";
 import { Fechas } from "../../util/fechas";
 import { LocalDate } from "../../util/tiempo";
@@ -19,10 +19,10 @@ import { Contacto } from "../common/Contacto";
 import { EstadoVacio } from "../common/EstadoVacio";
 import { HojaInferior } from "../common/HojaInferior";
 import { Icono } from "../common/Icono";
-import { RecepcionHoja } from "../common/RecepcionHoja";
 import { Tarjeta } from "../common/Tarjeta";
 import { Colores } from "../common/tema";
 import { Texto } from "../common/Texto";
+import { VeterinariasHoja } from "../common/VeterinariasHoja";
 
 const TONO_ESTADO: Record<EstadoEvento, TonoChip> = { PENDIENTE: "aviso", COMPLETADO: "ok", CANCELADO: "peligro" };
 
@@ -193,30 +193,23 @@ export function TurnoHoja({ turnoId, alCerrar, alMover }: { turnoId: string; alC
 }
 
 /**
- * Lo que se ve mientras la cuenta no tiene ningún veterinario activo: si hay un pedido esperando, para quién; si
- * no, cómo pedir sumarse.
+ * Lo que se ve mientras la cuenta no maneja la agenda de ningún veterinario: si tiene una invitación, de qué
+ * veterinaria; si no, que se la pida a quien administra la veterinaria.
  */
 export function SinVeterinarios() {
   const [hoja, setHoja] = useState(false);
-  const pendientes = RecepcionRepo.misVeterinarios.filter((v) => v.estado === "pendiente");
-  const esperando = pendientes.filter((v) => !v.me_toca_responder);
-  const porResponder = pendientes.filter((v) => v.me_toca_responder);
-  let titulo = "Todavía no trabajás para ningún veterinario";
-  let mensaje = "Pedile a tu veterinario que te invite, o pedí sumarte a su recepción con su correo, DNI o matrícula.";
-  if (porResponder.length > 0) {
-    titulo = `${porResponder[0].nombre} te invitó a su recepción`;
-    mensaje = "Aceptá la invitación para ver su agenda.";
-  } else if (esperando.length > 0) {
-    titulo = `Esperando que ${esperando[0].nombre} acepte`;
-    mensaje = "Cuando acepte tu pedido vas a ver su agenda acá. Te avisamos con una notificación.";
-  }
+  const invitacion = ClinicasRepo.invitaciones[0];
+  const titulo = invitacion ? `Te invitaron a ${invitacion.nombre}` : "Todavía no estás en ninguna veterinaria";
+  const mensaje = invitacion
+    ? "Aceptá la invitación para ver la agenda de sus veterinarios."
+    : "Pedile a quien administra la veterinaria que te sume al equipo con tu DNI o tu correo.";
   return (
     <>
       <EstadoVacio
         icono="personas" titulo={titulo} mensaje={mensaje}
-        textoBoton={porResponder.length > 0 ? "Ver invitación" : "Pedir sumarme"} alBoton={() => setHoja(true)}
+        textoBoton={invitacion ? "Ver invitación" : "Mis veterinarias"} alBoton={() => setHoja(true)}
       />
-      {hoja ? <RecepcionHoja lado="recepcionista" alCerrar={() => setHoja(false)} /> : null}
+      {hoja ? <VeterinariasHoja alCerrar={() => setHoja(false)} /> : null}
     </>
   );
 }

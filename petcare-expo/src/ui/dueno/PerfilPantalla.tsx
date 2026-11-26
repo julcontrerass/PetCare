@@ -1,7 +1,7 @@
 /*
  * Migrado de PerfilPantalla (ui/dueno/PerfilPantalla.kt) + pantalla_mi_perfil.xml.
- * Mi perfil: foto, datos de la cuenta y accesos a veterinarios, edición, contraseña, cambio de modo, trabajo en
- * recepción y cierre de sesión.
+ * Mi perfil: foto, datos de la cuenta y accesos a veterinarios, edición, contraseña, cambio de modo, las
+ * veterinarias en las que trabaja (si está en alguna) y cierre de sesión.
  *
  * Desvíos: el `AlertDialog` de "Cambiar contraseña" y el de "Ajustar posición de la foto" son hojas del kit; el
  * recorte arrastrable es `RecortarFotoDialogo`. Arriba de "Cuenta" se muestra `TarjetaPermiso` (aviso de las
@@ -26,7 +26,8 @@ import { Icono, type NombreIcono } from "../common/Icono";
 import { ImagenRemota } from "../common/ImagenRemota";
 import { ModoDeUso } from "../common/ModoDeUso";
 import { PantallaBase } from "../common/PantallaBase";
-import { RecepcionHoja } from "../common/RecepcionHoja";
+import { VeterinariasHoja } from "../common/VeterinariasHoja";
+import { ClinicasRepo } from "../../data/repositorio/clinicasRepo";
 import { Tarjeta } from "../common/Tarjeta";
 import { TarjetaPermiso } from "../common/TarjetaPermiso";
 import { Texto } from "../common/Texto";
@@ -323,7 +324,10 @@ export default function PerfilPantalla() {
         {modo ? <FilaCuenta icono="veterinario" texto={modo.texto} alTocar={modo.alTocar} divisor /> : null}
         <FilaCuenta icono="candado" texto="Cambiar contraseña" alTocar={abrirPassword} divisor />
         <FilaCuenta icono="medico" texto="Veterinarios con acceso" alTocar={() => NavDueno.irAVeterinarios()} divisor />
-        <FilaCuenta icono="personas" texto="Trabajo en recepción" alTocar={() => setHojaRecepcion(true)} divisor />
+        {/* Solo para quien trabaja en una veterinaria (o tiene una invitación): un dueño no se suma por su cuenta */}
+        {ClinicasRepo.activas.length > 0 || ClinicasRepo.invitaciones.length > 0 ? (
+          <FilaCuenta icono="sede" texto="Mis veterinarias" alTocar={() => setHojaRecepcion(true)} divisor />
+        ) : null}
         {Sesion.rolesDisponibles.includes("RECEPCIONISTA") ? (
           <FilaCuenta icono="calendario" texto="Pasar al modo recepción" alTocar={() => void ModoDeUso.cambiar("RECEPCIONISTA")} divisor />
         ) : null}
@@ -394,7 +398,7 @@ export default function PerfilPantalla() {
         />
       </HojaInferior>
 
-      {hojaRecepcion ? <RecepcionHoja lado="recepcionista" alCerrar={() => setHojaRecepcion(false)} /> : null}
+      {hojaRecepcion ? <VeterinariasHoja alCerrar={() => setHojaRecepcion(false)} /> : null}
 
       <RecortarFotoDialogo uri={aRecortar} alCancelar={() => setARecortar(null)} alGuardar={guardarRecorte} />
     </PantallaBase>

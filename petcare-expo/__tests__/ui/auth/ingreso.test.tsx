@@ -166,10 +166,8 @@ describe("AuthPantalla: recuperar contraseña y registro", () => {
     expect(screen.getByText("Registro profesional")).toBeTruthy();
     await fireEvent.press(screen.getByText("Comenzar"));
     expect(enrutador.push).toHaveBeenCalledWith("/auth/registro-veterinario");
-    await fireEvent.press(screen.getByText("Recepcionista"));
-    expect(screen.getByText("Registro de recepción")).toBeTruthy();
-    await fireEvent.press(screen.getByText("Comenzar"));
-    expect(enrutador.push).toHaveBeenCalledWith("/auth/registro-recepcionista");
+    // La recepción no se registra sola: la suma una veterinaria
+    expect(screen.queryByText("Recepcionista")).toBeNull();
   });
 
   it("al volver de un registro con el correo por confirmar, deja el correo en el ingreso y avisa", async () => {

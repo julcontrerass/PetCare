@@ -5,7 +5,7 @@
 import { Tabs, useFocusEffect } from "expo-router";
 import { useCallback, useEffect } from "react";
 import { RecepcionAgendaRepo } from "../../data/repositorio/recepcionAgendaRepo";
-import { RecepcionRepo } from "../../data/repositorio/recepcionRepo";
+import { ClinicasRepo } from "../../data/repositorio/clinicasRepo";
 import { Servicios } from "../../data/servicios";
 import { pedirPermisoDeNotificaciones } from "../common/permisoNotificaciones";
 import { useDatos } from "../common/useDatos";
@@ -38,7 +38,7 @@ function useActualizarRecepcion(): void {
       let vigente = true;
       const recargar = async () => {
         try {
-          await RecepcionRepo.cargar();
+          await ClinicasRepo.cargar();
           await RecepcionAgendaRepo.cargar();
           if (vigente) Servicios.avisarCambio();
         } catch {
