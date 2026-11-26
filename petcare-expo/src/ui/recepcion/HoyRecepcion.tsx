@@ -35,9 +35,12 @@ export function HoyRecepcion() {
   const turnos = RecepcionAgendaRepo.deHoy(vet);
   const enEspera = turnos.filter((t) => t.llegada === "en_espera").length;
   const faltan = turnos.filter((t) => t.llegada == null).length;
+  // Mismo formato que el inicio del veterinario: "Miércoles 25 de noviembre"
+  const hoy = LocalDate.now();
+  const fecha = `${Fechas.diaSemana(hoy)} ${hoy.dayOfMonth} de ${Fechas.nombreMes(hoy.monthValue).toLowerCase()}`;
 
   return (
-    <PantallaBase titulo="Hoy" subtitulo={Fechas.larga(LocalDate.now())} scroll={false} bordes={["top"]}>
+    <PantallaBase titulo="Hoy" subtitulo={fecha} scroll={false} bordes={["top"]}>
       {sinVets ? (
         <SinVeterinarios />
       ) : (

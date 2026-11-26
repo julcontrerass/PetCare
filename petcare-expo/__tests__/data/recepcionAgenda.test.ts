@@ -7,6 +7,7 @@ import { ingresarComo, limpiarServicios, prepararServicios } from "../soporte/pr
 import { RecepcionAgendaRepo } from "../../src/data/repositorio/recepcionAgendaRepo";
 import { RecepcionRepo } from "../../src/data/repositorio/recepcionRepo";
 import { Sesion } from "../../src/data/sesion";
+import { Fechas } from "../../src/util/fechas";
 import { LocalDate } from "../../src/util/tiempo";
 
 const VERA = Escenario.veterinario();
@@ -132,6 +133,21 @@ describe("Modo recepción", () => {
     expect(Sesion.rolesDisponibles).toEqual(["DUENO", "RECEPCIONISTA"]);
     await Sesion.cambiarModo("RECEPCIONISTA");
     expect(RecepcionAgendaRepo.veterinarios.map((v) => v.nombre)).toEqual(["Dr. Vera"]);
+  });
+
+  it("en el modo recepción, aceptar una invitación muestra la agenda de ese veterinario en el momento", async () => {
+    fuente.recepcion.push({ id: "rec-inv", veterinario_id: VERA.id, recepcionista_id: LAURA.id, estado: "pendiente", iniciado_por: "veterinario" });
+    await ingresarComo(LAURA);
+    expect(Sesion.rol).toBe("RECEPCIONISTA");
+    expect(RecepcionAgendaRepo.proximos()).toHaveLength(0);
+    await RecepcionRepo.responder(RecepcionRepo.invitacionesRecibidas[0], true);
+    expect(RecepcionAgendaRepo.proximos().map((t) => t.id)).toEqual(["t-vera"]);
+  });
+
+  it("la fecha de un día que no es cercano no se repite", () => {
+    const hoy = LocalDate.parse("2026-11-25");
+    expect(Fechas.relativaConFecha(LocalDate.parse("2026-11-25"), hoy)).toBe("Hoy · 25 Nov 2026");
+    expect(Fechas.relativaConFecha(LocalDate.parse("2026-11-27"), hoy)).toBe("27 Nov 2026");
   });
 
   it("al cerrar la sesión se olvida la agenda", async () => {

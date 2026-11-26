@@ -82,6 +82,13 @@ export const Fechas = {
     return Fechas.corta(f);
   },
 
+  /** "Hoy · 25 Nov 2026", "Mañana · 26 Nov 2026" o, si no es un día cercano, solo "27 Nov 2026" (sin repetirla). */
+  relativaConFecha(f: LocalDate, hoy: LocalDate = LocalDate.now()): string {
+    const relativa = Fechas.relativa(f, hoy);
+    const corta = Fechas.corta(f);
+    return relativa === corta ? corta : `${relativa} · ${corta}`;
+  },
+
   /** Convierte la fecha con zona horaria que manda el servidor a la hora local del teléfono. */
   instante(texto: string | null | undefined): LocalDateTime {
     if (!texto) return LocalDateTime.now();

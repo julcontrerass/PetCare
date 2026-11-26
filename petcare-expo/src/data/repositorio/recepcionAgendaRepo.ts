@@ -270,3 +270,8 @@ class RecepcionAgendaRepoImpl {
 }
 
 export const RecepcionAgendaRepo = new RecepcionAgendaRepoImpl();
+
+// En el modo recepción, aceptar o dejar un vínculo cambia qué agenda se ve: se vuelve a pedir en el momento
+RecepcionRepo.alCambiarVinculos = async () => {
+  if (CuentaActual.rol === "RECEPCIONISTA") await RecepcionAgendaRepo.cargar();
+};

@@ -118,7 +118,7 @@ export function TurnoHoja({ turnoId, alCerrar, alMover }: { turnoId: string; alC
   const cancelar = () =>
     Avisos.confirmar({
       titulo: "¿Cancelar el turno?",
-      mensaje: `${p?.nombre ?? "El paciente"} tenía ${t.tipo.toLowerCase()} el ${Fechas.corta(t.fecha)} a las ${t.hora}. Le avisamos al dueño.`,
+      mensaje: `${p?.nombre ?? "El paciente"} tiene ${t.tipo.toLowerCase()} el ${Fechas.corta(t.fecha)} a las ${t.hora}. Le avisamos al dueño.`,
       textoAceptar: "Cancelar turno", textoCancelar: "Volver", peligro: true, icono: "calendario",
       alAceptar: () => void hacer("cancelar", () => RecepcionAgendaRepo.cancelar(t), "Turno cancelado").then(alCerrar),
     });
@@ -145,7 +145,7 @@ export function TurnoHoja({ turnoId, alCerrar, alMover }: { turnoId: string; alC
       ) : null}
 
       <View style={{ marginTop: 12 }}>
-        <Dato icono="calendario" texto={`${Fechas.relativa(t.fecha)} · ${Fechas.corta(t.fecha)}`} />
+        <Dato icono="calendario" texto={Fechas.relativaConFecha(t.fecha)} />
         <Dato icono="reloj" texto={`${t.hora} · ${t.duracionMin} min`} />
         {vet ? <Dato icono="veterinario" texto={vet.nombre} /> : null}
         {lugar ? <Dato icono="sede" texto={lugar.direccion ? `${lugar.nombre} · ${lugar.direccion}` : lugar.nombre} /> : null}

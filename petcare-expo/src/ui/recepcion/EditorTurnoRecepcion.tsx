@@ -3,7 +3,7 @@
  * y horarios que se ofrecen salen de los lugares de atención de ese veterinario y de su agenda completa; el
  * servidor vuelve a validar todo al guardar (horario libre, tipo de animal, lugar).
  */
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { RecepcionAgendaRepo, type TurnoRecepcion } from "../../data/repositorio/recepcionAgendaRepo";
@@ -137,7 +137,7 @@ function FormularioTurno({ turno, vetInicial, mascotaInicial, alListo, alCancela
 
       <EtiquetaForm texto="Día" />
       <CampoTocable
-        valor={fecha ? `${Fechas.relativa(fecha)} · ${Fechas.corta(fecha)}` : ""} marcador="Elegí el día" accesibilidad="Día"
+        valor={fecha ? Fechas.relativaConFecha(fecha) : ""} marcador="Elegí el día" accesibilidad="Día"
         icono="calendario" error={errores.fecha} alTocar={() => setSelFecha(true)}
       />
       <EtiquetaForm texto="Horario" />
@@ -196,12 +196,18 @@ export function EditorTurnoRecepcion({ turno, alCerrar }: { turno: TurnoRecepcio
 export function TurnoNuevoRecepcion() {
   useDatos();
   const { vet, mascota } = useLocalSearchParams<{ vet?: string; mascota?: string }>();
+  // La pantalla se cierra (no se apila otra encima): así no quedan formularios viejos abiertos debajo
+  const cerrar = () => {
+    if (router.canGoBack()) router.back();
+    else NavRecepcion.irAHoy();
+  };
+  const listo = () => {
+    cerrar();
+    NavRecepcion.irAAgenda();
+  };
   return (
-    <PantallaBase titulo="Nuevo turno" alVolver={NavRecepcion.irAAgenda} formulario>
-      <FormularioTurno
-        turno={null} vetInicial={vet ?? null} mascotaInicial={mascota ?? null}
-        alListo={NavRecepcion.irAAgenda} alCancelar={NavRecepcion.irAAgenda}
-      />
+    <PantallaBase titulo="Nuevo turno" alVolver={cerrar} formulario>
+      <FormularioTurno turno={null} vetInicial={vet ?? null} mascotaInicial={mascota ?? null} alListo={listo} alCancelar={cerrar} />
     </PantallaBase>
   );
 }

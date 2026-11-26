@@ -27,7 +27,7 @@ function filasPorFecha(turnos: TurnoRecepcion[]): Fila[] {
   let ultima: LocalDate | null = null;
   for (const t of turnos) {
     if (ultima === null || !t.fecha.equals(ultima)) {
-      filas.push({ tipo: "encabezado", texto: `${Fechas.relativa(t.fecha)} · ${Fechas.corta(t.fecha)}` });
+      filas.push({ tipo: "encabezado", texto: Fechas.relativaConFecha(t.fecha) });
       ultima = t.fecha;
     }
     filas.push({ tipo: "turno", turno: t });

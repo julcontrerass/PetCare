@@ -319,14 +319,14 @@ export function RecepcionHoja({ lado, alCerrar }: { lado: LadoRecepcion; alCerra
     // Los datos se muestran una sola vez: no se cierra tocando afuera
     return (
       <HojaInferior visible alCerrar={() => {}} cancelable={false}>
-        <CuentaCreada cuenta={creada} alTerminar={() => { setCreada(null); setVista("lista"); }} />
+        <CuentaCreada cuenta={creada} alTerminar={() => { setCreada(null); setDato(""); setError(null); setVista("lista"); }} />
       </HojaInferior>
     );
   }
   if (vista === "crear") {
     return (
       <HojaInferior visible alCerrar={alCerrar}>
-        <FormularioCuenta alCreada={setCreada} alVolver={() => setVista("lista")} />
+        <FormularioCuenta alCreada={setCreada} alVolver={() => { setDato(""); setError(null); setVista("lista"); }} />
       </HojaInferior>
     );
   }
@@ -377,14 +377,22 @@ export function resumenRecepcion(lado: LadoRecepcion): string {
   const lista = lado === "veterinario" ? RecepcionRepo.miRecepcion : RecepcionRepo.misVeterinarios;
   const activos = lista.filter((v) => v.estado === "activo").length;
   const porResponder = lista.filter((v) => v.me_toca_responder).length;
-  let texto: string;
+  // Lo que la cuenta mandó y todavía espera la respuesta del otro lado
+  const esperando = lista.filter((v) => v.estado === "pendiente" && !v.me_toca_responder).length;
+  const partes: string[] = [];
   if (lado === "veterinario") {
-    texto = activos === 0 ? "Nadie todavía" : activos === 1 ? "1 persona" : `${activos} personas`;
+    if (activos > 0 || (porResponder === 0 && esperando === 0)) {
+      partes.push(activos === 0 ? "Nadie todavía" : activos === 1 ? "1 persona" : `${activos} personas`);
+    }
+    if (esperando > 0) partes.push(esperando === 1 ? "1 invitación pendiente" : `${esperando} invitaciones pendientes`);
   } else {
-    texto = activos === 0 ? "Ningún veterinario" : activos === 1 ? "1 veterinario" : `${activos} veterinarios`;
+    if (activos > 0 || (porResponder === 0 && esperando === 0)) {
+      partes.push(activos === 0 ? "Ningún veterinario" : activos === 1 ? "1 veterinario" : `${activos} veterinarios`);
+    }
+    if (esperando > 0) partes.push(esperando === 1 ? "1 pedido pendiente" : `${esperando} pedidos pendientes`);
   }
-  if (porResponder > 0) texto += porResponder === 1 ? " · 1 para responder" : ` · ${porResponder} para responder`;
-  return texto;
+  if (porResponder > 0) partes.push(porResponder === 1 ? "1 para responder" : `${porResponder} para responder`);
+  return partes.join(" · ");
 }
 
 const estilos = StyleSheet.create({

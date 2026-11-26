@@ -33,7 +33,7 @@ export function filasDeAgenda(eventos: EventoVet[]): AgendaFila[] {
   let ultima: LocalDate | null = null;
   for (const e of eventos) {
     if (ultima === null || !e.fecha.equals(ultima)) {
-      filas.push({ tipo: "encabezado", texto: `${Fechas.relativa(e.fecha)} · ${Fechas.corta(e.fecha)}` });
+      filas.push({ tipo: "encabezado", texto: Fechas.relativaConFecha(e.fecha) });
       ultima = e.fecha;
     }
     filas.push({ tipo: "turno", evento: e });

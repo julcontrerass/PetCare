@@ -51,7 +51,7 @@ function FichaPaciente({ paciente: p, vetFiltro, alCerrar }: { paciente: Pacient
       ) : (
         proximos.map((t) => (
           <Texto key={t.id} variante="cuerpo" tamano={14} style={{ marginTop: 4 }}>
-            {`${Fechas.relativa(t.fecha)} ${Fechas.corta(t.fecha)}, ${t.hora} · ${t.tipo}` +
+            {`${Fechas.relativaConFecha(t.fecha)}, ${t.hora} · ${t.tipo}` +
               (RecepcionAgendaRepo.veterinarios.length > 1 ? ` · ${RecepcionAgendaRepo.veterinario(t.vetId)?.nombre ?? ""}` : "")}
           </Texto>
         ))

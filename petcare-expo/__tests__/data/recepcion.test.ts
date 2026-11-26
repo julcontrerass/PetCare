@@ -30,7 +30,7 @@ describe("Recepción", () => {
     expect(await RecepcionRepo.invitar(`  ${DUENA.email} `)).toBe("pendiente");
     expect(fuente.llamadas).toContain(`invitarRecepcionista:${DUENA.email}`);
     expect(RecepcionRepo.miRecepcion.map((v) => [v.nombre, v.estado, v.me_toca_responder])).toEqual([["Ana Prueba", "pendiente", false]]);
-    expect(resumenRecepcion("veterinario")).toBe("Nadie todavía");
+    expect(resumenRecepcion("veterinario")).toBe("1 invitación pendiente");
 
     await cambiarA(DUENA);
     expect(RecepcionRepo.invitacionesRecibidas.map((v) => [v.nombre, v.clinica])).toEqual([["Dr. Vera", "Clínica Sur"]]);
@@ -56,7 +56,7 @@ describe("Recepción", () => {
 
     await cambiarA(VET);
     expect(RecepcionRepo.pedidosRecibidos.map((v) => v.nombre)).toEqual(["Ana Prueba"]);
-    expect(resumenRecepcion("veterinario")).toBe("Nadie todavía · 1 para responder");
+    expect(resumenRecepcion("veterinario")).toBe("1 para responder");
     await RecepcionRepo.responder(RecepcionRepo.pedidosRecibidos[0], false);
     expect(RecepcionRepo.miRecepcion).toHaveLength(0);
   });

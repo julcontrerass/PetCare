@@ -74,8 +74,19 @@ class RecepcionRepoImpl {
     this._vinculos = [];
   }
 
+  /**
+   * Se llama después de cada cambio de vínculo hecho desde la app. Lo registra la agenda de la recepción para
+   * volver a pedirse en el momento (aceptar una invitación muestra los turnos de ese veterinario sin esperar).
+   */
+  alCambiarVinculos: (() => Promise<void>) | null = null;
+
   private async recargar(): Promise<void> {
     await this.cargar();
+    try {
+      await this.alCambiarVinculos?.();
+    } catch {
+      // la agenda se vuelve a pedir en la próxima recarga
+    }
     Servicios.avisarCambio();
   }
 }
