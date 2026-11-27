@@ -118,6 +118,8 @@ export interface FuenteDatos {
 
   // ---------- Turnos ----------
   turnos(): Promise<TurnoDto[]>;
+  /** El veterinario tiene recepción (alguien con el rol de recepción en una veterinaria aprobada donde atiende). */
+  tengoRecepcion(): Promise<boolean>;
   crearTurno(turno: NuevoTurnoDto): Promise<void>;
   actualizarTurno(id: string, cambios: JsonObject): Promise<void>;
 
@@ -282,6 +284,7 @@ export class FuenteBase implements FuenteDatos {
   async turnos(): Promise<TurnoDto[]> { return []; }
   async crearTurno(_turno: NuevoTurnoDto): Promise<void> {}
   async actualizarTurno(_id: string, _cambios: JsonObject): Promise<void> {}
+  async tengoRecepcion(): Promise<boolean> { return false; }
 
   async catalogoVeterinarios(): Promise<PerfilDto[]> { return []; }
   async accesos(): Promise<AccesoDto[]> { return []; }

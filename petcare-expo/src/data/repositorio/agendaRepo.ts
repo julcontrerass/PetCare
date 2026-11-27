@@ -7,6 +7,8 @@ import { CuentaActual } from "../cuentaActual";
 import { PerfilVetRepo } from "./perfilVetRepo";
 
 export type EstadoEvento = "PENDIENTE" | "COMPLETADO" | "CANCELADO";
+/** El día del turno: "en_espera" (el dueño ya llegó, está en la sala de espera) o "no_vino". */
+export type Llegada = "en_espera" | "no_vino";
 export const EstadosEvento: Record<EstadoEvento, { etiqueta: string }> = {
   PENDIENTE: { etiqueta: "Pendiente" },
   COMPLETADO: { etiqueta: "Completado" },
@@ -28,13 +30,20 @@ export interface EventoVet {
   duracionMin: number;
   /** Lugar de atención donde es el turno. */
   sedeId: string | null;
+  /** La marca la recepción (o el veterinario, si no tiene recepción) el día del turno. */
+  llegada: Llegada | null;
+  /** Cuándo se marcó la llegada (instante del servidor). */
+  llegadaAt: string | null;
 }
 
 export function crearEventoVet(
-  e: Omit<EventoVet, "veterinarioId" | "duracionMin" | "sedeId"> &
-    Partial<Pick<EventoVet, "veterinarioId" | "duracionMin" | "sedeId">>,
+  e: Omit<EventoVet, "veterinarioId" | "duracionMin" | "sedeId" | "llegada" | "llegadaAt"> &
+    Partial<Pick<EventoVet, "veterinarioId" | "duracionMin" | "sedeId" | "llegada" | "llegadaAt">>,
 ): EventoVet {
-  return { ...e, veterinarioId: e.veterinarioId ?? null, duracionMin: e.duracionMin ?? 30, sedeId: e.sedeId ?? null };
+  return {
+    ...e, veterinarioId: e.veterinarioId ?? null, duracionMin: e.duracionMin ?? 30, sedeId: e.sedeId ?? null,
+    llegada: e.llegada ?? null, llegadaAt: e.llegadaAt ?? null,
+  };
 }
 
 const sinVacio = (s: string): string | null => (s.trim() ? s : null);
@@ -69,14 +78,23 @@ class AgendaRepoImpl {
 
   readonly eventos: EventoVet[] = [];
 
+  /** Si tiene recepción, la llegada la marca la recepción; si no, el veterinario. */
+  tieneRecepcion = false;
+
   limpiar(): void {
     this.eventos.length = 0;
+    this.tieneRecepcion = false;
   }
 
   async cargar(): Promise<void> {
-    const nuevos = (await Servicios.fuente.turnos()).map((t) => this.aEvento(t));
+    const [turnos, conRecepcion] = await Promise.all([
+      Servicios.fuente.turnos(),
+      Servicios.fuente.tengoRecepcion().catch(() => this.tieneRecepcion),
+    ]);
+    const nuevos = turnos.map((t) => this.aEvento(t));
     this.eventos.length = 0;
     this.eventos.push(...nuevos);
+    this.tieneRecepcion = conRecepcion;
   }
 
   private aEvento(t: TurnoDto): EventoVet {
@@ -93,6 +111,8 @@ class AgendaRepoImpl {
       veterinarioId: t.veterinario_id ?? null,
       duracionMin: t.duracion_min,
       sedeId: t.sede_id ?? null,
+      llegada: t.llegada ?? null,
+      llegadaAt: t.llegada_at ?? null,
     };
   }
 
@@ -129,6 +149,8 @@ class AgendaRepoImpl {
       veterinarioId: vetId,
       duracionMin: PerfilVetRepo.duracionDe(tipo),
       sedeId: lugar,
+      llegada: null,
+      llegadaAt: null,
     };
     this.eventos.push(e);
     void Servicios.escribir({ alFallar: this.alFallar }, async () => {
@@ -170,6 +192,22 @@ class AgendaRepoImpl {
     void Servicios.escribir({ alFallar: this.alFallar }, async () => {
       await Servicios.fuente.actualizarTurno(e.id, { estado: nombreEstado(estado) });
     });
+  }
+
+  /** Marca que el dueño llegó o que no vino (null quita la marca). Solo el día del turno; la base avisa a quien atiende. */
+  marcarLlegada(e: EventoVet, llegada: Llegada | null): void {
+    e.llegada = llegada;
+    e.llegadaAt = llegada ? new Date().toISOString() : null;
+    void Servicios.escribir({ alFallar: this.alFallar }, async () => {
+      await Servicios.fuente.actualizarTurno(e.id, { llegada });
+    });
+  }
+
+  /** Los de hoy que ya llegaron y esperan ser atendidos, por orden de llegada. */
+  salaDeEspera(): EventoVet[] {
+    return this.deHoy()
+      .filter((e) => e.llegada === "en_espera")
+      .sort((a, b) => compararTexto(a.llegadaAt ?? "", b.llegadaAt ?? "") || compararTexto(a.hora, b.hora));
   }
 
   porId(id: string | null | undefined): EventoVet | null {

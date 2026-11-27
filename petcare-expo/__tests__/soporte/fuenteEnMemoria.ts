@@ -36,6 +36,8 @@ export class FuenteEnMemoria extends FuenteBase {
   perfiles: PerfilDto[] = [];
   mascotas: MascotaDto[] = [];
   turnosGuardados: TurnoDto[] = [];
+  /** Lo que devuelve tengo_recepcion para el veterinario en sesión. */
+  conRecepcion = false;
   accesosGuardados: AccesoDto[] = [];
   notificacionesGuardadas: NotificacionDto[] = [];
   registros: RegistroSaludDto[] = [];
@@ -684,6 +686,10 @@ export class FuenteEnMemoria extends FuenteBase {
 
   // ---------- Turnos ----------
 
+  override async tengoRecepcion(): Promise<boolean> {
+    return this.conRecepcion;
+  }
+
   override async turnos(): Promise<TurnoDto[]> {
     return [...this.turnosGuardados];
   }
@@ -719,7 +725,10 @@ export class FuenteEnMemoria extends FuenteBase {
     if ("veterinario_id" in cambios) t = { ...t, veterinario_id: texto(cambios, "veterinario_id") };
     if ("sede_id" in cambios) t = { ...t, sede_id: texto(cambios, "sede_id") };
     if ("notas" in cambios) t = { ...t, notas: texto(cambios, "notas") };
-    if ("llegada" in cambios) t = { ...t, llegada: texto(cambios, "llegada") as TurnoDto["llegada"] };
+    if ("llegada" in cambios) {
+      const llegada = texto(cambios, "llegada") as TurnoDto["llegada"];
+      t = { ...t, llegada, llegada_at: llegada ? new Date().toISOString() : null };
+    }
     this.turnosGuardados[i] = t;
   }
 

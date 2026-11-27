@@ -1,6 +1,6 @@
 /*
  * Migrado de ui/veterinario/DetalleEventoVetActivity.kt (activity_detalle_evento_vet.xml, item_turno_detalle.xml).
- * Detalle del turno con sede, iniciar turno, completar, cancelar con confirmación, editar, informe y estudios previos
+ * Detalle del turno con sede, llegada del dueño (la marca la recepción; si el veterinario no tiene, él), iniciar turno, completar, cancelar con confirmación, editar, informe y estudios previos
  * del dueño. Ruta: `/vet/evento/[id]`.
  */
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -15,6 +15,7 @@ import { Servicios } from "../../data/servicios";
 import { signosTexto } from "../../model/clinica";
 import { textoLugarSede } from "../../model/modelos";
 import { Fechas } from "../../util/fechas";
+import { LocalDate } from "../../util/tiempo";
 import { ArchivosUi } from "../common/ArchivosUi";
 import { Avatar } from "../common/Avatar";
 import { Avisos } from "../common/Avisos";
@@ -83,16 +84,42 @@ export default function DetalleEventoVetPantalla() {
   const actual = informe ?? InformesRepo.obtener(evento.pacienteId, evento.id);
   const lugar = PerfilVetRepo.sedes.length > 1 ? PerfilVetRepo.sede(evento.sedeId) : null;
   const textoInforme = textoDeInforme(actual);
+  const esHoy = evento.fecha.equals(LocalDate.now());
+  // La llegada se marca el día del turno; "no vino" también después. Con recepción la marca ella.
+  const marcaLlegada = pendiente && !AgendaRepo.tieneRecepcion && !evento.fecha.isAfter(LocalDate.now());
+  const llegada = (valor: "en_espera" | "no_vino" | null, mensaje: string) => {
+    AgendaRepo.marcarLlegada(evento, valor);
+    Avisos.mostrar(mensaje);
+    redibujar((n) => n + 1);
+  };
+  const textoLlegada =
+    evento.llegada === "en_espera"
+      ? `En sala de espera desde las ${Fechas.instante(evento.llegadaAt).horaTexto()} hs`
+      : evento.llegada === "no_vino"
+        ? "No vino"
+        : AgendaRepo.tieneRecepcion ? "Tu recepción la marca cuando llegue" : "Marcala cuando llegue";
 
   return (
     <PantallaBase
       titulo="Detalle del turno" alVolver={cerrarPantalla}
       pie={
         <View>
+          {marcaLlegada ? (
+            <View style={{ flexDirection: "row", marginBottom: 6 }}>
+              {evento.llegada == null && esHoy ? (
+                <Boton titulo="Llegó" icono="check" variante="secundario" alto={46} estilo={{ flex: 1, marginRight: 8 }} onPress={() => llegada("en_espera", "Lo pasaste a la sala de espera")} />
+              ) : null}
+              {evento.llegada == null ? (
+                <Boton titulo="No vino" variante="secundario" alto={46} estilo={{ flex: 1 }} onPress={() => llegada("no_vino", "Marcado como que no vino")} />
+              ) : (
+                <Boton titulo={evento.llegada === "en_espera" ? "Quitar llegada" : "Quitar 'no vino'"} variante="secundario" alto={46} estilo={{ flex: 1 }} onPress={() => llegada(null, "Se quitó la marca")} />
+              )}
+            </View>
+          ) : null}
           {pendiente ? (
             <>
               <Boton
-                titulo={!informeVacio(actual) ? "Continuar informe" : "Iniciar turno"} alto={50}
+                titulo={!informeVacio(actual) ? "Continuar informe" : evento.llegada === "en_espera" ? "Atender" : "Iniciar turno"} alto={50}
                 onPress={() => NavVet.detallePaciente(evento.pacienteId, evento.id)}
               />
               <Boton
@@ -141,6 +168,11 @@ export default function DetalleEventoVetPantalla() {
               <View style={[estilos.chip, { marginLeft: 8 }]}>
                 <Texto variante="etiqueta" tamano={10.5} color={Colores.white}>{EstadosEvento[evento.estado].etiqueta}</Texto>
               </View>
+              {pendiente && evento.llegada ? (
+                <View style={[estilos.chip, { marginLeft: 8, backgroundColor: evento.llegada === "en_espera" ? Colores.successGreen : Colores.dangerRed }]}>
+                  <Texto variante="etiqueta" tamano={10.5} color={Colores.white}>{evento.llegada === "en_espera" ? "En sala de espera" : "No vino"}</Texto>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -182,7 +214,10 @@ export default function DetalleEventoVetPantalla() {
         <FilaInfo
           icono="medico" etiqueta="Veterinario" valor={evento.veterinario + (lugar ? `\n${textoLugarSede(lugar)}` : "")}
         />
-        <FilaInfo icono="calendario" etiqueta="Fecha y hora" valor={`${Fechas.corta(evento.fecha)} · ${evento.hora} hs`} conDivisor={false} />
+        <FilaInfo icono="calendario" etiqueta="Fecha y hora" valor={`${Fechas.corta(evento.fecha)} · ${evento.hora} hs`} conDivisor={pendiente && (esHoy || evento.llegada != null)} />
+        {pendiente && (esHoy || evento.llegada != null) ? (
+          <FilaInfo icono="reloj" etiqueta="Llegada" valor={textoLlegada} conDivisor={false} />
+        ) : null}
       </View>
 
       {estudios.length > 0 ? (

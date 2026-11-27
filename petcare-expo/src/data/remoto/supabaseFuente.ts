@@ -406,6 +406,10 @@ export class SupabaseFuente implements FuenteDatos {
     ) as TurnoDto[];
   }
 
+  async tengoRecepcion(): Promise<boolean> {
+    return ok(await this.cliente.rpc("tengo_recepcion")) === true;
+  }
+
   async crearTurno(turno: NuevoTurnoDto): Promise<void> {
     vacio(await this.cliente.from("turnos").insert(turno));
   }

@@ -1,6 +1,6 @@
 /*
  * Migrado de ui/veterinario/InicioVetSeccion.kt + seccion_vet_inicio.xml: inicio del veterinario. Lo que tiene hoy
- * (tarjeta de la próxima consulta, resumen del día, consultas de hoy), las solicitudes pendientes y las vacunas por
+ * (tarjeta de la próxima consulta, resumen del día, sala de espera, consultas de hoy), las solicitudes pendientes y las vacunas por
  * recordar, y la campana de avisos (el panel lo dibuja el cascarón, `EstadoCascaron.abrirAvisos`).
  */
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,6 +27,7 @@ import { PerfilVetRepo } from "../../data/repositorio/perfilVetRepo";
 import { EstadoCascaron } from "./estadoCascaronVet";
 import { FilaHomeVet, type HomeVetItem } from "./HomeVetAdapter";
 import { NavVet } from "./navegacionVet";
+import { SalaDeEspera, textoEspera } from "./SalaDeEspera";
 
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -84,9 +85,12 @@ export function InicioVet() {
   const enHorarioId = turnoEnHorario(hoy);
   const items: HomeVetItem[] = hoy.map((e) => ({
     title: PacientesRepo.nombreDe(e.pacienteId), subtitle: e.motivo, time: e.hora, type: "CONSULTA", eventoId: e.id,
-    isEnHorario: e.id === enHorarioId, fotoDueno: PacientesRepo.fotoDuenoDe(e.pacienteId),
+    isEnHorario: e.id === enHorarioId, fotoDueno: PacientesRepo.fotoDuenoDe(e.pacienteId), llegada: e.llegada,
   }));
-  const siguiente = hoy.find((e) => e.id === enHorarioId) ?? hoy[0] ?? null;
+  const esperando = AgendaRepo.salaDeEspera();
+  // Si alguien ya está en la sala de espera, el próximo es el primero que llegó
+  const siguiente = esperando[0] ?? hoy.find((e) => e.id === enHorarioId) ?? hoy[0] ?? null;
+  const siguienteEspera = siguiente?.llegada === "en_espera";
   const paciente = siguiente ? PacientesRepo.porId(siguiente.pacienteId) : null;
   const sinLeer = NotificacionesVet.sinLeer;
 
@@ -117,20 +121,24 @@ export function InicioVet() {
         </View>
         <View style={{ padding: 18 }}>
           <Texto variante="etiqueta" tamano={12} color="#FFFFFFD9" style={{ letterSpacing: 0.7, textTransform: "uppercase" }}>
-            {!siguiente ? "Agenda libre" : siguiente.id === enHorarioId ? "En horario" : "Próxima consulta"}
+            {!siguiente ? "Agenda libre" : siguienteEspera ? "En sala de espera" : siguiente.id === enHorarioId ? "En horario" : "Próxima consulta"}
           </Texto>
           <Texto variante="titulo" tamano={21} color={Colores.white} style={{ marginTop: 4, marginRight: 60 }}>
             {siguiente ? `${paciente?.nombre ?? "Paciente"} · ${siguiente.hora}` : "Sin consultas hoy"}
           </Texto>
           <Texto variante="chico" tamano={13.5} color="#FFFFFFEB" style={{ marginTop: 3, marginRight: 40 }}>
-            {siguiente ? `${siguiente.motivo} · ${paciente?.propietario ?? ""}` : "Revisá la agenda o cargá una consulta nueva."}
+            {siguiente
+              ? siguienteEspera
+                ? `${textoEspera(siguiente.llegadaAt)} · ${siguiente.motivo}`
+                : `${siguiente.motivo} · ${paciente?.propietario ?? ""}`
+              : "Revisá la agenda o cargá una consulta nueva."}
           </Texto>
           <Tocable
             onPress={() => (siguiente ? NavVet.detalleEvento(siguiente.id) : NavVet.irAAgenda())}
-            etiqueta={siguiente ? "Ver turno" : "Ver agenda"}
+            etiqueta={siguienteEspera ? "Atender" : siguiente ? "Ver turno" : "Ver agenda"}
             estilo={estilos.pildora}
           >
-            <Texto variante="etiqueta" tamano={13} color={Colores.primaryTeal}>{siguiente ? "Ver turno" : "Ver agenda"}</Texto>
+            <Texto variante="etiqueta" tamano={13} color={Colores.primaryTeal}>{siguienteEspera ? "Atender" : siguiente ? "Ver turno" : "Ver agenda"}</Texto>
           </Tocable>
         </View>
       </LinearGradient>
@@ -156,6 +164,8 @@ export function InicioVet() {
           <Icono nombre="chevronDerecha" tamano={22} color={Colores.textGray} />
         </View>
       </Tarjeta>
+
+      <SalaDeEspera esperando={esperando} alAbrir={(e) => NavVet.detalleEvento(e.id)} />
 
       <View style={estilos.encabezadoLista}>
         <Texto variante="titulo" tamano={18} style={{ flex: 1 }}>Consultas de hoy</Texto>

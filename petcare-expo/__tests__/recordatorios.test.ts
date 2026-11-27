@@ -14,7 +14,7 @@ function turno(id: string, fecha: LocalDate, hora: string, estado: EstadoTurno =
 function eventoVet(id: string, pacienteId: string, fecha: LocalDate, hora: string, estado: EstadoEvento): EventoVet {
   return {
     id, pacienteId, tipo: "Control", motivo: "Control", fecha, hora, estado, notas: "", veterinario: "Dr. Vera",
-    veterinarioId: null, duracionMin: 30, sedeId: null,
+    veterinarioId: null, duracionMin: 30, sedeId: null, llegada: null, llegadaAt: null,
   };
 }
 

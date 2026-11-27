@@ -6,6 +6,7 @@ import { Avatar } from "../common/Avatar";
 import { Icono } from "../common/Icono";
 import { Tarjeta } from "../common/Tarjeta";
 import { Texto } from "../common/Texto";
+import type { Llegada } from "../../data/repositorio/agendaRepo";
 import { Colores } from "../common/tema";
 
 export type ItemType = "CONSULTA" | "SOLICITUD";
@@ -20,10 +21,18 @@ export interface HomeVetItem {
   isEnHorario?: boolean;
   /** Foto de perfil del dueño del paciente (ruta en el bucket `fotos`). */
   fotoDueno?: string | null;
+  /** Si ya llegó (sala de espera) o no vino. */
+  llegada?: Llegada | null;
 }
 
 export function FilaHomeVet({ item, alTocar }: { item: HomeVetItem; alTocar: (item: HomeVetItem) => void }) {
   const enHorario = !!item.isEnHorario;
+  // La marca de la llegada dice más que "En horario": si ya se marcó, se muestra esa
+  const marca = item.llegada === "en_espera"
+    ? { texto: "En espera", color: Colores.successGreen, fondo: Colores.lightGreen }
+    : item.llegada === "no_vino"
+      ? { texto: "No vino", color: Colores.dangerRed, fondo: Colores.lightRed }
+      : enHorario ? { texto: "En horario", color: Colores.successGreen, fondo: Colores.lightGreen } : null;
   const consulta = item.type === "CONSULTA";
   return (
     <Tarjeta
@@ -44,9 +53,9 @@ export function FilaHomeVet({ item, alTocar }: { item: HomeVetItem; alTocar: (it
           {!consulta && item.timeAgo ? <Texto variante="chico" tamano={12}>{item.timeAgo}</Texto> : null}
         </View>
         {consulta ? <Avatar fotoPath={item.fotoDueno} tamano={36} estilo={estilos.dueno} /> : null}
-        {enHorario ? (
-          <View style={estilos.insignia}>
-            <Texto variante="etiqueta" tamano={10.5} color={Colores.successGreen}>En horario</Texto>
+        {marca ? (
+          <View style={[estilos.insignia, { backgroundColor: marca.fondo }]}>
+            <Texto variante="etiqueta" tamano={10.5} color={marca.color}>{marca.texto}</Texto>
           </View>
         ) : null}
         <Icono nombre="chevronDerecha" tamano={22} color={enHorario ? Colores.successGreen : Colores.textGray} />
