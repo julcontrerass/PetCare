@@ -117,10 +117,11 @@ export function FilaPendiente({ vet, alAbrir }: FilaPendienteProps) {
 }
 
 /** item_admin_actividad: un movimiento de la plataforma (se usa en el inicio y en la pestaña de actividad). */
-export function FilaActividad({ actividad }: { actividad: ActividadAdmin }) {
+/** Con [alAbrir] se toca y lleva a lo que menciona (la cuenta o la veterinaria); sin él es solo texto. */
+export function FilaActividad({ actividad, alAbrir }: { actividad: ActividadAdmin; alAbrir?: () => void }) {
   const { icono, color } = AdminUi.iconoActividad(actividad.tipo);
   return (
-    <Tarjeta relleno={12} estilo={estilos.fila}>
+    <Tarjeta relleno={12} estilo={estilos.fila} onPress={alAbrir} accessibilityLabel={alAbrir ? actividad.texto : undefined}>
       <View style={estilos.cajaIcono}>
         <Icono nombre={icono} tamano={20} color={color} />
       </View>
@@ -128,6 +129,7 @@ export function FilaActividad({ actividad }: { actividad: ActividadAdmin }) {
         <Texto variante="cuerpo" tamano={14} numberOfLines={3}>{actividad.texto}</Texto>
         <Texto variante="chico" tamano={12} style={{ marginTop: 2 }}>{AdminUi.cuando(actividad.cuando)}</Texto>
       </View>
+      {alAbrir ? <Icono nombre="chevronDerecha" tamano={22} color={Colores.textGray} /> : null}
     </Tarjeta>
   );
 }

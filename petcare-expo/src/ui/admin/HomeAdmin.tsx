@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Errores } from "../../util/errores";
 import { Fechas } from "../../util/fechas";
 import { LocalDate } from "../../util/tiempo";
-import { AdminRepo, type DuenoAdminItem, type VetAdminItem } from "../../data/repositorio/adminRepo";
+import { AdminRepo, type ActividadAdmin, type DuenoAdminItem, type VetAdminItem } from "../../data/repositorio/adminRepo";
 import { Servicios } from "../../data/servicios";
 import { Avisos } from "../common/Avisos";
 import { BotonIcono } from "../common/BotonIcono";
@@ -101,6 +101,7 @@ export function HomeAdmin() {
   const [cargandoCredencial, setCargandoCredencial] = useState(false);
 
   const { clinicas, recargar: recargarClinicas } = useClinicasAdmin();
+  const [clinicaEnfocada, setClinicaEnfocada] = useState<{ id: string; vez: number } | null>(null);
 
   const panelRef = useRef(panel);
   panelRef.current = panel;
@@ -277,6 +278,23 @@ export function HomeAdmin() {
     setDuenoAbierta(true);
   };
 
+  /** Adónde lleva tocar un movimiento: la veterinaria, o la cuenta del veterinario o del dueño. Nada si ya no existe. */
+  const destinoDe = (a: ActividadAdmin): (() => void) | undefined => {
+    if (a.clinicaId && clinicas.some((c) => c.id === a.clinicaId)) {
+      const id = a.clinicaId;
+      return () => {
+        setClinicaEnfocada((antes) => ({ id, vez: (antes?.vez ?? 0) + 1 }));
+        setPanel("clinicas");
+      };
+    }
+    if (!a.objetivoId) return undefined;
+    const vet = AdminRepo.vetPorId(a.objetivoId);
+    if (vet) return () => abrirVet(vet);
+    const dueno = AdminRepo.duenoPorId(a.objetivoId);
+    if (dueno) return () => abrirDueno(dueno);
+    return undefined;
+  };
+
   // ---------- Datos derivados ----------
 
   const pendientes = AdminRepo.pendientesRevisionCount();
@@ -325,7 +343,7 @@ export function HomeAdmin() {
       <View style={estilos.listaInicio}>
         {AdminRepo.actividad.slice(0, 4).map((a, i) => (
           <View key={`${i}-${a.texto}`} style={estilos.filaInicio}>
-            <FilaActividad actividad={a} />
+            <FilaActividad actividad={a} alAbrir={destinoDe(a)} />
           </View>
         ))}
       </View>
@@ -520,6 +538,7 @@ export function HomeAdmin() {
       columnas={columnas}
       envolver={envolver}
       estiloPanel={estilos.panel}
+      enfocar={clinicaEnfocada}
     />
   );
 
@@ -544,7 +563,7 @@ export function HomeAdmin() {
           columnWrapperStyle={columnas > 1 ? estilos.columnas : undefined}
           contentContainerStyle={estilos.lista}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => envolver(<FilaActividad actividad={item} />, `${index}-${item.texto}`, 10)}
+          renderItem={({ item, index }) => envolver(<FilaActividad actividad={item} alAbrir={destinoDe(item)} />, `${index}-${item.texto}`, 10)}
         />
       )}
     </View>

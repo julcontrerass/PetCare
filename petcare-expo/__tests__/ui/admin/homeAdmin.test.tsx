@@ -326,6 +326,31 @@ describe("HomeAdmin: actividad y cuenta", () => {
     expect(screen.queryByText("Sin actividad")).toBeNull();
   });
 
+  it("tocar un movimiento lleva a la cuenta o a la veterinaria que menciona", async () => {
+    const ahora = new Date().toISOString();
+    fuente.actividad.push(
+      { id: "a1", tipo: "aprobacion", texto: "Se dio de alta a Dra. Activa", created_at: ahora, objetivo_id: VET_ACTIVO },
+      { id: "a2", tipo: "registro", texto: "Juan registró la veterinaria Panda", created_at: ahora, objetivo_id: null, clinica_id: "cli-panda" },
+      { id: "a3", tipo: "baja", texto: "Alguien eliminó su cuenta", created_at: ahora },
+    );
+    fuente.agregarClinica("cli-panda", "Panda", [[VET_ACTIVO, ["titular", "veterinario"]]]);
+    await prepararPanel();
+    await mostrarPanel();
+    await irA("Actividad");
+
+    // Sin destino no se toca
+    expect(screen.queryByLabelText("Alguien eliminó su cuenta")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("Se dio de alta a Dra. Activa"));
+    expect(screen.getByText("Lun a Vie · 09:00 a 12:00 hs")).toBeTruthy();
+
+    await waitFor(() => expect(screen.getByLabelText("Juan registró la veterinaria Panda")).toBeTruthy());
+    await fireEvent.press(screen.getByLabelText("Juan registró la veterinaria Panda"));
+    expect(await screen.findByText("1 aprobadas · 0 en revisión")).toBeTruthy();
+    expect(screen.getByDisplayValue("Panda")).toBeTruthy();
+    expect(screen.getByLabelText("Veterinaria Panda")).toBeTruthy();
+  });
+
   it("la cuenta muestra el resumen y cerrar sesión pide confirmación", async () => {
     await prepararPanel();
     await mostrarPanel();

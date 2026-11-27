@@ -5,7 +5,7 @@
  * completó todo. Usa la misma revisión que el inicio (revisar_clinica).
  */
 import { useFocusEffect } from "expo-router";
-import { useCallback, useState, type ReactElement, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import type { ClinicaAdminDto, RevisionClinica } from "../../data/remoto/dtos";
 import { Servicios } from "../../data/servicios";
@@ -54,11 +54,22 @@ interface PanelVeterinariasProps {
   columnas: number;
   envolver: (hijo: ReactNode, id: string, margenAbajo: number) => ReactElement;
   estiloPanel: object;
+  /** Veterinaria a mostrar al entrar (desde la actividad): se filtra por su estado y su nombre. */
+  enfocar?: { id: string; vez: number } | null;
 }
 
-export function PanelVeterinarias({ clinicas, recargar, columnas, envolver, estiloPanel }: PanelVeterinariasProps) {
+export function PanelVeterinarias({ clinicas, recargar, columnas, envolver, estiloPanel, enfocar }: PanelVeterinariasProps) {
   const [filtro, setFiltro] = useState<string | null>("pendiente");
   const [busqueda, setBusqueda] = useState("");
+
+  const enfocada = enfocar ? clinicas.find((c) => c.id === enfocar.id) : undefined;
+  useEffect(() => {
+    if (!enfocada) return;
+    setFiltro(enfocada.revision);
+    setBusqueda(enfocada.nombre);
+    // Solo cuando se pide de nuevo (otra vez desde la actividad), no cada vez que se recarga la lista
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enfocar?.vez, enfocada?.id]);
   const [ocupada, setOcupada] = useState<string | null>(null);
   const [rechazar, setRechazar] = useState<ClinicaAdminDto | null>(null);
 

@@ -75,6 +75,9 @@ export interface ActividadAdmin {
   readonly tipo: TipoActividad;
   readonly texto: string;
   readonly cuando: LocalDateTime;
+  /** A qué apunta: una cuenta (veterinario o dueño) y/o una veterinaria. */
+  readonly objetivoId: string | null;
+  readonly clinicaId: string | null;
 }
 
 const sinVacio = (s: string): string | null => (s.trim() ? s : null);
@@ -222,7 +225,7 @@ class AdminRepoImpl {
       case "baja": tipo = "BAJA"; break;
       default: tipo = "REGISTRO";
     }
-    return { tipo, texto: a.texto, cuando: Fechas.instante(a.created_at) };
+    return { tipo, texto: a.texto, cuando: Fechas.instante(a.created_at), objetivoId: a.objetivo_id ?? null, clinicaId: a.clinica_id ?? null };
   }
 
   /** "Lun a Vie · 09:00 a 18:00 hs", o los días separados por comas si no son consecutivos. */

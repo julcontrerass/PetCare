@@ -495,6 +495,10 @@ export interface ActividadDto {
   tipo: string;
   texto: string;
   created_at: string;
+  /** La cuenta a la que se refiere el movimiento (veterinario o dueño), si sigue existiendo. */
+  objetivo_id?: string | null;
+  /** La veterinaria a la que se refiere, si es un movimiento de una veterinaria. */
+  clinica_id?: string | null;
 }
 
 /** Estudio anterior que el dueño adjuntó a un turno para que el veterinario lo vea. */
