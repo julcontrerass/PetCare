@@ -225,8 +225,9 @@ describe("DetallePacientePantalla: informe", () => {
 
     expect(fuente().llamadas).toContain("crearPrescripcion:Amoxicilina");
     expect(screen.getByText("Receta en PDF")).toBeTruthy();
-    // Debajo de la posología va cuántas tomas tildó el dueño
-    expect(screen.getByText(/^250 mg, cada 8 hs, durante 7 días\s+Tomas dadas: 0 de 1 hasta ahora \(21 en total\)$/)).toBeTruthy();
+    // Arranca cuando el dueño marca la primera dosis: hasta entonces se dice cuántas tomas son
+    expect(screen.getByText(/^250 mg, cada 8 hs, durante 7 días\s+El dueño todavía no empezó: son 21 tomas$/)).toBeTruthy();
+    expect(screen.getByText("El dueño todavía no marcó la primera dosis.")).toBeTruthy();
   });
 
   it("el medicamento exige un nombre y valores de horas y días posibles", async () => {

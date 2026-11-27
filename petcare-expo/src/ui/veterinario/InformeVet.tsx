@@ -4,6 +4,9 @@
  * del turno (SOAP con signos vitales), la receta, las vacunas aplicadas y los archivos de la consulta. El informe solo
  * lo puede modificar quien lo hizo y el mismo día.
  */
+import type { ConComida } from "../../data/remoto/dtos";
+import { estadoTratamiento, momentosDeTomas, tienePlan } from "../../model/tomas";
+import { GrillaTomas } from "../common/GrillaTomas";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { CatalogoMedico } from "../../data/catalogoMedico";
@@ -14,10 +17,10 @@ import { comoDocumento, type Paciente } from "../../data/repositorio/pacientesRe
 import { PerfilVetRepo } from "../../data/repositorio/perfilVetRepo";
 import { PrescripcionesRepo } from "../../data/repositorio/prescripcionesRepo";
 import { SaludRepo } from "../../data/repositorio/saludRepo";
-import { LIMITES_SIGNOS, numeroTexto, posologia, type Prescripcion, type SignosVitales } from "../../model/clinica";
+import { LIMITES_SIGNOS, numeroTexto, posologia, TEXTO_COMIDA, type Prescripcion, type SignosVitales } from "../../model/clinica";
 import { Errores } from "../../util/errores";
 import { Fechas } from "../../util/fechas";
-import { LocalDate } from "../../util/tiempo";
+import { LocalDate, LocalDateTime } from "../../util/tiempo";
 import { ArchivosUi } from "../common/ArchivosUi";
 import { Avisos } from "../common/Avisos";
 import { Boton } from "../common/Boton";
@@ -35,6 +38,7 @@ import { BannerInfo, CajaForm, CampoTocable, FilaTurnoDetalle, SeccionTitulo } f
 function textoTomas(m: Prescripcion): string {
   const c = PrescripcionesRepo.cumplimientoDe(m);
   if (!c) return "";
+  if (estadoTratamiento(m) === "sin_empezar") return `\nEl dueño todavía no empezó: son ${c.total} ${c.total === 1 ? "toma" : "tomas"}`;
   if (c.debidas === 0) return `\nTodavía no empezó: son ${c.total} ${c.total === 1 ? "toma" : "tomas"}`;
   return `\nTomas dadas: ${c.dadas} de ${c.debidas} hasta ahora (${c.total} en total)`;
 }
@@ -284,6 +288,7 @@ export function InformeVet({ paciente, turnoId, alTerminar }: InformeVetProps) {
           ))
         )}
       </View>
+      {medicamentos.filter(tienePlan).map((m) => <SeguimientoTomas key={`seg-${m.id}`} receta={m} alCambiar={tick} />)}
       <Boton titulo="Agregar medicamento" variante="secundario" alto={50} estilo={{ marginTop: 10 }} onPress={() => setHojaMedicamento(true)} />
       {medicamentos.length > 0 ? <Boton titulo="Receta en PDF" variante="secundario" alto={50} estilo={{ marginTop: 8 }} onPress={() => void recetaPdf()} /> : null}
 
@@ -335,8 +340,8 @@ export function InformeVet({ paciente, turnoId, alTerminar }: InformeVetProps) {
 
       <HojaMedicamento
         visible={hojaMedicamento} alCerrar={() => setHojaMedicamento(false)}
-        alAgregar={(nombre, dosis, cada, dias, indicaciones) => {
-          PrescripcionesRepo.agregar(paciente.id, turnoId, nombre, dosis, cada, dias, indicaciones);
+        alAgregar={(nombre, dosis, cada, dias, indicaciones, conComida) => {
+          PrescripcionesRepo.agregar(paciente.id, turnoId, nombre, dosis, cada, dias, indicaciones, conComida);
           tick();
         }}
       />
@@ -352,10 +357,68 @@ export function InformeVet({ paciente, turnoId, alTerminar }: InformeVetProps) {
   );
 }
 
+/**
+ * Cómo viene el tratamiento: la grilla con cada toma (verde = dada, rojo = no se dio) y, mientras sigue, suspenderlo.
+ */
+function SeguimientoTomas({ receta, alCambiar }: { receta: Prescripcion; alCambiar: () => void }) {
+  const [suspendiendo, setSuspendiendo] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const ahora = LocalDateTime.now();
+  const estado = estadoTratamiento(receta, ahora);
+  const momentos = momentosDeTomas(receta);
+  const suspender = async () => {
+    setGuardando(true);
+    try {
+      await PrescripcionesRepo.suspender(receta, motivo);
+      Avisos.mostrar(`Suspendiste ${receta.medicamento}. Le avisamos al dueño`, "exito");
+      setSuspendiendo(false);
+      alCambiar();
+    } catch (e) {
+      Avisos.error(Errores.mensaje(e));
+    } finally {
+      setGuardando(false);
+    }
+  };
+  return (
+    <View style={estilos.seguimiento}>
+      <Texto tamano={14} negrita>{`Seguimiento de ${receta.medicamento}`}</Texto>
+      {receta.conComida ? <Texto variante="chico" tamano={12.5}>{TEXTO_COMIDA[receta.conComida]}</Texto> : null}
+      {estado === "sin_empezar" ? (
+        <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>El dueño todavía no marcó la primera dosis.</Texto>
+      ) : (
+        <GrillaTomas momentos={momentos} dadas={PrescripcionesRepo.dadasDe(receta)} ahora={ahora} />
+      )}
+      {estado === "suspendido" ? (
+        <Texto variante="chico" tamano={13} color={Colores.dangerRed} style={{ marginTop: 6 }}>
+          {`Suspendido${receta.motivoSuspension ? `: ${receta.motivoSuspension}` : ""}`}
+        </Texto>
+      ) : null}
+      {estado === "en_curso" || estado === "sin_empezar" ? (
+        <Boton titulo="Suspender tratamiento" variante="texto" alto={40} estilo={{ marginTop: 6, alignSelf: "flex-start" }} onPress={() => setSuspendiendo(true)} />
+      ) : null}
+      <HojaInferior visible={suspendiendo} alCerrar={() => setSuspendiendo(false)}>
+        <Texto variante="titulo" tamano={20} accessibilityRole="header">{`Suspender ${receta.medicamento}`}</Texto>
+        <Texto variante="chico" tamano={13} style={{ marginTop: 4 }}>No hay más tomas ni avisos desde ahora. Al dueño le llega el aviso.</Texto>
+        <Campo
+          multilinea placeholder="Motivo (opcional): cambio de medicación, mejoró..." accessibilityLabel="Motivo de la suspensión"
+          value={motivo} onChangeText={setMotivo} autoCapitalize="sentences" numberOfLines={2} estilo={{ marginTop: 12 }}
+        />
+        <Boton titulo="Suspender" alto={50} estilo={{ marginTop: 14 }} cargando={guardando} onPress={() => void suspender()} />
+        <Boton titulo="Cancelar" variante="secundario" alto={50} estilo={{ marginTop: 8 }} deshabilitado={guardando} onPress={() => setSuspendiendo(false)} />
+      </HojaInferior>
+    </View>
+  );
+}
+
 /** sheet_medicamento: agrega un medicamento a la receta de la consulta. */
 function HojaMedicamento({
   visible, alCerrar, alAgregar,
-}: { visible: boolean; alCerrar: () => void; alAgregar: (nombre: string, dosis: string, cada: number | null, dias: number | null, indicaciones: string) => void }) {
+}: {
+  visible: boolean; alCerrar: () => void;
+  alAgregar: (nombre: string, dosis: string, cada: number | null, dias: number | null, indicaciones: string, conComida: ConComida | null) => void;
+}) {
+  const [conComida, setConComida] = useState<ConComida | null>(null);
   const [nombre, setNombre] = useState("");
   const [dosis, setDosis] = useState("");
   const [cada, setCada] = useState("");
@@ -366,7 +429,7 @@ function HojaMedicamento({
   const abierta = useRef(false);
   useEffect(() => {
     if (visible && !abierta.current) {
-      setNombre(""); setDosis(""); setCada(""); setDias(""); setIndicaciones(""); setErrorNombre(null); setErrorPauta(null);
+      setNombre(""); setDosis(""); setCada(""); setDias(""); setIndicaciones(""); setConComida(null); setErrorNombre(null); setErrorPauta(null);
     }
     abierta.current = visible;
   }, [visible]);
@@ -384,7 +447,7 @@ function HojaMedicamento({
       Avisos.aviso(m);
       return;
     }
-    alAgregar(nombre, dosis, c, d, indicaciones);
+    alAgregar(nombre, dosis, c, d, indicaciones, conComida);
     alCerrar();
   };
   return (
@@ -403,8 +466,17 @@ function HojaMedicamento({
         <Campo placeholder="Durante (días)" accessibilityLabel="Durante (días)" value={dias} onChangeText={(t) => { setDias(t); setErrorPauta(null); }} keyboardType="number-pad" estilo={{ flex: 1, marginLeft: 8 }} />
       </View>
       {errorPauta ? <Texto variante="chico" color={Colores.dangerRed} style={{ marginTop: 4 }}>{errorPauta}</Texto> : null}
+      <Texto variante="chico" tamano={12.5} style={{ marginTop: 12 }}>Con la comida</Texto>
+      <View style={estilos.chipsComida}>
+        {(Object.keys(TEXTO_COMIDA) as ConComida[]).map((k) => (
+          <Chip
+            key={k} texto={TEXTO_COMIDA[k]} tono={conComida === k ? "seleccionado" : "sinSeleccionar"}
+            onPress={() => setConComida(conComida === k ? null : k)}
+          />
+        ))}
+      </View>
       <Campo
-        multilinea placeholder="Indicaciones (con comida, en ayunas, vía...)" accessibilityLabel="Indicaciones" value={indicaciones}
+        multilinea placeholder="Otras indicaciones (vía, cómo darlo...)" accessibilityLabel="Indicaciones" value={indicaciones}
         onChangeText={setIndicaciones} autoCapitalize="sentences" numberOfLines={2} estilo={{ marginTop: 10 }}
       />
       <Boton titulo="Agregar a la receta" alto={50} estilo={{ marginTop: 18 }} onPress={guardar} />
@@ -483,6 +555,8 @@ function HojaVacuna({
 }
 
 const estilos = StyleSheet.create({
+  chipsComida: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  seguimiento: { marginTop: 10, padding: 12, borderRadius: 14, backgroundColor: Colores.white, borderWidth: 1, borderColor: Colores.dividerLight },
   fila: { flexDirection: "row", alignItems: "flex-start" },
   campo: { marginTop: 6 },
   lista: { backgroundColor: Colores.white, borderRadius: 18, padding: 14, marginTop: 10 },

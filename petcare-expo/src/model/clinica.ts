@@ -1,4 +1,4 @@
-import type { PrescripcionDto } from "../data/remoto/dtos";
+import type { ConComida, PrescripcionDto } from "../data/remoto/dtos";
 import { Fechas } from "../util/fechas";
 import { LocalDate, LocalDateTime } from "../util/tiempo";
 
@@ -48,8 +48,34 @@ export interface Prescripcion {
   duracionDias: number | null;
   indicaciones: string;
   inicio: LocalDate;
-  /** Cuándo se recetó; de ahí se cuentan las tomas. */
+  /** Cuándo se recetó. */
   creada: LocalDateTime | null;
+  /** Antes, durante o después de comer, o en ayunas; null si no importa. */
+  conComida: ConComida | null;
+  /** La primera dosis (la marca el dueño): de ahí se cuentan las tomas. Null = todavía no empezó. */
+  empezo: LocalDateTime | null;
+  /** El veterinario cortó el tratamiento: no hay tomas desde ahí. */
+  suspendida: LocalDateTime | null;
+  motivoSuspension: string;
+}
+
+/** Cómo se dice cada opción de la comida en la receta, en la tarjeta y en el aviso. */
+export const TEXTO_COMIDA: Record<ConComida, string> = {
+  antes: "Antes de comer",
+  durante: "Con la comida",
+  despues: "Después de comer",
+  ayunas: "En ayunas",
+};
+
+/** "2026-11-24T19:00:00" o "2026-11-24 19:00:00" (hora local) a fecha y hora; null si no se entiende. */
+function horaLocal(texto: string | null | undefined): LocalDateTime | null {
+  const m = texto ? /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(texto) : null;
+  if (!m) return null;
+  try {
+    return LocalDateTime.of(Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4]), Number(m[5]), 0);
+  } catch {
+    return null;
+  }
 }
 
 /** "250 mg, cada 8 hs, durante 7 días". */
@@ -75,6 +101,10 @@ export function crearPrescripcion(p: Partial<Prescripcion> & { id: string; masco
     indicaciones: p.indicaciones ?? "",
     inicio: p.inicio ?? LocalDate.now(),
     creada: p.creada ?? null,
+    conComida: p.conComida ?? null,
+    empezo: p.empezo ?? null,
+    suspendida: p.suspendida ?? null,
+    motivoSuspension: p.motivoSuspension ?? "",
   };
 }
 
@@ -90,5 +120,9 @@ export function prescripcionDeDto(d: PrescripcionDto): Prescripcion {
     indicaciones: d.indicaciones ?? "",
     inicio: Fechas.iso(d.inicio) ?? LocalDate.now(),
     creada: d.created_at ? Fechas.instante(d.created_at) : null,
+    conComida: d.con_comida ?? null,
+    empezo: horaLocal(d.empezo_at),
+    suspendida: d.suspendida_at ? Fechas.instante(d.suspendida_at) : null,
+    motivoSuspension: d.motivo_suspension ?? "",
   };
 }

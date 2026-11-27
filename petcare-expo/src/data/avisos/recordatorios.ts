@@ -54,7 +54,10 @@ export class VacunaProxima {
   ) {}
 }
 
-/** Una medicación en curso: toma cada [cadaHoras] desde [inicio] durante [dias]. */
+/**
+ * Una medicación en curso: toma cada [cadaHoras] desde [inicio] durante [dias] (o hasta [fin], si se suspendió).
+ * [dadas] son las tomas ya tildadas (claves "2026-11-24T08:00:00"): esas no avisan. [comida] va en el texto del aviso.
+ */
 export class Medicacion {
   constructor(
     readonly id: string,
@@ -64,8 +67,14 @@ export class Medicacion {
     readonly cadaHoras: number,
     readonly inicio: LocalDateTime,
     readonly dias: number,
+    readonly dadas: ReadonlySet<string> = new Set(),
+    readonly comida: string = "",
+    readonly fin: LocalDateTime | null = null,
   ) {}
 }
+
+/** Minutos después de la toma en los que se vuelve a avisar si todavía no se tildó. */
+export const REPETIR_AVISO_MINUTOS = [15, 30];
 
 /** Hora ("09:30" o "09:30:00", como LocalTime.parse) a una fecha y hora; null si no se entiende. */
 function inicio(fecha: LocalDate, hora: string): LocalDateTime | null {
@@ -166,23 +175,39 @@ function paraVacunas(
     .filter(despues(ahora));
 }
 
-/** Dueño: las tomas de los próximos dos días de cada medicación indicada por el veterinario. */
+/**
+ * Dueño: las tomas de los próximos dos días de cada medicación indicada por el veterinario. Cada toma sin tildar avisa
+ * a su hora y vuelve a avisar a los 15 y a los 30 minutos; al tildarla se reprograma todo y deja de insistir.
+ */
 function paraMedicacion(medicaciones: Medicacion[], ahora: LocalDateTime = LocalDateTime.now(), maximo: number = 48): Aviso[] {
+  const ultimoRepetir = REPETIR_AVISO_MINUTOS[REPETIR_AVISO_MINUTOS.length - 1];
   const todos = medicaciones.flatMap((m) => {
     if (m.cadaHoras <= 0) return [];
-    const fin = m.inicio.plusDays(m.dias);
+    let fin = m.inicio.plusDays(m.dias);
+    if (m.fin && m.fin.isBefore(fin)) fin = m.fin;
     const limite = ahora.plusHours(48);
-    const pasadas = Math.max(0, Math.trunc(segundosEntre(m.inicio, ahora) / 60));
     const paso = m.cadaHoras * 60;
+    // Desde la primera toma cuyos recordatorios todavía pueden sonar
+    const desde = ahora.minusMinutes(ultimoRepetir);
+    const pasadas = Math.max(0, Math.trunc(segundosEntre(m.inicio, desde) / 60));
     let t = m.inicio.plusMinutes(Math.trunc((pasadas + paso - 1) / paso) * paso);
-    if (!t.isAfter(ahora)) t = t.plusMinutes(paso);
-    const tomas: Aviso[] = [];
-    while (t.isBefore(fin) && t.isBefore(limite) && tomas.length < maximo) {
-      const detalle = m.medicamento + (m.dosis.trim() !== "" ? ` (${m.dosis})` : "");
-      tomas.push(new Aviso(`${m.id}-dosis-${t.toLocalDate().toString()}-${t.hour}-${t.minute}`, t, "Hora de la medicación", `${m.mascota}: ${detalle}`));
+    const detalle = m.medicamento + (m.dosis.trim() !== "" ? ` (${m.dosis})` : "") + (m.comida ? `. ${m.comida}` : "");
+    const avisos: Aviso[] = [];
+    while (t.isBefore(fin) && t.isBefore(limite) && avisos.length < maximo) {
+      const clave = t.toString();
+      if (!m.dadas.has(clave)) {
+        const base = `${m.id}-dosis-${t.toLocalDate().toString()}-${t.hour}-${t.minute}`;
+        if (t.isAfter(ahora)) avisos.push(new Aviso(base, t, "Hora de la medicación", `${m.mascota}: ${detalle}`));
+        for (const min of REPETIR_AVISO_MINUTOS) {
+          const otra = t.plusMinutes(min);
+          if (otra.isAfter(ahora)) {
+            avisos.push(new Aviso(`${base}-r${min}`, otra, "Todavía no tildaste la medicación", `${m.mascota}: ${detalle}. Tildala cuando se la des.`));
+          }
+        }
+      }
       t = t.plusMinutes(paso);
     }
-    return tomas;
+    return avisos;
   });
   return todos.sort((a, b) => a.momento.compareTo(b.momento)).slice(0, maximo);
 }

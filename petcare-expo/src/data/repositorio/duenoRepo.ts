@@ -6,10 +6,13 @@ import {
   AccesoDto, atiendeComoVeterinario, DuenoMascotaDto, HoraOcupadaDto, InvitacionCoduenoDto, Json, lugaresDe, MascotaDto,
   NotificacionDto, PerfilDto, PrescripcionDto, RegistroSaludDto, TomaDto, TurnoDto,
 } from "../remoto/dtos";
-import { claveDeToma, tomasDelDia as tomasDeLaReceta } from "../../model/tomas";
+import {
+  claveDeToma, cumplimiento, estadoTratamiento, inicioDeTomas, momentosDeTomas, tienePlan, tomasDelDia as tomasDeLaReceta,
+  type EstadoTratamiento,
+} from "../../model/tomas";
 import { Servicios } from "../servicios";
 import { CuentaActual } from "../cuentaActual";
-import { prescripcionDeDto, signosVacios } from "../../model/clinica";
+import { prescripcionDeDto, signosVacios, TEXTO_COMIDA } from "../../model/clinica";
 import type { Prescripcion, SignosVitales } from "../../model/clinica";
 import {
   EstadoAcceso, EstadoMascota, EstadosMascota, EventoMascota, Mascota, NotificacionDueno, PerfilDueno,
@@ -45,6 +48,18 @@ class EstadoDueno {
     /** Tomas de medicación ya tildadas. */
     public tomas: TomaDto[] = [],
   ) {}
+}
+
+/** Un medicamento con plan de tomas, para "Medicamentos activos". */
+export interface Tratamiento {
+  receta: Prescripcion;
+  mascota: Mascota;
+  estado: EstadoTratamiento;
+  /** Todas las tomas del plan (vacío si todavía no empezó). */
+  momentos: LocalDateTime[];
+  /** Claves de las tomas tildadas. */
+  dadas: Set<string>;
+  cumplimiento: { dadas: number; debidas: number; total: number };
 }
 
 /** Una toma de medicación del día, lista para tildar. */
@@ -361,24 +376,16 @@ class DuenoRepoImpl {
       vacunas.push({ id: r.id, mascota: nombres.get(r.mascota_id)!, vacuna: r.titulo, proxima, clase });
     }
     const medicacion = [];
-    for (const p of e.recetas) {
-      if (!nombres.has(p.mascota_id)) continue;
-      const cada = p.frecuencia_horas;
-      if (cada == null) continue;
-      const dias = p.duracion_dias;
-      if (dias == null) continue;
-      let inicio: LocalDateTime | null;
-      if (p.created_at != null) {
-        inicio = Fechas.instante(p.created_at);
-      } else {
-        const dia = fechaDeTexto(p.inicio);
-        inicio = dia ? dia.atTime(9, 0) : null;
-      }
-      if (!inicio) continue;
-      medicacion.push({
-        id: p.id, mascota: nombres.get(p.mascota_id)!, medicamento: p.medicamento, dosis: p.dosis ?? "",
-        cadaHoras: cada, inicio, dias,
-      });
+    for (const dto of e.recetas) {
+      if (!nombres.has(dto.mascota_id)) continue;
+      const receta = prescripcionDeDto(dto);
+      const inicio = inicioDeTomas(receta);
+      // Sin plan, sin empezar (el dueño todavía no dio la primera dosis) o suspendida: no avisa
+      if (!tienePlan(receta) || !inicio || receta.suspendida) continue;
+      medicacion.push(new Recordatorios.Medicacion(
+        receta.id, nombres.get(dto.mascota_id)!, receta.medicamento, receta.dosis, receta.frecuenciaHoras!, inicio,
+        receta.duracionDias!, this.tomasDadasDe(receta.id), receta.conComida ? TEXTO_COMIDA[receta.conComida] : "",
+      ));
     }
     const manuales = [];
     for (const r of RecordatoriosRepo.lista) {
@@ -766,6 +773,51 @@ class DuenoRepoImpl {
 
   // ---------- Tomas de medicación ----------
 
+  /** Claves ("2026-11-24T08:00:00") de las tomas ya tildadas de una receta. */
+  private tomasDadasDe(recetaId: string): Set<string> {
+    return new Set(this.estado.tomas.filter((t) => t.prescripcion_id === recetaId).map((t) => t.programada.replace(" ", "T").slice(0, 19)));
+  }
+
+  /**
+   * Medicamentos activos de las mascotas activas: los que tienen plan de tomas y están sin empezar o en curso, y los
+   * que terminaron o se suspendieron hace menos de [diasTerminados] días (para ver cómo terminó). Primero los en curso.
+   */
+  tratamientos(diasTerminados: number = 3, ahora: LocalDateTime = LocalDateTime.now()): Tratamiento[] {
+    const lista: Tratamiento[] = [];
+    for (const dto of this.estado.recetas) {
+      const mascota = this.mascotas.find((m) => m.id === dto.mascota_id && m.estado === "ACTIVA");
+      if (!mascota) continue;
+      const receta = prescripcionDeDto(dto);
+      if (!tienePlan(receta)) continue;
+      const estado = estadoTratamiento(receta, ahora);
+      const momentos = momentosDeTomas(receta);
+      if (estado === "terminado" || estado === "suspendido") {
+        const fin = receta.suspendida ?? momentos[momentos.length - 1];
+        if (!fin || fin.plusDays(diasTerminados).isBefore(ahora)) continue;
+      }
+      const dadas = this.tomasDadasDe(receta.id);
+      lista.push({ receta, mascota, estado, momentos, dadas, cumplimiento: cumplimiento(receta, dadas, ahora) });
+    }
+    const orden: Record<EstadoTratamiento, number> = { en_curso: 0, sin_empezar: 1, suspendido: 2, terminado: 3 };
+    return lista.sort((a, b) => orden[a.estado] - orden[b.estado] || a.receta.medicamento.localeCompare(b.receta.medicamento));
+  }
+
+  /** El dueño le dio la primera dosis a [hora]: desde ahí se arma el plan de tomas y empiezan los avisos. */
+  async empezarTratamiento(receta: Prescripcion, hora: LocalDateTime): Promise<void> {
+    const clave = claveDeToma(LocalDateTime.ofDate(hora.toLocalDate(), hora.hour, hora.minute, 0));
+    await Servicios.fuente.empezarTratamiento(receta.id, clave);
+    const e = this.estado;
+    const dto = e.recetas.find((x) => x.id === receta.id);
+    if (dto) dto.empezo_at = clave;
+    quitarSi(e.tomas, (t) => t.prescripcion_id === receta.id);
+    e.tomas.push({
+      id: `local-${receta.id}-${clave}`, prescripcion_id: receta.id, mascota_id: receta.mascotaId, programada: clave,
+      dada_at: new Date().toISOString(), registrada_por: CuentaActual.usuarioId,
+    });
+    await this.programarAvisos(e);
+    Servicios.avisarCambio();
+  }
+
   /** Las tomas de [dia] de las recetas en curso de las mascotas activas, por hora. */
   tomasDelDia(dia: LocalDate = LocalDate.now()): TomaDelDia[] {
     const dadas = new Set(this.estado.tomas.map((t) => `${t.prescripcion_id}|${t.programada.replace(" ", "T").slice(0, 19)}`));
@@ -782,20 +834,24 @@ class DuenoRepoImpl {
     return lista.sort((a, b) => a.momento.compareTo(b.momento) || a.mascota.nombre.localeCompare(b.mascota.nombre));
   }
 
-  /** Tilda (o destilda) una toma: se ve al instante y se guarda en segundo plano. */
-  marcarToma(toma: TomaDelDia, dada: boolean): void {
+  /**
+   * Tilda (o destilda) una toma: se ve al instante y se guarda en segundo plano. [dadaAt] es cuándo se dio de verdad
+   * (si se tilda tarde); si no, ahora. Se reprograman los avisos: una toma tildada deja de insistir.
+   */
+  marcarToma(toma: TomaDelDia, dada: boolean, dadaAt: Date | null = null): void {
     const e = this.estado;
     const esta = (t: TomaDto) => t.prescripcion_id === toma.receta.id && t.programada.replace(" ", "T").slice(0, 19) === toma.clave;
     if (dada && !e.tomas.some(esta)) {
       e.tomas.push({
         id: `local-${toma.receta.id}-${toma.clave}`, prescripcion_id: toma.receta.id, mascota_id: toma.mascota.id,
-        programada: toma.clave, dada_at: new Date().toISOString(), registrada_por: CuentaActual.usuarioId,
+        programada: toma.clave, dada_at: (dadaAt ?? new Date()).toISOString(), registrada_por: CuentaActual.usuarioId,
       });
     } else if (!dada) {
       quitarSi(e.tomas, esta);
     }
+    void this.programarAvisos(e).catch(() => undefined);
     void Servicios.escribir({ alFallar: this.recargarSiFalla }, async () => {
-      if (dada) await Servicios.fuente.registrarToma(toma.receta.id, toma.clave);
+      if (dada) await Servicios.fuente.registrarToma(toma.receta.id, toma.clave, dadaAt ? dadaAt.toISOString() : null);
       else await Servicios.fuente.quitarToma(toma.receta.id, toma.clave);
     });
   }

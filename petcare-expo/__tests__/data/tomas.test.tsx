@@ -5,7 +5,7 @@ import { ingresarComoDueno, limpiarServicios, prepararServicios } from "../sopor
 import { DuenoRepo } from "../../src/data/repositorio/duenoRepo";
 import { PrescripcionesRepo } from "../../src/data/repositorio/prescripcionesRepo";
 import { crearPrescripcion } from "../../src/model/clinica";
-import { claveDeToma, cumplimiento, momentosDeTomas, tomaDeClave } from "../../src/model/tomas";
+import { claveDeToma, cumplimiento, estadoTratamiento, momentosDeTomas, tomaDeClave, tomasPorDia } from "../../src/model/tomas";
 import { LocalDate, LocalDateTime, Reloj } from "../../src/util/tiempo";
 import { RemediosDeHoy } from "../../src/ui/dueno/RemediosDeHoy";
 
@@ -18,7 +18,9 @@ beforeEach(() => {
   fuente.mascotas.push(Escenario.mascota("m1", "Luna"));
   fuente.recetas.push({
     id: "r1", mascota_id: "m1", medicamento: "Amoxicilina", dosis: "250 mg", frecuencia_horas: 8, duracion_dias: 2,
-    inicio: "2026-11-24", created_at: new Date(2026, 10, 24, 8, 0, 0).toISOString(),
+    inicio: "2026-11-24", created_at: new Date(2026, 10, 24, 7, 30, 0).toISOString(),
+    // El dueño le dio la primera dosis a las 8: de ahí se cuentan las demás
+    empezo_at: "2026-11-24T08:00:00",
   });
 });
 afterEach(() => {
@@ -28,10 +30,33 @@ afterEach(() => {
 
 describe("modelo de tomas", () => {
   const receta = crearPrescripcion({
-    id: "r", mascotaId: "m", medicamento: "X", frecuenciaHoras: 8, duracionDias: 2, creada: LocalDateTime.of(2026, 11, 24, 8, 0, 37),
+    id: "r", mascotaId: "m", medicamento: "X", frecuenciaHoras: 8, duracionDias: 2,
+    creada: LocalDateTime.of(2026, 11, 24, 7, 10), empezo: LocalDateTime.of(2026, 11, 24, 8, 0, 37),
   });
 
-  it("una toma cada N horas desde que se recetó, durante los días indicados, sin segundos", () => {
+  it("sin la primera dosis no hay tomas, pero se sabe cuántas son", () => {
+    const sinEmpezar = { ...receta, empezo: null };
+    expect(momentosDeTomas(sinEmpezar)).toEqual([]);
+    expect(estadoTratamiento(sinEmpezar)).toBe("sin_empezar");
+    expect(cumplimiento(sinEmpezar, new Set())).toEqual({ dadas: 0, debidas: 0, total: 6 });
+  });
+
+  it("en curso, terminado o suspendido", () => {
+    expect(estadoTratamiento(receta, LocalDateTime.of(2026, 11, 25, 9, 0))).toBe("en_curso");
+    expect(estadoTratamiento(receta, LocalDateTime.of(2026, 11, 27, 9, 0))).toBe("terminado");
+    const suspendida = { ...receta, suspendida: LocalDateTime.of(2026, 11, 24, 20, 0) };
+    expect(estadoTratamiento(suspendida)).toBe("suspendido");
+    // Después del corte no hay más tomas
+    expect(momentosDeTomas(suspendida).map((t) => t.toString())).toEqual(["2026-11-24T08:00:00", "2026-11-24T16:00:00"]);
+  });
+
+  it("agrupa las tomas por día para la grilla", () => {
+    expect(tomasPorDia(momentosDeTomas(receta)).map((d) => [d.dia.toString(), d.tomas.length])).toEqual([
+      ["2026-11-24", 2], ["2026-11-25", 3], ["2026-11-26", 1],
+    ]);
+  });
+
+  it("una toma cada N horas desde la primera dosis, durante los días indicados, sin segundos", () => {
     expect(momentosDeTomas(receta).map((t) => t.toString())).toEqual([
       "2026-11-24T08:00:00", "2026-11-24T16:00:00", "2026-11-25T00:00:00",
       "2026-11-25T08:00:00", "2026-11-25T16:00:00", "2026-11-26T00:00:00",

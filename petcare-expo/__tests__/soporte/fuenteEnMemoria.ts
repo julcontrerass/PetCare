@@ -894,15 +894,39 @@ export class FuenteEnMemoria extends FuenteBase {
     return this.tomasGuardadas.filter((t) => mascotaId == null || t.mascota_id === mascotaId);
   }
 
-  override async registrarToma(prescripcionId: string, programada: string): Promise<void> {
-    this.llamadas.push(`registrarToma:${prescripcionId}:${programada}`);
+  override async registrarToma(prescripcionId: string, programada: string, dadaAt: string | null = null): Promise<void> {
+    this.llamadas.push(`registrarToma:${prescripcionId}:${programada}${dadaAt ? `@${dadaAt}` : ""}`);
     const receta = this.recetas.find((r) => r.id === prescripcionId);
     if (!receta) throw new Error("La receta no existe");
     if (this.tomasGuardadas.some((t) => t.prescripcion_id === prescripcionId && t.programada === programada)) return;
     this.tomasGuardadas.push({
       id: `toma-${this.tomasGuardadas.length + 1}`, prescripcion_id: prescripcionId, mascota_id: receta.mascota_id, programada,
-      dada_at: "2026-11-24T08:05:00+00:00", registrada_por: this.yo.id,
+      dada_at: dadaAt ?? "2026-11-24T08:05:00+00:00", registrada_por: this.yo.id,
     });
+  }
+
+  /** Como empezar_tratamiento: la primera dosis fija el inicio y queda tildada. */
+  override async empezarTratamiento(prescripcionId: string, hora: string): Promise<void> {
+    this.llamadas.push(`empezarTratamiento:${prescripcionId}:${hora}`);
+    const receta = this.recetas.find((r) => r.id === prescripcionId);
+    if (!receta) throw new Error("La receta no existe");
+    if (receta.frecuencia_horas == null || receta.duracion_dias == null) throw new Error("Esta receta no tiene frecuencia ni duración");
+    if (receta.suspendida_at) throw new Error("El veterinario suspendió este tratamiento");
+    if (this.tomasGuardadas.filter((t) => t.prescripcion_id === prescripcionId).length > 1) throw new Error("El tratamiento ya está en curso");
+    this.tomasGuardadas = this.tomasGuardadas.filter((t) => t.prescripcion_id !== prescripcionId);
+    receta.empezo_at = hora;
+    this.tomasGuardadas.push({
+      id: `toma-${this.tomasGuardadas.length + 1}`, prescripcion_id: prescripcionId, mascota_id: receta.mascota_id, programada: hora,
+      dada_at: hora, registrada_por: this.yo.id,
+    });
+  }
+
+  override async suspenderTratamiento(prescripcionId: string, motivo: string | null): Promise<void> {
+    this.llamadas.push(`suspenderTratamiento:${prescripcionId}`);
+    const receta = this.recetas.find((r) => r.id === prescripcionId);
+    if (!receta) throw new Error("La receta no existe");
+    receta.suspendida_at = new Date().toISOString();
+    receta.motivo_suspension = motivo;
   }
 
   override async quitarToma(prescripcionId: string, programada: string): Promise<void> {

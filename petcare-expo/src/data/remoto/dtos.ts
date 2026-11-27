@@ -684,7 +684,16 @@ export interface PrescripcionDto {
   indicaciones?: string | null;
   inicio: string;
   created_at?: string | null;
+  /** Antes, durante o después de comer, o en ayunas. */
+  con_comida?: ConComida | null;
+  /** Hora local de la primera dosis ("2026-11-24T19:00:00"); null si todavía no empezó. */
+  empezo_at?: string | null;
+  /** El veterinario cortó el tratamiento antes de tiempo. */
+  suspendida_at?: string | null;
+  motivo_suspension?: string | null;
 }
+
+export type ConComida = "antes" | "durante" | "despues" | "ayunas";
 
 export interface NuevaPrescripcionDto {
   id: string;
@@ -697,6 +706,7 @@ export interface NuevaPrescripcionDto {
   duracion_dias?: number | null;
   indicaciones?: string | null;
   inicio: string;
+  con_comida?: ConComida | null;
 }
 
 export interface NuevoArchivoDto {

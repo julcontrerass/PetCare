@@ -3,7 +3,7 @@ import { crearPrescripcion, prescripcionDeDto } from "../../model/clinica";
 import { claveDeToma, cumplimiento, tomaDeClave } from "../../model/tomas";
 import { LocalDate, LocalDateTime } from "../../util/tiempo";
 import { nuevoId } from "../../util/uuid";
-import type { NuevaPrescripcionDto } from "../remoto/dtos";
+import type { ConComida, NuevaPrescripcionDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
 import { CuentaActual } from "../cuentaActual";
 
@@ -46,6 +46,18 @@ class PrescripcionesRepoImpl {
     return c.total > 0 ? c : null;
   }
 
+  /** Claves de las tomas que el dueño tildó de [p]. */
+  dadasDe(p: Prescripcion): Set<string> {
+    return this.tomas.get(p.id) ?? new Set();
+  }
+
+  /** El veterinario corta el tratamiento: no hay más tomas ni avisos, y al dueño le llega el aviso. */
+  async suspender(p: Prescripcion, motivo: string): Promise<void> {
+    await Servicios.fuente.suspenderTratamiento(p.id, motivo.trim() || null);
+    await this.cargar(p.mascotaId);
+    Servicios.avisarCambio();
+  }
+
   /** Las recetas de la consulta (o las que se hicieron sin turno, desde la ficha del paciente). */
   deConsulta(pacienteId: string, turnoId: string | null): Prescripcion[] {
     // Las que no tienen fecha de creación (LocalDateTime.MIN en Kotlin) van primero
@@ -70,6 +82,7 @@ class PrescripcionesRepoImpl {
     frecuenciaHoras: number | null,
     duracionDias: number | null,
     indicaciones: string,
+    conComida: ConComida | null = null,
   ): Prescripcion {
     const p = crearPrescripcion({
       id: nuevoId(),
@@ -82,6 +95,7 @@ class PrescripcionesRepoImpl {
       indicaciones: indicaciones.trim(),
       inicio: LocalDate.now(),
       creada: LocalDateTime.now(),
+      conComida,
     });
     this.lista.push(p);
     void Servicios.escribir(
@@ -105,6 +119,7 @@ class PrescripcionesRepoImpl {
           duracion_dias: duracionDias,
           indicaciones: sinVacio(p.indicaciones),
           inicio: p.inicio.toString(),
+          con_comida: conComida,
         };
         await Servicios.fuente.crearPrescripcion(dto);
       },

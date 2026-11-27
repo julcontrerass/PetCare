@@ -168,7 +168,12 @@ export interface FuenteDatos {
   /** Tomas de medicación ya dadas de las mascotas que el usuario puede ver; con [mascotaId], solo de esa mascota. */
   tomas(mascotaId?: string | null): Promise<TomaDto[]>;
   /** Tilda una toma: [programada] es la hora a la que tocaba ("2026-11-24T08:00:00"). */
-  registrarToma(prescripcionId: string, programada: string): Promise<void>;
+  /** [dadaAt]: cuándo se dio de verdad (si se tilda tarde); si no, ahora. */
+  registrarToma(prescripcionId: string, programada: string, dadaAt?: string | null): Promise<void>;
+  /** El dueño marca la primera dosis (hora local "2026-11-24T19:00:00"): de ahí se arma el plan de tomas. */
+  empezarTratamiento(prescripcionId: string, hora: string): Promise<void>;
+  /** El veterinario corta el tratamiento antes de tiempo. */
+  suspenderTratamiento(prescripcionId: string, motivo: string | null): Promise<void>;
   quitarToma(prescripcionId: string, programada: string): Promise<void>;
   /** Guarda las alertas clínicas de la mascota (las pueden cambiar el dueño y los veterinarios con acceso). */
   guardarAlertas(mascotaId: string, alertas: string): Promise<void>;
@@ -309,7 +314,9 @@ export class FuenteBase implements FuenteDatos {
   async crearPrescripcion(_prescripcion: NuevaPrescripcionDto): Promise<void> {}
   async eliminarPrescripcion(_id: string): Promise<void> {}
   async tomas(_mascotaId?: string | null): Promise<TomaDto[]> { return []; }
-  async registrarToma(_prescripcionId: string, _programada: string): Promise<void> {}
+  async registrarToma(_prescripcionId: string, _programada: string, _dadaAt?: string | null): Promise<void> {}
+  async empezarTratamiento(_prescripcionId: string, _hora: string): Promise<void> {}
+  async suspenderTratamiento(_prescripcionId: string, _motivo: string | null): Promise<void> {}
   async quitarToma(_prescripcionId: string, _programada: string): Promise<void> {}
   async guardarAlertas(_mascotaId: string, _alertas: string): Promise<void> {}
   async archivosDe(_mascotaId: string): Promise<ArchivoDto[]> { return []; }

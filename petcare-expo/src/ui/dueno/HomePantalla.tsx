@@ -23,6 +23,7 @@ import { useSesionRequerida } from "../common/useSesionRequerida";
 import { FilaEvento, FotoVetEvento, iconoDeTipo, TituloSeccion } from "./ComponentesHome";
 import { InvitacionesCodueno } from "./InvitacionesCodueno";
 import { InvitacionesRecepcion } from "./InvitacionesRecepcion";
+import { MedicamentosActivos } from "./MedicamentosActivos";
 import { RemediosDeHoy } from "./RemediosDeHoy";
 import { NavDueno } from "./navegacionDueno";
 
@@ -136,6 +137,7 @@ export default function HomePantalla() {
       <TarjetaPrincipal />
 
       <RemediosDeHoy />
+      <MedicamentosActivos />
 
       <View style={estilos.accesos}>
         <Acceso icono="calendarioMas" color={Colores.primaryTeal} texto="Nuevo evento" alTocar={() => NavDueno.irANuevoEvento(LocalDate.now())} />

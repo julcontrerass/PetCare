@@ -555,14 +555,22 @@ export class SupabaseFuente implements FuenteDatos {
     return ok(await (mascotaId ? consulta.eq("mascota_id", mascotaId) : consulta)) as TomaDto[];
   }
 
-  async registrarToma(prescripcionId: string, programada: string): Promise<void> {
+  async registrarToma(prescripcionId: string, programada: string, dadaAt: string | null = null): Promise<void> {
     // mascota_id lo completa la base a partir de la receta; si ya estaba tildada no pasa nada
     vacio(
       await this.cliente.from("tomas_medicacion").upsert(
-        { prescripcion_id: prescripcionId, programada },
+        { prescripcion_id: prescripcionId, programada, ...(dadaAt ? { dada_at: dadaAt } : {}) },
         { onConflict: "prescripcion_id,programada", ignoreDuplicates: true },
       ),
     );
+  }
+
+  async empezarTratamiento(prescripcionId: string, hora: string): Promise<void> {
+    vacio(await this.cliente.rpc("empezar_tratamiento", { p_prescripcion: prescripcionId, p_hora: hora }));
+  }
+
+  async suspenderTratamiento(prescripcionId: string, motivo: string | null): Promise<void> {
+    vacio(await this.cliente.rpc("suspender_tratamiento", { p_prescripcion: prescripcionId, p_motivo: motivo }));
   }
 
   async quitarToma(prescripcionId: string, programada: string): Promise<void> {

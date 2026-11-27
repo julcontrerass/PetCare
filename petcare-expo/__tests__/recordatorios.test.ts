@@ -55,10 +55,40 @@ test("medicacion_avisaCadaTomaDeLosProximosDosDias", () => {
 
   const avisos = Recordatorios.paraMedicacion([m], ahora);
 
-  expect(avisos).toHaveLength(6);
+  // 6 tomas en dos días, cada una con su aviso y los que insisten a los 15 y a los 30 minutos
+  expect(avisos).toHaveLength(18);
   iguales(avisos[0].momento, LocalDateTime.of(2026, 10, 12, 16, 0));
-  iguales(avisos[1].momento, LocalDateTime.of(2026, 10, 13, 0, 0));
+  iguales(avisos[1].momento, LocalDateTime.of(2026, 10, 12, 16, 15));
+  iguales(avisos[2].momento, LocalDateTime.of(2026, 10, 12, 16, 30));
+  iguales(avisos[3].momento, LocalDateTime.of(2026, 10, 13, 0, 0));
   expect(avisos[0].mensaje.includes("Amoxicilina") && avisos[0].mensaje.includes("250 mg")).toBe(true);
+  expect(avisos[1].titulo).toBe("Todavía no tildaste la medicación");
+});
+
+test("medicacion_unaTomaTildadaNoAvisaNiInsiste", () => {
+  const inicio = ahora.minusHours(1);
+  const tildada = new Set([inicio.plusHours(8).toString()]);
+  const m = new Recordatorios.Medicacion("p1", "Rex", "Amoxicilina", "250 mg", 8, inicio, 1, tildada, "Después de comer");
+
+  const avisos = Recordatorios.paraMedicacion([m], ahora);
+
+  // Quedan las tomas de las 00 (sin tildar): la de las 16 ya se dio
+  expect(avisos.map((a) => a.momento.toString())).toEqual(["2026-10-13T00:00:00", "2026-10-13T00:15:00", "2026-10-13T00:30:00"]);
+  expect(avisos[0].mensaje).toContain("Después de comer");
+});
+
+test("medicacion_sigueInsistiendoSiLaTomaPasoHacePoco", () => {
+  // La toma era hace 10 minutos y no se tildó: todavía faltan los avisos de los 15 y los 30
+  const m = new Recordatorios.Medicacion("p1", "Rex", "Amoxicilina", "", 24, ahora.minusMinutes(10), 1);
+  const avisos = Recordatorios.paraMedicacion([m], ahora);
+  expect(avisos.map((a) => a.momento.toString())).toEqual([
+    ahora.plusMinutes(5).toString(), ahora.plusMinutes(20).toString(),
+  ]);
+});
+
+test("medicacion_suspendidaNoAvisaDespuesDelCorte", () => {
+  const m = new Recordatorios.Medicacion("p1", "Rex", "Amoxicilina", "", 8, ahora.minusHours(1), 3, new Set(), "", ahora.plusHours(1));
+  expect(Recordatorios.paraMedicacion([m], ahora)).toHaveLength(0);
 });
 
 test("medicacion_noPasaDeLosDiasIndicados", () => {
@@ -66,8 +96,8 @@ test("medicacion_noPasaDeLosDiasIndicados", () => {
 
   const avisos = Recordatorios.paraMedicacion([m], ahora);
 
-  // El tratamiento termina mañana a las 8: quedan las tomas de las 16 y las 00
-  expect(avisos).toHaveLength(2);
+  // El tratamiento termina mañana a las 8: quedan las tomas de las 16 y las 00 (con sus avisos que insisten)
+  expect(avisos).toHaveLength(6);
 });
 
 test("dueno_avisaUnDiaYDosHorasAntes", () => {
