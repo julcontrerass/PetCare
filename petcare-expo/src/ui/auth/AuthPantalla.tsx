@@ -55,10 +55,12 @@ function Enlace({ texto, alTocar, negrita, tamano = 14 }: { texto: string; alToc
 function BienvenidaVista({ alIngresar, alRegistrarse }: { alIngresar: () => void; alRegistrarse: () => void }) {
   // Las imágenes llevan el alto calculado: en la web `aspectRatio` junto con `width: "100%"` deja la imagen con su alto natural
   // Solo en formato teléfono: en escritorio el ingreso va directo al formulario (MarcoIngreso)
-  const { width: anchoVentana } = useWindowDimensions();
+  // En el teléfono el logo no pasa de la mitad del ancho y la foto se achica según el alto, así los botones entran
+  // siempre en la pantalla (no tiene scroll)
+  const { width: anchoVentana, height: altoVentana } = useWindowDimensions();
   const columna = Math.min(anchoVentana, 480);
-  const anchoLogo = Math.min(360, columna);
-  const anchoMascotas = columna - 48;
+  const anchoLogo = Math.round(Math.min(220, columna * 0.55));
+  const anchoMascotas = Math.round(Math.min(columna - 48, ((altoVentana * 0.3) * 1100) / 754));
   return (
     <PantallaBase fondo={Colores.white} margen={0} scroll={false} bordes={["top"]}>
       <View style={estilos.bienvenida}>

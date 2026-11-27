@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { LogBox, Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -16,6 +16,13 @@ import { Servicios } from "../../data/servicios";
 import { Avisos } from "./Avisos";
 import { AvisosHost } from "./AvisosHost";
 import { Colores } from "./tema";
+
+// En Expo Go (Android) expo-notifications avisa que no hay notificaciones push: la app solo usa avisos locales, que
+// funcionan igual, así que esos dos avisos no dicen nada útil. En una build de desarrollo no aparecen.
+LogBox.ignoreLogs([
+  "[expo-notifications] Push notifications (remote notifications) are unavailable in Expo Go",
+  "`expo-notifications` functionality is not fully supported in Expo Go",
+]);
 
 // Mantiene el splash hasta tener las fuentes. En la web no hay splash nativo: no se toca.
 if (Platform.OS !== "web") {
