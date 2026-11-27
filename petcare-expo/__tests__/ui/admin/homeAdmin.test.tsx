@@ -1,6 +1,6 @@
 jest.mock("@expo/vector-icons", () => require("../iconosFalsos"));
 import { Dimensions } from "react-native";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Escenario, type FuenteEnMemoria } from "../../soporte/fuenteEnMemoria";
 import { ingresarComo, limpiarServicios, prepararServicios } from "../../soporte/pruebaBase";
 import { HomeAdmin } from "../../../src/ui/admin/HomeAdmin";
@@ -349,6 +349,74 @@ describe("HomeAdmin: actividad y cuenta", () => {
   });
 });
 
+describe("HomeAdmin: veterinarias", () => {
+  /** Panda aprobada con un veterinario y una recepcionista; Gatitos en revisión y completa; Sur rechazada. */
+  function prepararClinicas() {
+    fuente.agregarClinica("cli-panda", "Panda", [["vet-act", ["titular", "veterinario"]], ["rec-1", ["recepcion"]]]);
+    fuente.clinicas.push({
+      id: "cli-gatitos", nombre: "Gatitos", direccion: "Av. Siempre Viva 742", telefono: null, creada_por: null,
+      revision: "pendiente", motivo_revision: null, cuit: "30123456789",
+      director: { nombre: "Ana Directora", dni: "20111222", matricula: "MP-77" },
+      habilitacion_comercial_path: "x/comercial.pdf", habilitacion_sanitaria_path: "x/sanitaria.pdf",
+    });
+    fuente.clinicas.push({
+      id: "cli-sur", nombre: "Veterinaria Sur", direccion: null, telefono: null, creada_por: null,
+      revision: "rechazada", motivo_revision: "No pudimos verificar que exista",
+    });
+  }
+
+  it("lista las veterinarias por estado, con su equipo y el motivo del rechazo", async () => {
+    prepararClinicas();
+    await prepararPanel();
+    await mostrarPanel();
+    await irA("Veterinarias");
+
+    expect(await screen.findByText("1 aprobadas · 1 en revisión")).toBeTruthy();
+    // Arranca en las que esperan la revisión
+    expect(screen.getByText("Gatitos")).toBeTruthy();
+    expect(screen.queryByText("Panda")).toBeNull();
+    expect(screen.getByText("30-12345678-9")).toBeTruthy();
+
+    await fireEvent.press(screen.getByText("Aprobadas (1)"));
+    expect(screen.getByText("Panda")).toBeTruthy();
+    expect(screen.getByText("1 veterinario · 2 personas en el equipo")).toBeTruthy();
+    expect(screen.getByText("Dar de baja")).toBeTruthy();
+
+    await fireEvent.press(screen.getByText("Rechazadas (1)"));
+    expect(screen.getByText("Motivo: No pudimos verificar que exista")).toBeTruthy();
+
+    await fireEvent.press(screen.getByText("Todas (3)"));
+    await fireEvent.changeText(screen.getByPlaceholderText("Buscar por nombre, CUIT, dirección o titular..."), "siempre viva");
+    expect(screen.getByText("Gatitos")).toBeTruthy();
+    expect(screen.queryByText("Veterinaria Sur")).toBeNull();
+  });
+
+  it("aprueba una en revisión y da de baja una aprobada con motivo", async () => {
+    prepararClinicas();
+    await prepararPanel();
+    await mostrarPanel();
+    await irA("Veterinarias");
+    await screen.findByText("Gatitos");
+
+    await fireEvent.press(screen.getByRole("button", { name: "Aprobar" }));
+    await waitFor(() => expect(fuente.llamadas).toContain("revisarClinica:cli-gatitos=true"));
+    await waitFor(() => expect(screen.getByText("Aprobadas (2)")).toBeTruthy());
+
+    await fireEvent.press(screen.getByText("Aprobadas (2)"));
+    await fireEvent.press(within(screen.getByLabelText("Veterinaria Gatitos")).getByText("Dar de baja"));
+    expect(screen.getByText("Dar de baja Gatitos")).toBeTruthy();
+    expect(fuente.llamadas).not.toContain("revisarClinica:cli-gatitos=false");
+  });
+
+  it("la pestaña lleva el contador de las que esperan revisión", async () => {
+    prepararClinicas();
+    await prepararPanel({ conPendiente: false });
+    await mostrarPanel();
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Veterinarias" })).toBeTruthy());
+    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+  });
+});
+
 describe("HomeAdmin: sin sesión", () => {
   it("vuelve al ingreso", async () => {
     fijarRuta();
@@ -381,5 +449,21 @@ describe("HomeAdmin: pantalla ancha", () => {
     expect(screen.getByText("Dra. Activa")).toBeTruthy();
     await fireEvent.press(screen.getByText("Dar de alta"));
     await waitFor(() => expect(fuente.llamadas).toContain(`revisionVet:${VET_PENDIENTE}=activo`));
+  });
+
+  it("el menú lateral tiene Veterinarias y Cerrar sesión (con confirmación)", async () => {
+    Dimensions.set({ window: { ...ventana, width: 1280, height: 800 } });
+    await prepararPanel();
+    await mostrarPanel();
+
+    await fireEvent.press(screen.getByRole("link", { name: "Veterinarias" }));
+    expect(await screen.findByText("Sin veterinarias acá")).toBeTruthy();
+
+    await fireEvent.press(screen.getByText("Cerrar sesión"));
+    expect(Avisos.estado.carteles[0].titulo).toBe("¿Cerrar sesión?");
+    await act(async () => {
+      Avisos.cerrarCartel(Avisos.estado.carteles[0].id, true);
+    });
+    await waitFor(() => expect(Sesion.activa).toBe(false));
   });
 });

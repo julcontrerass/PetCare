@@ -9,7 +9,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -346,6 +346,10 @@ export class SupabaseFuente implements FuenteDatos {
 
   async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> {
     return ok(await this.cliente.rpc("clinicas_para_revisar")) as ClinicaParaRevisarDto[];
+  }
+
+  async clinicasAdmin(): Promise<ClinicaAdminDto[]> {
+    return ok(await this.cliente.rpc("clinicas_admin")) as ClinicaAdminDto[];
   }
 
   async revisarClinica(clinicaId: string, aprobar: boolean, motivo: string | null): Promise<void> {

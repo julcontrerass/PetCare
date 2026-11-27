@@ -7,7 +7,7 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import type { ClinicaParaRevisarDto } from "../../data/remoto/dtos";
+import type { ClinicaAdminDto, ClinicaParaRevisarDto } from "../../data/remoto/dtos";
 import { Servicios } from "../../data/servicios";
 import { Errores } from "../../util/errores";
 import { LocalDate } from "../../util/tiempo";
@@ -46,25 +46,55 @@ function BotonDocumento({ titulo, ruta }: { titulo: string; ruta: string | null 
   );
 }
 
-function FilaClinica({ clinica: c, alAprobar, alRechazar, ocupada }: {
-  clinica: ClinicaParaRevisarDto; alAprobar: () => void; alRechazar: () => void; ocupada: boolean;
+/** Se puede aprobar solo con todo cargado (lo mismo que pide revisar_clinica). */
+function clinicaCompleta(c: ClinicaParaRevisarDto): boolean {
+  return !!(c.cuit && c.director_matricula && c.habilitacion_comercial_path && c.habilitacion_sanitaria_path);
+}
+
+function etiquetaDeEstado(c: ClinicaParaRevisarDto | ClinicaAdminDto): { texto: string; tono: "aviso" | "ok" | "peligro" } {
+  const revision = "revision" in c ? c.revision : "pendiente";
+  if (revision === "aprobada") return { texto: "Aprobada", tono: "ok" };
+  if (revision === "rechazada") return { texto: "Rechazada", tono: "peligro" };
+  return { texto: `Registrada ${AdminUi.hace(LocalDate.parse(c.created_at.slice(0, 10))).toLowerCase()}`, tono: "aviso" };
+}
+
+function textoEquipo(c: ClinicaAdminDto): string {
+  const vets = c.veterinarios === 1 ? "1 veterinario" : `${c.veterinarios} veterinarios`;
+  return c.equipo === 1 ? `${vets} · 1 persona en el equipo` : `${vets} · ${c.equipo} personas en el equipo`;
+}
+
+/**
+ * Tarjeta de una veterinaria con lo que el administrador verifica. Sin [alAprobar] o sin [alRechazar] no dibuja ese
+ * botón; [textoRechazar] cambia el del rechazo (p. ej. "Dar de baja" para una ya aprobada).
+ */
+export function TarjetaClinica({ clinica: c, alAprobar, alRechazar, textoRechazar = "Rechazar", ocupada }: {
+  clinica: ClinicaParaRevisarDto | ClinicaAdminDto; alAprobar?: () => void; alRechazar?: () => void; textoRechazar?: string; ocupada: boolean;
 }) {
+  const estado = etiquetaDeEstado(c);
+  const admin = "revision" in c ? c : null;
   const titular = [c.titular_nombre, c.titular_dni ? `DNI ${c.titular_dni}` : null].filter(Boolean).join(" · ");
   const contacto = [c.titular_email, c.titular_telefono].filter(Boolean).join(" · ");
-  const completa = !!(c.cuit && c.director_matricula && c.habilitacion_comercial_path && c.habilitacion_sanitaria_path);
+  const completa = clinicaCompleta(c);
+  const pendiente = !admin || admin.revision === "pendiente";
   return (
-    <Tarjeta relleno={14} estilo={estilos.tarjeta} accessibilityLabel={`Veterinaria ${c.nombre} para revisar`}>
+    <Tarjeta relleno={14} estilo={estilos.tarjeta} accessibilityLabel={pendiente ? `Veterinaria ${c.nombre} para revisar` : `Veterinaria ${c.nombre}`}>
       <View style={estilos.fila}>
         <LogoVeterinaria logoPath={c.logo_path} nombre={c.nombre} tamano={52} />
         <View style={estilos.textos}>
           <Texto variante="titulo" tamano={15.5} numberOfLines={1}>{c.nombre}</Texto>
           <Texto variante="subtitulo" tamano={13}>{[c.direccion, c.telefono].filter(Boolean).join(" · ") || "Sin dirección ni teléfono"}</Texto>
-          <EtiquetaAdmin
-            texto={`Registrada ${AdminUi.hace(LocalDate.parse(c.created_at.slice(0, 10))).toLowerCase()}`}
-            tono="aviso" estilo={{ marginTop: 6, alignSelf: "flex-start" }}
-          />
+          <EtiquetaAdmin texto={estado.texto} tono={estado.tono} estilo={{ marginTop: 6, alignSelf: "flex-start" }} />
         </View>
       </View>
+      {admin?.revision === "rechazada" && admin.motivo_revision ? (
+        <Texto variante="chico" tamano={12.5} color={Colores.dangerRed} style={{ marginTop: 10 }}>{`Motivo: ${admin.motivo_revision}`}</Texto>
+      ) : null}
+      {admin && admin.revision === "aprobada" ? (
+        <View style={estilos.bloque}>
+          <Texto variante="chico" tamano={12}>Equipo</Texto>
+          <Texto variante="cuerpo" tamano={14}>{textoEquipo(admin)}</Texto>
+        </View>
+      ) : null}
       <View style={estilos.bloque}>
         <Texto variante="chico" tamano={12}>CUIT</Texto>
         <Texto variante="cuerpo" tamano={14} selectable>{c.cuit ? cuitLegible(c.cuit) : "Sin cargar"}</Texto>
@@ -96,21 +126,28 @@ function FilaClinica({ clinica: c, alAprobar, alRechazar, ocupada }: {
         <Texto variante="cuerpo" tamano={14}>{titular || "Cuenta sin datos"}</Texto>
         {contacto ? <Texto variante="chico" tamano={12.5}>{contacto}</Texto> : null}
       </View>
-      {completa ? null : (
+      {completa || !pendiente ? null : (
         <Texto variante="chico" tamano={12.5} color={Colores.accentOrangeDark} style={{ marginTop: 10 }}>
           Falta documentación: se carga cuando el titular ingresa a la app. Hasta entonces no se puede aprobar.
         </Texto>
       )}
-      <View style={estilos.botones}>
-        <Boton titulo="Rechazar" variante="secundario" alto={44} estilo={{ flex: 1 }} deshabilitado={ocupada} onPress={alRechazar} />
-        <Boton titulo="Aprobar" alto={44} estilo={{ flex: 1 }} cargando={ocupada} deshabilitado={!completa} onPress={alAprobar} />
-      </View>
+      {alRechazar || alAprobar ? (
+        <View style={estilos.botones}>
+          {alRechazar ? (
+            <Boton titulo={textoRechazar} variante="secundario" alto={44} estilo={{ flex: 1 }} deshabilitado={ocupada} cargando={ocupada && !alAprobar} onPress={alRechazar} />
+          ) : null}
+          {alAprobar ? <Boton titulo="Aprobar" alto={44} estilo={{ flex: 1 }} cargando={ocupada} deshabilitado={!completa} onPress={alAprobar} /> : null}
+        </View>
+      ) : null}
     </Tarjeta>
   );
 }
 
-/** [encabezado] dibuja el título de la sección como las demás del panel (solo si hay algo para revisar). */
-export function RevisionClinicas({ encabezado }: { encabezado: (cantidad: number) => ReactNode }) {
+/**
+ * [encabezado] dibuja el título de la sección como las demás del panel (solo si hay algo para revisar); [alRevisar]
+ * avisa que se aprobó o rechazó una (para actualizar la sección Veterinarias).
+ */
+export function RevisionClinicas({ encabezado, alRevisar }: { encabezado: (cantidad: number) => ReactNode; alRevisar?: () => void }) {
   const [clinicas, setClinicas] = useState<ClinicaParaRevisarDto[]>([]);
   const [ocupada, setOcupada] = useState<string | null>(null);
   const [rechazar, setRechazar] = useState<ClinicaParaRevisarDto | null>(null);
@@ -137,6 +174,7 @@ export function RevisionClinicas({ encabezado }: { encabezado: (cantidad: number
       await Servicios.fuente.revisarClinica(c.id, aprobar, motivo);
       Avisos.mostrar(aprobar ? `${c.nombre} ya está dada de alta` : `Rechazaste ${c.nombre}`, aprobar ? "exito" : "info");
       setClinicas((lista) => lista.filter((x) => x.id !== c.id));
+      alRevisar?.();
     } catch (e) {
       Avisos.error(Errores.mensaje(e));
     } finally {
@@ -149,7 +187,7 @@ export function RevisionClinicas({ encabezado }: { encabezado: (cantidad: number
     <View>
       {encabezado(clinicas.length)}
       {clinicas.map((c) => (
-        <FilaClinica
+        <TarjetaClinica
           key={c.id} clinica={c} ocupada={ocupada === c.id}
           alAprobar={() => void revisar(c, true, null)} alRechazar={() => setRechazar(c)}
         />

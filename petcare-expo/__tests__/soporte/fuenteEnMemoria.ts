@@ -5,7 +5,7 @@ import type {
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
   RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion,
+  AgendaManejadaDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion,
   EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
@@ -533,8 +533,13 @@ export class FuenteEnMemoria extends FuenteBase {
 
   override async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> {
     if (this.yo.rol !== "admin") return [];
+    const pendientes = new Set(this.clinicas.filter((c) => c.revision === "pendiente").map((c) => c.id));
+    return this.datosDeRevision().filter((c) => pendientes.has(c.id));
+  }
+
+  private datosDeRevision(): ClinicaParaRevisarDto[] {
     const todos = [...this.perfiles, this.yo];
-    return this.clinicas.filter((c) => c.revision === "pendiente").map((c) => {
+    return this.clinicas.map((c) => {
       const t = todos.find((p) => p.id === c.creada_por);
       return {
         id: c.id, nombre: c.nombre, direccion: c.direccion, telefono: c.telefono, created_at: "2026-11-26T12:00:00Z",
@@ -542,6 +547,19 @@ export class FuenteEnMemoria extends FuenteBase {
         cuit: c.cuit ?? null, director_nombre: c.director?.nombre ?? null, director_dni: c.director?.dni ?? null,
         director_matricula: c.director?.matricula ?? null, director_en_petcare: c.director_id != null,
         habilitacion_comercial_path: c.habilitacion_comercial_path ?? null, habilitacion_sanitaria_path: c.habilitacion_sanitaria_path ?? null,
+      };
+    });
+  }
+
+  /** Como clinicas_admin: todas, con el estado y cuánta gente tienen. */
+  override async clinicasAdmin(): Promise<ClinicaAdminDto[]> {
+    if (this.yo.rol !== "admin") return [];
+    const filas = new Map(this.datosDeRevision().map((c) => [c.id, c]));
+    return this.clinicas.map((c) => {
+      const activos = this.miembros.filter((m) => m.clinica_id === c.id && m.estado === "activo");
+      return {
+        ...filas.get(c.id)!, revision: c.revision, motivo_revision: c.motivo_revision,
+        veterinarios: activos.filter((m) => m.roles.includes("veterinario")).length, equipo: activos.length,
       };
     });
   }

@@ -2,7 +2,7 @@
  * Migrado de ui/admin/HomeAdminActivity.kt + layout activity_home_admin.
  *
  * Panel del administrador: resumen general, revisión de altas de veterinarios, listado de dueños con sus
- * mascotas y registro de actividad. Desde acá se da de alta, rechaza, suspende o reactiva cuentas.
+ * mascotas, las veterinarias (en revisión, aprobadas o rechazadas) y el registro de actividad. Desde acá se da de alta, rechaza, suspende o reactiva cuentas.
  * En pantallas anchas (>= 900 dp, la web de escritorio) las listas se ven en dos columnas.
  */
 import { useCallback, useRef, useState, type ReactNode } from "react";
@@ -16,8 +16,6 @@ import { AdminRepo, type DuenoAdminItem, type VetAdminItem } from "../../data/re
 import { Servicios } from "../../data/servicios";
 import { Avisos } from "../common/Avisos";
 import { BotonIcono } from "../common/BotonIcono";
-import { Campo } from "../common/Campo";
-import { Chip } from "../common/Chip";
 import { EstadoVacio } from "../common/EstadoVacio";
 import { Icono, type NombreIcono } from "../common/Icono";
 import { Insignia } from "../common/Insignia";
@@ -34,14 +32,16 @@ import { AdminUi } from "./AdminUi";
 import { DialogoCredencial } from "./DialogoCredencial";
 import { DialogoMotivo, type PedidoMotivo } from "./DialogoMotivo";
 import { FilaActividad, FilaDueno, FilaPendiente, FilaVet } from "./FilasAdmin";
-import { HojaCuentaAdmin } from "./HojaCuentaAdmin";
+import { cerrarSesionConfirmando, HojaCuentaAdmin } from "./HojaCuentaAdmin";
+import { BuscadorAdmin as Buscador, FiltrosAdmin as Filtros } from "./FiltrosAdmin";
+import { PanelVeterinarias, useClinicasAdmin } from "./PanelVeterinarias";
 import { HojaDuenoAdmin } from "./HojaDuenoAdmin";
 import { HojaVetAdmin } from "./HojaVetAdmin";
 import { imagenEnMemoria, type ImagenEnMemoria } from "./credencial";
 import { RevisionClinicas } from "./RevisionClinicas";
 import { RevisionEspecialidades } from "./RevisionEspecialidades";
 
-type Panel = "inicio" | "vets" | "duenos" | "actividad";
+type Panel = "inicio" | "vets" | "clinicas" | "duenos" | "actividad";
 
 /** A partir de este ancho (dp) las listas pasan a dos columnas. */
 const ANCHO_DOS_COLUMNAS = 900;
@@ -99,6 +99,8 @@ export function HomeAdmin() {
   const [motivo, setMotivo] = useState<MotivoPendiente | null>(null);
   const [credencial, setCredencial] = useState<{ nombre: string; matricula: string; imagen: ImagenEnMemoria } | null>(null);
   const [cargandoCredencial, setCargandoCredencial] = useState(false);
+
+  const { clinicas, recargar: recargarClinicas } = useClinicasAdmin();
 
   const panelRef = useRef(panel);
   panelRef.current = panel;
@@ -278,6 +280,8 @@ export function HomeAdmin() {
   // ---------- Datos derivados ----------
 
   const pendientes = AdminRepo.pendientesRevisionCount();
+  const clinicasPendientes = clinicas.filter((c) => c.revision === "pendiente").length;
+  const insigniaDe = (p: Panel) => (p === "vets" ? pendientes : p === "clinicas" ? clinicasPendientes : 0);
   const vets = AdminRepo.listaVeterinarios;
   const duenos = AdminRepo.listaDuenos;
 
@@ -363,6 +367,7 @@ export function HomeAdmin() {
 
       {/* Veterinarias que registró alguien que no es veterinario: solo aparece si hay alguna */}
       <RevisionClinicas
+        alRevisar={() => void recargarClinicas()}
         encabezado={(n) => (
           <CabeceraSeccion titulo={n === 1 ? "Veterinaria para revisar" : `${n} veterinarias para revisar`} accion="" visible={false} alAccion={() => {}} />
         )}
@@ -508,6 +513,16 @@ export function HomeAdmin() {
     </View>
   );
 
+  const panelClinicas = (
+    <PanelVeterinarias
+      clinicas={clinicas}
+      recargar={recargarClinicas}
+      columnas={columnas}
+      envolver={envolver}
+      estiloPanel={estilos.panel}
+    />
+  );
+
   const movimientos = AdminRepo.actividad;
   const panelActividad = (
     <View style={estilos.panel}>
@@ -542,10 +557,11 @@ export function HomeAdmin() {
         texto: item.titulo,
         icono: item.icono,
         activo: panel === item.panel,
-        insignia: item.panel === "vets" ? pendientes : 0,
+        insignia: insigniaDe(item.panel),
         alTocar: () => setPanel(item.panel),
       }))}
       otras={[{ clave: "cuenta", texto: "Mi cuenta", icono: "persona", alTocar: () => setCuentaAbierta(true) }]}
+      alCerrarSesion={cerrarSesionConfirmando}
     />
   );
 
@@ -554,9 +570,9 @@ export function HomeAdmin() {
     <PantallaBase scroll={false} margen={0} anchoMaximo={ANCHO_PANEL} bordes={["top"]}>
       <View style={estilos.raiz}>
         <View style={estilos.raiz}>
-          {panel === "inicio" ? inicio : panel === "vets" ? panelVets : panel === "duenos" ? panelDuenos : panelActividad}
+          {panel === "inicio" ? inicio : panel === "vets" ? panelVets : panel === "clinicas" ? panelClinicas : panel === "duenos" ? panelDuenos : panelActividad}
         </View>
-        {escritorio ? null : <BarraNavegacion panel={panel} alElegir={setPanel} pendientes={pendientes} />}
+        {escritorio ? null : <BarraNavegacion panel={panel} alElegir={setPanel} insigniaDe={insigniaDe} />}
       </View>
 
       <HojaVetAdmin
@@ -656,58 +672,16 @@ function Estadistica({ icono, fondo, color, valor, etiqueta, onPress, ancha }: E
   );
 }
 
-function Buscador({ placeholder, valor, alCambiar }: { placeholder: string; valor: string; alCambiar: (t: string) => void }) {
-  return (
-    <Campo
-      forma="pildora"
-      icono="buscar"
-      placeholder={placeholder}
-      value={valor}
-      onChangeText={alCambiar}
-      returnKeyType="search"
-      autoCorrect={false}
-      estilo={estilos.buscador}
-    />
-  );
-}
-
-interface FiltrosProps {
-  opciones: { estado: string | null; texto: string }[];
-  elegido: string | null;
-  alElegir: (estado: string | null) => void;
-  cantidad: (estado: string | null) => number;
-}
-
-/** Fila de chips de filtro por estado, cada uno con su cantidad ("Activos (3)"). */
-function Filtros({ opciones, elegido, alElegir, cantidad }: FiltrosProps) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={estilos.filtros}
-      contentContainerStyle={estilos.filtrosContenido}
-    >
-      {opciones.map((o) => (
-        <Chip
-          key={o.estado ?? "todos"}
-          texto={`${o.texto} (${cantidad(o.estado)})`}
-          tono={elegido === o.estado ? "seleccionado" : "sinSeleccionar"}
-          onPress={() => alElegir(o.estado)}
-        />
-      ))}
-    </ScrollView>
-  );
-}
-
 const ITEMS_NAVEGACION: { panel: Panel; titulo: string; icono: NombreIcono }[] = [
   { panel: "inicio", titulo: "Inicio", icono: "inicio" },
   { panel: "vets", titulo: "Veterinarios", icono: "botiquin" },
+  { panel: "clinicas", titulo: "Veterinarias", icono: "sede" },
   { panel: "duenos", titulo: "Dueños", icono: "persona" },
   { panel: "actividad", titulo: "Actividad", icono: "historial" },
 ];
 
-/** Barra inferior con las cuatro secciones (view_admin_bottom_nav); la de veterinarios lleva el contador de altas por revisar. */
-function BarraNavegacion({ panel, alElegir, pendientes }: { panel: Panel; alElegir: (p: Panel) => void; pendientes: number }) {
+/** Barra inferior con las secciones (view_admin_bottom_nav); veterinarios y veterinarias llevan el contador de lo que hay por revisar. */
+function BarraNavegacion({ panel, alElegir, insigniaDe }: { panel: Panel; alElegir: (p: Panel) => void; insigniaDe: (p: Panel) => number }) {
   const margenes = useMargenes();
   return (
     <View style={[estilos.barra, { paddingBottom: margenes.bottom }]}>
@@ -716,7 +690,7 @@ function BarraNavegacion({ panel, alElegir, pendientes }: { panel: Panel; alEleg
           key={item.panel}
           item={item}
           activo={panel === item.panel}
-          insignia={item.panel === "vets" ? pendientes : 0}
+          insignia={insigniaDe(item.panel)}
           onPress={() => alElegir(item.panel)}
         />
       ))}
@@ -776,9 +750,6 @@ const estilos = StyleSheet.create({
   dosColumnasInicio: { flexDirection: "row", gap: 24, alignItems: "flex-start" },
   columnaInicio: { flex: 1, minWidth: 0 },
   panel: { flex: 1, paddingHorizontal: MARGEN, paddingTop: MARGEN },
-  buscador: { marginTop: 14 },
-  filtros: { flexGrow: 0, marginTop: 10 },
-  filtrosContenido: { gap: 8, paddingVertical: 2 },
   lista: { paddingTop: 12, paddingBottom: 16 },
   columnas: { gap: SEPARACION },
   vacio: { marginTop: 12 },

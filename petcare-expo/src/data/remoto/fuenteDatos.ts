@@ -4,7 +4,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, TipoHabilitacion,
+  AgendaManejadaDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, TipoHabilitacion,
   EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 
@@ -95,6 +95,8 @@ export interface FuenteDatos {
   crearCuentaMiembro(datos: NuevaCuentaMiembroDto): Promise<CuentaMiembroCreadaDto>;
   /** Veterinarias que esperan la revisión (solo el administrador). */
   clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]>;
+  /** Todas las veterinarias, en cualquier estado (solo el administrador). */
+  clinicasAdmin(): Promise<ClinicaAdminDto[]>;
   /** El administrador aprueba o rechaza (con motivo) una veterinaria. */
   revisarClinica(clinicaId: string, aprobar: boolean, motivo: string | null): Promise<void>;
   // ---------- Títulos de especialidades ----------
@@ -265,6 +267,7 @@ export class FuenteBase implements FuenteDatos {
     throw new Error("Operación no disponible: crearCuentaMiembro");
   }
   async clinicasParaRevisar(): Promise<ClinicaParaRevisarDto[]> { return []; }
+  async clinicasAdmin(): Promise<ClinicaAdminDto[]> { return []; }
   async revisarClinica(_clinicaId: string, _aprobar: boolean, _motivo: string | null): Promise<void> {}
   async cambiarLogoClinica(_clinicaId: string, _logoPath: string | null): Promise<void> {}
   async misEspecialidades(): Promise<EspecialidadVetDto[]> { return []; }

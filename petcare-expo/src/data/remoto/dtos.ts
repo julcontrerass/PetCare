@@ -319,6 +319,17 @@ export interface ClinicaParaRevisarDto {
   habilitacion_sanitaria_path?: string | null;
 }
 
+/** Cualquier veterinaria, en la sección Veterinarias del administrador (rpc clinicas_admin). */
+export interface ClinicaAdminDto extends ClinicaParaRevisarDto {
+  revision: RevisionClinica;
+  motivo_revision?: string | null;
+  revisada_at?: string | null;
+  /** Veterinarios activos en el equipo. */
+  veterinarios: number;
+  /** Personas activas en el equipo (todos los roles). */
+  equipo: number;
+}
+
 /** Una persona del equipo de una veterinaria (rpc equipo_clinica). */
 export interface MiembroClinicaDto {
   miembro_id: string;
