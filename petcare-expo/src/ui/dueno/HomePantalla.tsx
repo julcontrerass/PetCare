@@ -23,6 +23,7 @@ import { useSesionRequerida } from "../common/useSesionRequerida";
 import { FilaEvento, FotoVetEvento, iconoDeTipo, TituloSeccion } from "./ComponentesHome";
 import { InvitacionesCodueno } from "./InvitacionesCodueno";
 import { InvitacionesRecepcion } from "./InvitacionesRecepcion";
+import { AhoraMedicacion } from "./AhoraMedicacion";
 import { MedicamentosActivos } from "./MedicamentosActivos";
 import { RemediosDeHoy } from "./RemediosDeHoy";
 import { NavDueno } from "./navegacionDueno";
@@ -133,6 +134,8 @@ export default function HomePantalla() {
 
       <InvitacionesCodueno />
       <InvitacionesRecepcion />
+
+      <AhoraMedicacion />
 
       <TarjetaPrincipal />
 

@@ -39,7 +39,7 @@ function textoQueda(t: Tratamiento, ahora: LocalDateTime): string | null {
 }
 
 /** Cuándo le dio la primera dosis: ahora o más temprano (hoy). */
-function HojaPrimeraDosis({ t, alCerrar }: { t: Tratamiento; alCerrar: () => void }) {
+export function HojaPrimeraDosis({ t, alCerrar }: { t: Tratamiento; alCerrar: () => void }) {
   const [eligiendo, setEligiendo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const empezar = async (hora: LocalDateTime) => {
@@ -82,7 +82,7 @@ function HojaPrimeraDosis({ t, alCerrar }: { t: Tratamiento; alCerrar: () => voi
 }
 
 /** Una toma atrasada: ¿se la dio a horario (y se olvidó de tildar) o recién ahora? */
-function HojaTomaAtrasada({ t, momento, alCerrar }: { t: Tratamiento; momento: LocalDateTime; alCerrar: () => void }) {
+export function HojaTomaAtrasada({ t, momento, alCerrar }: { t: Tratamiento; momento: LocalDateTime; alCerrar: () => void }) {
   const marcar = (cuando: Date) => {
     DuenoRepo.marcarToma({ clave: claveDeToma(momento), receta: t.receta, mascota: t.mascota, momento, dada: false }, true, cuando);
     alCerrar();
