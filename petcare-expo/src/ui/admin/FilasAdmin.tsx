@@ -1,11 +1,12 @@
 /* Migrado de ui/admin/AdminAdapters.kt (filas de las listas) y de AdminUi.vistaActividad. */
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { AdminRepo, type ActividadAdmin, type DuenoAdminItem, type VetAdminItem } from "../../data/repositorio/adminRepo";
 import { Boton } from "../common/Boton";
 import { Icono } from "../common/Icono";
 import { Tarjeta } from "../common/Tarjeta";
 import { Texto } from "../common/Texto";
 import { Colores } from "../common/tema";
+import { cursorTocable, estiloFoco, useFoco } from "../common/Web";
 import { AdminUi, AvatarAdmin, EtiquetaAdmin } from "./AdminUi";
 import { BotonContorno } from "./BotonContorno";
 
@@ -19,8 +20,9 @@ export interface FilaVetProps {
 /** item_admin_vet: avatar, nombre, matrícula y clínica, estado, especialidades, correo y, si está en revisión, los botones. */
 export function FilaVet({ vet, alAbrir, alAprobar, alRechazar }: FilaVetProps) {
   const pendiente = vet.estado === AdminRepo.PENDIENTE;
-  return (
-    <Tarjeta relleno={14} onPress={() => alAbrir(vet)} accessibilityLabel={`Veterinario ${vet.nombre}`}>
+  const foco = useFoco();
+  const datos = (
+    <>
       <View style={estilos.fila}>
         <AvatarAdmin nombre={vet.nombre} fotoPath={vet.fotoPath} />
         <View style={estilos.textos}>
@@ -39,12 +41,25 @@ export function FilaVet({ vet, alAbrir, alAprobar, alRechazar }: FilaVetProps) {
         <Icono nombre="correo" tamano={16} color={Colores.tealDark} estilo={estilos.icono} />
         <Texto variante="subtitulo" tamano={13} numberOfLines={1} style={estilos.textoIcono}>{vet.email}</Texto>
       </View>
-      {pendiente ? (
-        <View style={estilos.acciones}>
-          <BotonContorno titulo="Rechazar" color={Colores.dangerRed} alto={46} onPress={() => alRechazar(vet)} estilo={estilos.mitad} />
-          <Boton titulo="Dar de alta" alto={46} onPress={() => alAprobar(vet)} estilo={estilos.mitad} />
-        </View>
-      ) : null}
+    </>
+  );
+  if (!pendiente) {
+    return <Tarjeta relleno={14} onPress={() => alAbrir(vet)} accessibilityLabel={`Veterinario ${vet.nombre}`}>{datos}</Tarjeta>;
+  }
+  // En revisión la tarjeta tiene sus propios botones: la parte de los datos abre el detalle y los botones van aparte
+  // (un botón no puede ir adentro de otro)
+  return (
+    <Tarjeta relleno={14}>
+      <Pressable
+        accessibilityRole="button" accessibilityLabel={`Veterinario ${vet.nombre}`} onPress={() => alAbrir(vet)}
+        {...foco.props} style={[cursorTocable, estiloFoco(foco.enfocado)]}
+      >
+        {datos}
+      </Pressable>
+      <View style={estilos.acciones}>
+        <BotonContorno titulo="Rechazar" color={Colores.dangerRed} alto={46} onPress={() => alRechazar(vet)} estilo={estilos.mitad} />
+        <Boton titulo="Dar de alta" alto={46} onPress={() => alAprobar(vet)} estilo={estilos.mitad} />
+      </View>
     </Tarjeta>
   );
 }
