@@ -45,8 +45,8 @@ describe("SelectorFechaVet", () => {
   });
 
   it("con varios lugares nombra el lugar y usa los días del lugar elegido", async () => {
-    const sede = { id: "s2", nombre: "Consultorio Centro", direccion: "", dias: [6], apertura: "10:00", cierre: "14:00", pausaDesde: null, pausaHasta: null };
-    PerfilVetRepo.sedes.push({ id: "s1", nombre: "Clínica Sur", direccion: "", dias: [1, 2, 3, 4, 5], apertura: "09:00", cierre: "12:00", pausaDesde: null, pausaHasta: null }, sede);
+    const sede = { id: "s2", nombre: "Consultorio Centro", direccion: "", dias: [6], apertura: "10:00", cierre: "14:00", pausaDesde: null, pausaHasta: null, servicios: null };
+    PerfilVetRepo.sedes.push({ id: "s1", nombre: "Clínica Sur", direccion: "", dias: [1, 2, 3, 4, 5], apertura: "09:00", cierre: "12:00", pausaDesde: null, pausaHasta: null, servicios: null }, sede);
     const alElegir = jest.fn();
     await render(<SelectorFechaVet visible sede={sede} alElegir={alElegir} alCerrar={() => {}} />);
     expect(screen.getByText("Atendés en Consultorio Centro: Sáb")).toBeTruthy();

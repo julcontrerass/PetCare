@@ -16,7 +16,7 @@ import { prescripcionDeDto, signosVacios, TEXTO_COMIDA } from "../../model/clini
 import type { Prescripcion, SignosVitales } from "../../model/clinica";
 import {
   EstadoAcceso, EstadoMascota, EstadosMascota, EventoMascota, Mascota, NotificacionDueno, PerfilDueno,
-  SIN_DATOS, sexoDeTexto, tipoNotificacionDeClave, VeterinarioAcceso,
+  SIN_DATOS, sexoDeTexto, tipoNotificacionDeClave, VeterinarioAcceso, ofreceEn,
 } from "../../model/modelos";
 import type { AjusteFoto, SedeVet } from "../../model/modelos";
 import { TiposMascota } from "../../model/tiposMascota";
@@ -527,6 +527,7 @@ class DuenoRepoImpl {
       cierre: it.hora_cierre.slice(0, 5),
       pausaDesde: it.pausa_desde ? it.pausa_desde.slice(0, 5) : null,
       pausaHasta: it.pausa_hasta ? it.pausa_hasta.slice(0, 5) : null,
+      servicios: it.servicios ?? null,
     }));
     const principal = sedes[0] ?? null;
     // A los dueños (y a la recepción) solo se les ofrecen los servicios y las especialidades con el título aprobado
@@ -785,6 +786,11 @@ class DuenoRepoImpl {
    * Medicamentos activos de las mascotas activas: los que tienen plan de tomas y están sin empezar o en curso, y los
    * que terminaron o se suspendieron hace menos de [diasTerminados] días (para ver cómo terminó). Primero los en curso.
    */
+  /** Todas las recetas de esa mascota (con plan de tomas o sin él), para su historia clínica. */
+  recetasDe(mascotaId: string): Prescripcion[] {
+    return this.estado.recetas.filter((r) => r.mascota_id === mascotaId).map(prescripcionDeDto);
+  }
+
   tratamientos(diasTerminados: number = 3, ahora: LocalDateTime = LocalDateTime.now()): Tratamiento[] {
     const lista: Tratamiento[] = [];
     for (const dto of this.estado.recetas) {
@@ -981,10 +987,18 @@ class DuenoRepoImpl {
   veterinariosPara(servicio: string | null, tipoMascota: string | null = null): VeterinarioAcceso[] {
     let lista = this.todosLosVeterinarios();
     if (servicio != null) {
-      lista = lista.filter((vet) => vet.especialidades.some((e) => iguales(e, servicio)));
+      lista = lista.filter(
+        (vet) => vet.especialidades.some((e) => iguales(e, servicio)) && (vet.sedes.length === 0 || this.lugaresPara(vet, servicio).length > 0),
+      );
     }
     if (tipoMascota != null) lista = lista.filter((vet) => vet.atiende(tipoMascota));
     return lista;
+  }
+
+  /** Los lugares del veterinario donde se atiende ese servicio (sin lugares propios, el de siempre). */
+  lugaresPara(vet: VeterinarioAcceso, servicio: string | null): SedeVet[] {
+    if (vet.sedes.length === 0) return [];
+    return vet.sedes.filter((s) => ofreceEn(s, servicio, (n) => CatalogoMedico.esDelCatalogo(n)));
   }
 
   /** True si atiende ese día en [sede] (o, sin indicarla, en su lugar principal). */

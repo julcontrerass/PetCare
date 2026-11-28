@@ -12,6 +12,7 @@ import type {
   AgendaManejadaDto, BloqueoAfectadoDto, BloqueoDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
+import type { ItemCatalogo } from "../catalogoMedico";
 import { datosDeSedes } from "./sedesJson";
 import type { FuenteDatos, ResultadoRegistro } from "./fuenteDatos";
 
@@ -280,6 +281,14 @@ export class SupabaseFuente implements FuenteDatos {
 
   async eliminarBloqueo(id: string): Promise<void> {
     vacio(await this.cliente.rpc("eliminar_bloqueo", { p_id: id }));
+  }
+
+  async catalogoServicios(): Promise<ItemCatalogo[]> {
+    return ok(await this.cliente.from("catalogo_servicios").select("nombre,tipo,duracion_min,activo,orden").order("orden")) as ItemCatalogo[];
+  }
+
+  async guardarServicioCatalogo(nombre: string, tipo: ItemCatalogo["tipo"], duracionMin: number, activo: boolean): Promise<void> {
+    vacio(await this.cliente.rpc("guardar_servicio_catalogo", { p_nombre: nombre, p_tipo: tipo, p_duracion: duracionMin, p_activo: activo }));
   }
 
   async eliminarSede(id: string): Promise<void> {

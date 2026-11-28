@@ -6,6 +6,10 @@
  * para no perder lo que se está escribiendo en el informe.
  */
 import { router, useLocalSearchParams } from "expo-router";
+import { historiaDelVeterinario } from "../../data/historiaClinica";
+import { AgendaRepo } from "../../data/repositorio/agendaRepo";
+import { InformesRepo } from "../../data/repositorio/informesRepo";
+import { PrescripcionesRepo } from "../../data/repositorio/prescripcionesRepo";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { PacientesRepo , comoDocumento, razaYSexo } from "../../data/repositorio/pacientesRepo";
@@ -113,6 +117,25 @@ export default function DetallePacientePantalla() {
     await DocumentosPdf.compartir(archivo, (vacunacion ? "Certificado de vacunación de " : "Certificado de salud de ") + paciente.nombre);
   };
 
+  /** Toda la historia clínica en un PDF, con los informes de cada consulta, la firma y la matrícula. */
+  const generarHistoria = async () => {
+    try {
+      const completadas = AgendaRepo.deMascota(paciente.id).filter((e) => e.estado === "COMPLETADO");
+      const consultas = await Promise.all(completadas.map(async (e) => ({
+        fecha: e.fecha, tipo: e.tipo, motivo: e.motivo, veterinario: e.veterinario,
+        informe: await InformesRepo.cargar(paciente.id, e.id).catch(() => null),
+      })));
+      await PrescripcionesRepo.cargar(paciente.id).catch(() => {});
+      const historia = historiaDelVeterinario(
+        SaludRepo.registros.filter((r) => r.mascotaId === paciente.id), PrescripcionesRepo.deMascota(paciente.id), consultas,
+      );
+      const archivo = await DocumentosPdf.historiaClinica(PerfilVetRepo.comoProfesional(), comoDocumento(paciente), LocalDate.now(), historia);
+      await DocumentosPdf.compartir(archivo, `Historia clínica de ${paciente.nombre}`);
+    } catch (e) {
+      Avisos.error(e instanceof Error ? e.message : "No se pudo armar la historia clínica");
+    }
+  };
+
   // La ficha puede haber cambiado desde que se abrió (por ejemplo, al crearle la cuenta al dueño)
   const actual = PacientesRepo.porId(paciente.id) ?? paciente;
   const elegir = (accion: () => void | Promise<void>) => () => {
@@ -169,6 +192,7 @@ export default function DetallePacientePantalla() {
             Contacto.abrir(Contacto.whatsApp(paciente.telefono, Contacto.mensajeDeSaludo(paciente.propietario, paciente.nombre)), "No hay un teléfono válido para este dueño"),
           )}
         />
+        <FilaMenu texto="Historia clínica completa (PDF)" icono="pdf" alTocar={elegir(generarHistoria)} />
         <FilaMenu texto="Certificado de vacunación (PDF)" icono="pdf" alTocar={elegir(() => generarCertificado(true))} />
         <FilaMenu texto="Certificado de salud (PDF)" icono="pdf" alTocar={elegir(() => generarCertificado(false))} />
         {/* Sin cuenta, el dueño no ve nada de lo que se completa acá: se la puede crear el veterinario */}

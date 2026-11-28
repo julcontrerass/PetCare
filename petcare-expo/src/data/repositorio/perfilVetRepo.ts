@@ -70,6 +70,7 @@ class PerfilVetRepoImpl {
       hora_cierre: `${sede.cierre}:00`,
       pausa_desde: sede.pausaDesde ? `${sede.pausaDesde}:00` : null,
       pausa_hasta: sede.pausaHasta ? `${sede.pausaHasta}:00` : null,
+      servicios: sede.servicios,
     };
   }
 
@@ -111,6 +112,7 @@ class PerfilVetRepoImpl {
           hora_cierre: `${sede.cierre}:00`,
           pausa_desde: sede.pausaDesde ? `${sede.pausaDesde}:00` : null,
           pausa_hasta: sede.pausaHasta ? `${sede.pausaHasta}:00` : null,
+          servicios: sede.servicios,
         });
       }
     });
@@ -166,6 +168,17 @@ class PerfilVetRepoImpl {
     const par = buscado === undefined ? undefined : Object.entries(this.duraciones).find(([k]) => k.toLowerCase() === buscado);
     if (par) return Math.min(CatalogoMedico.DURACION_MAXIMA_MIN, Math.max(CatalogoMedico.DURACION_MINIMA_MIN, par[1]));
     return CatalogoMedico.duracionPorDefecto(servicio);
+  }
+
+  /**
+   * Rearma la lista para elegir con el catálogo actual (lo maneja el administrador). Las que ya tenía elegidas siguen
+   * en la lista aunque ya no estén en el catálogo, así se ven y se pueden sacar.
+   */
+  sincronizarCatalogo(elegidas: readonly string[] = this.serviciosOfrecidos()): void {
+    const lista = [...CatalogoMedico.TODAS];
+    for (const e of elegidas) if (!lista.includes(e)) lista.push(e);
+    this.todasLasEspecialidades.splice(0, this.todasLasEspecialidades.length, ...lista);
+    this.especialidadesSeleccionadas.splice(0, this.especialidadesSeleccionadas.length, ...lista.map((e) => elegidas.includes(e)));
   }
 
   /** Servicios y especialidades que el veterinario marcó como propios. */
@@ -256,15 +269,12 @@ class PerfilVetRepoImpl {
           cierre: lugar.hora_cierre.slice(0, 5),
           pausaDesde: lugar.pausa_desde ? lugar.pausa_desde.slice(0, 5) : null,
           pausaHasta: lugar.pausa_hasta ? lugar.pausa_hasta.slice(0, 5) : null,
+          servicios: lugar.servicios ?? null,
         }),
       );
     }
     this.reflejarPrincipal();
-    this.especialidadesSeleccionadas.fill(false);
-    for (const esp of v?.especialidades ?? []) {
-      const i = this.todasLasEspecialidades.indexOf(esp);
-      if (i >= 0) this.especialidadesSeleccionadas[i] = true;
-    }
+    this.sincronizarCatalogo(v?.especialidades ?? []);
     this.tiposAnimales.clear();
     for (const t of v?.tipos_animales ?? TiposMascota.TODOS) this.tiposAnimales.add(TiposMascota.normalizar(t));
     this.vaciarRegistro(this.duraciones);

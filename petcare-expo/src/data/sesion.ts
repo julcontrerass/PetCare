@@ -19,6 +19,7 @@ import { RecordatoriosRepo } from "./repositorio/recordatoriosRepo";
 import { SaludRepo } from "./repositorio/saludRepo";
 import { SolicitudesRepo } from "./repositorio/solicitudesRepo";
 import { BloqueosRepo } from "./repositorio/bloqueosRepo";
+import { CatalogoRepo } from "./repositorio/catalogoRepo";
 import { FotosPendientes } from "./fotosPendientes";
 import { Imagenes } from "./imagenes";
 import { Servicios } from "./servicios";
@@ -247,6 +248,8 @@ class SesionImpl {
     if (!this.rolesDisponibles.includes(rolElegido)) {
       throw new Error(`La cuenta no puede ingresar como ${rolElegido}`);
     }
+    // El catálogo de servicios lo maneja el administrador: se pide de nuevo al entrar
+    await CatalogoRepo.cargar();
     switch (rolElegido) {
       case "DUENO":
         await DuenoRepo.cargar(datos);

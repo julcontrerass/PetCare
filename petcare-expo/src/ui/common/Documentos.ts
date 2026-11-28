@@ -2,6 +2,7 @@
  * Migrado de ui/common/Documentos.kt (la parte de contenido). El dibujo en la hoja y el archivo PDF están en
  * DocumentosPdf.ts.
  */
+import type { EntradaHistoria, HistoriaClinica } from "../../data/historiaClinica";
 import type { RegistroSalud } from "../../data/repositorio/saludRepo";
 import { posologia, type Prescripcion } from "../../model/clinica";
 import { Fechas } from "../../util/fechas";
@@ -224,6 +225,46 @@ export function planoDeCertificadoSalud(
   });
 }
 
+/**
+ * Historia clínica completa: vacunas, desparasitaciones, cirugías y tratamientos, medicamentos, consultas y
+ * documentos. La emite un veterinario (con su encabezado y su firma) o el dueño (sin firma: es un resumen, no un
+ * certificado).
+ */
+export function planoDeHistoriaClinica(
+  profesional: Profesional | null, paciente: DatosPaciente, fecha: LocalDate, h: HistoriaClinica,
+): Plano {
+  return plano("historia-clinica", paciente, fecha, (d) => {
+    if (profesional) d.encabezado(profesional);
+    d.titulo("HISTORIA CLÍNICA");
+    d.paciente(paciente, fecha);
+    const seccion = (titulo: string, entradas: EntradaHistoria[], vacio: string) => {
+      d.subtitulo(titulo);
+      if (entradas.length === 0) d.texto(vacio, { gris: true });
+      for (const e of entradas) {
+        d.texto(`${e.fecha} · ${e.titulo}`, { negrita: true });
+        for (const l of e.lineas) d.texto(l, { sangria: 18 });
+        d.espacio(4);
+      }
+      d.espacio(6);
+    };
+    seccion("Consultas", h.consultas, "Sin consultas registradas.");
+    seccion("Vacunas", h.vacunas, "Sin vacunas registradas.");
+    seccion("Desparasitaciones", h.desparasitaciones, "Sin desparasitaciones registradas.");
+    seccion("Cirugías y tratamientos", h.procedimientos, "Sin cirugías ni tratamientos registrados.");
+    seccion("Medicamentos recetados", h.medicamentos, "Sin medicamentos recetados.");
+    if (h.documentos.length > 0) seccion("Estudios y documentos en PetCare", h.documentos, "");
+    if (profesional) {
+      d.firma(profesional);
+    } else {
+      d.texto(
+        `Resumen generado por ${paciente.propietario.trim() || "el dueño"} desde PetCare el ${Fechas.larga(fecha)}. ` +
+          "No reemplaza un certificado veterinario.",
+        { gris: true },
+      );
+    }
+  });
+}
+
 /** Nombre del archivo: tipo, paciente y fecha, por ejemplo `receta-rex-2026-10-12.pdf`. */
 export function nombreDeArchivo(p: Plano): string {
   const paciente =
@@ -236,5 +277,6 @@ export const Documentos = {
   planoDeReceta,
   planoDeCertificadoVacunacion,
   planoDeCertificadoSalud,
+  planoDeHistoriaClinica,
   nombreDeArchivo,
 };

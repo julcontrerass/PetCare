@@ -190,8 +190,15 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
   const vet = DuenoRepo.buscarVeterinario(veterinario);
   const mascotaElegida = DuenoRepo.buscarMascota(mascota);
   const tipoDeLaMascota = mascotaElegida?.tipo ?? null;
-  /** El lugar donde se atendería el turno: el elegido o, si no eligió, el principal del veterinario. */
-  const sedeElegida = (v: VeterinarioAcceso | null): SedeVet | null => v?.sede(sedeId) ?? null;
+  /**
+   * El lugar donde se atendería el turno: el elegido o, si no eligió, el primero donde el veterinario atiende ese
+   * servicio (cada lugar puede ofrecer cosas distintas).
+   */
+  const sedeElegida = (v: VeterinarioAcceso | null): SedeVet | null => {
+    if (!v) return null;
+    const lugares = DuenoRepo.lugaresPara(v, categoria);
+    return lugares.find((l) => l.id === sedeId) ?? lugares[0] ?? v.sede(sedeId);
+  };
   const sede = sedeElegida(vet);
   const duracion = vet?.duracionDe(categoria) ?? CatalogoMedico.duracionPorDefecto(categoria);
 
@@ -293,7 +300,7 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
       toast("No hiciste ningún cambio");
       return;
     }
-    DuenoRepo.modificarEvento(edicion, fecha, hora as string, veterinario ?? "", obs, sedeId);
+    DuenoRepo.modificarEvento(edicion, fecha, hora as string, veterinario ?? "", obs, sedeElegida(vet)?.id || sedeId);
     toast("Turno actualizado");
     irAlCalendario(fecha);
   };
@@ -304,7 +311,7 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
       return;
     }
     DuenoRepo.agendarEvento(
-      fecha, categoria as string, mascota as string, veterinario ?? "", hora as string, observaciones, [...estudios], sedeId,
+      fecha, categoria as string, mascota as string, veterinario ?? "", hora as string, observaciones, [...estudios], sedeElegida(vet)?.id || sedeId,
     );
     toast("Evento guardado");
     irAlCalendario(fecha);
@@ -417,6 +424,7 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
   };
 
   const elegidoConVarias = elegibles.find((v) => v.nombre === veterinario);
+  const lugaresDelServicio = elegidoConVarias ? DuenoRepo.lugaresPara(elegidoConVarias, categoria) : [];
 
   const horas = vet == null ? [] : DuenoRepo.horasDe(vet, fecha, duracion, sede);
   const noLibres = horas.filter(
@@ -470,14 +478,19 @@ export default function NuevoEventoPantalla({ fecha: fechaPedida, mascota: masco
             );
           })
         )}
-        {elegidoConVarias && elegidoConVarias.sedes.length > 1 ? (
+        {elegidoConVarias && elegidoConVarias.sedes.length > 1 && lugaresDelServicio.length === 1 ? (
+          <Texto variante="chico" tamano={13} style={{ marginTop: 12 }}>
+            {`${elegidoConVarias.nombre} atiende ${categoria ?? "este servicio"} en ${textoLugarSede(lugaresDelServicio[0])}`}
+          </Texto>
+        ) : null}
+        {elegidoConVarias && lugaresDelServicio.length > 1 ? (
           <View>
             <Texto variante="cuerpo" peso="bold" style={{ marginTop: 16, marginBottom: 4 }}>
               {`¿Dónde querés atenderte con ${elegidoConVarias.nombre}?`}
             </Texto>
-            {elegidoConVarias.sedes.map((s) => (
+            {lugaresDelServicio.map((s) => (
               <Tarjeta
-                key={s.id} onPress={() => elegirSede(s)} seleccionada={elegidoConVarias.sede(sedeId)?.id === s.id}
+                key={s.id} onPress={() => elegirSede(s)} seleccionada={sedeElegida(elegidoConVarias)?.id === s.id}
                 relleno={14} estilo={{ marginTop: 8 }} accessibilityLabel={s.nombre}
               >
                 <Texto variante="cuerpo" peso="bold">{s.nombre}</Texto>

@@ -26,6 +26,8 @@ export interface SedeDto {
   /** Pausa de todos los días que atiende en este lugar ("13:00:00"); null si no tiene. */
   pausa_desde?: string | null;
   pausa_hasta?: string | null;
+  /** Lo que ofrece en este lugar; null = todo lo que ofrece. */
+  servicios?: string[] | null;
 }
 
 /** Un momento en que el veterinario no atiende (tabla bloqueos_agenda). Horas locales: "2026-11-30T08:00:00". */
@@ -128,6 +130,7 @@ export function normalizarSede(s: Partial<SedeDto> & { id: string; nombre: strin
     created_at: s.created_at ?? null,
     pausa_desde: s.pausa_desde ?? null,
     pausa_hasta: s.pausa_hasta ?? null,
+    servicios: s.servicios ?? null,
   };
 }
 
@@ -172,6 +175,7 @@ export interface NuevaSedeDto {
   hora_cierre: string;
   pausa_desde?: string | null;
   pausa_hasta?: string | null;
+  servicios?: string[] | null;
 }
 
 /** La cuenta está activa y su rol de veterinario fue aprobado: puede atender y aparece en el catálogo. */

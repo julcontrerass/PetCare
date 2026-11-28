@@ -35,13 +35,15 @@ import { FilaActividad, FilaDueno, FilaPendiente, FilaVet } from "./FilasAdmin";
 import { cerrarSesionConfirmando, HojaCuentaAdmin } from "./HojaCuentaAdmin";
 import { BuscadorAdmin as Buscador, FiltrosAdmin as Filtros } from "./FiltrosAdmin";
 import { PanelVeterinarias, useClinicasAdmin } from "./PanelVeterinarias";
+import { PanelServicios } from "./PanelServicios";
+import { CatalogoMedico } from "../../data/catalogoMedico";
 import { HojaDuenoAdmin } from "./HojaDuenoAdmin";
 import { HojaVetAdmin } from "./HojaVetAdmin";
 import { imagenEnMemoria, type ImagenEnMemoria } from "./credencial";
 import { RevisionClinicas } from "./RevisionClinicas";
 import { RevisionEspecialidades } from "./RevisionEspecialidades";
 
-type Panel = "inicio" | "vets" | "clinicas" | "duenos" | "actividad";
+type Panel = "inicio" | "vets" | "clinicas" | "duenos" | "actividad" | "servicios";
 
 /** A partir de este ancho (dp) las listas pasan a dos columnas. */
 const ANCHO_DOS_COLUMNAS = 900;
@@ -398,6 +400,20 @@ export function HomeAdmin() {
         )}
       />
 
+      {/* En el teléfono el catálogo no entra en la barra de abajo: se abre desde acá */}
+      {escritorio ? null : (
+        <Tarjeta relleno={14} estilo={{ marginTop: 16 }} onPress={() => setPanel("servicios")} accessibilityLabel="Catálogo de servicios">
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Icono nombre="botiquin" tamano={22} color={Colores.primaryTeal} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Texto variante="cuerpo" tamano={15} negrita>Catálogo de servicios</Texto>
+              <Texto variante="chico" tamano={12.5}>{`${CatalogoMedico.SERVICIOS.length + CatalogoMedico.ESPECIALIDADES.length} servicios y especialidades activos`}</Texto>
+            </View>
+            <Icono nombre="chevronDerecha" tamano={22} color={Colores.textGray} />
+          </View>
+        </Tarjeta>
+      )}
+
       <View style={[estilos.estadisticas, ancha ? estilos.estadisticasAncha : null]}>
         <Estadistica
           ancha={ancha}
@@ -542,6 +558,8 @@ export function HomeAdmin() {
     />
   );
 
+  const panelServicios = <PanelServicios estiloPanel={estilos.panel} />;
+
   const movimientos = AdminRepo.actividad;
   const panelActividad = (
     <View style={estilos.panel}>
@@ -589,7 +607,7 @@ export function HomeAdmin() {
     <PantallaBase scroll={false} margen={0} anchoMaximo={ANCHO_PANEL} bordes={["top"]}>
       <View style={estilos.raiz}>
         <View style={estilos.raiz}>
-          {panel === "inicio" ? inicio : panel === "vets" ? panelVets : panel === "clinicas" ? panelClinicas : panel === "duenos" ? panelDuenos : panelActividad}
+          {panel === "inicio" ? inicio : panel === "vets" ? panelVets : panel === "clinicas" ? panelClinicas : panel === "duenos" ? panelDuenos : panel === "servicios" ? panelServicios : panelActividad}
         </View>
         {escritorio ? null : <BarraNavegacion panel={panel} alElegir={setPanel} insigniaDe={insigniaDe} />}
       </View>
@@ -697,14 +715,18 @@ const ITEMS_NAVEGACION: { panel: Panel; titulo: string; icono: NombreIcono }[] =
   { panel: "clinicas", titulo: "Veterinarias", icono: "sede" },
   { panel: "duenos", titulo: "Dueños", icono: "persona" },
   { panel: "actividad", titulo: "Actividad", icono: "historial" },
+  { panel: "servicios", titulo: "Servicios", icono: "botiquin" },
 ];
+
+/** En la barra de abajo del teléfono entran cinco: el catálogo se abre desde el inicio. */
+const ITEMS_BARRA = ITEMS_NAVEGACION.filter((i) => i.panel !== "servicios");
 
 /** Barra inferior con las secciones (view_admin_bottom_nav); veterinarios y veterinarias llevan el contador de lo que hay por revisar. */
 function BarraNavegacion({ panel, alElegir, insigniaDe }: { panel: Panel; alElegir: (p: Panel) => void; insigniaDe: (p: Panel) => number }) {
   const margenes = useMargenes();
   return (
     <View style={[estilos.barra, { paddingBottom: margenes.bottom }]}>
-      {ITEMS_NAVEGACION.map((item) => (
+      {ITEMS_BARRA.map((item) => (
         <ItemNavegacion
           key={item.panel}
           item={item}

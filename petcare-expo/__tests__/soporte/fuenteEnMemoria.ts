@@ -1,4 +1,5 @@
 /* Migrado de app/src/test/.../FuenteEnMemoria.kt. */
+import type { ItemCatalogo } from "../../src/data/catalogoMedico";
 import type {
   AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, DuenoMascotaDto,
   EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, Json, JsonObject, MascotaCreadaDto, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto,
@@ -224,10 +225,29 @@ export class FuenteEnMemoria extends FuenteBase {
             dias_atencion: Array.isArray(dias) ? dias.map((d) => Number(d)) : s.dias_atencion,
             pausa_desde: "pausa_desde" in cambios ? texto(cambios, "pausa_desde") : s.pausa_desde,
             pausa_hasta: "pausa_hasta" in cambios ? texto(cambios, "pausa_hasta") : s.pausa_hasta,
+            servicios: Array.isArray(cambios["servicios"]) ? (cambios["servicios"] as unknown[]).map(String) : "servicios" in cambios ? null : s.servicios,
           };
         }),
       );
     }
+  }
+
+  // ---------- Catálogo de servicios (como catalogo_de_servicios.sql) ----------
+
+  /** Vacío = la app sigue con la lista de siempre. */
+  catalogo: ItemCatalogo[] = [];
+
+  override async catalogoServicios(): Promise<ItemCatalogo[]> {
+    return this.catalogo.map((i) => ({ ...i }));
+  }
+
+  override async guardarServicioCatalogo(nombre: string, tipo: ItemCatalogo["tipo"], duracionMin: number, activo: boolean): Promise<void> {
+    this.llamadas.push(`guardarServicioCatalogo:${nombre}:${tipo}:${duracionMin}:${activo}`);
+    if (this.yo.rol !== "admin") throw new Error("Solo un administrador puede cambiar el catálogo");
+    const actual = this.catalogo.find((i) => i.nombre.toLowerCase() === nombre.toLowerCase());
+    if (actual && actual.tipo !== tipo) throw new Error(`${actual.nombre} ya existe: no se puede cambiar el tipo`);
+    if (actual) Object.assign(actual, { duracion_min: duracionMin, activo });
+    else this.catalogo.push({ nombre, tipo, duracion_min: duracionMin, activo, orden: 1000 + this.catalogo.length });
   }
 
   // ---------- Bloqueos de agenda (como bloqueos_de_agenda.sql) ----------

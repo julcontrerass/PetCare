@@ -12,12 +12,13 @@ import { Directory, File, Paths } from "expo-file-system";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
+import type { HistoriaClinica } from "../../data/historiaClinica";
 import type { RegistroSalud } from "../../data/repositorio/saludRepo";
 import type { Prescripcion } from "../../model/clinica";
 import { Fechas } from "../../util/fechas";
 import type { LocalDate } from "../../util/tiempo";
 import {
-  nombreDeArchivo, planoDeCertificadoSalud, planoDeCertificadoVacunacion, planoDeReceta,
+  nombreDeArchivo, planoDeCertificadoSalud, planoDeCertificadoVacunacion, planoDeHistoriaClinica, planoDeReceta,
   type Bloque, type DatosPaciente, type Plano, type Profesional,
 } from "./Documentos";
 
@@ -167,6 +168,13 @@ export function certificadoVacunacion(
   return generarPdf(planoDeCertificadoVacunacion(profesional, paciente, fecha, vacunas));
 }
 
+/** Historia clínica completa; [profesional] null si la emite el dueño. */
+export function historiaClinica(
+  profesional: Profesional | null, paciente: DatosPaciente, fecha: LocalDate, historia: HistoriaClinica,
+): Promise<ArchivoPdf> {
+  return generarPdf(planoDeHistoriaClinica(profesional, paciente, fecha, historia));
+}
+
 export function certificadoSalud(
   profesional: Profesional, paciente: DatosPaciente, fecha: LocalDate, observaciones = "",
 ): Promise<ArchivoPdf> {
@@ -279,6 +287,7 @@ export const DocumentosPdf = {
   receta,
   certificadoVacunacion,
   certificadoSalud,
+  historiaClinica,
   imprimir,
   compartir,
 };

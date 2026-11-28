@@ -13,6 +13,7 @@ import {
   Nunito_800ExtraBold,
 } from "@expo-google-fonts/nunito";
 import { Servicios } from "../../data/servicios";
+import { CatalogoRepo } from "../../data/repositorio/catalogoRepo";
 import { Avisos } from "./Avisos";
 import { AvisosHost } from "./AvisosHost";
 import { Colores } from "./tema";
@@ -50,6 +51,8 @@ export function RaizApp({ children }: { children?: ReactNode }) {
     if (Platform.OS === "web") fondoDelDocumento();
     // Los errores de las escrituras en segundo plano se muestran como cartel
     Servicios.alMostrarError = (mensaje) => Avisos.error(mensaje);
+    // El catálogo de servicios (lo usa también el registro del veterinario, antes de tener cuenta)
+    void CatalogoRepo.cargar();
     return () => {
       Servicios.alMostrarError = null;
     };

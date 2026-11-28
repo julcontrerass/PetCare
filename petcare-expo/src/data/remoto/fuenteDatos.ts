@@ -7,6 +7,7 @@ import type {
   AgendaManejadaDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, TipoHabilitacion,
   EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
+import type { ItemCatalogo } from "../catalogoMedico";
 
 /** Qué pasó al crear una cuenta: si Supabase pide confirmar el correo no hay sesión hasta que lo confirme. */
 export interface ResultadoRegistro {
@@ -60,6 +61,10 @@ export interface FuenteDatos {
   /** Bloquea la agenda y devuelve los turnos que caen adentro; con [cancelar] los cancela y les avisa a los dueños. */
   crearBloqueo(veterinarioId: string, desde: string, hasta: string, motivo: string, cancelar: boolean): Promise<BloqueoAfectadoDto[]>;
   eliminarBloqueo(id: string): Promise<void>;
+  /** El catálogo de servicios y especialidades (también los desactivados). */
+  catalogoServicios(): Promise<ItemCatalogo[]>;
+  /** El administrador agrega uno o cambia su duración y si está activo. */
+  guardarServicioCatalogo(nombre: string, tipo: ItemCatalogo["tipo"], duracionMin: number, activo: boolean): Promise<void>;
   eliminarSede(id: string): Promise<void>;
   actualizarDni(dni: string): Promise<void>;
 
@@ -249,6 +254,8 @@ export class FuenteBase implements FuenteDatos {
   async bloqueos(_veterinarioIds: string[]): Promise<BloqueoDto[]> { return []; }
   async crearBloqueo(_v: string, _d: string, _h: string, _m: string, _c: boolean): Promise<BloqueoAfectadoDto[]> { return []; }
   async eliminarBloqueo(_id: string): Promise<void> {}
+  async catalogoServicios(): Promise<ItemCatalogo[]> { return []; }
+  async guardarServicioCatalogo(_n: string, _t: ItemCatalogo["tipo"], _d: number, _a: boolean): Promise<void> {}
   async eliminarSede(_id: string): Promise<void> {}
   async actualizarDni(_dni: string): Promise<void> {}
 

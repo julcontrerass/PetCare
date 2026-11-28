@@ -1,8 +1,24 @@
+/** Un servicio o especialidad del catálogo (tabla catalogo_servicios). */
+export interface ItemCatalogo {
+  nombre: string;
+  tipo: "servicio" | "especialidad";
+  duracion_min: number;
+  activo: boolean;
+  orden?: number;
+}
+
 /**
  * Servicios y especialidades médicas que ofrece la clínica. Es la lista única que usan el registro del
- * veterinario, su perfil y el filtro del dueño al sacar un turno.
+ * veterinario, su perfil y el filtro del dueño al sacar un turno. La maneja el administrador: al arrancar se baja de
+ * la base con [aplicar]; hasta entonces (o sin conexión) vale la lista de siempre de acá abajo.
  */
 export const CatalogoMedico = {
+  /** Los que el administrador desactivó: no se eligen ni se ofrecen (en minúsculas). */
+  INACTIVOS: new Set<string>(),
+
+  /** Todo el catálogo, con los desactivados, para la pantalla del administrador. */
+  ITEMS: [] as ItemCatalogo[],
+
   SERVICIOS: [
     "Chequeo médico integral",
     "Castraciones y limpieza dental",
@@ -37,13 +53,41 @@ export const CatalogoMedico = {
     return [...this.SERVICIOS, ...this.ESPECIALIDADES];
   },
 
+  /** Reemplaza la lista con la de la base (los arreglos se cambian en el lugar: los que los guardan ven lo nuevo). */
+  aplicar(items: readonly ItemCatalogo[]): void {
+    if (items.length === 0) return;
+    const orden = [...items].sort((a, b) => (a.orden ?? 1000) - (b.orden ?? 1000) || a.nombre.localeCompare(b.nombre));
+    const activos = (tipo: ItemCatalogo["tipo"]) => orden.filter((i) => i.tipo === tipo && i.activo).map((i) => i.nombre);
+    this.SERVICIOS.splice(0, this.SERVICIOS.length, ...activos("servicio"));
+    this.ESPECIALIDADES.splice(0, this.ESPECIALIDADES.length, ...activos("especialidad"));
+    // Las desactivadas siguen pidiendo título: un veterinario que la tenía no la ofrece sin aprobación
+    this.TODAS_LAS_ESPECIALIDADES = orden.filter((i) => i.tipo === "especialidad").map((i) => i.nombre);
+    this.INACTIVOS = new Set(orden.filter((i) => !i.activo).map((i) => i.nombre.toLowerCase()));
+    for (const i of orden) this.DURACIONES_POR_DEFECTO[i.nombre] = i.duracion_min;
+    this.ITEMS = orden;
+  },
+
+  /** Todas las especialidades, también las desactivadas (para saber cuáles piden título). */
+  TODAS_LAS_ESPECIALIDADES: [] as string[],
+
+  /** Es un servicio o una especialidad del catálogo (no un tipo general como "Consulta"). */
+  esDelCatalogo(nombre: string): boolean {
+    const n = nombre.trim().toLowerCase();
+    return this.TODAS.some((t) => t.toLowerCase() === n) || this.ITEMS.some((i) => i.nombre.toLowerCase() === n);
+  },
+
+  activo(nombre: string): boolean {
+    return !this.INACTIVOS.has(nombre.toLowerCase());
+  },
+
   esServicio(nombre: string): boolean {
     return this.SERVICIOS.some((s) => s.toLowerCase() === nombre.toLowerCase());
   },
 
   /** Las especialidades piden título aprobado para ofrecerse; los servicios, no. */
   pideTitulo(nombre: string): boolean {
-    return this.ESPECIALIDADES.some((s) => s.toLowerCase() === nombre.toLowerCase());
+    const n = nombre.toLowerCase();
+    return this.ESPECIALIDADES.some((s) => s.toLowerCase() === n) || this.TODAS_LAS_ESPECIALIDADES.some((s) => s.toLowerCase() === n);
   },
 
   /** Tipos generales para cargar cualquier atención, además de los servicios del veterinario. */
@@ -62,10 +106,13 @@ export const CatalogoMedico = {
     return [...new Set([...ofrecidos, ...generales, ...extra])];
   },
 
-  /** Lo que el veterinario ofrece a los dueños: sus servicios y las especialidades con el título aprobado. */
+  /**
+   * Lo que el veterinario ofrece a los dueños: sus servicios y las especialidades con el título aprobado, sin las que
+   * el administrador desactivó.
+   */
   ofrecidas(elegidas: readonly string[], aprobadas: readonly string[] | null | undefined): string[] {
     const ok = new Set((aprobadas ?? []).map((a) => a.toLowerCase()));
-    return elegidas.filter((e) => !this.pideTitulo(e) || ok.has(e.toLowerCase()));
+    return elegidas.filter((e) => this.activo(e) && (!this.pideTitulo(e) || ok.has(e.toLowerCase())));
   },
 
   /** Vacunas que más se aplican, para sugerirlas al cargar una (se puede escribir cualquier otra). */

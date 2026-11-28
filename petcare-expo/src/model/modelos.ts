@@ -161,6 +161,8 @@ export interface SedeVet {
   /** Pausa de todos los días que atiende acá ("13:00"); null si no tiene. */
   readonly pausaDesde: string | null;
   readonly pausaHasta: string | null;
+  /** Lo que ofrece en este lugar (servicios y especialidades); null = todo lo que ofrece. */
+  readonly servicios: string[] | null;
 }
 
 export function crearSede(s: Partial<SedeVet> & { id: string; nombre: string }): SedeVet {
@@ -173,7 +175,23 @@ export function crearSede(s: Partial<SedeVet> & { id: string; nombre: string }):
     cierre: s.cierre ?? "18:00",
     pausaDesde: s.pausaDesde ?? null,
     pausaHasta: s.pausaHasta ?? null,
+    servicios: s.servicios ?? null,
   };
+}
+
+/**
+ * True si en ese lugar se atiende ese servicio o especialidad. Los tipos generales (Consulta, Control, Vacuna...)
+ * y un lugar sin lista propia valen para todo.
+ */
+export function ofreceEn(sede: SedeVet | null | undefined, servicio: string | null | undefined, delCatalogo: (n: string) => boolean): boolean {
+  if (!sede?.servicios || !servicio || !delCatalogo(servicio)) return true;
+  const buscado = servicio.trim().toLowerCase();
+  return sede.servicios.some((s) => s.trim().toLowerCase() === buscado);
+}
+
+/** "Solo: Cirugía 24hs, Tomografía", o "" si en el lugar ofrece todo. */
+export function textoServiciosSede(sede: SedeVet): string {
+  return sede.servicios && sede.servicios.length > 0 ? `Solo: ${sede.servicios.join(", ")}` : "";
 }
 
 /** "Lun a Vie · 09:00 a 18:00 hs", o los días separados por comas si no son consecutivos. */

@@ -1,10 +1,17 @@
 /*
  * Migrado de DetalleMascotaPantalla.kt (pestaña "Historial") + HistorialAdapter.kt + pantalla_mascota_historial.xml +
- * item_historial_clinico.xml: línea de tiempo de los turnos de la mascota, con buscador y filtros.
+ * item_historial_clinico.xml: línea de tiempo de los turnos de la mascota, con buscador y filtros, y la historia
+ * clínica completa en PDF para compartir.
  */
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { DuenoRepo } from "../../data/repositorio/duenoRepo";
+import { historiaDelDueno } from "../../data/historiaClinica";
+import { SaludRepo } from "../../data/repositorio/saludRepo";
+import { LocalDate } from "../../util/tiempo";
+import { Avisos } from "../common/Avisos";
+import { crearDatosPaciente } from "../common/Documentos";
+import { DocumentosPdf } from "../common/DocumentosPdf";
 import type { Mascota } from "../../model/modelos";
 import { Fechas } from "../../util/fechas";
 import { Boton } from "../common/Boton";
@@ -80,9 +87,36 @@ export function HistorialMascota({ mascota }: { mascota: Mascota }) {
     ];
   }
 
+  const [armando, setArmando] = useState(false);
+  /** Arma la historia clínica (carnet, recetas y turnos completados) y abre el selector para compartirla. */
+  const compartirHistoria = async () => {
+    setArmando(true);
+    try {
+      if (!SaludRepo.registros.some((r) => r.mascotaId === mascota.id)) await SaludRepo.cargarComoDueno().catch(() => {});
+      const historia = historiaDelDueno(
+        SaludRepo.registros.filter((r) => r.mascotaId === mascota.id), DuenoRepo.recetasDe(mascota.id), DuenoRepo.eventosDeMascota(mascota.nombre),
+      );
+      const paciente = crearDatosPaciente({
+        nombre: mascota.nombre, especie: mascota.tipo, raza: mascota.raza, sexo: mascota.sexo ?? "", edad: mascota.edadTexto() ?? "",
+        peso: mascota.tienePesoValido ? mascota.peso : "", microchip: mascota.microchip === "Sin datos" ? "" : mascota.microchip,
+        propietario: DuenoRepo.perfil.nombre,
+      });
+      const archivo = await DocumentosPdf.historiaClinica(null, paciente, LocalDate.now(), historia);
+      await DocumentosPdf.compartir(archivo, `Historia clínica de ${mascota.nombre}`);
+    } catch (e) {
+      Avisos.error(e instanceof Error ? e.message : "No se pudo armar la historia clínica");
+    } finally {
+      setArmando(false);
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={estilos.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Boton
+          titulo="Compartir historia clínica (PDF)" icono="pdf" variante="secundario" alto={46} cargando={armando}
+          estilo={{ marginBottom: 8 }} onPress={() => void compartirHistoria()}
+        />
         <FiltroLineaTiempo filtro={filtro} tipos={categorias} />
         <View style={{ marginTop: 8 }}>
           {items.map((it, i) => <FilaHistorial key={it.clave} item={it} ultimo={i === items.length - 1} />)}
