@@ -9,7 +9,7 @@ import type {
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
   SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto,
-  AgendaManejadaDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
+  AgendaManejadaDto, BloqueoAfectadoDto, BloqueoDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, NuevaClinicaDto, TipoHabilitacion, EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, CuentaMiembroCreadaDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "./dtos";
 import { normalizarPerfil } from "./dtos";
 import { datosDeSedes } from "./sedesJson";
@@ -261,6 +261,25 @@ export class SupabaseFuente implements FuenteDatos {
 
   async actualizarSede(id: string, cambios: JsonObject): Promise<void> {
     vacio(await this.cliente.from("sedes").update(cambios).eq("id", id));
+  }
+
+  async bloqueos(veterinarioIds: string[]): Promise<BloqueoDto[]> {
+    if (veterinarioIds.length === 0) return [];
+    const ahora = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 19); // hora local de Argentina
+    return ok(
+      await this.cliente.from("bloqueos_agenda").select("id,veterinario_id,desde,hasta,motivo")
+        .in("veterinario_id", veterinarioIds).gt("hasta", ahora).order("desde"),
+    ) as BloqueoDto[];
+  }
+
+  async crearBloqueo(veterinarioId: string, desde: string, hasta: string, motivo: string, cancelar: boolean): Promise<BloqueoAfectadoDto[]> {
+    return ok(await this.cliente.rpc("crear_bloqueo", {
+      p_veterinario: veterinarioId, p_desde: desde, p_hasta: hasta, p_motivo: motivo, p_cancelar: cancelar,
+    })) as BloqueoAfectadoDto[];
+  }
+
+  async eliminarBloqueo(id: string): Promise<void> {
+    vacio(await this.cliente.rpc("eliminar_bloqueo", { p_id: id }));
   }
 
   async eliminarSede(id: string): Promise<void> {

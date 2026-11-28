@@ -18,6 +18,7 @@ import { EspecialidadesRepo } from "./repositorio/especialidadesRepo";
 import { RecordatoriosRepo } from "./repositorio/recordatoriosRepo";
 import { SaludRepo } from "./repositorio/saludRepo";
 import { SolicitudesRepo } from "./repositorio/solicitudesRepo";
+import { BloqueosRepo } from "./repositorio/bloqueosRepo";
 import { FotosPendientes } from "./fotosPendientes";
 import { Imagenes } from "./imagenes";
 import { Servicios } from "./servicios";
@@ -405,6 +406,7 @@ class SesionImpl {
       SolicitudesRepo.cargar(),
       segura(() => NotificacionesVet.cargar(silencioso)),
       segura(() => RecordatoriosRepo.cargar()),
+      segura(() => BloqueosRepo.cargar(CuentaActual.usuarioId ? [CuentaActual.usuarioId] : [])),
     ]);
     const manuales = RecordatoriosRepo.lista.map(
       (r) => new Manual(r.id, PacientesRepo.nombreDe(r.mascotaId), r.titulo, r.fecha, r.hora, r.nota),
@@ -500,6 +502,7 @@ class SesionImpl {
     SolicitudesRepo.limpiar();
     NotificacionesVet.limpiar();
     AdminRepo.limpiar();
+    BloqueosRepo.limpiar();
   }
 }
 

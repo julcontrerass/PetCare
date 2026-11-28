@@ -1,6 +1,7 @@
 /*
  * Agenda de la recepción, como la del veterinario (AgendaVet): próximos, completados y cancelados, agrupados por
- * fecha, con el filtro por veterinario cuando trabaja para más de uno.
+ * fecha, con el filtro por veterinario cuando trabaja para más de uno. Con un veterinario elegido (o si es uno solo),
+ * arriba está su próximo bloqueo de agenda, que abre la hoja para bloquear horarios.
  */
 import { useState } from "react";
 import { FlatList } from "react-native";
@@ -15,6 +16,11 @@ import { PestanasVet } from "../veterinario/PestanasVet";
 import { EditorTurnoRecepcion } from "./EditorTurnoRecepcion";
 import { FiltroVeterinarios, SinVeterinarios, TarjetaTurno, TurnoHoja } from "./ElementosRecepcion";
 import { NavRecepcion } from "./navegacionRecepcion";
+import { BloqueosRepo } from "../../data/repositorio/bloqueosRepo";
+import { Servicios } from "../../data/servicios";
+import { turnosQuePisan } from "../../model/bloqueos";
+import { AvisoBloqueo } from "../common/AvisoBloqueo";
+import { HojaBloqueos } from "../common/HojaBloqueos";
 
 const PESTANAS = ["Próximos", "Completados", "Cancelados"];
 const SIN_TURNOS = ["No hay turnos próximos", "No hay turnos completados", "No hay turnos cancelados"];
@@ -47,6 +53,11 @@ export function AgendaRecepcion() {
         : RecepcionAgendaRepo.proximos(vet);
   const filas = filasPorFecha(turnos);
   const sinVets = RecepcionAgendaRepo.veterinarios.length === 0;
+  const [bloqueos, setBloqueos] = useState(false);
+  // Los bloqueos son de un veterinario: el elegido en el filtro, o el único
+  const vetBloqueos = vet != null
+    ? RecepcionAgendaRepo.veterinarios.find((v) => v.id === vet) ?? null
+    : RecepcionAgendaRepo.veterinarios.length === 1 ? RecepcionAgendaRepo.veterinarios[0] : null;
 
   return (
     <PantallaBase
@@ -58,6 +69,7 @@ export function AgendaRecepcion() {
       ) : (
         <>
           <FiltroVeterinarios elegido={vet} alElegir={setVet} />
+          {vetBloqueos ? <AvisoBloqueo bloqueos={BloqueosRepo.de(vetBloqueos.id)} alTocar={() => setBloqueos(true)} /> : null}
           <PestanasVet etiquetas={PESTANAS} seleccionada={pestana} alElegir={setPestana} />
           {filas.length === 0 ? (
             <EstadoVacio
@@ -85,6 +97,16 @@ export function AgendaRecepcion() {
         <TurnoHoja turnoId={abierto} alCerrar={() => setAbierto(null)} alMover={(t) => { setAbierto(null); setMoviendo(t); }} />
       ) : null}
       {moviendo ? <EditorTurnoRecepcion turno={moviendo} alCerrar={() => setMoviendo(null)} /> : null}
+      {vetBloqueos ? (
+        <HojaBloqueos
+          visible={bloqueos} veterinarioId={vetBloqueos.id} veterinario={vetBloqueos.nombre}
+          turnosEntre={(desde, hasta) => turnosQuePisan(RecepcionAgendaRepo.proximos(vetBloqueos.id), desde, hasta)}
+          alCambiar={() => {
+            RecepcionAgendaRepo.cargar().then(() => Servicios.avisarCambio()).catch(() => Servicios.avisarCambio());
+          }}
+          alCerrar={() => setBloqueos(false)}
+        />
+      ) : null}
     </PantallaBase>
   );
 }

@@ -68,6 +68,8 @@ class PerfilVetRepoImpl {
       dias_atencion: diasOrdenados(sede),
       hora_apertura: `${sede.apertura}:00`,
       hora_cierre: `${sede.cierre}:00`,
+      pausa_desde: sede.pausaDesde ? `${sede.pausaDesde}:00` : null,
+      pausa_hasta: sede.pausaHasta ? `${sede.pausaHasta}:00` : null,
     };
   }
 
@@ -107,6 +109,8 @@ class PerfilVetRepoImpl {
           dias_atencion: diasOrdenados(sede),
           hora_apertura: `${sede.apertura}:00`,
           hora_cierre: `${sede.cierre}:00`,
+          pausa_desde: sede.pausaDesde ? `${sede.pausaDesde}:00` : null,
+          pausa_hasta: sede.pausaHasta ? `${sede.pausaHasta}:00` : null,
         });
       }
     });
@@ -250,6 +254,8 @@ class PerfilVetRepoImpl {
           dias: [...new Set(lugar.dias_atencion)],
           apertura: lugar.hora_apertura.slice(0, 5),
           cierre: lugar.hora_cierre.slice(0, 5),
+          pausaDesde: lugar.pausa_desde ? lugar.pausa_desde.slice(0, 5) : null,
+          pausaHasta: lugar.pausa_hasta ? lugar.pausa_hasta.slice(0, 5) : null,
         }),
       );
     }

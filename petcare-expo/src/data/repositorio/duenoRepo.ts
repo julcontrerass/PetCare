@@ -20,6 +20,7 @@ import {
 } from "../../model/modelos";
 import type { AjusteFoto, SedeVet } from "../../model/modelos";
 import { TiposMascota } from "../../model/tiposMascota";
+import { pisaPausa } from "../../model/bloqueos";
 import { Fechas } from "../../util/fechas";
 import { LocalDate, LocalDateTime, Reloj, YearMonth } from "../../util/tiempo";
 import { Imagenes } from "../imagenes";
@@ -524,6 +525,8 @@ class DuenoRepoImpl {
       dias: [...new Set(it.dias_atencion)],
       apertura: it.hora_apertura.slice(0, 5),
       cierre: it.hora_cierre.slice(0, 5),
+      pausaDesde: it.pausa_desde ? it.pausa_desde.slice(0, 5) : null,
+      pausaHasta: it.pausa_hasta ? it.pausa_hasta.slice(0, 5) : null,
     }));
     const principal = sedes[0] ?? null;
     // A los dueños (y a la recepción) solo se les ofrecen los servicios y las especialidades con el título aprobado
@@ -1021,7 +1024,9 @@ class DuenoRepoImpl {
     let t = this.minutos(sede?.apertura ?? vet.apertura);
     const fin = this.minutos(sede?.cierre ?? vet.cierre);
     while (t + duracionMin <= fin) {
-      horas.push(`${dos(Math.trunc(t / 60))}:${dos(t % 60)}`);
+      const hora = `${dos(Math.trunc(t / 60))}:${dos(t % 60)}`;
+      // La pausa del lugar no se ofrece
+      if (!pisaPausa(sede, hora, duracionMin)) horas.push(hora);
       t += this.PASO_HORARIOS_MIN;
     }
     return horas;

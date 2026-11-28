@@ -1,6 +1,6 @@
 /*
  * Migrado de ui/veterinario/EditorSede.kt + sheet_sede_vet.xml: hoja para cargar o editar una veterinaria donde atiende
- * el veterinario (nombre, dirección, días y horario propios). La usa el perfil. A diferencia de `EditorSedeRegistro`
+ * el veterinario (nombre, dirección, días, horario y pausa propios). La usa el perfil. A diferencia de `EditorSedeRegistro`
  * (el del registro), acá `alEliminar` recibe la función que cierra la hoja: quien llama decide si se puede borrar y
  * cuándo se cierra (por ejemplo, si el lugar tiene turnos pendientes la hoja queda abierta).
  */
@@ -55,20 +55,29 @@ export function EditorSede({ sede, alGuardar, alEliminar, alCerrar }: EditorSede
   const [apertura, setApertura] = useState(sede?.apertura ?? "09:00");
   const [cierre, setCierre] = useState(sede?.cierre ?? "18:00");
   const [dias, setDias] = useState<number[]>(sede?.dias ?? [1, 2, 3, 4, 5]);
-  const [eligiendo, setEligiendo] = useState<"apertura" | "cierre" | null>(null);
+  const [conPausa, setConPausa] = useState(!!sede?.pausaDesde);
+  const [pausaDesde, setPausaDesde] = useState(sede?.pausaDesde ?? "13:00");
+  const [pausaHasta, setPausaHasta] = useState(sede?.pausaHasta ?? "14:00");
+  const [eligiendo, setEligiendo] = useState<"apertura" | "cierre" | "pausaDesde" | "pausaHasta" | null>(null);
   const refNombre = useRef<EntradaTexto>(null);
 
   /** Lo que se ve debajo de los horarios: cómo queda el lugar o, si falta algo, qué es. */
-  const problema = (): string | null =>
-    dias.length === 0 ? "Elegí al menos un día de atención." : cierre <= apertura ? "El horario de cierre tiene que ser posterior al de apertura." : null;
+  const problema = (): string | null => {
+    if (dias.length === 0) return "Elegí al menos un día de atención.";
+    if (cierre <= apertura) return "El horario de cierre tiene que ser posterior al de apertura.";
+    if (conPausa && pausaHasta <= pausaDesde) return "El final de la pausa tiene que ser posterior al comienzo.";
+    if (conPausa && (pausaDesde < apertura || pausaHasta > cierre)) return `La pausa tiene que estar dentro del horario (${apertura} a ${cierre} hs).`;
+    return null;
+  };
   const error = problema();
-  const resumen = error ?? "Atiende " + textoHorarioSede(crearSede({ id: "", nombre: "", dias, apertura, cierre }));
+  const pausa = conPausa ? { pausaDesde, pausaHasta } : { pausaDesde: null, pausaHasta: null };
+  const resumen = error ?? "Atiende " + textoHorarioSede(crearSede({ id: "", nombre: "", dias, apertura, cierre, ...pausa }));
 
   const alternarDia = (d: number, marcado: boolean) =>
     setDias((a) => (marcado ? [...new Set([...a, d])] : a.filter((x) => x !== d)));
 
   const guardar = () => {
-    const nuevo = crearSede({ id: sede?.id ?? "", nombre: nombre.trim(), direccion: direccion.trim(), dias: [...dias].sort((a, b) => a - b), apertura, cierre });
+    const nuevo = crearSede({ id: sede?.id ?? "", nombre: nombre.trim(), direccion: direccion.trim(), dias: [...dias].sort((a, b) => a - b), apertura, cierre, ...pausa });
     if (nuevo.nombre.trim() === "") {
       setErrorNombre("Ingresá el nombre de la veterinaria");
       refNombre.current?.focus();
@@ -107,6 +116,18 @@ export function EditorSede({ sede, alGuardar, alEliminar, alCerrar }: EditorSede
         <CampoHora etiqueta="Desde" valor={apertura} onPress={() => setEligiendo("apertura")} />
         <CampoHora etiqueta="Hasta" valor={cierre} onPress={() => setEligiendo("cierre")} />
       </View>
+
+      <Texto variante="etiqueta" style={estilos.etiqueta}>Pausa</Texto>
+      <GrupoChips espacioVertical={4}>
+        <ChipRegistro texto="Sin pausa" marcado={!conPausa} alCambiar={() => setConPausa(false)} />
+        <ChipRegistro texto="Pausa todos los días" marcado={conPausa} alCambiar={() => setConPausa(true)} />
+      </GrupoChips>
+      {conPausa ? (
+        <View style={[estilos.horas, { marginTop: 4 }]}>
+          <CampoHora etiqueta="Pausa desde" valor={pausaDesde} onPress={() => setEligiendo("pausaDesde")} />
+          <CampoHora etiqueta="Pausa hasta" valor={pausaHasta} onPress={() => setEligiendo("pausaHasta")} />
+        </View>
+      ) : null}
       <Texto variante="cuerpo" tamano={13.5} color={error == null ? Colores.tealDark : Colores.dangerRed} style={estilos.resumen}>{resumen}</Texto>
 
       <Boton titulo="Guardar" alto={50} estilo={{ marginTop: 18 }} onPress={guardar} />
@@ -117,13 +138,19 @@ export function EditorSede({ sede, alGuardar, alEliminar, alCerrar }: EditorSede
         </Pressable>
       ) : null}
       <SelectorHoraLibre
-        visible={eligiendo != null} valor={eligiendo === "cierre" ? cierre : apertura}
-        titulo={eligiendo === "cierre" ? "Hora de cierre" : "Hora de apertura"}
-        alElegir={(h) => (eligiendo === "cierre" ? setCierre(h) : setApertura(h))} alCerrar={() => setEligiendo(null)}
+        visible={eligiendo != null}
+        valor={eligiendo === "cierre" ? cierre : eligiendo === "pausaDesde" ? pausaDesde : eligiendo === "pausaHasta" ? pausaHasta : apertura}
+        titulo={TITULO_HORA[eligiendo ?? "apertura"]}
+        alElegir={(h) => ({ apertura: setApertura, cierre: setCierre, pausaDesde: setPausaDesde, pausaHasta: setPausaHasta })[eligiendo ?? "apertura"](h)}
+        alCerrar={() => setEligiendo(null)}
       />
     </HojaInferior>
   );
 }
+
+const TITULO_HORA = {
+  apertura: "Hora de apertura", cierre: "Hora de cierre", pausaDesde: "Comienzo de la pausa", pausaHasta: "Fin de la pausa",
+} as const;
 
 export default EditorSede;
 

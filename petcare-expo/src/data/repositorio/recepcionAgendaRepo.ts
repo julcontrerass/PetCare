@@ -15,6 +15,7 @@ import type { AccesoDto, MascotaDto, TurnoDto } from "../remoto/dtos";
 import { Servicios } from "../servicios";
 import type { EstadoEvento } from "./agendaRepo";
 import { DuenoRepo } from "./duenoRepo";
+import { BloqueosRepo } from "./bloqueosRepo";
 import { ClinicasRepo } from "./clinicasRepo";
 
 export type Llegada = "en_espera" | "no_vino";
@@ -144,7 +145,7 @@ class RecepcionAgendaRepoImpl {
 
   /**
    * Horarios de inicio que ofrece el veterinario ese día en ese lugar para un turno de [duracionMin], y cuáles de
-   * ellos no se pueden tomar (se pisan con otro turno suyo o ya pasaron). [ignorarId] es el turno que se mueve.
+   * ellos no se pueden tomar (se pisan con otro turno suyo o con un bloqueo de su agenda, o ya pasaron). [ignorarId] es el turno que se mueve.
    */
   horarios(
     vet: VeterinarioAcceso, fecha: LocalDate, duracionMin: number, sedeId: string | null, ignorarId: string | null = null,
@@ -156,7 +157,10 @@ class RecepcionAgendaRepoImpl {
       (t) => t.vetId === vet.id && t.id !== ignorarId && t.estado === "PENDIENTE" && t.fecha.equals(fecha),
     );
     const ocupadas = horas.filter(
-      (h) => DuenoRepo.horaPasada(fecha, h) || tomados.some((t) => DuenoRepo.seSuperponen(h, duracionMin, t.hora, t.duracionMin)),
+      (h) =>
+        DuenoRepo.horaPasada(fecha, h) ||
+        tomados.some((t) => DuenoRepo.seSuperponen(h, duracionMin, t.hora, t.duracionMin)) ||
+        BloqueosRepo.quePisa(vet.id, fecha, h, duracionMin) !== null,
     );
     return { horas, ocupadas };
   }
@@ -170,6 +174,7 @@ class RecepcionAgendaRepoImpl {
     const f = Servicios.fuente;
     const [catalogo, turnos, mascotas, accesos] = await Promise.all([
       f.catalogoVeterinarios(), f.turnos(), f.mascotasDelVeterinario(), f.accesos(),
+      BloqueosRepo.cargar([...ids]).catch(() => {}),
     ]);
     this._veterinarios = catalogo
       .filter((p) => ids.has(p.id))

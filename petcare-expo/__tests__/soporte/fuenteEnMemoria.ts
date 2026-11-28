@@ -5,7 +5,7 @@ import type {
   NuevaMascotaDto, NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto,
   NuevoRecordatorioDto, NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto,
   RegistroSaludDto, RutaDto, SedeDto, SolicitudAccesoDto, SolicitudAltaVeterinarioDto, TomaDto, TurnoDto, VeterinarioDto,
-  AgendaManejadaDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion,
+  AgendaManejadaDto, BloqueoAfectadoDto, BloqueoDto, ClinicaAdminDto, ClinicaDto, ClinicaParaRevisarDto, CuentaMiembroCreadaDto, NuevaClinicaDto, RevisionClinica, TipoHabilitacion,
   EspecialidadParaRevisarDto, EspecialidadVetDto, NuevoCertificadoDto, MiembroClinicaDto, NuevaCuentaMiembroDto, RolClinica,
 } from "../../src/data/remoto/dtos";
 import { lugaresDe, normalizarPerfil, normalizarVeterinario } from "../../src/data/remoto/dtos";
@@ -222,10 +222,48 @@ export class FuenteEnMemoria extends FuenteBase {
             hora_apertura: texto(cambios, "hora_apertura") ?? s.hora_apertura,
             hora_cierre: texto(cambios, "hora_cierre") ?? s.hora_cierre,
             dias_atencion: Array.isArray(dias) ? dias.map((d) => Number(d)) : s.dias_atencion,
+            pausa_desde: "pausa_desde" in cambios ? texto(cambios, "pausa_desde") : s.pausa_desde,
+            pausa_hasta: "pausa_hasta" in cambios ? texto(cambios, "pausa_hasta") : s.pausa_hasta,
           };
         }),
       );
     }
+  }
+
+  // ---------- Bloqueos de agenda (como bloqueos_de_agenda.sql) ----------
+
+  bloqueosGuardados: BloqueoDto[] = [];
+
+  override async bloqueos(veterinarioIds: string[]): Promise<BloqueoDto[]> {
+    return this.bloqueosGuardados.filter((b) => veterinarioIds.includes(b.veterinario_id));
+  }
+
+  /** Como crear_bloqueo: guarda el bloqueo y devuelve (y si se pide, cancela) los turnos pendientes que caen adentro. */
+  override async crearBloqueo(veterinarioId: string, desde: string, hasta: string, motivo: string, cancelar: boolean): Promise<BloqueoAfectadoDto[]> {
+    this.llamadas.push(`crearBloqueo:${veterinarioId}:${desde}:${hasta}:${motivo}:${cancelar}`);
+    if (hasta <= desde) throw new Error("El final del bloqueo tiene que ser posterior al comienzo");
+    this.bloqueosGuardados.push({ id: `bloq-${this.bloqueosGuardados.length + 1}`, veterinario_id: veterinarioId, desde, hasta, motivo });
+    const minutos = (hora: string) => Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
+    const clave = (fecha: string, min: number) => `${fecha}T${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}:00`;
+    const afectados: BloqueoAfectadoDto[] = [];
+    this.turnosGuardados = this.turnosGuardados.map((t) => {
+      if (t.veterinario_id !== veterinarioId || t.estado !== "pendiente") return t;
+      const inicio = minutos(t.hora);
+      if (!(clave(t.fecha, inicio) < hasta && clave(t.fecha, inicio + t.duracion_min) > desde)) return t;
+      const mascota = this.mascotas.find((m) => m.id === t.mascota_id);
+      const dueno = [...this.perfiles, this.yo].find((p) => p.id === mascota?.dueno_id);
+      afectados.push({
+        turno_id: t.id, mascota: mascota?.nombre ?? "", dueno: dueno?.nombre ?? null, telefono: dueno?.telefono ?? null,
+        fecha: t.fecha, hora: t.hora, cancelado: cancelar,
+      });
+      return cancelar ? { ...t, estado: "cancelado" } : t;
+    });
+    return afectados;
+  }
+
+  override async eliminarBloqueo(id: string): Promise<void> {
+    this.llamadas.push(`eliminarBloqueo:${id}`);
+    this.bloqueosGuardados = this.bloqueosGuardados.filter((b) => b.id !== id);
   }
 
   override async eliminarSede(id: string): Promise<void> {

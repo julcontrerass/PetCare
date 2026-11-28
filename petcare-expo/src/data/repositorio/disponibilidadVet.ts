@@ -2,7 +2,10 @@ import type { SedeVet } from "../../model/modelos";
 import { crearSede } from "../../model/modelos";
 import { CatalogoMedico } from "../catalogoMedico";
 import { LocalDate, LocalDateTime, horaDesdeMinutos } from "../../util/tiempo";
+import { pisaPausa } from "../../model/bloqueos";
+import { CuentaActual } from "../cuentaActual";
 import { AgendaRepo } from "./agendaRepo";
+import { BloqueosRepo } from "./bloqueosRepo";
 import { PerfilVetRepo } from "./perfilVetRepo";
 
 export interface Horario {
@@ -16,8 +19,8 @@ function enteroONull(texto: string | undefined): number | null {
 }
 
 /**
- * Reglas de disponibilidad del veterinario: días de atención, franja horaria del perfil y turnos ya ocupados en
- * la agenda. Cada turno dura lo que corresponde a su servicio; los horarios arrancan cada [PASO_MIN] minutos.
+ * Reglas de disponibilidad del veterinario: días de atención, franja horaria del perfil, pausa de cada lugar,
+ * bloqueos de agenda y turnos ya ocupados en la agenda. Cada turno dura lo que corresponde a su servicio; los horarios arrancan cada [PASO_MIN] minutos.
  */
 class DisponibilidadVetImpl {
   /** Duración que se usa cuando todavía no se sabe qué servicio es. */
@@ -79,6 +82,12 @@ class DisponibilidadVetImpl {
     });
   }
 
+  /** El motivo del bloqueo propio que pisa ese turno, o null. */
+  bloqueado(fecha: LocalDate, hora: string, duracionMin: number): string | null {
+    const yo = CuentaActual.usuarioId;
+    return yo ? BloqueosRepo.quePisa(yo, fecha, hora, duracionMin)?.motivo ?? null : null;
+  }
+
   private yaPaso(fecha: LocalDate, min: number): boolean {
     const hoy = LocalDate.now();
     if (fecha.isBefore(hoy)) return true;
@@ -103,7 +112,9 @@ class DisponibilidadVetImpl {
     let t = inicio;
     while (t + duracionMin <= fin) {
       const hora = this.formato(t);
-      lista.push({ hora, libre: !this.yaPaso(fecha, t) && !this.ocupado(fecha, hora, duracionMin, ignorarId) });
+      const tomado = this.yaPaso(fecha, t) || this.ocupado(fecha, hora, duracionMin, ignorarId)
+        || pisaPausa(this.lugar(sede), hora, duracionMin) || this.bloqueado(fecha, hora, duracionMin) !== null;
+      lista.push({ hora, libre: !tomado });
       t += this.PASO_MIN;
     }
     return lista;
@@ -135,6 +146,9 @@ class DisponibilidadVetImpl {
       );
     }
     if (this.yaPaso(fecha, m)) return "Ese horario ya pasó";
+    if (pisaPausa(donde, hora, duracionMin)) return `Ese horario es tu pausa${enOtro} (${donde.pausaDesde} a ${donde.pausaHasta} hs)`;
+    const motivo = this.bloqueado(fecha, hora, duracionMin);
+    if (motivo !== null) return `Bloqueaste la agenda en ese horario (${motivo})`;
     if (this.ocupado(fecha, hora, duracionMin, ignorarId)) return "Ya tenés un turno en ese horario";
     return null;
   }

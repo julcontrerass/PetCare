@@ -1,5 +1,5 @@
 import type {
-  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, DuenoMascotaDto,
+  AccesoDto, AccesoHistorialDto, ActividadDto, ArchivoDto, BloqueoAfectadoDto, BloqueoDto, CuentaDuenoCreadaDto, DuenoBuscadoDto, DuenoMascotaDto,
   EstudioTurnoDto, HoraOcupadaDto, InformeDto, InvitacionCoduenoDto, JsonObject, MascotaDto, NotificacionDto, NuevaCuentaDuenoDto, NuevaMascotaDto,
   NuevaPrescripcionDto, NuevaSedeDto, NuevoArchivoDto, NuevoEstudioTurnoDto, NuevoInformeDto, NuevoRecordatorioDto,
   NuevoRegistroSaludDto, NuevoTurnoDto, PerfilDto, PrescripcionDto, RecordatorioDto, RegistroSaludDto, RutaDto,
@@ -55,6 +55,11 @@ export interface FuenteDatos {
   actualizarVeterinario(cambios: JsonObject): Promise<void>;
   crearSede(sede: NuevaSedeDto): Promise<void>;
   actualizarSede(id: string, cambios: JsonObject): Promise<void>;
+  /** Bloqueos de agenda (que todavía no terminaron) de esos veterinarios: los propios o los de la recepción. */
+  bloqueos(veterinarioIds: string[]): Promise<BloqueoDto[]>;
+  /** Bloquea la agenda y devuelve los turnos que caen adentro; con [cancelar] los cancela y les avisa a los dueños. */
+  crearBloqueo(veterinarioId: string, desde: string, hasta: string, motivo: string, cancelar: boolean): Promise<BloqueoAfectadoDto[]>;
+  eliminarBloqueo(id: string): Promise<void>;
   eliminarSede(id: string): Promise<void>;
   actualizarDni(dni: string): Promise<void>;
 
@@ -241,6 +246,9 @@ export class FuenteBase implements FuenteDatos {
   async actualizarVeterinario(_cambios: JsonObject): Promise<void> {}
   async crearSede(_sede: NuevaSedeDto): Promise<void> {}
   async actualizarSede(_id: string, _cambios: JsonObject): Promise<void> {}
+  async bloqueos(_veterinarioIds: string[]): Promise<BloqueoDto[]> { return []; }
+  async crearBloqueo(_v: string, _d: string, _h: string, _m: string, _c: boolean): Promise<BloqueoAfectadoDto[]> { return []; }
+  async eliminarBloqueo(_id: string): Promise<void> {}
   async eliminarSede(_id: string): Promise<void> {}
   async actualizarDni(_dni: string): Promise<void> {}
 

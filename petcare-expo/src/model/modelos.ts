@@ -158,6 +158,9 @@ export interface SedeVet {
   readonly dias: number[];
   readonly apertura: string;
   readonly cierre: string;
+  /** Pausa de todos los días que atiende acá ("13:00"); null si no tiene. */
+  readonly pausaDesde: string | null;
+  readonly pausaHasta: string | null;
 }
 
 export function crearSede(s: Partial<SedeVet> & { id: string; nombre: string }): SedeVet {
@@ -168,6 +171,8 @@ export function crearSede(s: Partial<SedeVet> & { id: string; nombre: string }):
     dias: s.dias ?? [1, 2, 3, 4, 5],
     apertura: s.apertura ?? "09:00",
     cierre: s.cierre ?? "18:00",
+    pausaDesde: s.pausaDesde ?? null,
+    pausaHasta: s.pausaHasta ?? null,
   };
 }
 
@@ -180,7 +185,8 @@ export function textoHorarioSede(sede: SedeVet): string {
     consecutivos && ordenados.length > 2
       ? `${DIAS_CORTOS[ordenados[0] - 1]} a ${DIAS_CORTOS[ordenados[ordenados.length - 1] - 1]}`
       : ordenados.map((d) => DIAS_CORTOS[d - 1]).join(", ");
-  return `${textoDias} · ${sede.apertura} a ${sede.cierre} hs`;
+  const pausa = sede.pausaDesde && sede.pausaHasta ? ` (pausa de ${sede.pausaDesde} a ${sede.pausaHasta})` : "";
+  return `${textoDias} · ${sede.apertura} a ${sede.cierre} hs${pausa}`;
 }
 
 /** Nombre y dirección en una línea. */

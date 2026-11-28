@@ -1,6 +1,7 @@
 /*
  * Migrado de ui/veterinario/AgendaVetSeccion.kt (+ AgendaAdapter y AgendaFila) con seccion_vet_agenda.xml,
  * item_agenda_vet.xml e item_header_fecha.xml: los turnos próximos, completados y cancelados, agrupados por fecha.
+ * Arriba, el próximo bloqueo de agenda (o "Bloquear horario"), que abre la hoja de bloqueos.
  */
 import { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
@@ -19,6 +20,12 @@ import { Texto } from "../common/Texto";
 import { Colores } from "../common/tema";
 import { useDatos } from "../common/useDatos";
 import { NavVet } from "./navegacionVet";
+import { BloqueosRepo } from "../../data/repositorio/bloqueosRepo";
+import { CuentaActual } from "../../data/cuentaActual";
+import { Servicios } from "../../data/servicios";
+import { turnosQuePisan } from "../../model/bloqueos";
+import { AvisoBloqueo } from "../common/AvisoBloqueo";
+import { HojaBloqueos } from "../common/HojaBloqueos";
 import { PestanasVet } from "./PestanasVet";
 
 export type AgendaFila = { tipo: "encabezado"; texto: string } | { tipo: "turno"; evento: EventoVet };
@@ -64,6 +71,8 @@ function FilaTurno({ e }: { e: EventoVet }) {
 export function AgendaVet() {
   useDatos();
   const [pestana, setPestana] = useState(0);
+  const [bloqueos, setBloqueos] = useState(false);
+  const yo = CuentaActual.usuarioId ?? "";
   const eventos = pestana === 1 ? AgendaRepo.porEstado("COMPLETADO") : pestana === 2 ? AgendaRepo.porEstado("CANCELADO") : AgendaRepo.proximos();
   const filas = filasDeAgenda(eventos);
   const cantidad = eventos.length;
@@ -72,6 +81,7 @@ export function AgendaVet() {
       titulo="Agenda" subtitulo={cantidad === 1 ? "1 turno" : `${cantidad} turnos`} alVolver={NavVet.irAInicio}
       scroll={false} bordes={["top"]}
     >
+      <AvisoBloqueo bloqueos={BloqueosRepo.de(yo)} alTocar={() => setBloqueos(true)} />
       <PestanasVet etiquetas={PESTANAS} seleccionada={pestana} alElegir={setPestana} />
       {filas.length === 0 ? (
         <EstadoVacio icono="calendario" titulo={SIN_TURNOS[pestana]} mensaje="Los turnos agendados con vos aparecen acá" />
@@ -90,6 +100,14 @@ export function AgendaVet() {
           contentContainerStyle={{ paddingBottom: 16 }}
         />
       )}
+      <HojaBloqueos
+        visible={bloqueos} veterinarioId={yo} veterinario={PerfilVetRepo.nombre}
+        turnosEntre={(desde, hasta) => turnosQuePisan(AgendaRepo.eventos, desde, hasta)}
+        alCambiar={() => {
+          AgendaRepo.cargar().then(() => Servicios.avisarCambio()).catch(() => Servicios.avisarCambio());
+        }}
+        alCerrar={() => setBloqueos(false)}
+      />
     </PantallaBase>
   );
 }

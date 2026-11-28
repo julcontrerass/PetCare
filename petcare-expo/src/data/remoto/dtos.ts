@@ -23,6 +23,30 @@ export interface SedeDto {
   hora_cierre: string;
   activa: boolean;
   created_at?: string | null;
+  /** Pausa de todos los días que atiende en este lugar ("13:00:00"); null si no tiene. */
+  pausa_desde?: string | null;
+  pausa_hasta?: string | null;
+}
+
+/** Un momento en que el veterinario no atiende (tabla bloqueos_agenda). Horas locales: "2026-11-30T08:00:00". */
+export interface BloqueoDto {
+  id: string;
+  veterinario_id: string;
+  desde: string;
+  hasta: string;
+  motivo: string;
+}
+
+/** Un turno que cae dentro de un bloqueo nuevo (rpc crear_bloqueo), con el contacto del dueño. */
+export interface BloqueoAfectadoDto {
+  turno_id: string;
+  mascota: string;
+  dueno?: string | null;
+  telefono?: string | null;
+  fecha: string;
+  hora: string;
+  /** Se canceló al crear el bloqueo (al dueño le llegó el aviso con el motivo). */
+  cancelado: boolean;
 }
 
 export interface VeterinarioDto {
@@ -102,6 +126,8 @@ export function normalizarSede(s: Partial<SedeDto> & { id: string; nombre: strin
     hora_cierre: s.hora_cierre ?? "18:00:00",
     activa: s.activa ?? true,
     created_at: s.created_at ?? null,
+    pausa_desde: s.pausa_desde ?? null,
+    pausa_hasta: s.pausa_hasta ?? null,
   };
 }
 
@@ -144,6 +170,8 @@ export interface NuevaSedeDto {
   dias_atencion: number[];
   hora_apertura: string;
   hora_cierre: string;
+  pausa_desde?: string | null;
+  pausa_hasta?: string | null;
 }
 
 /** La cuenta está activa y su rol de veterinario fue aprobado: puede atender y aparece en el catálogo. */
